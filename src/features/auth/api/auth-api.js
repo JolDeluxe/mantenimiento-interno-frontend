@@ -7,16 +7,16 @@ export const authService = {
    */
   login: async (identifier, password) => {
     try {
-      // 🚀 CORRECCIÓN: api.post ya devuelve la 'data' limpia gracias al interceptor
       const data = await api.post('/api/auth/login', {
         identifier,
         password,
       });
 
-      const { token, refreshToken, usuario } = data;
+      //Leer exactamente las keys que envía el backend
+      const { accessToken, refreshToken, user } = data;
 
-      // Guardar en el store global (Zustand)
-      useAuthStore.getState().setAuth(usuario, token, refreshToken);
+      // Guardar en el store global (Zustand) mapeando al formato que espera setAuth
+      useAuthStore.getState().setAuth(user, accessToken, refreshToken);
 
       return data;
     } catch (error) {

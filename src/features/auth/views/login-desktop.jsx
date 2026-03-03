@@ -13,7 +13,7 @@ export const LoginDesktop = ({ view, bgImage, onBack, ...formProps }) => {
 
       <div className="relative bg-white rounded-lg shadow-2xl w-112.5 p-8 text-slate-800">
         <div className="flex justify-center mb-8">
-          <img src="/img/01_Cuadra.webp" alt="Logo Cuadra" className="w-50 h-auto object-contain" />
+          <img src="/img/01_Cuadra_Mantnimento.webp" alt="Logo Cuadra" className="w-70 h-auto object-contain" />
         </div>
 
         {view === 'login' && <LoginForm {...formProps} />}
