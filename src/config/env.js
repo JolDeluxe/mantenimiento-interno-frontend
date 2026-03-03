@@ -1,24 +1,23 @@
 /**
  * Validador y Centralizador de Variables de Entorno
- * 
- * Vite procesa automáticamente el archivo .env en la raíz del proyecto.
- * NO necesitas importar .env manualmente - Vite lo hace por ti.
- * 
- * Variables con prefijo VITE_ son inyectadas en import.meta.env automáticamente.
- * 
- * Uso:
- * import { ENV } from '@/config/env';
- * const apiUrl = ENV.API_URL;
+ * * Este módulo asegura que la aplicación no arranque si faltan definiciones críticas,
+ * especialmente las URLs de redirección necesarias para el SSO entre portales.
  */
+
+// Detectamos dinámicamente qué aplicación es según el nombre en el .env
+const appName = import.meta.env.VITE_APP_NAME || '';
+const isPortalCliente = appName.toLowerCase().includes('cliente');
 
 const requiredVars = [
   'VITE_API_URL',
+  'VITE_APP_NAME',
+  // Si es portal de cliente, requiere la URL del sistema interno y viceversa
+  isPortalCliente ? 'VITE_URL_SISTEMA_INTERNO' : 'VITE_URL_PORTAL_CLIENTE'
 ];
 
 const optionalVars = {
   VITE_VAPID_PUBLIC_KEY: '',
   VITE_ENV: 'development',
-  VITE_APP_NAME: 'Cuadra',
 };
 
 function validateEnv() {
@@ -33,52 +32,42 @@ function validateEnv() {
   if (missing.length > 0) {
     const errorMsg = `
 ╔════════════════════════════════════════════════════════════╗
-║  ⚠️  ERROR CRÍTICO: Variables de Entorno Faltantes         ║
+║  ⚠️  ERROR CRÍTICO: Variables de Entorno Faltantes          ║
 ╠════════════════════════════════════════════════════════════╣
-║  Las siguientes variables son REQUERIDAS:                  ║
+║  Las siguientes variables son REQUERIDAS para esta APP:    ║
 ║  ${missing.map(v => `  - ${v}`).join('\n║ ')}
 ║                                                            ║
 ║  📁 Archivo: .env (en la raíz del proyecto)                ║
-║  Contenido requerido:                                      ║
-║  ${missing.map(v => `  ${v}=valor`).join('\n║ ')}
-║                                                            ║
 ║  💡 Recuerda: Reinicia el servidor después de editar .env  ║
 ╚════════════════════════════════════════════════════════════╝
     `.trim();
     
-    throw new Error(errorMsg);
+    console.error(errorMsg);
+    throw new Error('Configuración de entorno incompleta.');
   }
 }
 
-// Ejecuta validación al cargar el módulo
 validateEnv();
 
-// Exporta objeto centralizado y tipado
 export const ENV = {
-  // Backend
+  // Backend Central
   API_URL: import.meta.env.VITE_API_URL,
   
-  // Push Notifications
+  // Identidad y Redirección SSO
+  APP_NAME: import.meta.env.VITE_APP_NAME,
+  // Esta variable contendrá la URL del OTRO proyecto automáticamente
+  URL_PORTAL_OPUESTO: isPortalCliente 
+    ? import.meta.env.VITE_URL_SISTEMA_INTERNO 
+    : import.meta.env.VITE_URL_PORTAL_CLIENTE,
+
+  // Notificaciones y Otros
   VAPID_PUBLIC_KEY: import.meta.env.VITE_VAPID_PUBLIC_KEY || optionalVars.VITE_VAPID_PUBLIC_KEY,
-  
-  // Ambiente
   ENV_MODE: import.meta.env.VITE_ENV || optionalVars.VITE_ENV,
-  APP_NAME: import.meta.env.VITE_APP_NAME || optionalVars.VITE_APP_NAME,
   
-  // Banderas de Vite (siempre disponibles)
+  // Utilidades de Vite
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
   MODE: import.meta.env.MODE,
 };
-
-// Log de confirmación en desarrollo
-// if (ENV.IS_DEV) {
-//   console.log('🔧 Configuración de Entorno Cargada:', {
-//     API_URL: ENV.API_URL,
-//     VAPID_ACTIVO: !!ENV.VAPID_PUBLIC_KEY,
-//     ENV_MODE: ENV.ENV_MODE,
-//     APP_NAME: ENV.APP_NAME,
-//   });
-// }
 
 export default ENV;
