@@ -4,13 +4,11 @@ import { persist } from 'zustand/middleware';
 export const useAuthStore = create(
   persist(
     (set, get) => ({
-      // Estado
       user: null,
       token: null,
       refreshToken: null,
       isAuthenticated: false,
 
-      // Acciones
       setAuth: (user, token, refreshToken) => {
         set({
           user,
@@ -18,16 +16,10 @@ export const useAuthStore = create(
           refreshToken,
           isAuthenticated: true,
         });
-        
-        // Sincronizar con localStorage (por si acaso)
-        localStorage.setItem('token', token);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
       },
 
       setToken: (token) => {
         set({ token });
-        localStorage.setItem('token', token);
       },
 
       logout: () => {
@@ -38,19 +30,18 @@ export const useAuthStore = create(
           isAuthenticated: false,
         });
         
-        // Limpiar localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
       },
 
-      // Getters
       getUser: () => get().user,
       getToken: () => get().token,
+      getRefreshToken: () => get().refreshToken,
       isAuth: () => get().isAuthenticated,
     }),
     {
-      name: 'auth-storage', // Nombre en localStorage
+      name: 'auth-storage', 
       partialize: (state) => ({
         user: state.user,
         token: state.token,
