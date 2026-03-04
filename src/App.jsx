@@ -9,8 +9,6 @@ export const App = () => {
   return (
     <BrowserRouter>
       <AppRoutes />
-      
-      {/* El contenedor que renderiza los Toasts/Snackbars globales */}
       <ToastContainer />
     </BrowserRouter>
   );

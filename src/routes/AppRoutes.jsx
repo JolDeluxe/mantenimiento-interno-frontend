@@ -3,6 +3,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 
+// Layouts
+import { DashboardLayout } from '@/layouts/dashboard-layout';
+
+// Pages
 import LoginPage from '@/features/auth/pages/login-page';
 import HomeDashboard from '@/pages/home-dashboard';
 import NotFound from '@/pages/not-found';
@@ -19,9 +23,17 @@ export const AppRoutes = () => {
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
-      {/* Rutas Privadas */}
+      {/* Rutas Privadas con Dashboard Layout */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<HomeDashboard />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<HomeDashboard />} />
+          
+          {/* Aquí se agregarán las rutas de los módulos */}
+          {/* Ejemplo: */}
+          {/* <Route path="/tickets" element={<TicketsPage />} /> */}
+          {/* <Route path="/usuarios" element={<UsuariosPage />} /> */}
+          {/* <Route path="/departamentos" element={<DepartamentosPage />} /> */}
+        </Route>
       </Route>
 
       {/* Errores */}
