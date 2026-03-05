@@ -107,7 +107,7 @@ export const ModalBody = ({ children, className = "" }) => {
  */
 export const ModalFooter = ({ children, className = "" }) => {
   return (
-    <div className={cn("shrink-0 flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 rounded-b-lg", className)}>
+    <div className={cn("shrink-0 flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-200 rounded-b-lg", className)}>
       {children}
     </div>
   );

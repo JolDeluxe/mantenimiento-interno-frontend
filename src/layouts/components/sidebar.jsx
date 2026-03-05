@@ -5,8 +5,8 @@ import { getModulesByRole } from '@/config/modules-config';
 import { SidebarHeader } from './sidebar-header';
 import { SidebarItem } from './sidebar-item';
 
-const Sidebar = () => {
-  const { user } = useAuthStore();
+export const Sidebar = () => {
+    const { user } = useAuthStore();
   const { sidebarExpanded } = useUIStore();
 
   const userModules = getModulesByRole(user?.rol);
@@ -28,20 +28,28 @@ const Sidebar = () => {
         </ul>
       </nav>
 
+      {/* Footer del Sidebar */}
       <div className={`
-        p-4 border-t border-marca-primario/20 mt-auto
-        transition-all duration-300
+        p-4 border-t border-marca-primario/30 mt-auto flex flex-col items-center
+        transition-all duration-300 overflow-hidden
         ${sidebarExpanded ? 'opacity-100' : 'opacity-0 hidden'}
       `}>
-        <p className="text-white/80 text-xs text-center font-medium">
+        {/* Nombre del sistema con fuente corporativa */}
+        <p className="fuente-titulos text-white text-xl tracking-wide whitespace-nowrap">
           Cuadra Mantenimiento
         </p>
-        <p className="text-white/60 text-xs text-center mt-1">
-          v - desarrollo
+        
+        {/* Versión con fuente monoespaciada en formato badge */}
+        <p className="font-codigo text-[10px] bg-marca-primario/50 text-cuadra-arena px-2 py-0.5 rounded-sm mt-1 mb-3 whitespace-nowrap shadow-inner">
+          v.desarrollo
+        </p>
+        
+        {/* Créditos de autoría sutiles */}
+        <p className="text-[10px] text-white/50 text-center leading-tight">
+          Desarrollado por el equipo de <br/>
+          <span className="font-bold text-white/80">Procesos Tecnológicos</span>
         </p>
       </div>
     </aside>
   );
 };
-
-export default Sidebar;

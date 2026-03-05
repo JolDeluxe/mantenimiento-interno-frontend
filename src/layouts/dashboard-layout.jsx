@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useUIStore } from '@/stores/ui-store';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import Sidebar from './components/sidebar.jsx';
+import { Sidebar } from './components/sidebar.jsx';
 import { Navbar } from './components/navbar.jsx';
 import { Footer } from './components/footer.jsx';
 import { Icon } from '@/components/ui/icon';

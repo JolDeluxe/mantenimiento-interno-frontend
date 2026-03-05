@@ -1,11 +1,88 @@
+@import "tailwindcss";
+
 /* ─────────────────────────────────────────────────────────────────────
-   src/index.css
-   Motor visual del ecosistema Cuadra Mantenimiento
+   FUENTES E ÍCONOS LOCALES (Soporte Offline PWA estricto)
 ───────────────────────────────────────────────────────────────────── */
 
-/* ─── Imports con soporte para Ejes Variables (Variable Fonts) ─── */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lato:wght@300;400;700;900&family=Work+Sans:wght@300;400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..200&display=swap');
-@import "tailwindcss";
+/* ─── Bebas Neue ─── */
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/BebasNeue-Regular.woff2') format('woff2');
+}
+
+/* ─── Lato ─── */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('./assets/fonts/Lato-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/Lato-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/Lato-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('./assets/fonts/Lato-Black.woff2') format('woff2');
+}
+
+/* ─── Work Sans ─── */
+@font-face {
+  font-family: 'Work Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/WorkSans-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Work Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/WorkSans-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Work Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/WorkSans-SemiBold.woff2') format('woff2');
+}
+
+/* ─── JetBrains Mono ─── */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+/* ─── Material Symbols Rounded (Íconos) ─── */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('./assets/icons/MaterialSymbolsRounded.woff2') format('woff2');
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    TOKENS DEL SISTEMA
@@ -14,7 +91,7 @@
   --color-marca-primario:   #482b2c;
   --color-marca-secundario: #846768;
   --color-marca-acento:     #66494a;
-  --color-cuadra-arena:     #f6f5f0;
+  --color-cuadra-arena:     #E8E1DA;
 
   --color-estado-pendiente:   #f59e0b;
   --color-estado-asignada:    #3b82f6;
@@ -81,10 +158,10 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   COMPONENTS
+   COMPONENTS (Capa de Compatibilidad y Base UI)
 ───────────────────────────────────────────────────────────────────── */
 @layer components {
-  .boton-guardar, .boton-aceptar {
+  /* .boton-guardar, .boton-aceptar {
     @apply bg-emerald-600 text-white px-5 py-2 rounded-sm
            hover:bg-emerald-700 active:scale-95 transition-all
            font-medium cursor-pointer flex items-center justify-center gap-2;
@@ -115,7 +192,7 @@
   }
 
   button:disabled {
-    @apply opacity-50 cursor-not-allowed grayscale transform-none!;
+    @apply opacity-50 cursor-not-allowed grayscale !transform-none;
   }
 
   .tarjeta-cuadra {
@@ -123,9 +200,10 @@
   }
 
   .animacion-carga {
-    @apply animate-pulse bg-slate-200 rounded-sm;
-  }
+    @apply animate-pulse bg-slate-300 rounded-sm;
+  } */
 
+  /* CRÍTICO: Mantiene vivos los íconos del Sidebar y Navbar */
   .material-symbols-rounded {
     font-family: 'Material Symbols Rounded';
     font-weight: normal;

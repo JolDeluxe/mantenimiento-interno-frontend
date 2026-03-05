@@ -1,44 +1,27 @@
-import React from 'react';
-import { Icon } from '@/components/ui/icon';
+import React, { forwardRef } from 'react';
 import { cn } from '@/utils/cn';
 
-export const Input = ({ 
-  label, 
-  iconName, 
-  error, 
-  submitted, 
-  className, 
-  ...props 
-}) => {
-  // El error solo se muestra visualmente si el usuario ya intentó enviar el formulario
-  const showError = submitted && error;
+export const Input = forwardRef(({ className, error, multiline, helperText, ...props }, ref) => {
+  const baseStyles = "w-full border rounded-sm px-3 py-2 text-sm focus:outline-none transition-all disabled:bg-slate-100 disabled:cursor-not-allowed bg-white";
+  const stateStyles = error
+    ? "border-red-500 focus:ring-2 focus:ring-red-200"
+    : "border-slate-300 focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario";
+
+  const Component = multiline ? "textarea" : "input";
 
   return (
-    <div className="flex flex-col w-full">
-      {label && (
-        <label className="flex text-sm font-bold text-slate-700 mb-1 items-center gap-2">
-          {iconName && <Icon name={iconName} size="18px" weight={600} />}
-          {label}
-        </label>
-      )}
-      
-      <input
+    <div className="w-full">
+      <Component
+        ref={ref}
+        className={cn(baseStyles, stateStyles, multiline && "resize-none h-24", className)}
         {...props}
-        className={cn(
-          "w-full px-4 py-2.5 border rounded-md outline-none transition-all duration-200",
-          showError 
-            ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200" 
-            : "border-slate-300 focus:ring-2 focus:ring-marca-primario/20 focus:border-marca-primario",
-          className
-        )}
       />
-
-      {showError && (
-        <p className="text-red-600 text-xs mt-1.5 font-medium flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
-          <Icon name="error" size="14px" fill={true} />
-          {error}
+      {helperText && (
+        <p className={cn("text-xs mt-1", error ? "text-red-600" : "text-slate-500")}>
+          {helperText}
         </p>
       )}
     </div>
   );
-};
+});
+Input.displayName = 'Input';

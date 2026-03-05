@@ -9,9 +9,6 @@ export const Footer = () => {
         <p className="text-sm text-slate-600">
           <span className="font-semibold">Manufacturera de Botas Cuadra</span> © {currentYear}
         </p>
-        <p className="text-xs text-slate-500 mt-1">
-          Herramienta desarrollada por el equipo de <span className="font-medium">Procesos Tecnológicos</span>
-        </p>
       </div>
     </footer>
   );
