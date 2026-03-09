@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
+import ProfilePage from '@/features/auth/pages/profile-page';
+
 
 // Layouts
 import { DashboardLayout } from '@/layouts/dashboard-layout';
@@ -27,7 +29,7 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/" element={<HomeDashboard />} />
-          
+          <Route path="/perfil" element={<ProfilePage />} />
           {/* Aquí se agregarán las rutas de los módulos */}
           {/* Ejemplo: */}
           {/* <Route path="/tickets" element={<TicketsPage />} /> */}

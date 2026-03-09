@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, CardBody } from '@/components/ui/card';
-import { Icon } from '@/components/ui/icon';
+import { Card, CardBody, Icon } from '@/components/ui/z_index';
 
 export const FontTester = () => {
   return (

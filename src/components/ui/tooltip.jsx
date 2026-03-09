@@ -86,7 +86,7 @@ export const Tooltip = ({
           className={`
             fixed bg-marca-primario text-white px-2.5 py-1 rounded-sm
             whitespace-nowrap text-xs font-semibold shadow-lg
-            pointer-events-none z-[100]
+            pointer-events-none z-100
             animate-in fade-in zoom-in-95 duration-200
             ${positionClasses[position]}
           `}

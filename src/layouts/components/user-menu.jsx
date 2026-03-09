@@ -1,3 +1,4 @@
+// src/components/layouts/user-menu.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/icon';
@@ -10,27 +11,32 @@ export const UserMenu = () => {
   const [imageFailed, setImageFailed] = useState(false);
   const menuRef = useRef(null);
 
-  // Interceptor de estructura: 
-  // Garantiza que leamos las propiedades correctamente sin importar si el store 
-  // guardó el objeto { status, data } completo o solo el payload.
   const currentUser = user?.data || user;
 
-  // Cerrar menú al hacer clic fuera
+  const resolveImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  const imageUrl = resolveImageUrl(currentUser?.imagen);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
 
   const handleLogout = () => {
     logout();
@@ -44,10 +50,10 @@ export const UserMenu = () => {
 
   return (
     <div className="relative" ref={menuRef}>
-      {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="
+          cursor-pointer
           flex items-center gap-2 px-3 py-2 rounded-sm
           hover:bg-slate-100 transition-colors
           focus:outline-none focus:ring-2 focus:ring-marca-secundario/30
@@ -57,17 +63,16 @@ export const UserMenu = () => {
           <p className="text-sm font-semibold text-marca-primario">
             {currentUser?.nombre || 'Usuario'}
           </p>
-          <p className="text-xs text-slate-500">
-            {currentUser?.rol?.replace(/_/g, ' ') || 'Rol'}
+          <p className="text-xs text-slate-500 capitalize">
+            {currentUser?.rol?.replace(/_/g, ' ').toLowerCase() || 'Rol'}
           </p>
         </div>
         
-        {/* Contenedor del Avatar con overflow-hidden obligatorio */}
         <div className="w-10 h-10 rounded-full bg-marca-secundario flex items-center justify-center overflow-hidden border border-marca-secundario/20 shrink-0 shadow-sm">
-          {currentUser?.imagen && !imageFailed ? (
+          {imageUrl && !imageFailed ? (
             <img 
-              src={currentUser.imagen} 
-              alt={`Avatar de ${currentUser.nombre}`} 
+              src={imageUrl} 
+              alt={`Avatar de ${currentUser?.nombre}`} 
               className="w-full h-full object-cover animate-in fade-in duration-300"
               onError={() => setImageFailed(true)}
               referrerPolicy="no-referrer"
@@ -84,19 +89,17 @@ export const UserMenu = () => {
         />
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div className="
           absolute right-0 mt-2 w-56 
           bg-white rounded-sm shadow-lg border border-slate-200
           z-50 animate-in fade-in slide-in-from-top-2 duration-200
         ">
-          {/* User Info - Mobile */}
           <div className="sm:hidden px-4 py-3 border-b border-slate-200 bg-slate-50 rounded-t-sm">
             <p className="text-sm font-semibold text-marca-primario">
               {currentUser?.nombre}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1 truncate">
               {currentUser?.email || currentUser?.username}
             </p>
           </div>
@@ -105,6 +108,7 @@ export const UserMenu = () => {
             <button
               onClick={handleProfile}
               className="
+                cursor-pointer
                 w-full px-4 py-2 text-left text-sm font-medium
                 hover:bg-slate-50 transition-colors
                 flex items-center gap-3 text-slate-700
@@ -117,6 +121,7 @@ export const UserMenu = () => {
             <button
               onClick={handleLogout}
               className="
+                cursor-pointer
                 w-full px-4 py-2 text-left text-sm font-medium
                 hover:bg-red-50 transition-colors
                 flex items-center gap-3 text-red-600

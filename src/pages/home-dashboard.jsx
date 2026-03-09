@@ -3,9 +3,8 @@ import { useAuthStore } from '@/stores/auth-store';
 import { FontTester } from '@/components/test/font-tester'; 
 import { IconTester } from '@/components/test/icon-tester';
 import { UiTester } from '@/components/test/ui-tester'; 
-import { Button } from '@/components/ui/button';
-import { Card, CardBody } from '@/components/ui/card';
-import { Icon } from '@/components/ui/icon';
+import { TableTester } from '@/components/test/table-test';
+import { Icon, Button, Card, CardBody } from '@/components/ui/z_index';
 import api from '@/lib/axios';
 
 const HomeDashboard = () => {
@@ -46,7 +45,8 @@ const HomeDashboard = () => {
           Cerrar Sesión
         </Button>
       </div>
-
+      
+      <TableTester />
       <FontTester />
       <IconTester />
       <UiTester />

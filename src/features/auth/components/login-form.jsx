@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from '@/components/ui/icon';
-import { Input } from '@/components/form/input';
+import { Input, Label } from '@/components/form/z_index';
 
 export const LoginForm = ({
   formData,
@@ -12,6 +12,10 @@ export const LoginForm = ({
   onForgot,
   onRegister
 }) => {
+  // Evaluamos si el error debe mostrarse basado en el estado de "submitted"
+  const emailError = submitted && !formData.email.trim() ? "El correo o usuario es obligatorio" : null;
+  const passwordError = submitted && !formData.password.trim() ? "La contraseña es obligatoria" : null;
+
   return (
     <div className="animate-in fade-in zoom-in-95 duration-300">
       <h2 className="fuente-titulos text-2xl font-bold mb-6 text-center text-marca-primario uppercase">
@@ -27,29 +31,39 @@ export const LoginForm = ({
       )}
 
       <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
-        <Input
-          label="Correo o Usuario"
-          iconName="mail"
-          type="text" // Cambiado a text por si decide poner su username en lugar de correo
-          name="email"
-          placeholder="usuario o usuario@cuadra.com.mx"
-          value={formData.email}
-          onChange={onChange}
-          submitted={submitted}
-          error={!formData.email.trim() ? "El correo o usuario es obligatorio" : null}
-        />
+        {/* Campo Correo o Usuario */}
+        <div>
+          <Label htmlFor="email" error={!!emailError} className="flex items-center gap-2">
+            <Icon name="mail" size="18px" /> Correo o Usuario
+          </Label>
+          <Input
+            id="email"
+            type="text"
+            name="email"
+            placeholder="usuario o usuario@cuadra.com.mx"
+            value={formData.email}
+            onChange={onChange}
+            error={!!emailError}        // Activa el borde rojo
+            helperText={emailError}     // Muestra el texto inferior
+          />
+        </div>
 
-        <Input
-          label="Contraseña"
-          iconName="lock"
-          type="password"
-          name="password"
-          placeholder="••••••••"
-          value={formData.password}
-          onChange={onChange}
-          submitted={submitted}
-          error={!formData.password.trim() ? "La contraseña es obligatoria" : null}
-        />
+        {/* Campo Contraseña */}
+        <div>
+          <Label htmlFor="password" error={!!passwordError} className="flex items-center gap-2">
+            <Icon name="lock" size="18px" /> Contraseña
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={onChange}
+            error={!!passwordError}     // Activa el borde rojo
+            helperText={passwordError}  // Muestra el texto inferior
+          />
+        </div>
 
         <button
           type="submit"
