@@ -11,39 +11,78 @@ export const ProfileGeneralForm = ({
   clearError
 }) => {
   const [formData, setFormData] = useState({ nombre: '', username: '', email: '', telefono: '' });
+  // 🔥 ESTADO ORIGINAL: Guardamos la foto intacta de los datos para saber si hubo cambios
+  const [initialData, setInitialData] = useState({ nombre: '', username: '', email: '', telefono: '' });
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     if (profile) {
-      setFormData({
+      const data = {
         nombre: profile.nombre || '',
         username: profile.username || '',
         email: profile.email || '',
         telefono: profile.telefono || ''
-      });
+      };
+      setFormData(data);
+      setInitialData(data); // Establecemos la foto original al cargar
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (error?.message) {
+      const msg = error.message.toLowerCase();
+      let handled = false;
+
+      if (msg.includes('correo')) {
+        setFormErrors(prev => ({ ...prev, email: error.message }));
+        handled = true;
+      }
+      
+      if (msg.includes('usuario ya existe') || msg.includes('nombre de usuario')) {
+        setFormErrors(prev => ({ ...prev, username: error.message }));
+        handled = true;
+      }
+
+      if (handled && clearError) {
+        clearError(); 
+      }
+    }
+  }, [error, clearError]);
+
   const validateForm = () => {
     const errors = {};
-    if (!formData.nombre?.trim()) errors.nombre = 'El nombre completo es obligatorio';
+    
+    if (!formData.nombre?.trim()) {
+      errors.nombre = 'El nombre completo es obligatorio';
+    } else if (formData.nombre.trim().length < 3) {
+      errors.nombre = 'El nombre debe tener al menos 3 caracteres';
+    } else if (formData.nombre.length > 100) {
+      errors.nombre = 'Límite excedido (máx 100 caracteres)';
+    }
     
     if (!formData.username?.trim()) {
       errors.username = 'El usuario es obligatorio';
     } else if (/\s/.test(formData.username)) {
       errors.username = 'El usuario no puede contener espacios';
+    } else if (formData.username.length > 50) {
+      errors.username = 'Límite excedido (máx 50 caracteres)';
     }
 
     if (!formData.email?.trim()) {
       errors.email = 'El correo es obligatorio';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Formato de correo inválido';
+    } else if (!formData.email.endsWith('@cuadra.com.mx')) {
+      errors.email = 'Solo se permiten correos corporativos (@cuadra.com.mx)';
+    } else if (formData.email.length > 100) {
+      errors.email = 'Límite excedido (máx 100 caracteres)';
     }
 
     if (formData.telefono && formData.telefono.trim() !== '') {
-      const digitos = formData.telefono.replace(/\D/g, '');
-      if (digitos.length < 10) {
-        errors.telefono = 'Debe contener al menos 10 dígitos';
+      if (formData.telefono.length < 10) {
+        errors.telefono = 'Faltan dígitos (requiere 10)';
+      } else if (formData.telefono.length > 10) {
+        errors.telefono = 'Sobran dígitos (máx 10)';
       }
     }
 
@@ -51,8 +90,29 @@ export const ProfileGeneralForm = ({
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (formErrors[field]) setFormErrors(prev => ({ ...prev, [field]: undefined }));
+    let finalValue = value;
+
+    if (field === 'telefono') {
+      finalValue = value.replace(/\D/g, ''); 
+      if (finalValue.length > 11) finalValue = finalValue.substring(0, 11); 
+    } 
+    else if (field === 'username') {
+      finalValue = value.replace(/\s/g, ''); 
+      if (finalValue.length > 51) finalValue = finalValue.substring(0, 51);
+    } 
+    else if (field === 'nombre') {
+      if (finalValue.length > 101) finalValue = finalValue.substring(0, 101);
+    } 
+    else if (field === 'email') {
+      finalValue = value.replace(/\s/g, ''); 
+      if (finalValue.length > 101) finalValue = finalValue.substring(0, 101);
+    }
+
+    setFormData(prev => ({ ...prev, [field]: finalValue }));
+    
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const handleSubmit = () => {
@@ -61,9 +121,17 @@ export const ProfileGeneralForm = ({
     onSave(formData);
   };
 
+  // 🔥 LÓGICA DE BLOQUEO AVANZADA ("DIRTY STATE")
+  // 1. Verificamos si falta algún campo obligatorio
+  const isMissingRequiredFields = !formData.nombre?.trim() || !formData.username?.trim() || !formData.email?.trim();
+  // 2. Comparamos el objeto actual con el original para saber si HUBO CAMBIOS
+  const isDataUnchanged = JSON.stringify(formData) === JSON.stringify(initialData);
+  // 3. El botón se bloquea si está cargando, si faltan datos, o si los datos NO han cambiado
+  const isSaveDisabled = updating || isMissingRequiredFields || isDataUnchanged;
+
   return (
     <div className="space-y-6">
-      {error && (
+      {error && !formErrors.email && !formErrors.username && (
         <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 shadow-sm">
           <Icon name="error" className="text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -80,57 +148,81 @@ export const ProfileGeneralForm = ({
 
       <div className="space-y-5">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="nombre" error={!!formErrors.nombre}>Nombre Completo</Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="nombre" error={!!formErrors.nombre || formData.nombre.length > 100}>Nombre Completo</Label>
+            <span className={`text-[10px] font-bold tracking-wider ${formData.nombre.length > 100 ? 'text-red-500' : 'text-gray-400'}`}>
+              {formData.nombre.length}/100
+            </span>
+          </div>
           <Input 
             id="nombre" 
             value={formData.nombre} 
             onChange={(e) => handleChange('nombre', e.target.value)} 
-            error={!!formErrors.nombre}
+            error={!!formErrors.nombre || formData.nombre.length > 100}
             helperText={formErrors.nombre}
             disabled={updating} 
             placeholder="Ej. Juan Pérez"
+            maxLength={101}
           />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="username" error={!!formErrors.username}>Nombre de Usuario</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="username" error={!!formErrors.username || formData.username.length > 50}>Nombre de Usuario</Label>
+              <span className={`text-[10px] font-bold tracking-wider ${formData.username.length > 50 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.username.length}/50
+              </span>
+            </div>
             <Input 
               id="username" 
               value={formData.username} 
               onChange={(e) => handleChange('username', e.target.value)} 
-              error={!!formErrors.username}
+              error={!!formErrors.username || formData.username.length > 50}
               helperText={formErrors.username}
               disabled={updating} 
               placeholder="Ej. juanperez"
+              maxLength={51}
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="telefono" error={!!formErrors.telefono}>Teléfono de Contacto</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="telefono" error={!!formErrors.telefono || formData.telefono.length > 10}>Teléfono de Contacto</Label>
+              <span className={`text-[10px] font-bold tracking-wider ${formData.telefono.length > 10 ? 'text-red-500' : 'text-gray-400'}`}>
+                {formData.telefono.length}/10
+              </span>
+            </div>
             <Input 
               id="telefono" 
               type="tel"
               value={formData.telefono} 
               onChange={(e) => handleChange('telefono', e.target.value)} 
-              error={!!formErrors.telefono}
+              error={!!formErrors.telefono || formData.telefono.length > 10}
               helperText={formErrors.telefono}
               disabled={updating} 
               placeholder="10 dígitos"
+              maxLength={11}
             />
           </div>
         </div>
         
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email" error={!!formErrors.email}>Correo Electrónico del Sistema</Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="email" error={!!formErrors.email || formData.email.length > 100}>Correo Electrónico del Sistema</Label>
+            <span className={`text-[10px] font-bold tracking-wider ${formData.email.length > 100 ? 'text-red-500' : 'text-gray-400'}`}>
+              {formData.email.length}/100
+            </span>
+          </div>
           <Input 
             id="email" 
             type="email" 
             value={formData.email} 
             onChange={(e) => handleChange('email', e.target.value)} 
-            error={!!formErrors.email}
+            error={!!formErrors.email || formData.email.length > 100}
             helperText={formErrors.email}
             disabled={updating} 
-            placeholder="ejemplo@cuadra.com"
+            placeholder="ejemplo@cuadra.com.mx"
+            maxLength={101}
           />
         </div>
       </div>
@@ -150,6 +242,7 @@ export const ProfileGeneralForm = ({
           variant="guardar" 
           icon="save"
           isLoading={updating}
+          disabled={isSaveDisabled}
           className="text-xs px-5 py-0.5 h-auto"
         >
           Guardar Cambios

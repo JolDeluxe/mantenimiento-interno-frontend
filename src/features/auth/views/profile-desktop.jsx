@@ -6,7 +6,8 @@ import { ProfilePasswordForm } from '../components/profile-password-form';
 import { ProfileInfoCard } from '../components/profile-info-card';
 
 export const ProfileDesktop = ({ 
-  profile, loading, updating, uploadingImage, error, success, onUpdate, onAvatarUpload, onAvatarDelete, clearError 
+  profile, loading, updating, uploadingImage, error, success, 
+  onUpdate, onChangePassword, onAvatarUpload, onAvatarDelete, clearError 
 }) => {
   const [editing, setEditing] = useState(false);
   const [activeMenu, setActiveMenu] = useState('general');
@@ -17,7 +18,6 @@ export const ProfileDesktop = ({
   return (
     <div className="flex flex-col gap-6 w-full max-w-full">
       
-      {/* 1. ENCABEZADO: Avatar Izquierda, Datos Derecha */}
       <Card className="border-none shadow-sm bg-white overflow-hidden rounded-xl">
         <CardBody className="p-8 flex flex-row items-center gap-8">
           <div className="shrink-0">
@@ -34,7 +34,7 @@ export const ProfileDesktop = ({
             <div className="flex justify-between items-start w-full">
               <div>
                 <h2 className="text-3xl font-extrabold text-gray-900">{profile.nombre}</h2>
-                <p className="text-lg font-medium text-gray-500">@{profile.username}</p>
+                <p className="text-lg font-medium text-gray-500">{profile.username}</p>
               </div>
               <Badge className="bg-marca-primario/10 text-marca-primario border border-marca-primario/20 px-3 py-1 font-bold">
                 {profile.rol.replace(/_/g, ' ')}
@@ -59,7 +59,6 @@ export const ProfileDesktop = ({
         </CardBody>
       </Card>
 
-      {/* 2. CONTROLES: Botones Pegados (Segmented Control) y Acciones */}
       <div className="flex justify-between items-center bg-white p-2.5 rounded-xl shadow-sm border border-gray-100">
         <div className="inline-flex bg-gray-100 p-1.5 rounded-lg border border-gray-200">
           <button 
@@ -80,7 +79,7 @@ export const ProfileDesktop = ({
                 : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
             }`}
           >
-            <Icon name="lock" size="sm" /> Seguridad
+            <Icon name="lock" size="xs" /> Seguridad
           </button>
         </div>
 
@@ -95,7 +94,6 @@ export const ProfileDesktop = ({
         )}
       </div>
 
-      {/* 3. CONTENIDO: Información o Formulario */}
       <Card className="shadow-sm border-none bg-white rounded-xl">
         <CardBody className="p-8">
           {activeMenu === 'general' ? (
@@ -118,7 +116,13 @@ export const ProfileDesktop = ({
                   Actualizar Contraseña
                 </h3>
                 <ProfilePasswordForm 
-                  onSave={async (d) => { if (await onUpdate(d)) setActiveMenu('general'); }} 
+                  onSave={async (d) => { 
+                    if (onChangePassword) {
+                      if (await onChangePassword(d)) setActiveMenu('general'); 
+                    } else {
+                      console.error("Cuadra Lead: Falta inyectar onChangePassword desde la página padre.");
+                    }
+                  }} 
                   onCancel={() => { setActiveMenu('general'); clearError?.(); }} 
                   updating={updating} 
                   error={error} 

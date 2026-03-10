@@ -120,14 +120,16 @@ export const useProfile = () => {
     }
   }, [userId, currentUser, setUser]);
 
-  const handleChangePassword = useCallback(async (currentPassword, newPassword) => {
+const handleChangePassword = useCallback(async ({ currentPassword, newPassword }) => {
     try {
       setUpdating(true);
       setError(null);
       setSuccess(null);
 
       const response = await changePassword({ currentPassword, newPassword });
-      setSuccess({ message: response.message || 'Contraseña actualizada correctamente' });
+      
+      setSuccess({ message: response?.message || 'Contraseña actualizada correctamente' });
+      
       return true;
     } catch (err) {
       setError({ message: err.message || 'Error al cambiar contraseña', status: err.status, details: err.data });

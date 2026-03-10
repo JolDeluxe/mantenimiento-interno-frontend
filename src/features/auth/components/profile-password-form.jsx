@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input, Label } from '@/components/form/z_index';
-import { Button, Icon, Spinner } from '@/components/ui/z_index';
+import { Button, Icon } from '@/components/ui/z_index';
 
 export const ProfilePasswordForm = ({
   onSave,
@@ -12,6 +12,16 @@ export const ProfilePasswordForm = ({
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [formErrors, setFormErrors] = useState({});
 
+  useEffect(() => {
+    if (error?.message) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('contraseña actual')) {
+        setFormErrors(prev => ({ ...prev, currentPassword: error.message }));
+        if (clearError) clearError();
+      }
+    }
+  }, [error, clearError]);
+
   const validatePassword = () => {
     const errors = {};
     if (!passwordData.currentPassword) {
@@ -20,8 +30,8 @@ export const ProfilePasswordForm = ({
     
     if (!passwordData.newPassword) {
       errors.newPassword = 'La nueva contraseña es obligatoria';
-    } else if (passwordData.newPassword.length < 8) {
-      errors.newPassword = 'Debe tener al menos 8 caracteres';
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = 'Debe tener al menos 6 caracteres';
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -32,19 +42,29 @@ export const ProfilePasswordForm = ({
   };
 
   const handleChange = (field, value) => {
-    setPasswordData(prev => ({ ...prev, [field]: value }));
+    // Bloqueo de espacios físicos en las contraseñas
+    const finalValue = value.replace(/\s/g, '');
+    
+    setPasswordData(prev => ({ ...prev, [field]: finalValue }));
     if (formErrors[field]) setFormErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
   const handleSubmit = () => {
     const errors = validatePassword();
     if (Object.keys(errors).length > 0) return setFormErrors(errors);
-    onSave({ changePassword: true, ...passwordData });
+    
+    onSave({ 
+      currentPassword: passwordData.currentPassword, 
+      newPassword: passwordData.newPassword 
+    });
   };
+
+  // 🔥 LÓGICA DE BLOQUEO: Deshabilita el botón si falta alguna contraseña
+  const isSaveDisabled = updating || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword;
 
   return (
     <div className="space-y-6 max-w-full">
-      {error && (
+      {error && !formErrors.currentPassword && (
         <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 shadow-sm">
           <Icon name="error" className="text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -92,7 +112,7 @@ export const ProfilePasswordForm = ({
               error={!!formErrors.newPassword}
               helperText={formErrors.newPassword}
               disabled={updating} 
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Mínimo 6 caracteres"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -126,6 +146,7 @@ export const ProfilePasswordForm = ({
           variant="guardar" 
           icon="save"
           isLoading={updating}
+          disabled={isSaveDisabled} // 🔥 INYECCIÓN DE LA CONDICIÓN
           className="text-xs px-5 py-0.5 h-auto"
         >
           Actualizar

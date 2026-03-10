@@ -36,26 +36,24 @@ const ProfilePage = () => {
     }
   }, [success, clearSuccess]);
 
-  useEffect(() => {
+useEffect(() => {
     if (error?.message) {
-      notify.error(error.message);
+      const msg = error.message.toLowerCase();
+      
+      // Silenciamos estrictamente los errores que los formularios ya manejan en su propia UI
+      const isSilencedError = 
+        msg.includes('contraseña') || 
+        msg.includes('datos de entrada inválidos') ||
+        msg.includes('correo') || // Error silenciado para que lo maneje GeneralForm
+        msg.includes('usuario ya existe') || // Error silenciado para que lo maneje GeneralForm
+        msg.includes('nombre de usuario'); // Error silenciado para que lo maneje GeneralForm
+      
+      // Si NO es un error silenciado (ej. 500 Server Error o Red), entonces sí lanzamos el Toast
+      if (!isSilencedError) {
+        notify.error(error.message);
+      }
     }
   }, [error]);
-
-  const handleUpdate = async (data) => {
-    if (data.changePassword) {
-      return await changePassword(data.currentPassword, data.newPassword);
-    }
-    return await updateProfile(data);
-  };
-
-  const handleAvatarUpload = async (file) => {
-    return await uploadImage(file);
-  };
-
-  const handleAvatarDelete = async () => {
-    return await deleteImage();
-  };
 
   const viewProps = {
     profile,
@@ -64,9 +62,10 @@ const ProfilePage = () => {
     uploadingImage,
     error,
     success,
-    onUpdate: handleUpdate,
-    onAvatarUpload: handleAvatarUpload,
-    onAvatarDelete: handleAvatarDelete,
+    onUpdate: updateProfile,
+    onChangePassword: changePassword,
+    onAvatarUpload: uploadImage,
+    onAvatarDelete: deleteImage,
     clearError,
     clearSuccess
   };

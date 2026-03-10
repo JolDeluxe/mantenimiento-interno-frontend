@@ -7,7 +7,6 @@ import axios from '@/lib/axios';
 export const getProfile = async (userId) => {
   try {
     const response = await axios.get(`/api/usuarios/${userId}`);
-    // Fallback defensivo: si response.data no existe, devuelve la respuesta entera
     return response?.data ?? response; 
   } catch (error) {
     throw {
@@ -44,7 +43,8 @@ export const updateProfile = async (userId, profileData) => {
 export const uploadProfileImage = async (userId, file) => {
   try {
     const formData = new FormData();
-    formData.append('file', file); // Multer (req.file)
+    // Corrección estricta: El backend exige el campo 'imagen'
+    formData.append('imagen', file); 
     
     const response = await axios.put(`/api/usuarios/${userId}`, formData, {
       headers: {
