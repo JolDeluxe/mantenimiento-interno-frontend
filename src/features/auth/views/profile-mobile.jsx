@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Icon, Spinner } from '@/components/ui/z_index';
 import { ProfileSummaryCard } from '../components/profile-summary-card';
 import { ProfileInfoCard } from '../components/profile-info-card';
-import { ProfileEditForm } from '../components/profile-edit-form';
+// import { ProfileEditForm } from '../components/profile-edit-form';
 
 export const ProfileMobile = ({ 
   profile, loading, updating, uploadingImage, error, success, onUpdate, onAvatarUpload, onAvatarDelete, clearError 

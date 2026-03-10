@@ -39,23 +39,25 @@ export const ProfileAvatar = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3">
+      
+      {/* 1. Contenedor Principal del Avatar */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
         className={`
-          relative w-28 h-28 rounded-full overflow-hidden cursor-pointer
-          border-4 transition-all shadow-sm bg-gray-50
+          relative w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden cursor-pointer
+          ring-4 ring-offset-4 transition-all duration-300 shrink-0 group
           ${isDragging 
-            ? 'border-marca-primario scale-105' 
-            : 'border-gray-100 hover:border-marca-primario'
+            ? 'ring-marca-primario scale-105 shadow-2xl' 
+            : 'ring-gray-50 hover:ring-marca-primario/20 shadow-md'
           }
         `}
       >
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-20">
             <Spinner size="md" />
           </div>
         )}
@@ -63,18 +65,23 @@ export const ProfileAvatar = ({
         {preview ? (
           <img src={preview} alt={nombre} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Icon name="person" size="lg" className="text-gray-300 text-5xl" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
+            <Icon name="person" className="text-gray-400 text-6xl" />
           </div>
         )}
 
+        {/* 2. Overlay Interactivo al hacer Hover (Solo para Actualizar) */}
         {!loading && (
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-all flex items-center justify-center opacity-0 hover:opacity-100">
-            <Icon name="photo_camera" size="md" className="text-white drop-shadow-md" />
+          <div className="absolute inset-0 bg-gray-900/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+            <Icon name="photo_camera" size="md" className="text-white drop-shadow-md mb-1" />
+            <span className="text-white text-[10px] font-extrabold tracking-widest uppercase drop-shadow-md">
+              {isDragging ? 'Soltar' : 'Actualizar'}
+            </span>
           </div>
         )}
       </div>
 
+      {/* Input oculto */}
       <input
         ref={fileInputRef}
         type="file"
@@ -83,30 +90,16 @@ export const ProfileAvatar = ({
         className="hidden"
       />
 
-      <div className="flex gap-2">
+      {/* 3. Acción Secundaria y Sutil para Eliminar */}
+      {preview && !loading && (
         <button
-          onClick={handleClick}
-          disabled={loading}
-          className="px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-md bg-marca-primario text-white hover:opacity-90 disabled:opacity-50 transition-all"
+          onClick={onDelete}
+          className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors px-2 py-1 mt-1"
         >
-          {preview ? 'Cambiar' : 'Subir'} Foto
+          Remover foto
         </button>
+      )}
 
-        {preview && (
-          <button
-            onClick={onDelete}
-            disabled={loading}
-            className="px-4 py-1.5 text-xs font-bold uppercase tracking-wide rounded-md bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 transition-all"
-          >
-            Eliminar
-          </button>
-        )}
-      </div>
-
-      <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider text-center">
-        JPG, PNG o WebP. Max 5MB.<br/>
-        {isDragging && <span className="text-marca-primario">Suelta para cargar</span>}
-      </p>
     </div>
   );
 };

@@ -43,7 +43,7 @@ export const ProfileSummaryCard = ({
         <div className="w-full text-center space-y-3">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{profile.nombre}</h2>
-            <p className="text-sm text-gray-500">@{profile.username}</p>
+            <p className="text-sm text-gray-500">{profile.username}</p>
           </div>
 
           <div className="flex justify-center">
