@@ -89,6 +89,7 @@
 ───────────────────────────────────────────────────────────────────── */
 @theme {
   --color-marca-primario:   #482b2c;
+  --color-marca-primario-hover: #5d3d3e;
   --color-marca-secundario: #846768;
   --color-marca-acento:     #66494a;
   --color-cuadra-arena:     #F0EBE9;
@@ -111,6 +112,7 @@
   --font-titulos: "Bebas Neue", sans-serif;
   --font-codigo:  "JetBrains Mono", monospace;
 
+  --radius-sm: 0.25rem; 
   --radius-cuadra: 0.25rem;
 }
 
