@@ -65,7 +65,7 @@ export const ProfileAvatar = ({
         {preview ? (
           <img src={preview} alt={nombre} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
+          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-200">
             <Icon name="person" className="text-gray-400 text-6xl" />
           </div>
         )}

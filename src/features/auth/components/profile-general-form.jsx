@@ -122,27 +122,28 @@ export const ProfileGeneralForm = ({
   };
 
   // 🔥 LÓGICA DE BLOQUEO AVANZADA ("DIRTY STATE")
-  // 1. Verificamos si falta algún campo obligatorio
   const isMissingRequiredFields = !formData.nombre?.trim() || !formData.username?.trim() || !formData.email?.trim();
-  // 2. Comparamos el objeto actual con el original para saber si HUBO CAMBIOS
   const isDataUnchanged = JSON.stringify(formData) === JSON.stringify(initialData);
-  // 3. El botón se bloquea si está cargando, si faltan datos, o si los datos NO han cambiado
   const isSaveDisabled = updating || isMissingRequiredFields || isDataUnchanged;
 
   return (
     <div className="space-y-6">
+      {/* Nuevo Diseño de Alerta copiado del Login */}
       {error && !formErrors.email && !formErrors.username && (
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 shadow-sm">
-          <Icon name="error" className="text-red-600 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="font-extrabold text-red-900 text-sm">No se pudo procesar la solicitud</h4>
-            <p className="text-xs text-red-700 mt-1 font-medium">{error.message}</p>
-            {clearError && (
-              <button onClick={clearError} className="text-[10px] text-red-600 hover:text-red-800 mt-3 font-bold uppercase tracking-widest transition-colors">
-                Descartar mensaje
-              </button>
-            )}
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-estado-rechazado rounded-r-[--radius-cuadra] flex items-center justify-between text-estado-rechazado text-sm font-bold shadow-sm">
+          <div className="flex items-center gap-3">
+            <Icon name="error" size="20px" fill={true} />
+            <span>{error.message}</span>
           </div>
+          {clearError && (
+            <button 
+              onClick={clearError} 
+              className="text-red-500 hover:text-red-700 transition-colors p-1 cursor-pointer"
+              title="Descartar mensaje"
+            >
+              <Icon name="close" size="18px" />
+            </button>
+          )}
         </div>
       )}
 

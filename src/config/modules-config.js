@@ -14,13 +14,13 @@ export const MODULES_CONFIG = [
   {
     id: 'tickets',
     name: 'Gestión de Actividades',
-    icon: 'confirmation_number',
+    icon: 'assignment_add',
     route: '/tickets',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
   },
   {
     id: 'usuarios',
-    name: 'Usuarios',
+    name: 'Mi Equipo',
     icon: 'group',
     route: '/usuarios',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO'],
