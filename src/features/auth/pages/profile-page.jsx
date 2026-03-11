@@ -72,11 +72,6 @@ useEffect(() => {
 
   return (
     <div className="space-y-4 max-w-370 mx-auto">
-      <div className="mb-6">
-        <p className="text-gray-600 mt-2">
-          Gestiona tu información personal y configuración de seguridad
-        </p>
-      </div>
 
       {isDesktop ? (
         <ProfileDesktop {...viewProps} />

@@ -16,10 +16,18 @@ export const ProfileDesktop = ({
   if (!profile) return <div className="text-center text-red-600 p-10"><Icon name="error" size="lg"/><p>Error al cargar el perfil</p></div>;
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-full">
+    <div className="flex flex-col gap-6 w-full max-w-full overflow-hidden">
       
-      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-xl">
-        <CardBody className="p-8 flex flex-row items-center gap-8">
+      {/* Encabezado de Vista Desktop */}
+      <div className="mb-2">
+
+        <p className="text-base text-gray-500 mt-1 font-medium">
+          Gestiona tu información personal y configuración de seguridad.
+        </p>
+      </div>
+      
+      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-xl w-full">
+        <CardBody className="p-8 flex flex-row items-center gap-8 min-w-0">
           <div className="shrink-0">
             <ProfileAvatar 
               imagen={profile.imagen} 
@@ -30,29 +38,29 @@ export const ProfileDesktop = ({
             />
           </div>
 
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="flex justify-between items-start w-full">
-              <div>
-                <h2 className="text-3xl font-extrabold text-gray-900">{profile.nombre}</h2>
-                <p className="text-lg font-medium text-gray-500">{profile.username}</p>
+          <div className="flex-1 flex flex-col justify-center min-w-0">
+            <div className="flex justify-between items-start w-full gap-4 min-w-0">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-3xl font-extrabold text-gray-900 wrap-break-word whitespace-normal leading-tight">{profile.nombre}</h2>
+                <p className="text-lg font-medium text-gray-500 break-all whitespace-normal mt-1">{profile.username}</p>
               </div>
-              <Badge className="bg-marca-primario/10 text-marca-primario border border-marca-primario/20 px-3 py-1 font-bold">
+              <Badge className="shrink-0 bg-marca-primario/10 text-marca-primario border border-marca-primario/20 px-3 py-1 font-bold">
                 {profile.rol.replace(/_/g, ' ')}
               </Badge>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-6 text-sm text-gray-600 font-medium">
-              <span className="flex items-center gap-2">
-                <Icon name="business" size="sm" className="text-gray-400" /> 
-                {profile.departamento?.nombre || 'Sin Departamento'}
+            <div className="mt-5 flex flex-wrap gap-6 text-sm text-gray-600 font-medium min-w-0">
+              <span className="flex items-center gap-2 min-w-0">
+                <Icon name="business" size="sm" className="text-gray-400 shrink-0" /> 
+                <span className="truncate">{profile.departamento?.nombre || 'Sin Departamento'}</span>
               </span>
-              <span className="flex items-center gap-2">
-                <Icon name="work" size="sm" className="text-gray-400" /> 
-                {profile.cargo || 'Sin Cargo Asignado'}
+              <span className="flex items-center gap-2 min-w-0">
+                <Icon name="work" size="sm" className="text-gray-400 shrink-0" /> 
+                <span className="truncate">{profile.cargo || 'Sin Cargo Asignado'}</span>
               </span>
-              <span className="flex items-center gap-2">
-                <Icon name="mail" size="sm" className="text-gray-400" /> 
-                {profile.email}
+              <span className="flex items-center gap-2 min-w-0">
+                <Icon name="mail" size="sm" className="text-gray-400 shrink-0" /> 
+                <span className="truncate">{profile.email}</span>
               </span>
             </div>
           </div>
@@ -94,7 +102,7 @@ export const ProfileDesktop = ({
         )}
       </div>
 
-      <Card className="shadow-sm border-none bg-white rounded-xl">
+      <Card className="shadow-sm border-none bg-white rounded-xl w-full overflow-hidden">
         <CardBody className="p-8">
           {activeMenu === 'general' ? (
             editing ? (
