@@ -6,3 +6,5 @@ export { Modal, ModalHeader, ModalBody, ModalFooter } from './modal';
 export { Spinner, Skeleton } from './spinner';
 export { Tooltip } from './tooltip';
 export { Table } from './table';
+export { SummaryBar } from './summary-bar';
+export { Fab } from './fab';

@@ -10,9 +10,11 @@ import { DashboardLayout } from '@/layouts/dashboard-layout';
 
 // Pages
 import LoginPage from '@/features/auth/pages/login-page';
+import UsersPage from '@/features/usuarios/pages/users-page';
 import HomeDashboard from '@/pages/home-dashboard';
 import NotFound from '@/pages/not-found';
 import SsoReceiver from '@/pages/sso-receiver';
+
 
 export const AppRoutes = () => {
   return (
@@ -33,7 +35,7 @@ export const AppRoutes = () => {
           {/* Aquí se agregarán las rutas de los módulos */}
           {/* Ejemplo: */}
           {/* <Route path="/tickets" element={<TicketsPage />} /> */}
-          {/* <Route path="/usuarios" element={<UsuariosPage />} /> */}
+          <Route path="/usuarios" element={<UsersPage />} />
           {/* <Route path="/departamentos" element={<DepartamentosPage />} /> */}
         </Route>
       </Route>
