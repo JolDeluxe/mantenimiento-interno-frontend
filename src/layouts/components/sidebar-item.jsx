@@ -13,10 +13,10 @@ export const SidebarItem = ({ module }) => {
 
   return (
     <li className="relative group">
-      <Tooltip 
-        text={module.name} 
-        position="right" 
-        offset={12} 
+      <Tooltip
+        text={module.name}
+        position="right"
+        offset={12}
         disabled={sidebarExpanded}
       >
         <NavLink
@@ -25,18 +25,18 @@ export const SidebarItem = ({ module }) => {
           className={({ isActive }) => `
             flex items-center gap-3 px-4 py-3 rounded-sm
             transition-all duration-200 relative
-            ${isActive 
-              ? 'bg-marca-acento text-white font-semibold shadow-md' 
+            ${isActive
+              ? 'bg-marca-acento text-white font-semibold shadow-md'
               : 'text-white/80 hover:bg-marca-primario/20 hover:text-white'
             }
           `}
         >
-          <Icon 
-            name={module.icon} 
+          <Icon
+            name={module.icon}
             size="24px"
             className="shrink-0"
           />
-          
+
           <span className={`
             whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden
             ${sidebarExpanded ? 'opacity-100 w-auto translate-x-0' : 'opacity-0 w-0 -translate-x-4'}

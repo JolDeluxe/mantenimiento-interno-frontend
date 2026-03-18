@@ -1,16 +1,18 @@
 // src/features/usuarios/pages/users-page.jsx
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { notify } from '@/components/notification/adaptive-notify';
-import { Button, Icon } from '@/components/ui/z_index';
 import { useUsers } from '../hooks/use-users';
 import { UsersDesktop } from '../views/users-desktop';
 import { UsersMobile } from '../views/users-mobile';
-import { UserSummaryBar } from '../components/user-summary-bar';
-import { UserFilterBar } from '../components/user-filter-bar';
 import { UserFormModal } from '../components/user-form-modal';
 
+/**
+ * LIMIT controla cuántas filas pide el frontend al backend por página.
+ * Ajustar aquí para cambiar el tamaño de página sin tocar nada más.
+ * Con 19 usuarios en la BD, usa un valor ≤ 18 para ver la paginación en acción.
+ */
 const LIMIT = 10;
 
 const UsersPage = () => {
@@ -18,7 +20,6 @@ const UsersPage = () => {
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
 
-    // ── Store ─────────────────────────────────────────────────────────────────
     const {
         users,
         departamentos,
@@ -32,37 +33,42 @@ const UsersPage = () => {
         toggleStatus,
     } = useUsers();
 
-    // ── Filtros y paginación ───────────────────────────────────────────────────
+    // ── Estado de la página ──────────────────────────────────────────────────
     const [query, setQuery] = useState('');
     const [filtroRol, setFiltroRol] = useState('TODOS');
     const [page, setPage] = useState(1);
-    const [sortConfig, setSortConfig] = useState({ key: 'nombre', direction: 'asc' });
-
-    // ── Modal alta ─────────────────────────────────────────────────────────────
+    const [sortConfig, setSortConfig] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
+    const [mostrarInactivos, setMostrarInactivos] = useState(false);
+    const [filtroDepto, setFiltroDepto] = useState('');
+    const [isMttoFilter, setIsMttoFilter] = useState(false);
 
-    // ── Fetch principal ────────────────────────────────────────────────────────
+    // ── Carga de datos ───────────────────────────────────────────────────────
     const loadUsers = useCallback(() => {
         const params = {
             page,
             limit: LIMIT,
-            q: query || undefined,
-            rol: filtroRol !== 'TODOS' ? filtroRol : undefined,
-            sortBy: sortConfig.key,
-            sortOrder: sortConfig.direction,
         };
+
+        if (query) params.q = query;
+        if (filtroRol !== 'TODOS') params.rol = filtroRol;
+        if (mostrarInactivos) params.estado = 'INACTIVO';
+        if (sortConfig?.key) {
+            params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
+        }
+        if (isMttoFilter) {
+            params.mtto = true;
+        } else if (filtroDepto) {
+            params.departamentoId = Number(filtroDepto);
+        }
+
         fetchUsers(params).catch(() => notify.error('Error al cargar usuarios.'));
-    }, [page, query, filtroRol, sortConfig, fetchUsers]);
+    }, [page, query, filtroRol, sortConfig, mostrarInactivos, isMttoFilter, filtroDepto, fetchUsers]);
 
-    useEffect(() => {
-        loadUsers(); console.log('🔍 users state:', users);
-        console.log('🔍 meta state:', meta);
-    }, [loadUsers]);
-
-    // Departamentos se cargan una sola vez
+    useEffect(() => { loadUsers(); }, [loadUsers]);
     useEffect(() => { fetchDepartamentos(); }, [fetchDepartamentos]);
 
-    // ── Handlers de filtros (reset page) ──────────────────────────────────────
+    // ── Handlers de filtros (siempre resetean a página 1) ───────────────────
     const handleSearchChange = useCallback((q) => {
         setQuery(q);
         setPage(1);
@@ -78,7 +84,25 @@ const UsersPage = () => {
         setPage(1);
     }, []);
 
-    // ── Mutaciones ─────────────────────────────────────────────────────────────
+    const handleToggleMttoFilter = useCallback(() => {
+        setIsMttoFilter(prev => !prev);
+        setFiltroRol('TODOS');
+        setPage(1);
+    }, []);
+
+    const handleDeptoChange = useCallback((id) => {
+        setFiltroDepto(id);
+        setFiltroRol('TODOS');
+        setPage(1);
+    }, []);
+
+    const handleToggleInactivos = useCallback(() => {
+        setMostrarInactivos(prev => !prev);
+        setFiltroRol('TODOS');
+        setPage(1);
+    }, []);
+
+    // ── Handlers de acciones ────────────────────────────────────────────────
     const handleCreate = async (payload) => {
         try {
             await createUser(payload);
@@ -91,7 +115,7 @@ const UsersPage = () => {
                 err?.response?.data?.message ||
                 'Error al crear el usuario.';
             notify.error(msg);
-            throw err; // Propaga para que el modal maneje inline si es duplicado
+            throw err;
         }
     };
 
@@ -116,18 +140,24 @@ const UsersPage = () => {
             const label = estatus === 'ACTIVO' ? 'reactivado' : 'desactivado';
             notify.success(`Usuario ${label} correctamente.`);
             loadUsers();
-        } catch (err) {
+        } catch {
             notify.error('Error al cambiar el estatus del usuario.');
         }
     };
 
-    // ── Total de páginas (calculado desde meta) ───────────────────────────────
-    const totalPages = useMemo(
-        () => Math.max(1, Math.ceil((meta.totalItems ?? 0) / LIMIT)),
-        [meta.totalItems]
-    );
-
-    // ── Props compartidas entre vistas ────────────────────────────────────────
+    // ── Props compartidos para ambas vistas ──────────────────────────────────
+    /**
+     * Separación explícita de los dos totales:
+     *
+     *   totalParaSummary → meta.totalAbsoluto
+     *     Cuántos usuarios existen en total (sin filtro de rol).
+     *     Lo usan las pastillas de la SummaryBar.
+     *
+     *   totalParaPaginador → meta.totalFiltrado
+     *     Cuántos usuarios coinciden con la búsqueda/filtros actuales.
+     *     Es el número que determina cuántas páginas hay.
+     *     = pagination.total del backend.
+     */
     const sharedViewProps = {
         users,
         loading,
@@ -135,81 +165,39 @@ const UsersPage = () => {
         currentUser,
         departamentos,
         page,
-        totalPages,
+        limit: LIMIT,
+        totalPages: meta.totalPages,
+        totalParaSummary: meta.totalAbsoluto,
+        totalParaPaginador: meta.totalFiltrado,
+        resumenRoles: meta.resumenRoles,
         sortConfig,
+        query,
+        filtroRol,
+        mostrarInactivos,
+        filtroDepto,
+        isMttoFilter,
+        onToggleMttoFilter: handleToggleMttoFilter,
+        onDeptoChange: handleDeptoChange,
+        onToggleInactivos: handleToggleInactivos,
         onPageChange: setPage,
         onSortChange: handleSortChange,
+        onSearchChange: handleSearchChange,
+        onFilterChange: handleFilterChange,
         onSave: handleUpdate,
         onToggleStatus: handleToggleStatus,
         onRefresh: loadUsers,
+        onOpenCreate: () => setShowCreate(true),
     };
 
     return (
-        <div className="space-y-4 max-w-full mx-auto">
-
-
-            {/* ── Panel principal ────────────────────────────────────────────── */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                {/* Barra de resumen + filtros */}
-                <div className="p-4 border-b border-slate-100 space-y-3 sticky top-0 bg-white z-20">
-                    <UserSummaryBar
-                        totalItems={meta.totalItems ?? 0}
-                        resumenRoles={meta.resumenRoles ?? {}}
-                        filtroActual={filtroRol}
-                        onFilterChange={handleFilterChange}
-                        loading={loading}
-                    />
-                    <div className="flex items-center justify-between gap-3">
-                        <UserFilterBar onSearchChange={handleSearchChange} />
-                        {/* Refresh — Solo desktop, en mobile hay FAB */}
-                        <button
-                            onClick={loadUsers}
-                            disabled={loading}
-                            className={`hidden lg:flex items-center gap-1.5 text-xs font-semibold text-slate-500
-                hover:text-marca-primario transition-colors px-2 py-1 rounded-lg
-                hover:bg-slate-50 ${loading ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                            <Icon name="refresh" size="xs" className={loading ? 'animate-spin' : ''} />
-                            Actualizar
-                        </button>
-                        <div className="flex items-center justify-between">
-
-                            {/* Botón "Nuevo" — Desktop fijo aquí, Mobile flotante abajo */}
-                            <Button
-                                variant="guardar"
-                                icon="person_add"
-                                onClick={() => setShowCreate(true)}
-                                className="hidden lg:inline-flex"
-                            >
-                                Nuevo Usuario
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Contenido de vista */}
-                <div className="p-2 lg:p-4">
-                    {isDesktop ? (
-                        <UsersDesktop {...sharedViewProps} />
-                    ) : (
-                        <UsersMobile {...sharedViewProps} />
-                    )}
-                </div>
+        <div className="max-w-full mx-auto">
+            <div className="p-2 lg:p-4">
+                {isDesktop
+                    ? <UsersDesktop {...sharedViewProps} />
+                    : <UsersMobile  {...sharedViewProps} />
+                }
             </div>
 
-            {/* ── Botón Nuevo flotante (solo mobile) ───────────────────────── */}
-            <button
-                onClick={() => setShowCreate(true)}
-                className="lg:hidden fixed bottom-20 right-5 z-50 flex items-center gap-2
-          bg-estado-resuelto text-white font-bold text-sm
-          px-4 py-3 rounded-full shadow-xl
-          hover:bg-green-600 active:scale-95 transition-all"
-            >
-                <Icon name="person_add" size="sm" />
-                Nuevo
-            </button>
-
-            {/* ── Modal Alta ────────────────────────────────────────────────── */}
             <UserFormModal
                 isOpen={showCreate}
                 onClose={() => setShowCreate(false)}

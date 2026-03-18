@@ -8,22 +8,22 @@ import { getModulesByRole } from '@/config/modules-config';
 export const MobileSidebar = () => {
   const { mobileMenuOpen, closeMobileMenu } = useUIStore();
   const { user } = useAuthStore();
-  
+
   const currentUser = user?.data || user;
-  
+
   const userModules = currentUser?.rol ? getModulesByRole(currentUser.rol) : [];
 
   if (!mobileMenuOpen) return null;
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 bg-marca-primario/80 backdrop-blur-sm z-40 animate-in fade-in duration-200"
         onClick={closeMobileMenu}
       />
-      
+
       <div className="fixed top-0 right-0 h-full w-4/5 max-w-sm bg-cuadra-arena z-50 animate-in slide-in-from-right duration-300 shadow-2xl flex flex-col">
-        
+
         <div className="flex items-center justify-between p-4 border-b border-marca-primario/10 shrink-0">
           <span className="fuente-titulos text-marca-primario text-lg tracking-wide uppercase">
             Navegación
@@ -46,8 +46,8 @@ export const MobileSidebar = () => {
                   onClick={closeMobileMenu}
                   className={({ isActive }) => `
                     flex items-center gap-4 px-4 py-3.5 rounded-sm transition-colors
-                    ${isActive 
-                      ? 'bg-marca-acento text-white font-semibold shadow-sm' 
+                    ${isActive
+                      ? 'bg-marca-acento text-white font-semibold shadow-sm'
                       : 'text-marca-primario/70 hover:bg-marca-primario/10 hover:text-marca-primario'
                     }
                   `}

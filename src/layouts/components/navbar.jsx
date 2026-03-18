@@ -14,9 +14,9 @@ const SYSTEM_ROUTES = [
 export const Navbar = () => {
   const location = useLocation();
   const isDesktop = useIsDesktop();
-  
+
   const { toggleMobileMenu, sidebarExpanded } = useUIStore();
-  
+
   // Fusionamos los módulos públicos con los de sistema para encontrar el activo
   const activeModule = useMemo(() => {
     const allRoutes = [...MODULES_CONFIG, ...SYSTEM_ROUTES];
@@ -29,7 +29,7 @@ export const Navbar = () => {
       sticky top-0 z-40
     ">
       <div className="grid grid-cols-3 items-center px-4 py-3 gap-4">
-        
+
         {/* LEFT SECTION - Módulo Activo */}
         <div className="flex items-center gap-4 justify-self-start">
           {!isDesktop && (
@@ -45,17 +45,16 @@ export const Navbar = () => {
           {/* Module Info */}
           {activeModule && (
             <div className="flex items-center gap-2">
-              <Icon 
-                name={activeModule.icon} 
-                size={!sidebarExpanded ? "32px" : "24px"} 
+              <Icon
+                name={activeModule.icon}
+                size={!sidebarExpanded ? "32px" : "24px"}
                 className="text-marca-acento hidden sm:block transition-all duration-300"
               />
-              <h1 
-                className={`fuente-titulos text-marca-primario uppercase hidden md:block transition-all duration-300 ${
-                  !sidebarExpanded 
-                    ? "text-xl sm:text-2xl" 
+              <h1
+                className={`fuente-titulos text-marca-primario uppercase hidden md:block transition-all duration-300 ${!sidebarExpanded
+                    ? "text-xl sm:text-2xl"
                     : "text-base sm:text-lg"
-                }`}
+                  }`}
               >
                 {activeModule.name}
               </h1>
@@ -65,9 +64,9 @@ export const Navbar = () => {
 
         {/* CENTER SECTION - Logo */}
         <div className="flex items-center justify-center">
-          <img 
-            src="/img/01_Cuadra_Mantnimento.webp" 
-            alt="Cuadra Mantenimiento" 
+          <img
+            src="/img/01_Cuadra_Mantnimento.webp"
+            alt="Cuadra Mantenimiento"
             className="h-8 sm:h-10 w-auto object-contain"
           />
         </div>

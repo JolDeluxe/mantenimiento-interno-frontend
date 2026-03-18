@@ -14,6 +14,7 @@
     "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "liquid-glass-react": "^1.1.1",
     "lucide-react": "^0.563.0",
     "material-symbols": "^0.40.2",
     "react": "^19.2.0",

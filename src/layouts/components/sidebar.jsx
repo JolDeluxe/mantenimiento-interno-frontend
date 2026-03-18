@@ -6,7 +6,7 @@ import { SidebarHeader } from './sidebar-header';
 import { SidebarItem } from './sidebar-item';
 
 export const Sidebar = () => {
-    const { user } = useAuthStore();
+  const { user } = useAuthStore();
   const { sidebarExpanded } = useUIStore();
 
   const userModules = getModulesByRole(user?.rol);
@@ -38,15 +38,15 @@ export const Sidebar = () => {
         <p className="fuente-titulos text-white text-xl tracking-wide whitespace-nowrap">
           Cuadra Mantenimiento
         </p>
-        
+
         {/* Versión con fuente monoespaciada en formato badge */}
         <p className="font-codigo text-[10px] bg-marca-primario/50 text-cuadra-arena px-2 py-0.5 rounded-sm mt-1 mb-3 whitespace-nowrap shadow-inner">
           v.desarrollo
         </p>
-        
+
         {/* Créditos de autoría sutiles */}
         <p className="text-[10px] text-white/50 text-center leading-tight">
-          Desarrollado por el equipo de <br/>
+          Desarrollado por el equipo de <br />
           <span className="font-bold text-white/80">Procesos Tecnológicos</span>
         </p>
       </div>

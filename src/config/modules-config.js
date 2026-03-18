@@ -20,7 +20,7 @@ export const MODULES_CONFIG = [
   },
   {
     id: 'usuarios',
-    name: 'Mi Equipo',
+    name: 'Usuarios',
     icon: 'group',
     route: '/usuarios',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO'],

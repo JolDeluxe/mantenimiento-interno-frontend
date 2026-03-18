@@ -8,9 +8,9 @@ import { Icon } from '@/components/ui/icon';
  */
 export const Skeleton = ({ className, ...props }) => {
   return (
-    <div 
-      className={cn("animate-pulse bg-slate-300 rounded-sm", className)} 
-      {...props} 
+    <div
+      className={cn("animate-pulse bg-slate-300 rounded-sm", className)}
+      {...props}
     />
   );
 };
@@ -22,10 +22,10 @@ export const Skeleton = ({ className, ...props }) => {
 export const Spinner = ({ className, size = "24px" }) => {
   return (
     <div className={cn("flex justify-center items-center", className)}>
-      <Icon 
-        name="progress_activity" 
-        size={size} 
-        className="animate-spin text-marca-primario" 
+      <Icon
+        name="progress_activity"
+        size={size}
+        className="animate-spin text-marca-primario"
       />
     </div>
   );

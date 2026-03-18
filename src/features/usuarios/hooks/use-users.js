@@ -8,37 +8,67 @@ import {
   getDepartamentos,
 } from '../api/users-api';
 
+/**
+ * Contrato de respuesta del backend /api/usuarios:
+ * {
+ *   status: "success",
+ *   pagination: { total, page, limit, totalPages },  ← total = filas filtradas por rol/q/depto
+ *   totalAbsoluto: number,                            ← total sin filtro de rol (para SummaryBar)
+ *   resumenRoles: { JEFE_MTTO: n, ... },
+ *   data: Usuario[]
+ * }
+ *
+ * El interceptor de axios ya hace response.data, así que getUsers() devuelve
+ * directamente el objeto anterior.
+ */
 export const useUsers = () => {
-  const [users, setUsers]                 = useState([]);
+  const [users, setUsers]       = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
-  const [meta, setMeta]                   = useState({ totalItems: 0, totalPages: 1, resumenRoles: {} });
-  const [loading, setLoading]             = useState(false);
-  const [submitting, setSubmitting]       = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  /**
+   * meta expone:
+   *  - totalFiltrado  → para el paginador (cuántas filas coinciden con rol/q/depto)
+   *  - totalAbsoluto  → para la SummaryBar (total del universo visible al usuario)
+   *  - totalPages     → calculado por el backend
+   *  - resumenRoles   → conteos por rol para las pastillas de filtro
+   */
+  const [meta, setMeta] = useState({
+    totalFiltrado:  0,
+    totalAbsoluto:  0,
+    totalPages:     1,
+    resumenRoles:   {},
+  });
 
   const fetchUsers = useCallback(async (params = {}) => {
     setLoading(true);
     try {
       const response = await getUsers(params);
 
-      // El interceptor de axios.js ya desenvuelve response.data internamente.
-      // Si el resultado es un array plano → el interceptor extrajo solo 'data'
-      // Si el resultado tiene .data → llegó el body completo del backend
+      // Caso defensivo: si el interceptor devolviera un array directamente
       if (Array.isArray(response)) {
         setUsers(response);
         setMeta({
-          totalItems:   response.length,
-          totalPages:   1,
-          resumenRoles: {},
+          totalFiltrado: response.length,
+          totalAbsoluto: response.length,
+          totalPages:    1,
+          resumenRoles:  {},
         });
-      } else {
-        setUsers(response.data ?? []);
-        const p = response.pagination ?? {};
-        setMeta({
-          totalItems:   p.total      ?? 0,
-          totalPages:   p.totalPages ?? 1,
-          resumenRoles: response.resumenRoles ?? {},
-        });
+        return;
       }
+
+      const pagination   = response.pagination ?? {};
+      const data         = Array.isArray(response.data) ? response.data : [];
+
+      setUsers(data);
+      setMeta({
+        // pagination.total es el conteo de la tabla filtrada (lo que mueve el paginador)
+        totalFiltrado:  pagination.total     ?? 0,
+        totalAbsoluto:  response.totalAbsoluto ?? pagination.total ?? 0,
+        totalPages:     pagination.totalPages ?? 1,
+        resumenRoles:   response.resumenRoles ?? {},
+      });
     } finally {
       setLoading(false);
     }
@@ -47,29 +77,32 @@ export const useUsers = () => {
   const fetchDepartamentos = useCallback(async () => {
     try {
       const response = await getDepartamentos();
-      setDepartamentos(
-        Array.isArray(response) ? response : (response.data ?? response ?? [])
-      );
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
+      setDepartamentos(list);
     } catch {
-      // silencioso
+      // silencioso — no rompe el flujo principal
     }
   }, []);
 
   const handleCreate = useCallback(async (data) => {
     setSubmitting(true);
-    try { await createUser(data); }
+    try { return await createUser(data); }
     finally { setSubmitting(false); }
   }, []);
 
   const handleUpdate = useCallback(async (id, data) => {
     setSubmitting(true);
-    try { await updateUser(id, data); }
+    try { return await updateUser(id, data); }
     finally { setSubmitting(false); }
   }, []);
 
   const handleToggleStatus = useCallback(async (id, estado) => {
     setSubmitting(true);
-    try { await updateUserStatus(id, estado); }
+    try { return await updateUserStatus(id, estado); }
     finally { setSubmitting(false); }
   }, []);
 
@@ -81,8 +114,8 @@ export const useUsers = () => {
     submitting,
     fetchUsers,
     fetchDepartamentos,
-    createUser: handleCreate,
-    updateUser: handleUpdate,
+    createUser:   handleCreate,
+    updateUser:   handleUpdate,
     toggleStatus: handleToggleStatus,
   };
 };

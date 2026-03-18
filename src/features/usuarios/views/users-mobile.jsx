@@ -1,38 +1,17 @@
 // src/features/usuarios/views/users-mobile.jsx
 import { useState } from 'react';
-import { Badge, Button, Icon, Skeleton } from '@/components/ui/z_index';
+import { Icon, Skeleton } from '@/components/ui/z_index';
+import { GlassFab, GlassPaginationPill, GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
+import { UserCard } from '../components/user-card';
 import { UserFormModal } from '../components/user-form-modal';
 import { UserStatusModal } from '../components/user-status-modal';
+import { UserDetailModal } from '../components/user-detail-modal';
+import { UserSummaryBar } from '../components/user-summary-bar';
+import { UserFilterBar } from '../components/user-filter-bar';
+import { UsersTable } from '../components/users-table';
+import { cn } from '@/utils/cn';
 
-const ROL_LABEL = {
-    SUPER_ADMIN: 'Super Admin',
-    JEFE_MTTO: 'Jefe Mtto',
-    COORDINADOR_MTTO: 'Coordinador',
-    TECNICO: 'Técnico',
-    CLIENTE_INTERNO: 'Cliente Interno',
-};
-
-const ROL_TEXT_COLOR = {
-    SUPER_ADMIN: 'text-marca-primario',
-    JEFE_MTTO: 'text-marca-primario',
-    COORDINADOR_MTTO: 'text-amber-700',
-    TECNICO: 'text-blue-700',
-    CLIENTE_INTERNO: 'text-rose-800',
-};
-
-const puedeEditar = (me, row) => {
-    if (me?.rol === 'SUPER_ADMIN') return true;
-    if (Number(me?.id) === Number(row.id)) return true;
-    if (me?.rol === 'JEFE_MTTO' && row.rol !== 'JEFE_MTTO' && row.rol !== 'SUPER_ADMIN') return true;
-    return false;
-};
-
-const puedeCambiarEstado = (me, row) => {
-    if (Number(me?.id) === Number(row.id)) return false;
-    if (me?.rol === 'SUPER_ADMIN') return true;
-    if (me?.rol === 'JEFE_MTTO' && row.rol !== 'JEFE_MTTO' && row.rol !== 'SUPER_ADMIN') return true;
-    return false;
-};
+const SKELETON_COUNT = 5;
 
 export const UsersMobile = ({
     users,
@@ -41,14 +20,36 @@ export const UsersMobile = ({
     currentUser,
     departamentos,
     page,
+    limit,
     totalPages,
+    totalParaSummary,
+    totalParaPaginador,
+    resumenRoles,
+    filtroRol,
+    query,
+    sortConfig,
+    mostrarInactivos,
+    filtroDepto,
+    isMttoFilter,
     onPageChange,
+    onSortChange,
     onSave,
     onToggleStatus,
     onRefresh,
+    onOpenCreate,
+    onFilterChange,
+    onSearchChange,
+    onToggleInactivos,
+    onDeptoChange,
+    onToggleMttoFilter,
 }) => {
+    const [viewMode, setViewMode] = useState('cards');
     const [editTarget, setEditTarget] = useState(null);
     const [statusTarget, setStatusTarget] = useState(null);
+    const [detailTarget, setDetailTarget] = useState(null);
+
+    const hasContent = !loading && users.length > 0;
+    const hasPaginator = hasContent && totalPages > 1;
 
     const handleStatusConfirm = async () => {
         if (!statusTarget) return;
@@ -57,119 +58,133 @@ export const UsersMobile = ({
         setStatusTarget(null);
     };
 
-    if (loading) {
-        return (
-            <div className="flex flex-col gap-3 px-1 pt-1 pb-24">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
-                        <Skeleton className="h-4 w-3/4 rounded" />
-                        <Skeleton className="h-3 w-1/2 rounded" />
-                        <Skeleton className="h-3 w-1/3 rounded" />
-                    </div>
-                ))}
-            </div>
-        );
-    }
-
-    if (!users.length) {
-        return (
-            <div className="flex flex-col items-center justify-center h-40 gap-2 text-slate-400">
-                <Icon name="search_off" size="xl" />
-                <p className="text-sm font-medium">Sin resultados</p>
-            </div>
-        );
-    }
+    const fabAddBottom = hasPaginator ? '104px' : '84px';
+    const fabRefreshBottom = hasPaginator ? '164px' : '144px';
 
     return (
         <>
-            <div className="flex flex-col gap-3 px-1 pt-1 pb-32">
-                {users.map((row) => (
-                    <div key={row.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                        {/* Cabecera */}
-                        <div className="flex justify-between items-start mb-2">
-                            <p className="font-extrabold text-slate-900 text-base leading-tight">{row.nombre}</p>
-                            {/* Campo del backend es 'estado' */}
-                            <Badge status={row.estado === 'ACTIVO' ? 'activo' : 'inactivo'}>
-                                {row.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                        </div>
-
-                        {/* Datos */}
-                        <div className="space-y-1 text-sm text-slate-600 mb-4">
-                            <p className="flex items-center gap-2">
-                                <Icon name="alternate_email" size="xs" className="text-slate-400" />
-                                <span className="font-codigo text-xs">{row.username}</span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                                <Icon name="badge" size="xs" className="text-slate-400" />
-                                <span className={`font-bold text-xs ${ROL_TEXT_COLOR[row.rol] ?? 'text-slate-600'}`}>
-                                    {ROL_LABEL[row.rol] ?? row.rol}
-                                </span>
-                            </p>
-                            {row.departamento?.nombre && (
-                                <p className="flex items-center gap-2">
-                                    <Icon name="business" size="xs" className="text-slate-400" />
-                                    <span className="text-xs">{row.departamento.nombre}</span>
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Acciones */}
-                        <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                            {puedeEditar(currentUser, row) ? (
-                                <Button
-                                    variant="editar" icon="edit" size="sm"
-                                    onClick={() => setEditTarget(row)}
-                                    className="flex-1 text-xs"
-                                >
-                                    Editar
-                                </Button>
-                            ) : (
-                                <div className="flex-1 flex items-center justify-center gap-1 text-slate-300 text-xs py-1">
-                                    <Icon name="lock" size="xs" /> Bloqueado
-                                </div>
-                            )}
-
-                            {puedeCambiarEstado(currentUser, row) && (
-                                <Button
-                                    variant={row.estado === 'ACTIVO' ? 'borrar' : 'guardar'}
-                                    icon={row.estado === 'ACTIVO' ? 'person_off' : 'person_check'}
-                                    size="sm"
-                                    onClick={() => setStatusTarget(row)}
-                                    className="flex-1 text-xs"
-                                >
-                                    {row.estado === 'ACTIVO' ? 'Desactivar' : 'Reactivar'}
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                ))}
+            {/* ── 1. ENCABEZADO ── */}
+            <div className="px-1 mb-4">
+                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos">
+                    Usuarios
+                </h1>
+                <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+                    Gestiona los usuarios y sus niveles de acceso.
+                </p>
             </div>
 
-            {/* Paginación */}
-            {totalPages > 1 && (
-                <div className="fixed bottom-20 left-0 right-0 flex justify-center z-40 pb-2">
-                    <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-full px-4 py-2 shadow-lg">
-                        <Button variant="cancelar" size="sm" onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="!py-1 !px-3 text-xs">‹</Button>
-                        <span className="text-xs font-bold text-slate-700 min-w-[4rem] text-center">{page} / {totalPages}</span>
-                        <Button variant="accion" size="sm" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="!py-1 !px-3 text-xs">›</Button>
-                    </div>
+            {/* ── 2. SUMMARY BAR ── */}
+            <div className="mb-3">
+                <UserSummaryBar
+                    currentUser={currentUser}
+                    total={totalParaSummary}
+                    conteos={resumenRoles}
+                    filtroActual={filtroRol}
+                    onFilterChange={onFilterChange}
+                    loading={loading}
+                    mostrarInactivos={mostrarInactivos}
+                    isMttoFilter={isMttoFilter}
+                    filtroDepto={filtroDepto}
+                    departamentos={departamentos}
+                />
+            </div>
+
+            {/* ── 3. FILTRO + TOGGLE DE VISTA ── */}
+            <div className="mb-3">
+                {/*
+          glassMode=true → el botón de Inactivos usa estética Glass
+          para coincidir visualmente con el toggle de cards/tabla
+        */}
+                <UserFilterBar
+                    currentUser={currentUser}
+                    query={query}
+                    departamentos={departamentos}
+                    onSearchChange={onSearchChange}
+                    mostrarInactivos={mostrarInactivos}
+                    onToggleInactivos={onToggleInactivos}
+                    filtroDepto={filtroDepto}
+                    onDeptoChange={onDeptoChange}
+                    isMttoFilter={isMttoFilter}
+                    onToggleMttoFilter={onToggleMttoFilter}
+                    glassMode
+                />
+
+                {/* Toggle cards / tabla */}
+                <div className="flex justify-end mt-2.5">
+                    <GlassViewToggle value={viewMode} onChange={setViewMode} />
+                </div>
+            </div>
+
+            {/* ── 4. CONTENIDO ── */}
+            {viewMode === 'cards' ? (
+                <CardsContent
+                    users={users}
+                    loading={loading}
+                    currentUser={currentUser}
+                    hasPaginator={hasPaginator}
+                    onEdit={setEditTarget}
+                    onToggleStatus={setStatusTarget}
+                    onViewDetail={setDetailTarget}
+                />
+            ) : (
+                <div className={cn('mb-40', hasPaginator && 'mb-52')}>
+                    {/*
+            hidePagination=true → suprime la barra de paginación interna.
+            La paginación la maneja GlassPaginationPill más abajo.
+          */}
+                    <UsersTable
+                        usuarios={users}
+                        loading={loading}
+                        submitting={submitting}
+                        currentUser={currentUser}
+                        departamentos={departamentos}
+                        page={page}
+                        limit={limit}
+                        totalPages={totalPages}
+                        totalItems={totalParaPaginador}
+                        sortConfig={sortConfig}
+                        onPageChange={onPageChange}
+                        onSortChange={onSortChange}
+                        onSave={onSave}
+                        onToggleStatus={onToggleStatus}
+                        onRecargar={onRefresh}
+                        hidePagination
+                    />
                 </div>
             )}
 
-            {/* FAB Refresh */}
-            <button
-                onClick={onRefresh}
-                disabled={loading}
-                className={`fixed bottom-36 right-5 z-50 w-12 h-12 rounded-full shadow-xl
-          flex items-center justify-center bg-marca-primario text-white
-          hover:bg-marca-primario-hover transition-all duration-200
-          ${loading ? 'opacity-70 cursor-wait' : 'active:scale-95'}`}
-            >
-                <Icon name="refresh" size="sm" className={loading ? 'animate-spin' : ''} />
-            </button>
+            {/* ── 5. PAGINACIÓN FLOTANTE ── */}
+            {hasPaginator && (
+                <GlassPaginationPill
+                    page={page}
+                    totalPages={totalPages}
+                    totalItems={totalParaPaginador}
+                    onPageChange={onPageChange}
+                    loading={loading}
+                    bottom="24px"
+                />
+            )}
 
-            {/* Modales */}
+            {/* ── 6. FABS ── */}
+            <GlassFab
+                icon="refresh"
+                onClick={onRefresh}
+                isLoading={loading}
+                variant="neutral"
+                size={50}
+                bottom={fabRefreshBottom}
+                right="20px"
+            />
+            <GlassFab
+                icon="add"
+                onClick={onOpenCreate}
+                variant="primary"
+                size={56}
+                bottom={fabAddBottom}
+                right="20px"
+            />
+
+            {/* ── 7. MODALES ── */}
             <UserFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
@@ -190,6 +205,73 @@ export const UsersMobile = ({
                 usuario={statusTarget}
                 submitting={submitting}
             />
+
+            <UserDetailModal
+                isOpen={Boolean(detailTarget)}
+                onClose={() => setDetailTarget(null)}
+                usuario={detailTarget}
+            />
         </>
     );
 };
+
+// ── Lista de cards ────────────────────────────────────────────────────────────
+const CardsContent = ({ users, loading, currentUser, hasPaginator, onEdit, onToggleStatus, onViewDetail }) => {
+    const bottomPadding = hasPaginator ? 'pb-56' : 'pb-44';
+
+    if (loading) {
+        return (
+            <div className={cn('flex flex-col gap-3 px-1 pt-1', bottomPadding)}>
+                {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+                    <CardSkeleton key={i} />
+                ))}
+            </div>
+        );
+    }
+
+    if (!users.length) {
+        return (
+            <div className="flex flex-col items-center justify-center h-44 gap-3 text-slate-400">
+                <Icon name="search_off" size="xl" />
+                <p className="text-sm font-medium">Sin resultados</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className={cn('flex flex-col gap-3 px-1 pt-1', bottomPadding)}>
+            {users.map((row) => (
+                <UserCard
+                    key={row.id}
+                    usuario={row}
+                    currentUser={currentUser}
+                    onEdit={onEdit}
+                    onToggleStatus={onToggleStatus}
+                    onViewDetail={onViewDetail}
+                />
+            ))}
+        </div>
+    );
+};
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+const CardSkeleton = () => (
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-3 mb-3">
+            <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+            <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4 rounded-md" />
+                <Skeleton className="h-3 w-1/2 rounded-md" />
+            </div>
+            <Skeleton className="h-5 w-14 rounded-md shrink-0" />
+        </div>
+        <div className="space-y-2 mb-3 ml-1">
+            <Skeleton className="h-3 w-28 rounded-md" />
+            <Skeleton className="h-3 w-36 rounded-md" />
+        </div>
+        <div className="flex gap-2 pt-3 border-t border-slate-100">
+            <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+            <Skeleton className="h-8 flex-1 rounded-lg" />
+        </div>
+    </div>
+);
