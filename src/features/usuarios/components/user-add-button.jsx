@@ -16,7 +16,7 @@ export const UserAddButton = ({ onClick, isMobile = false }) => {
 
     // 💻 VISTA ESCRITORIO: Botón verde sólido normal
     return (
-        <div className="flex justify-end w-full px-2 lg:px-4">
+        <div className="flex justify-end w-full px-2 lg:px-0">
             <Button
                 variant="accion" // ← Verde corporativo
                 icon="add"

@@ -1,6 +1,6 @@
+// src/components/ui/summary-bar.jsx
 import { cn } from '@/utils/cn';
 
-// Diccionario Clean UI: Bordes sutiles, sombras difusas, gradientes ligeros y micro-interacciones de escala
 const VARIANTS = {
     por_defecto: {
         desktopBase: "bg-white border border-slate-200/80 text-slate-600 shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
@@ -64,7 +64,7 @@ export const SummaryBar = ({
     onSelect,
     loading = false,
     className,
-    separateFirstMobile = false
+    // separateFirstMobile ya no se usa — la lógica es automática
 }) => {
     if (!items.length) return null;
 
@@ -76,7 +76,7 @@ export const SummaryBar = ({
     else if (items.length === 5) gridColsClass = "grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
     else if (items.length >= 6) gridColsClass = "grid-cols-2 md:grid-cols-3 xl:grid-cols-6";
 
-    // ── 📱 Sub-componente Móvil Compacto ─────────────────────────────────────
+    // ── Sub-componente chip móvil ─────────────────────────────────────────────
     const renderMobileItem = (item) => {
         const isActive = activeId === item.id;
         const styles = VARIANTS[item.color] || VARIANTS.por_defecto;
@@ -86,7 +86,7 @@ export const SummaryBar = ({
                 key={item.id}
                 onClick={() => !loading && !isActive && onSelect?.(item.id)}
                 className={cn(
-                    "flex justify-between items-center w-full max-w-[16rem] px-5 py-2.5 rounded-full select-none",
+                    "flex justify-between items-center w-full px-3 py-2.5 rounded-full select-none",
                     isActive || loading ? "cursor-default" : "cursor-pointer",
                     "transition-all duration-200 ease-out will-change-transform",
                     isActive ? styles.mobileActive : styles.mobileBase,
@@ -94,20 +94,64 @@ export const SummaryBar = ({
                     item.className
                 )}
             >
-                <span className={cn("text-[13px] font-semibold tracking-tight", item.labelClassName)}>
+                <span className={cn(
+                    "text-[11px] font-semibold tracking-tight truncate mr-2",
+                    item.labelClassName
+                )}>
                     {item.label}
                 </span>
-                <span className={cn("text-base font-bold opacity-90 drop-shadow-sm", isActive && "text-white", item.valueClassName)}>
+                <span className={cn(
+                    "text-base font-bold opacity-90 drop-shadow-sm shrink-0",
+                    isActive && "text-white",
+                    item.valueClassName
+                )}>
                     {loading ? "..." : item.value}
                 </span>
             </div>
         );
     };
 
+    // ── Layout móvil dinámico ─────────────────────────────────────────────────
+    // Regla: impares → primer item (Total) full-width arriba + resto en grid 2 cols
+    //        pares   → todos en grid 2 cols
+    //        1 item  → centrado full-width
+    const renderMobileLayout = () => {
+        const count = items.length;
+
+        if (count === 1) {
+            return (
+                <div className="w-full">
+                    {renderMobileItem(items[0])}
+                </div>
+            );
+        }
+
+        if (count % 2 === 0) {
+            // Pares: grid uniforme de 2 columnas
+            return (
+                <div className="grid grid-cols-2 gap-3 w-full">
+                    {items.map(renderMobileItem)}
+                </div>
+            );
+        }
+
+        // Impares: Total arriba full-width + resto en grid 2 cols
+        return (
+            <>
+                <div className="w-full">
+                    {renderMobileItem(items[0])}
+                </div>
+                <div className="grid grid-cols-2 gap-3 w-full">
+                    {items.slice(1).map(renderMobileItem)}
+                </div>
+            </>
+        );
+    };
+
     return (
         <div className={cn("w-full", className)}>
 
-            {/* 💻 VISTA ESCRITORIO */}
+            {/* 💻 VISTA ESCRITORIO — sin cambios */}
             <div className={cn("hidden lg:grid gap-4 mb-4", gridColsClass)}>
                 {items.map((item) => {
                     const isActive = activeId === item.id;
@@ -143,22 +187,9 @@ export const SummaryBar = ({
                 })}
             </div>
 
-            {/* 📱 VISTA MÓVIL */}
-            <div className="lg:hidden flex flex-col items-center px-4 space-y-3 mb-5">
-                {separateFirstMobile && items.length > 1 ? (
-                    <>
-                        <div className="w-full flex justify-center mb-1">
-                            {renderMobileItem(items[0])}
-                        </div>
-                        <div className="flex flex-col items-center space-y-3 w-full">
-                            {items.slice(1).map(renderMobileItem)}
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex flex-col items-center space-y-3 w-full">
-                        {items.map(renderMobileItem)}
-                    </div>
-                )}
+            {/* 📱 VISTA MÓVIL — layout dinámico por paridad */}
+            <div className="lg:hidden flex flex-col px-4 gap-3 mb-5">
+                {renderMobileLayout()}
             </div>
 
         </div>

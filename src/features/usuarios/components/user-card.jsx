@@ -124,12 +124,12 @@ export const UserCard = ({ usuario, currentUser, onEdit, onToggleStatus, onViewD
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-prioridad-media active:scale-95 transition-all shadow-sm"
                     >
                         <Icon name="edit" size="xs" />
-                        <span>Editar</span>
+                        <span className="hidden min-[360px]:inline">Editar</span>
                     </button>
                 ) : (
                     <div className="flex-1 flex items-center justify-center gap-1.5 text-slate-300 text-xs py-1.5">
                         <Icon name="lock" size="xs" />
-                        <span>Sin permiso</span>
+                        <span className="hidden min-[360px]:inline">Sin permiso</span>
                     </div>
                 )}
 
@@ -144,7 +144,9 @@ export const UserCard = ({ usuario, currentUser, onEdit, onToggleStatus, onViewD
                         )}
                     >
                         <Icon name={isActive ? 'person_off' : 'person_check'} size="xs" />
-                        <span>{isActive ? 'Desactivar' : 'Reactivar'}</span>
+                        <span className="hidden min-[360px]:inline">
+                            {isActive ? 'Desactivar' : 'Reactivar'}
+                        </span>
                     </button>
                 )}
             </div>

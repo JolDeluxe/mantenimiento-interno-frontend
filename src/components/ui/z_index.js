@@ -14,3 +14,4 @@ export { GlassFab, GlassPaginationPill, GlassViewToggle }      from './liquid-gl
 export { TableActions }                                        from './table-actions';
 export { StarBorder }                                          from './star-border';
 export { SearchableSelect }                                    from './searchable-select';
+export { ScrollToTopButton }                                   from './scroll-to-top-button';

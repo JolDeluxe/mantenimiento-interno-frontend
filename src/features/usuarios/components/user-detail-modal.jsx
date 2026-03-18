@@ -80,7 +80,7 @@ export const UserDetailModal = ({ isOpen, onClose, usuario }) => {
                     <div className="space-y-5">
                         <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 mb-4 flex items-center gap-2">
                             <Icon name="domain" size="sm" className="text-marca-primario" />
-                            Ubicación Corporativa
+                            Ubicación
                         </h4>
                         <DataRow
                             icon="business"

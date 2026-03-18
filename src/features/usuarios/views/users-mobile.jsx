@@ -1,5 +1,5 @@
 // src/features/usuarios/views/users-mobile.jsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { GlassFab, GlassPaginationPill, GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
 import { UserCard } from '../components/user-card';
@@ -9,10 +9,160 @@ import { UserDetailModal } from '../components/user-detail-modal';
 import { UserSummaryBar } from '../components/user-summary-bar';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UsersTable } from '../components/users-table';
+import { ScrollToTopButton } from '@/components/ui/scroll-to-top-button';
 import { cn } from '@/utils/cn';
 
 const SKELETON_COUNT = 5;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tokens glass (espejo fiel de liquid-glass-mobile internals)
+// ─────────────────────────────────────────────────────────────────────────────
+const GLASS_VARIANTS = {
+    primary: { bg: 'rgba(72,43,44,0.78)', shadow: '0 12px 36px rgba(72,43,44,0.40), 0 2px 8px rgba(72,43,44,0.20)' },
+    danger: { bg: 'rgba(220,38,38,0.72)', shadow: '0 10px 30px rgba(220,38,38,0.30), 0 2px 6px rgba(220,38,38,0.16)' },
+};
+
+const glassActive = (variant = 'primary') => {
+    const v = GLASS_VARIANTS[variant];
+    return {
+        background: v.bg,
+        backdropFilter: 'blur(20px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+        border: '1px solid rgba(255,255,255,0.32)',
+        boxShadow: `${v.shadow}, 0 1px 0 rgba(255,255,255,0.48) inset, 0 -1px 0 rgba(0,0,0,0.08) inset`,
+        borderRadius: 10,
+        position: 'relative',
+        overflow: 'hidden',
+    };
+};
+
+const glassPill = {
+    display: 'inline-flex',
+    padding: 4,
+    borderRadius: 14,
+    gap: 4,
+    backdropFilter: 'blur(16px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+    background: 'rgba(255,255,255,0.18)',
+    border: '1px solid rgba(255,255,255,0.30)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.45) inset',
+    position: 'relative',
+    overflow: 'hidden',
+    flexShrink: 0,
+};
+
+const GlassSheen = () => (
+    <div
+        aria-hidden
+        style={{
+            position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none',
+            background: 'linear-gradient(148deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.03) 60%)',
+        }}
+    />
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GlassIconChip
+// ─────────────────────────────────────────────────────────────────────────────
+const GlassIconChip = ({ icon, isActive, variant = 'primary', onClick }) => (
+    <button
+        onClick={onClick}
+        style={
+            isActive
+                ? glassActive(variant)
+                : { borderRadius: 10, background: 'transparent', border: '1px solid transparent' }
+        }
+        className="flex items-center justify-center w-8 h-8 transition-all duration-200 active:scale-90 outline-none select-none shrink-0"
+    >
+        {isActive && <GlassSheen />}
+        <Icon
+            name={icon}
+            size="xs"
+            className={cn('relative transition-colors', isActive ? 'text-white' : 'text-slate-500')}
+        />
+    </button>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MobileFilterChips — Fila C
+// Elimina DeptoDropdown. Implementa Overlay Nativo con <select> invisible.
+// ─────────────────────────────────────────────────────────────────────────────
+const MobileFilterChips = ({
+    currentUser,
+    departamentos,
+    mostrarInactivos,
+    onToggleInactivos,
+    filtroDepto,
+    onDeptoChange,
+    isMttoFilter,
+    onToggleMttoFilter,
+}) => {
+    const esSuperAdmin = currentUser?.rol === 'SUPER_ADMIN';
+
+    const deptoOptions = useMemo(
+        () => departamentos?.map((d) => ({ value: d.id, label: d.nombre })) || [],
+        [departamentos]
+    );
+
+    return (
+        <div className="flex items-center gap-2">
+            {/* Pill: Mantenimiento + Departamento (solo SUPER_ADMIN) */}
+            {esSuperAdmin && (
+                <div style={glassPill}>
+                    {/* Mantenimiento — oculto si hay depto activo */}
+                    {!filtroDepto && (
+                        <GlassIconChip
+                            icon="construction"
+                            isActive={isMttoFilter}
+                            variant="primary"
+                            onClick={onToggleMttoFilter}
+                        />
+                    )}
+
+                    {/* Departamento — oculto si mtto activo */}
+                    {!isMttoFilter && (
+                        <div style={{ position: 'relative' }}>
+                            <GlassIconChip
+                                icon={filtroDepto ? 'close' : 'business'}
+                                isActive={Boolean(filtroDepto)}
+                                variant="primary"
+                                onClick={() => filtroDepto && onDeptoChange(null)}
+                            />
+                            {!filtroDepto && (
+                                <select
+                                    value=""
+                                    onChange={(e) => onDeptoChange(e.target.value || null)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                >
+                                    <option value="" disabled>Departamentos...</option>
+                                    {deptoOptions.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Pill: Inactivos — siempre visible */}
+            <div style={glassPill}>
+                <GlassIconChip
+                    icon={mostrarInactivos ? 'person_check' : 'person_off'}
+                    isActive={mostrarInactivos}
+                    variant="danger"
+                    onClick={onToggleInactivos}
+                />
+            </div>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UsersMobile
+// ─────────────────────────────────────────────────────────────────────────────
 export const UsersMobile = ({
     users,
     loading,
@@ -58,6 +208,7 @@ export const UsersMobile = ({
         setStatusTarget(null);
     };
 
+    // FAB derecho — refresh arriba, add abajo
     const fabAddBottom = hasPaginator ? '104px' : '84px';
     const fabRefreshBottom = hasPaginator ? '164px' : '144px';
 
@@ -89,12 +240,9 @@ export const UsersMobile = ({
                 />
             </div>
 
-            {/* ── 3. FILTRO + TOGGLE DE VISTA ── */}
-            <div className="mb-3">
-                {/*
-          glassMode=true → el botón de Inactivos usa estética Glass
-          para coincidir visualmente con el toggle de cards/tabla
-        */}
+            {/* ── 3. CONTROLES ────────────────────────────────────────────────────── */}
+            <div className="mb-3 flex flex-col gap-2">
+                {/* Fila A — Buscador aislado (mobileSearchOnly) */}
                 <UserFilterBar
                     currentUser={currentUser}
                     query={query}
@@ -106,12 +254,26 @@ export const UsersMobile = ({
                     onDeptoChange={onDeptoChange}
                     isMttoFilter={isMttoFilter}
                     onToggleMttoFilter={onToggleMttoFilter}
-                    glassMode
+                    mobileSearchOnly
                 />
 
-                {/* Toggle cards / tabla */}
-                <div className="flex justify-end mt-2.5">
+                {/* Fila B — selector de vista (derecha) */}
+                <div className="flex items-center justify-end">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
+                </div>
+
+                {/* Fila C — Chips de contexto móviles */}
+                <div className="flex items-center justify-start">
+                    <MobileFilterChips
+                        currentUser={currentUser}
+                        departamentos={departamentos}
+                        mostrarInactivos={mostrarInactivos}
+                        onToggleInactivos={onToggleInactivos}
+                        filtroDepto={filtroDepto}
+                        onDeptoChange={onDeptoChange}
+                        isMttoFilter={isMttoFilter}
+                        onToggleMttoFilter={onToggleMttoFilter}
+                    />
                 </div>
             </div>
 
@@ -128,10 +290,6 @@ export const UsersMobile = ({
                 />
             ) : (
                 <div className={cn('mb-40', hasPaginator && 'mb-52')}>
-                    {/*
-            hidePagination=true → suprime la barra de paginación interna.
-            La paginación la maneja GlassPaginationPill más abajo.
-          */}
                     <UsersTable
                         usuarios={users}
                         loading={loading}
@@ -165,7 +323,7 @@ export const UsersMobile = ({
                 />
             )}
 
-            {/* ── 6. FABS ── */}
+            {/* ── 6. FABS — columna derecha ── */}
             <GlassFab
                 icon="refresh"
                 onClick={onRefresh}
@@ -184,7 +342,10 @@ export const UsersMobile = ({
                 right="20px"
             />
 
-            {/* ── 7. MODALES ── */}
+            {/* ── 7. SCROLL TO TOP — columna izquierda, mismo nivel que "add" ── */}
+            <ScrollToTopButton bottom={fabAddBottom} left="20px" />
+
+            {/* ── 8. MODALES ── */}
             <UserFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
@@ -215,7 +376,9 @@ export const UsersMobile = ({
     );
 };
 
-// ── Lista de cards ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CardsContent
+// ─────────────────────────────────────────────────────────────────────────────
 const CardsContent = ({ users, loading, currentUser, hasPaginator, onEdit, onToggleStatus, onViewDetail }) => {
     const bottomPadding = hasPaginator ? 'pb-56' : 'pb-44';
 
@@ -254,7 +417,9 @@ const CardsContent = ({ users, loading, currentUser, hasPaginator, onEdit, onTog
     );
 };
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CardSkeleton
+// ─────────────────────────────────────────────────────────────────────────────
 const CardSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
         <div className="flex items-center gap-3 mb-3">

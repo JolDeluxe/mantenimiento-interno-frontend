@@ -6,7 +6,6 @@ const ROLES_MTTO = new Set(['SUPER_ADMIN', 'CLIENTE_INTERNO']);
 const ROLES_NO_MTTO = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'TODOS']);
 const ROLES_JEFE = new Set(['TODOS', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO']);
 
-// Replica exacta del chip desktop: py-4 px-3 rounded-2xl, label 11px, valor 3xl
 const SummaryBarSkeleton = ({ count = 6 }) => {
     const gridClass = {
         1: 'grid-cols-1 max-w-xs mx-auto',
@@ -23,19 +22,39 @@ const SummaryBarSkeleton = ({ count = 6 }) => {
             <div className={`hidden lg:grid gap-4 mb-4 ${gridClass}`}>
                 {Array.from({ length: count }).map((_, i) => (
                     <div key={i} className="flex flex-col justify-center items-center py-4 px-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <Skeleton className="h-[11px] w-16 rounded-full mb-3" />
+                        <Skeleton className="h-2.75 w-16 rounded-full mb-3" />
                         <Skeleton className="h-9 w-12 rounded-md" />
                     </div>
                 ))}
             </div>
+
             {/* Mobile */}
-            <div className="lg:hidden flex flex-col items-center px-4 space-y-3 mb-5">
-                {Array.from({ length: count }).map((_, i) => (
-                    <div key={i} className="flex justify-between items-center w-full max-w-[16rem] px-5 py-2.5 rounded-full bg-white border border-slate-200/80 shadow-sm">
-                        <Skeleton className="h-3 w-16 rounded-full" />
-                        <Skeleton className="h-4 w-8 rounded-md" />
+            <div className="lg:hidden flex flex-col px-4 gap-3 mb-5">
+                {count > 1 ? (
+                    <>
+                        <div className="w-full flex justify-center">
+                            <div className="flex justify-between items-center w-full max-w-[16rem] px-3 py-2.5 rounded-full bg-white border border-slate-200/80 shadow-sm">
+                                <Skeleton className="h-3 w-16 rounded-full" />
+                                <Skeleton className="h-4 w-8 rounded-md" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 w-full">
+                            {Array.from({ length: count - 1 }).map((_, i) => (
+                                <div key={i} className="flex justify-between items-center w-full px-3 py-2.5 rounded-full bg-white border border-slate-200/80 shadow-sm">
+                                    <Skeleton className="h-3 w-12 rounded-full" />
+                                    <Skeleton className="h-4 w-6 rounded-md" />
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <div className="w-full flex justify-center">
+                        <div className="flex justify-between items-center w-full max-w-[16rem] px-3 py-2.5 rounded-full bg-white border border-slate-200/80 shadow-sm">
+                            <Skeleton className="h-3 w-16 rounded-full" />
+                            <Skeleton className="h-4 w-8 rounded-md" />
+                        </div>
                     </div>
-                ))}
+                )}
             </div>
         </>
     );

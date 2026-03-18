@@ -111,7 +111,7 @@ export const UsersTable = ({
       sortable: true,
       headerClassName: "w-[20%] min-w-[150px] whitespace-nowrap",
       cell: (row) => {
-        if (row.isSkeleton) return <Skeleton className="h-4 w-full max-w-[120px]" />;
+        if (row.isSkeleton) return <Skeleton className="h-4 w-full max-w-30" />;
         return (
           <span className="text-sm font-medium text-slate-700">
             {row.departamento?.nombre || <span className="text-slate-400 italic">Sin departamento</span>}

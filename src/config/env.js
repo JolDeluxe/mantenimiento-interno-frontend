@@ -9,8 +9,9 @@ const appName = import.meta.env.VITE_APP_NAME || '';
 const isPortalCliente = appName.toLowerCase().includes('cliente');
 
 const requiredVars = [
-  'VITE_API_URL',
   'VITE_APP_NAME',
+  'VITE_API_URL_LOCAL',
+  'VITE_API_URL_NETWORK',
   // Si es portal de cliente, requiere la URL del sistema interno y viceversa
   isPortalCliente ? 'VITE_URL_SISTEMA_INTERNO' : 'VITE_URL_PORTAL_CLIENTE'
 ];
@@ -49,9 +50,17 @@ function validateEnv() {
 
 validateEnv();
 
+const connection = import.meta.env.VITE_CONNECTION;
+
 export const ENV = {
-  // Backend Central
-  API_URL: import.meta.env.VITE_API_URL,
+  API_URL:
+    connection === 'network'
+      ? import.meta.env.VITE_API_URL_NETWORK
+      : connection === 'prod'
+      ? import.meta.env.VITE_API_URL_PROD
+      : import.meta.env.VITE_API_URL_LOCAL,
+
+
   
   // Identidad y Redirección SSO
   APP_NAME: import.meta.env.VITE_APP_NAME,
