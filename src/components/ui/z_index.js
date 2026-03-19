@@ -15,3 +15,4 @@ export { TableActions }                                        from './table-act
 export { StarBorder }                                          from './star-border';
 export { SearchableSelect }                                    from './searchable-select';
 export { ScrollToTopButton }                                   from './scroll-to-top-button';
+export { RefreshFab } from './refresh-fab';

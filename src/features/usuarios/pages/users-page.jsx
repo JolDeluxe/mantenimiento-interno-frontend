@@ -62,7 +62,8 @@ const UsersPage = () => {
             params.departamentoId = Number(filtroDepto);
         }
 
-        fetchUsers(params).catch(() => notify.error('Error al cargar usuarios.'));
+        // Se retorna la promesa para poder usar await en las mutaciones
+        return fetchUsers(params).catch(() => notify.error('Error al cargar usuarios.'));
     }, [page, query, filtroRol, sortConfig, mostrarInactivos, isMttoFilter, filtroDepto, fetchUsers]);
 
     useEffect(() => { loadUsers(); }, [loadUsers]);
@@ -108,7 +109,7 @@ const UsersPage = () => {
             await createUser(payload);
             notify.success('Usuario creado correctamente.');
             setShowCreate(false);
-            loadUsers();
+            await loadUsers(); // Encadenamiento estricto
         } catch (err) {
             const msg =
                 err?.response?.data?.error ||
@@ -123,7 +124,7 @@ const UsersPage = () => {
         try {
             await updateUser(id, payload);
             notify.success('Usuario actualizado correctamente.');
-            loadUsers();
+            await loadUsers(); // Encadenamiento estricto
         } catch (err) {
             const msg =
                 err?.response?.data?.error ||
@@ -139,7 +140,7 @@ const UsersPage = () => {
             await toggleStatus(id, estatus);
             const label = estatus === 'ACTIVO' ? 'reactivado' : 'desactivado';
             notify.success(`Usuario ${label} correctamente.`);
-            loadUsers();
+            await loadUsers(); // Encadenamiento estricto
         } catch {
             notify.error('Error al cambiar el estatus del usuario.');
         }
@@ -149,14 +150,14 @@ const UsersPage = () => {
     /**
      * Separación explícita de los dos totales:
      *
-     *   totalParaSummary → meta.totalAbsoluto
-     *     Cuántos usuarios existen en total (sin filtro de rol).
-     *     Lo usan las pastillas de la SummaryBar.
+     * totalParaSummary → meta.totalAbsoluto
+     * Cuántos usuarios existen en total (sin filtro de rol).
+     * Lo usan las pastillas de la SummaryBar.
      *
-     *   totalParaPaginador → meta.totalFiltrado
-     *     Cuántos usuarios coinciden con la búsqueda/filtros actuales.
-     *     Es el número que determina cuántas páginas hay.
-     *     = pagination.total del backend.
+     * totalParaPaginador → meta.totalFiltrado
+     * Cuántos usuarios coinciden con la búsqueda/filtros actuales.
+     * Es el número que determina cuántas páginas hay.
+     * = pagination.total del backend.
      */
     const sharedViewProps = {
         users,

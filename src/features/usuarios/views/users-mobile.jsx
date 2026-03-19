@@ -1,6 +1,6 @@
 // src/features/usuarios/views/users-mobile.jsx
 import { useState, useMemo } from 'react';
-import { Icon, Skeleton } from '@/components/ui/z_index';
+import { Icon, Skeleton, RefreshFab } from '@/components/ui/z_index';
 import { GlassFab, GlassPaginationPill, GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
 import { UserCard } from '../components/user-card';
 import { UserFormModal } from '../components/user-form-modal';
@@ -10,6 +10,7 @@ import { UserSummaryBar } from '../components/user-summary-bar';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UsersTable } from '../components/users-table';
 import { ScrollToTopButton } from '@/components/ui/scroll-to-top-button';
+import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
 const SKELETON_COUNT = 5;
@@ -313,37 +314,43 @@ export const UsersMobile = ({
 
             {/* ── 5. PAGINACIÓN FLOTANTE ── */}
             {hasPaginator && (
-                <GlassPaginationPill
-                    page={page}
-                    totalPages={totalPages}
-                    totalItems={totalParaPaginador}
-                    onPageChange={onPageChange}
-                    loading={loading}
-                    bottom="24px"
-                />
+                <div className="md:hidden">
+                    <GlassPaginationPill
+                        page={page}
+                        totalPages={totalPages}
+                        totalItems={totalParaPaginador}
+                        onPageChange={onPageChange}
+                        loading={loading}
+                        bottom="24px"
+                    />
+                </div>
             )}
 
             {/* ── 6. FABS — columna derecha ── */}
-            <GlassFab
-                icon="refresh"
-                onClick={onRefresh}
-                isLoading={loading}
-                variant="neutral"
-                size={50}
-                bottom={fabRefreshBottom}
-                right="20px"
-            />
-            <GlassFab
-                icon="add"
-                onClick={onOpenCreate}
-                variant="primary"
-                size={56}
-                bottom={fabAddBottom}
-                right="20px"
-            />
+            <div className="md:hidden">
+                <GlassFab
+                    icon="refresh"
+                    onClick={hardReload}
+                    isLoading={loading}
+                    variant="neutral"
+                    size={50}
+                    bottom={fabRefreshBottom}
+                    right="20px"
+                />
+                <GlassFab
+                    icon="add"
+                    onClick={onOpenCreate}
+                    variant="primary"
+                    size={56}
+                    bottom={fabAddBottom}
+                    right="20px"
+                />
+            </div>
 
-            {/* ── 7. SCROLL TO TOP — columna izquierda, mismo nivel que "add" ── */}
-            <ScrollToTopButton bottom={fabAddBottom} left="20px" />
+            {/* ── 7. SCROLL TO TOP — columna izquierda ── */}
+            <div className="md:hidden">
+                <ScrollToTopButton bottom={fabAddBottom} left="20px" />
+            </div>
 
             {/* ── 8. MODALES ── */}
             <UserFormModal

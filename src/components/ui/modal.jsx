@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/utils/cn';
 import { Icon } from './z_index';
 
-export const Modal = ({ 
-  isOpen, 
-  onClose, 
-  children, 
-  className = "" 
+export const Modal = ({
+  isOpen,
+  onClose,
+  children,
+  className = ""
 }) => {
   const mouseDownInside = useRef(false);
 
@@ -15,12 +15,12 @@ export const Modal = ({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) onClose();
     };
-    
+
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';

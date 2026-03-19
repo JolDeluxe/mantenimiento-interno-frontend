@@ -3,6 +3,7 @@ import { UsersTable } from '../components/users-table';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UserSummaryBar } from '../components/user-summary-bar';
 import { UserAddButton } from '../components/user-add-button';
+import { RefreshFab } from '@/components/ui/z_index';
 
 export const UsersDesktop = ({
     users,
@@ -36,6 +37,10 @@ export const UsersDesktop = ({
 }) => {
     return (
         <div className="flex flex-col gap-4">
+
+
+            <RefreshFab bottom="32px" right="32px" size={48} />
+
             <UserSummaryBar
                 currentUser={currentUser}
                 total={totalParaSummary}
@@ -50,6 +55,7 @@ export const UsersDesktop = ({
             />
 
             <UserAddButton onClick={onOpenCreate} />
+
 
             <UserFilterBar
                 currentUser={currentUser}
