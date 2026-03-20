@@ -4,7 +4,6 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import ProfilePage from '@/features/auth/pages/profile-page';
 
-
 // Layouts
 import { DashboardLayout } from '@/layouts/dashboard-layout';
 
@@ -15,32 +14,36 @@ import HomeDashboard from '@/pages/home-dashboard';
 import NotFound from '@/pages/not-found';
 import SsoReceiver from '@/pages/sso-receiver';
 
+import TicketsPage from '@/features/tickets/pages/tickets-page';
+import TicketsBandejaPage from '@/features/tickets/pages/tickets-bandeja';
+import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
+import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* SsoReceiver debe ser 100% independiente de los Guards */}
       <Route path="/sso-receiver" element={<SsoReceiver />} />
 
-      {/* Rutas Públicas */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
-      {/* Rutas Privadas con Dashboard Layout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/" element={<HomeDashboard />} />
           <Route path="/perfil" element={<ProfilePage />} />
-          {/* Aquí se agregarán las rutas de los módulos */}
-          {/* Ejemplo: */}
-          {/* <Route path="/tickets" element={<TicketsPage />} /> */}
+
+          <Route path="/tickets" element={<TicketsPage />}>
+            <Route index element={<Navigate to="hoy" replace />} />
+            <Route path="bandeja" element={<TicketsBandejaPage />} />
+            <Route path="hoy" element={<TicketsHoyPage />} />
+            <Route path="historico" element={<TicketsHistoricoPage />} />
+          </Route>
+
           <Route path="/usuarios" element={<UsersPage />} />
-          {/* <Route path="/departamentos" element={<DepartamentosPage />} /> */}
         </Route>
       </Route>
 
-      {/* Errores */}
       <Route path="/404" element={<NotFound />} />
       <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>

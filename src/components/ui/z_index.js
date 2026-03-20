@@ -1,4 +1,3 @@
-// src/components/ui/z_index.js
 export { Badge }                                               from './badge';
 export { Button }                                              from './button';
 export { Card, CardHeader, CardTitle, CardBody, CardFooter }   from './card';
@@ -10,9 +9,9 @@ export { Table }                                               from './table';
 export { Pagination }                                          from './pagination';
 export { SummaryBar }                                          from './summary-bar';
 export { Fab }                                                 from './fab';
-export { GlassFab, GlassPaginationPill, GlassViewToggle }      from './liquid-glass-mobile';
+export { GlassFab, GlassPaginationPill, GlassViewToggle, GlassPill, GlassIconChip } from './liquid-glass-mobile';
 export { TableActions }                                        from './table-actions';
 export { StarBorder }                                          from './star-border';
 export { SearchableSelect }                                    from './searchable-select';
 export { ScrollToTopButton }                                   from './scroll-to-top-button';
-export { RefreshFab } from './refresh-fab';
+export { RefreshFab }                                          from './refresh-fab';

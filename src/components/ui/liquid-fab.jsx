@@ -1,11 +1,3 @@
-// src/components/ui/liquid-fab.jsx
-//
-// ⚠️  REQUIERE instalación previa:
-//     npm install liquid-glass-react
-//
-// Uso:
-//   <LiquidFab icon="add" bottom="5" right="5" onClick={handleClick} />
-
 import LiquidGlass from 'liquid-glass-react';
 import { Icon } from './icon';
 import { cn } from '@/utils/cn';

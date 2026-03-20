@@ -128,7 +128,7 @@ export const UserFilterBar = ({
 
           {esSuperAdmin && !filtroDepto && (
             <Button
-              variant={isMttoFilter ? 'primario' : 'ghost'}
+              variant={isMttoFilter ? 'primario' : 'default'}
               icon="construction"
               size="sm"
               onClick={onToggleMttoFilter}
@@ -153,7 +153,7 @@ export const UserFilterBar = ({
         </div>
 
         <Button
-          variant={mostrarInactivos ? 'borrar' : 'ghost'}
+          variant={mostrarInactivos ? 'borrar' : 'default'}
           icon={mostrarInactivos ? 'close' : 'person_off'}
           size="sm"
           onClick={onToggleInactivos}

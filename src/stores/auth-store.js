@@ -22,6 +22,12 @@ export const useAuthStore = create(
         set({ token });
       },
 
+      setUser: (updatedUser) => {
+        set((state) => ({
+          user: { ...state.user, ...updatedUser }
+        }));
+      },
+
       logout: () => {
         set({
           user: null,

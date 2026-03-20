@@ -9,12 +9,6 @@ import { UserDetailModal } from "./user-detail-modal";
 import { UserActions } from "./user-actions";
 import { updateUserStatus } from "../api/users-api";
 
-/**
- * Props nuevas:
- *   hidePagination → boolean — oculta la barra de paginación interna de <Table />.
- *                              Usar en mobile donde el paginador flotante ya existe.
- *                              Default: false.
- */
 export const UsersTable = ({
   usuarios,
   loading,

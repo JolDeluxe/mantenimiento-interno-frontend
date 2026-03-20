@@ -241,8 +241,8 @@ export const ProfileGeneralForm = ({
         <Button
           onClick={onCancel}
           variant="cancelar"
+          size="sm"
           disabled={updating}
-          className="text-xs px-4 py-0.5 h-auto"
         >
           Cancelar
         </Button>
@@ -250,10 +250,11 @@ export const ProfileGeneralForm = ({
         <Button
           onClick={handleSubmit}
           variant="guardar"
+          size="sm"
           icon="save"
+          iconSize="md"
           isLoading={updating}
           disabled={isSaveDisabled}
-          className="text-xs px-5 py-0.5 h-auto"
         >
           Guardar Cambios
         </Button>

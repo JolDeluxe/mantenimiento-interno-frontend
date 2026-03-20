@@ -8,12 +8,12 @@ export const getUsers = async (params = {}) => {
 export const createUser = (data) =>
   api.post('/api/usuarios', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
-  }).then((r) => r.data);
+  });
 
 export const updateUser = (id, data) =>
   api.put(`/api/usuarios/${id}`, data, {
       headers: { 'Content-Type': 'multipart/form-data' }
-  }).then((r) => r.data);
+  });
 
 export const updateUserStatus = (id, estado) =>
   api.patch(`/api/usuarios/${id}`, { estado }).then((r) => r.data);

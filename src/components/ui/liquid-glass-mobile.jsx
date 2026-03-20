@@ -3,29 +3,14 @@ import { cn } from '@/utils/cn';
 
 // ── Tokens de variantes ────────────────────────────────────────────────────
 const GLASS_VARIANTS = {
-    primary: {
-        bg: 'rgba(72, 43, 44, 0.78)',
-        shadow: '0 12px 36px rgba(72,43,44,0.40), 0 2px 8px rgba(72,43,44,0.20)',
-    },
-    neutral: {
-        bg: 'rgba(100, 116, 139, 0.62)',
-        shadow: '0 10px 30px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)',
-    },
-    action: {
-        bg: 'rgba(59, 130, 246, 0.72)',
-        shadow: '0 10px 30px rgba(59,130,246,0.35), 0 2px 6px rgba(59,130,246,0.18)',
-    },
-    success: {
-        bg: 'rgba(16, 185, 129, 0.70)',
-        shadow: '0 10px 30px rgba(16,185,129,0.32), 0 2px 6px rgba(16,185,129,0.16)',
-    },
-    danger: {
-        bg: 'rgba(220, 38, 38, 0.72)',
-        shadow: '0 10px 30px rgba(220,38,38,0.30), 0 2px 6px rgba(220,38,38,0.16)',
-    },
+    primary: { bg: 'rgba(72, 43, 44, 0.78)', shadow: '0 12px 36px rgba(72,43,44,0.40), 0 2px 8px rgba(72,43,44,0.20)' },
+    neutral: { bg: 'rgba(100, 116, 139, 0.62)', shadow: '0 10px 30px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' },
+    action: { bg: 'rgba(59, 130, 246, 0.72)', shadow: '0 10px 30px rgba(59,130,246,0.35), 0 2px 6px rgba(59,130,246,0.18)' },
+    success: { bg: 'rgba(16, 185, 129, 0.70)', shadow: '0 10px 30px rgba(16,185,129,0.32), 0 2px 6px rgba(16,185,129,0.16)' },
+    danger: { bg: 'rgba(220, 38, 38, 0.72)', shadow: '0 10px 30px rgba(220,38,38,0.30), 0 2px 6px rgba(220,38,38,0.16)' },
 };
 
-const glassBase = (variant = 'primary') => {
+export const glassBase = (variant = 'primary') => {
     const v = GLASS_VARIANTS[variant] || GLASS_VARIANTS.primary;
     return {
         background: v.bg,
@@ -36,8 +21,7 @@ const glassBase = (variant = 'primary') => {
     };
 };
 
-// Reflejo especular interno
-const GlassSheen = () => (
+export const GlassSheen = () => (
     <div
         aria-hidden="true"
         style={{
@@ -49,6 +33,51 @@ const GlassSheen = () => (
         }}
     />
 );
+
+export const GlassPill = ({ children, className }) => (
+    <div
+        className={cn('inline-flex p-1 rounded-2xl gap-1 relative overflow-hidden shrink-0', className)}
+        style={{
+            backdropFilter: 'blur(16px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.30)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.45) inset'
+        }}
+    >
+        {children}
+    </div>
+);
+
+export const GlassIconChip = ({ icon, isActive, variant = 'primary', onClick }) => {
+    const activeStyle = {
+        ...glassBase(variant),
+        borderRadius: 10,
+        position: 'relative',
+        overflow: 'hidden',
+    };
+
+    const inactiveStyle = {
+        borderRadius: 10,
+        background: 'transparent',
+        border: '1px solid transparent'
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            style={isActive ? activeStyle : inactiveStyle}
+            className="flex items-center justify-center w-8 h-8 transition-all duration-200 active:scale-90 outline-none select-none shrink-0"
+        >
+            {isActive && <GlassSheen />}
+            <Icon
+                name={icon}
+                size="xs"
+                className={cn('relative transition-colors', isActive ? 'text-white' : 'text-slate-500')}
+            />
+        </button>
+    );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GlassFab

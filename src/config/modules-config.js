@@ -11,12 +11,32 @@ export const MODULES_CONFIG = [
     route: '/',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
   },
-  {
+{
     id: 'tickets',
     name: 'Gestión de Actividades',
-    icon: 'assignment_add',
+    icon: 'assignment',
     route: '/tickets',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+    children: [
+      {
+        id: 'tickets-hoy',
+        name: 'Tareas de Hoy',
+        route: '/tickets/hoy',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+      },
+      {
+        id: 'tickets-bandeja',
+        name: 'Bandeja de Entrada',
+        route: '/tickets/bandeja',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'tickets-historico',
+        name: 'Histórico',
+        route: '/tickets/historico',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      }
+    ]
   },
   {
     id: 'usuarios',
@@ -24,6 +44,13 @@ export const MODULES_CONFIG = [
     icon: 'group',
     route: '/usuarios',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO'],
+  },
+  {
+    id: 'dias_laborados',
+    name: 'Días Laborados',
+    icon: 'calendar_clock',
+    route: '/dias_laborados',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'departamentos',

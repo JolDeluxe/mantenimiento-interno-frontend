@@ -51,7 +51,7 @@ export const UserDetailModal = ({ isOpen, onClose, usuario }) => {
                         <h3 className="text-2xl font-extrabold text-slate-900 leading-tight">
                             {usuario.nombre}
                         </h3>
-                        <p className="text-slate-500 font-mono text-sm mt-1">@{usuario.username}</p>
+                        <p className="text-slate-500 font-mono text-sm mt-1">{usuario.username}</p>
 
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
                             <span className="px-2.5 py-1 text-xs font-bold bg-slate-200 text-slate-700 rounded-md border border-slate-300 uppercase tracking-wide">
@@ -103,15 +103,15 @@ export const UserDetailModal = ({ isOpen, onClose, usuario }) => {
                     <span>Actualizado: {formatFecha(usuario.updatedAt) || "Fecha desconocida"}</span>
                 </div> */}
             </ModalBody>
-            {/* <ModalFooter>
-                <Button
+            <ModalFooter>
+                {/* <Button
                     variant="cancelar"
                     onClick={onClose}
                     icon="close"
                 >
                     Cerrar
-                </Button>
-            </ModalFooter> */}
+                </Button> */}
+            </ModalFooter>
         </Modal>
     );
 };
