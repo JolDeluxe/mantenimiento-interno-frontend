@@ -1,55 +1,137 @@
+// src/features/tickets/hooks/use-tickets.js
 import { useState, useCallback } from 'react';
-import { ticketsApi } from '../api/tickets-api';
-import { notify } from '@/components/notification/adaptive-notify';
+import {
+  getTickets,
+  createTicket,
+  updateTicket,
+  changeTicketStatus,
+  getTecnicos,
+  getTicketMetrics,
+} from '../api/tickets-api';
 
+/**
+ * Contrato de respuesta del backend /api/tickets:
+ * {
+ *   status: "success",
+ *   pagination: { total, page, limit, totalPages },
+ *   data: Ticket[]
+ * }
+ *
+ * Contrato de respuesta del backend /api/tickets/metrics:
+ * {
+ *   status: "success",
+ *   data: {
+ *     distribucion: { porEstado: { PENDIENTE: n, ASIGNADA: n, ... } }
+ *   }
+ * }
+ *
+ * El interceptor de axios ya hace response.data, así que ambas funciones
+ * devuelven directamente el objeto anterior.
+ */
 export const useTickets = () => {
-  const [tickets, setTickets] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 100, total: 0 });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isMutating, setIsMutating] = useState(false);
+  const [tickets,    setTickets]    = useState([]);
+  const [tecnicos,   setTecnicos]   = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const fetchTickets = useCallback(async (filters = {}) => {
-    setIsLoading(true);
+  /**
+   * meta expone:
+   *  - totalFiltrado   → para el paginador
+   *  - totalPages      → calculado por el backend
+   *  - resumenEstados  → { PENDIENTE: n, ASIGNADA: n, ... } para la SummaryBar
+   */
+  const [meta, setMeta] = useState({
+    totalFiltrado:  0,
+    totalPages:     1,
+    resumenEstados: {},
+  });
+
+  // ── Lista principal + conteos en paralelo ────────────────────────────────
+  const fetchTickets = useCallback(async (params = {}) => {
+    setLoading(true);
     try {
-      const data = await ticketsApi.getTickets(filters);
-      setTickets(data.items || []);
-      if (data.meta) {
-        setPagination({
-          page: data.meta.currentPage,
-          limit: data.meta.perPage,
-          total: data.meta.totalItems
-        });
+      const [listResult, metricsResult] = await Promise.allSettled([
+        getTickets(params),
+        getTicketMetrics(params),
+      ]);
+
+      // Procesa la lista
+      if (listResult.status === 'fulfilled') {
+        const res = listResult.value;
+
+        if (Array.isArray(res)) {
+          setTickets(res);
+          setMeta((prev) => ({ ...prev, totalFiltrado: res.length, totalPages: 1 }));
+        } else {
+          const pagination = res.pagination ?? {};
+          setTickets(Array.isArray(res.data) ? res.data : []);
+          setMeta((prev) => ({
+            ...prev,
+            totalFiltrado: pagination.total     ?? 0,
+            totalPages:    pagination.totalPages ?? 1,
+          }));
+        }
       }
-    } catch (error) {
-      notify.error('No se pudieron cargar los tickets');
+
+      // Procesa los conteos por estado para la SummaryBar
+      if (metricsResult.status === 'fulfilled') {
+        const m = metricsResult.value;
+        // El backend devuelve data.distribucion.porEstado (ver 06_metrics.ts)
+        const porEstado =
+          m?.data?.distribucion?.porEstado ??
+          m?.distribucion?.porEstado ??
+          {};
+        setMeta((prev) => ({ ...prev, resumenEstados: porEstado }));
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
 
-  const updateStatus = async (id, newStatus, extraPayload = {}) => {
-    setIsMutating(true);
+  // ── Técnicos activos para asignación ────────────────────────────────────
+  const fetchTecnicos = useCallback(async () => {
     try {
-      await ticketsApi.changeStatus(id, { estado: newStatus, ...extraPayload });
-      notify.success(`Ticket actualizado a ${newStatus}`);
-      // Refrescar lista localmente sin recargar si es necesario, 
-      // o invocar fetchTickets de nuevo.
-      setTickets(prev => prev.map(t => t.id === id ? { ...t, estado: newStatus } : t));
-      return true;
-    } catch (error) {
-      // El error ya fue manejado por el interceptor y mostrado con Toastify
-      return false;
-    } finally {
-      setIsMutating(false);
+      const response = await getTecnicos();
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
+      setTecnicos(list);
+    } catch {
+      // silencioso — no rompe el flujo principal
     }
-  };
+  }, []);
+
+  // ── Mutaciones ────────────────────────────────────────────────────────────
+  const handleCreate = useCallback(async (data) => {
+    setSubmitting(true);
+    try { return await createTicket(data); }
+    finally { setSubmitting(false); }
+  }, []);
+
+  const handleUpdate = useCallback(async (id, data) => {
+    setSubmitting(true);
+    try { return await updateTicket(id, data); }
+    finally { setSubmitting(false); }
+  }, []);
+
+  const handleChangeStatus = useCallback(async (id, data) => {
+    setSubmitting(true);
+    try { return await changeTicketStatus(id, data); }
+    finally { setSubmitting(false); }
+  }, []);
 
   return {
     tickets,
-    pagination,
-    isLoading,
-    isMutating,
+    tecnicos,
+    meta,
+    loading,
+    submitting,
     fetchTickets,
-    updateStatus
+    fetchTecnicos,
+    createTicket:  handleCreate,
+    updateTicket:  handleUpdate,
+    changeStatus:  handleChangeStatus,
   };
 };

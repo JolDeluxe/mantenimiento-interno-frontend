@@ -1,3 +1,4 @@
+// src/components/ui/modal.jsx
 import React, { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/utils/cn';
@@ -29,7 +30,6 @@ export const Modal = ({
 
   if (!isOpen) return null;
 
-  // Renderizamos mediante Portal para asegurar que el Z-INDEX sea absoluto
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"

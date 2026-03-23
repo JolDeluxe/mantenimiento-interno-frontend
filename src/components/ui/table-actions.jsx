@@ -1,3 +1,4 @@
+// src/components/ui/table-actions.jsx
 import { cn } from "@/utils/cn";
 import { Icon } from "./icon";
 import { Tooltip } from "./tooltip";
@@ -16,7 +17,7 @@ const ACTION_CONFIG = {
         className: "text-amber-500 hover:bg-amber-500/10",
     },
     borrar: {
-        icon: "trash",
+        icon: "delete",
         tooltip: "Borrar",
         variant: "dark",
         className: "text-estado-rechazado hover:bg-estado-rechazado/10",
@@ -32,15 +33,38 @@ const ACTION_CONFIG = {
         tooltip: "Activar usuario",
         variant: "dark",
         className: "text-estado-resuelto hover:bg-estado-resuelto/10",
-    }
+    },
+    // ── Acciones de Tickets ──
+    asignar_tecnico: {
+        icon: "engineering",
+        tooltip: "Asignar técnico",
+        variant: "dark",
+        className: "text-estado-asignada hover:bg-estado-asignada/10",
+    },
+    cambiar_estado: {
+        icon: "swap_horiz",
+        tooltip: "Cambiar estado",
+        variant: "dark",
+        className: "text-estado-en-progreso hover:bg-estado-en-progreso/10",
+    },
+    revisar_ticket: {
+        icon: "fact_check",
+        tooltip: "Revisar / Validar resolución",
+        variant: "dark",
+        className: "text-estado-resuelto hover:bg-estado-resuelto/10",
+    },
+    cancelar_ticket: {
+        icon: "cancel",
+        tooltip: "Cancelar ticket",
+        variant: "error",
+        className: "text-estado-cancelada hover:bg-estado-cancelada/10",
+    },
 };
 
 export const TableActions = ({ row, actions = [] }) => {
     return (
         <div className="flex items-center justify-center gap-1.5">
             {actions.map(({ key, enabled, hidden, onClick, tooltip: tooltipOverride }) => {
-                // Si la acción está explícitamente oculta o el usuario no tiene permiso (enabled: false), 
-                // abortamos el renderizado para no dejar huecos ni iconos bloqueados.
                 if (hidden || !enabled) return null;
 
                 const config = ACTION_CONFIG[key];
@@ -62,7 +86,7 @@ export const TableActions = ({ row, actions = [] }) => {
                                 config.className
                             )}
                         >
-                            <Icon name={config.icon} />
+                            <Icon name={config.icon} size="sm" />
                         </button>
                     </Tooltip>
                 );

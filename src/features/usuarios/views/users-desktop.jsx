@@ -17,8 +17,8 @@ export const UsersDesktop = ({
     sortConfig,
     query,
     filtroRol,
-    totalParaSummary,      // ← para SummaryBar: total sin filtro de rol
-    totalParaPaginador,    // ← para la tabla: total filtrado (mueve el paginador)
+    totalParaSummary,
+    totalParaPaginador,
     resumenRoles,
     mostrarInactivos,
     filtroDepto,

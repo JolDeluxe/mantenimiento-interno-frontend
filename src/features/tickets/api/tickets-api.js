@@ -1,53 +1,31 @@
-import api, { handleError } from '@/lib/axios';
+// src/features/tickets/api/tickets-api.js
+import api from '@/lib/axios';
 
-export const ticketsApi = {
-  getTickets: async (params = {}) => {
-    try {
-      const response = await api.get('/api/tickets', { params });
-      return response.data?.data || response.data || response;
-    } catch (error) {
-      handleError(error);
-      throw error;
-    }
-  },
+export const getTickets = (params = {}) =>
+  api.get('/api/tickets', { params });
 
-  getTicketById: async (id) => {
-    try {
-      const response = await api.get(`/api/tickets/${id}`);
-      return response.data?.data || response.data || response;
-    } catch (error) {
-      handleError(error);
-      throw error;
-    }
-  },
+export const getTicketById = (id) =>
+  api.get(`/api/tickets/${id}`);
 
-  createTicketClient: async (payload) => {
-    try {
-      const response = await api.post('/api/tickets/cliente', payload);
-      return response.data?.data || response.data || response;
-    } catch (error) {
-      handleError(error);
-      throw error;
-    }
-  },
+export const createTicket = (data) =>
+  api.post('/api/tickets', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
-  createTicketAdmin: async (payload) => {
-    try {
-      const response = await api.post('/api/tickets/admin', payload);
-      return response.data?.data || response.data || response;
-    } catch (error) {
-      handleError(error);
-      throw error;
-    }
-  },
+export const updateTicket = (id, data) =>
+  api.put(`/api/tickets/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
-  changeStatus: async (id, payload) => {
-    try {
-      const response = await api.patch(`/api/tickets/${id}/status`, payload);
-      return response.data?.data || response.data || response;
-    } catch (error) {
-      handleError(error);
-      throw error;
-    }
-  }
-};
+export const changeTicketStatus = (id, data) =>
+  api.patch(`/api/tickets/${id}/status`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+export const getTicketMetrics = (params = {}) =>
+  api.get('/api/tickets/metrics', { params });
+
+export const getTecnicos = () =>
+  api.get('/api/usuarios', {
+    params: { rol: 'TECNICO', limit: 500, estado: 'ACTIVO' },
+  });

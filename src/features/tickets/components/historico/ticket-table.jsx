@@ -1,76 +1,291 @@
-import React from 'react';
-import { Table, Pagination, Badge } from '@/components/ui/z_index';
+// src/features/tickets/components/historico/ticket-table.jsx
+import { useState } from 'react';
+import { Table, Skeleton, Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
+import { TicketFormModal } from './ticket-form-modal';
+import { TicketStatusModal } from './ticket-status-modal';
+import { TicketDetailModal } from './ticket-detail-modal';
+import { TicketAssignModal } from './ticket-assign-modal';
+import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
+import { cn } from '@/utils/cn';
 
-const isAtrasada = (ticket) => {
+const formatFecha = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('es-MX', {
+        day: '2-digit', month: 'short', year: 'numeric',
+    });
+};
+
+const isVencida = (ticket) => {
     if (['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'].includes(ticket.estado)) return false;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (ticket.fechaVencimiento) return new Date(ticket.fechaVencimiento) < new Date();
-    return new Date(ticket.createdAt) < hoy;
+    if (!ticket.fechaVencimiento) return false;
+    return new Date(ticket.fechaVencimiento) < new Date();
 };
 
 export const TicketsTable = ({
     tickets,
-    isLoading,
-    pagination,
+    loading,
+    currentUser,
+    tecnicos = [],
+    page,
+    totalPages,
+    totalItems,
+    sortConfig,
     onPageChange,
-    userRole,
-    onAssign,
-    onStatusChange,
-    onViewDetails
+    onSortChange,
+    onSave,
+    onChangeStatus,
+    onRefresh,
+    submitting,
+    hidePagination = false,
 }) => {
-    const headers = ["ID", "TÍTULO", "ÁREA", "PRIORIDAD", "ESTADO", "ACCIONES"];
+    const [detailTarget, setDetailTarget] = useState(null);
+    const [editTarget, setEditTarget] = useState(null);
+    const [statusTarget, setStatusTarget] = useState(null);
+    const [assignTarget, setAssignTarget] = useState(null);
+    const [reviewTarget, setReviewTarget] = useState(null);
+    const [cancelTarget, setCancelTarget] = useState(null);
+
+    // ── Columnas ─────────────────────────────────────────────────────────────
+    const columns = [
+        {
+            header: 'ID',
+            accessorKey: 'id',
+            sortable: true,
+            headerClassName: 'w-[5%] min-w-[64px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-4 w-12 rounded-md" />;
+                const vencida = isVencida(row);
+                return (
+                    <div className="flex flex-col items-start gap-1">
+                        <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
+                        {vencida && (
+                            <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase">
+                                <Icon name="warning" size="xs" /> Vencida
+                            </span>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            header: 'Título',
+            accessorKey: 'titulo',
+            sortable: true,
+            headerClassName: 'w-[26%] min-w-[180px]',
+            cell: (row) => {
+                if (row.isSkeleton) return (
+                    <div className="flex flex-col gap-2">
+                        <Skeleton className="h-4 w-3/4 rounded-md" />
+                        <Skeleton className="h-3 w-1/2 rounded-md" />
+                    </div>
+                );
+                return (
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{row.titulo}</span>
+                        {row.planta && (
+                            <span className="text-xs text-slate-400 mt-0.5 truncate">
+                                {row.planta}{row.area ? ` — ${row.area}` : ''}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            header: 'Responsable',
+            accessorKey: 'responsables',
+            sortable: false,
+            headerClassName: 'w-[10%] min-w-[100px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-4 w-24 rounded-md" />;
+                const lista = row.responsables ?? [];
+                if (lista.length === 0) {
+                    return (
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 italic">
+                            <Icon name="person_off" size="xs" />
+                            Sin asignar
+                        </span>
+                    );
+                }
+                return (
+                    <span className="text-sm text-slate-700 font-medium truncate block max-w-[150px]">
+                        {lista.map((r) => r.nombre).join(', ')}
+                    </span>
+                );
+            },
+        },
+        {
+            header: 'Estado',
+            accessorKey: 'estado',
+            sortable: true,
+            align: 'center',
+            headerClassName: 'w-[13%] min-w-[110px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-5 w-20 mx-auto rounded-md" />;
+                return <TicketStatusBadge estado={row.estado} />;
+            },
+        },
+        {
+            header: 'Prioridad',
+            accessorKey: 'prioridad',
+            sortable: true,
+            align: 'center',
+            headerClassName: 'w-[10%] min-w-[90px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-5 w-14 mx-auto rounded-md" />;
+                return <TicketPriorityBadge prioridad={row.prioridad} />;
+            },
+        },
+        {
+            header: 'Creado',
+            accessorKey: 'createdAt',
+            sortable: true,
+            headerClassName: 'w-[10%] min-w-[90px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
+                return <span className="text-xs text-slate-500">{formatFecha(row.createdAt)}</span>;
+            },
+        },
+        {
+            header: 'Acciones',
+            accessorKey: 'acciones',
+            align: 'center',
+            headerClassName: 'w-[20%] min-w-[50px]',
+            cell: (row) => {
+                if (row.isSkeleton) return (
+                    <div className="flex gap-1.5 justify-center">
+                        {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-7 w-7 rounded-md" />)}
+                    </div>
+                );
+                return (
+                    <TicketActions
+                        ticket={row}
+                        currentUser={currentUser}
+                        onViewDetail={(r) => setDetailTarget(r)}
+                        onEdit={(r) => setEditTarget(r)}
+                        onAssign={(r) => setAssignTarget(r)}
+                        onChangeStatus={(r) => setStatusTarget(r)}
+                        onReview={(r) => setReviewTarget(r)}
+                        onCancel={(r) => setCancelTarget(r)}
+                    />
+                );
+            },
+        },
+    ];
+
+    const tableData = loading
+        ? Array.from({ length: 10 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
+        : tickets;
+
+    // ── Manejador de cancelación rápida (confirm inline) ──────────────────
+    const handleConfirmCancel = async () => {
+        if (!cancelTarget) return;
+        const formData = new FormData();
+        formData.append('estado', 'CANCELADA');
+        formData.append('nota', 'Ticket cancelado por el usuario.');
+        await onChangeStatus(cancelTarget.id, formData);
+        setCancelTarget(null);
+    };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col w-full">
-            <Table headers={headers} isLoading={isLoading} emptyMessage="No hay tickets que mostrar.">
-                {tickets.map((ticket) => {
-                    const rezagada = isAtrasada(ticket);
-                    return (
-                        <tr
-                            key={ticket.id}
-                            // Destello de advertencia sutil si está atrasada
-                            className={`border-b border-slate-100 last:border-0 transition-colors ${rezagada ? 'bg-red-50/40 hover:bg-red-50/80' : 'hover:bg-slate-50'}`}
-                        >
-                            <td className="p-4 text-sm font-mono font-medium text-slate-500">
-                                #{ticket.id}
-                                {rezagada && <div className="mt-1"><Badge color="danger">Atrasada</Badge></div>}
-                            </td>
-                            <td className={`p-4 text-sm font-semibold truncate max-w-[200px] ${rezagada ? 'text-red-900' : 'text-slate-800'}`}>
-                                {ticket.titulo}
-                            </td>
-                            <td className="p-4 text-sm text-slate-600">{ticket.area || 'N/A'}</td>
-                            <td className="p-4">
-                                <TicketPriorityBadge priority={ticket.prioridad} />
-                            </td>
-                            <td className="p-4">
-                                <TicketStatusBadge status={ticket.estado} />
-                            </td>
-                            <td className="p-4 flex justify-end">
-                                <TicketActions
-                                    ticket={ticket}
-                                    userRole={userRole}
-                                    onAssign={onAssign}
-                                    onStatusChange={onStatusChange}
-                                    onViewDetails={onViewDetails}
-                                />
-                            </td>
-                        </tr>
-                    );
-                })}
-            </Table>
+        <div className="w-full">
+            <Table
+                columns={columns}
+                data={tableData}
+                keyField="id"
+                loading={false}
+                emptyMessage="No hay tickets que coincidan con los filtros."
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={onPageChange}
+                sortConfig={sortConfig}
+                hidePagination={hidePagination}
+                rowClassName={(row) =>
+                    row.isSkeleton
+                        ? 'bg-white'
+                        : isVencida(row)
+                            ? 'bg-red-50/40 hover:bg-red-50/70'
+                            : 'bg-white hover:bg-slate-50'
+                }
+                onSortChange={(key) => {
+                    const direction =
+                        sortConfig?.key === key && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+                    onSortChange(key, direction);
+                }}
+            />
 
-            {pagination && pagination.total > 0 && (
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                    <Pagination
-                        currentPage={pagination.page}
-                        totalPages={Math.ceil(pagination.total / pagination.limit)}
-                        onPageChange={onPageChange}
-                    />
-                </div>
-            )}
+            {/* ── Modales ─────────────────────────────────────────────────────── */}
+
+            <TicketDetailModal
+                isOpen={Boolean(detailTarget)}
+                onClose={() => setDetailTarget(null)}
+                ticket={detailTarget}
+            />
+
+            <TicketFormModal
+                isOpen={Boolean(editTarget)}
+                onClose={() => setEditTarget(null)}
+                ticketAEditar={editTarget}
+                currentUser={currentUser}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onSuccess={async (payload) => {
+                    await onSave(editTarget.id, payload);
+                    setEditTarget(null);
+                }}
+            />
+
+            <TicketAssignModal
+                isOpen={Boolean(assignTarget)}
+                onClose={() => setAssignTarget(null)}
+                ticket={assignTarget}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onSave(id, payload);
+                    setAssignTarget(null);
+                }}
+            />
+
+            <TicketStatusModal
+                isOpen={Boolean(statusTarget)}
+                onClose={() => setStatusTarget(null)}
+                ticket={statusTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setStatusTarget(null);
+                }}
+            />
+
+            <TicketReviewModal
+                isOpen={Boolean(reviewTarget)}
+                onClose={() => setReviewTarget(null)}
+                ticket={reviewTarget}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setReviewTarget(null);
+                }}
+            />
+
+            {/* Confirmación de cancelación — modal ligero reutilizando StatusModal */}
+            <TicketStatusModal
+                isOpen={Boolean(cancelTarget)}
+                onClose={() => setCancelTarget(null)}
+                ticket={cancelTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                forcedEstado="CANCELADA"
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setCancelTarget(null);
+                }}
+            />
         </div>
     );
 };
