@@ -14,7 +14,8 @@ export const TicketsHistoricoDesktop = ({
     page,
     limit,
     totalPages,
-    totalItems,
+    totalParaSummary,
+    totalParaPaginador,
     sortConfig,
     query,
     filtroEstado,
@@ -23,6 +24,8 @@ export const TicketsHistoricoDesktop = ({
     conteos,
     mostrarPapelera,
     onTogglePapelera,
+    mostrarRechazadas,
+    onToggleRechazadas,
     onPageChange,
     onSortChange,
     onSearchChange,
@@ -39,12 +42,13 @@ export const TicketsHistoricoDesktop = ({
         <RefreshFab bottom="32px" right="32px" size={48} />
 
         <TicketSummaryBar
-            total={totalItems}
+            totalParaSummary={totalParaSummary}
             conteos={conteos}
             filtroActual={filtroEstado}
             onFilterChange={onFilterChange}
             loading={loading}
             mostrarPapelera={mostrarPapelera}
+            mostrarRechazadas={mostrarRechazadas}
         />
 
         <TicketAddButton onClick={onOpenCreate} />
@@ -56,8 +60,11 @@ export const TicketsHistoricoDesktop = ({
             onTipoChange={onTipoChange}
             filtroPrioridad={filtroPrioridad}
             onPrioridadChange={onPrioridadChange}
+            mostrarRechazadas={mostrarRechazadas}
+            onToggleRechazadas={onToggleRechazadas}
             mostrarPapelera={mostrarPapelera}
             onTogglePapelera={onTogglePapelera}
+            conteos={conteos}
         />
 
         <TicketsTable
@@ -69,7 +76,7 @@ export const TicketsHistoricoDesktop = ({
             page={page}
             limit={limit}
             totalPages={totalPages}
-            totalItems={totalItems}
+            totalItems={totalParaPaginador}
             sortConfig={sortConfig}
             onPageChange={onPageChange}
             onSortChange={onSortChange}

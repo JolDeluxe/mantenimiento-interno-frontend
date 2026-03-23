@@ -55,6 +55,66 @@ const VARIANTS = {
         desktopActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
         mobileBase: "bg-white border border-red-200/80 text-red-700 shadow-sm active:scale-[0.98]",
         mobileActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
+    },
+    todos: {
+        desktopBase: "bg-white border border-slate-200/80 text-slate-600 shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-marca-primario to-marca-primario/90 border border-marca-primario text-white shadow-md shadow-marca-primario/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-slate-200/80 text-slate-600 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-marca-primario to-marca-primario/90 border border-marca-primario text-white shadow-md shadow-marca-primario/25 active:scale-[0.98]",
+    },
+    pendiente: { // #f59e0b (amber)
+        desktopBase: "bg-white border border-amber-200/80 text-amber-700 shadow-sm hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-600 text-white shadow-md shadow-amber-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-amber-200/80 text-amber-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-amber-500 to-amber-600 border border-amber-600 text-white shadow-md shadow-amber-500/25 active:scale-[0.98]",
+    },
+    asignada: { // #3b82f6 (blue)
+        desktopBase: "bg-white border border-blue-200/80 text-blue-700 shadow-sm hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-blue-500 to-blue-600 border border-blue-600 text-white shadow-md shadow-blue-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-blue-200/80 text-blue-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-blue-500 to-blue-600 border border-blue-600 text-white shadow-md shadow-blue-500/25 active:scale-[0.98]",
+    },
+    en_progreso: { // #8b5cf6 (violet)
+        desktopBase: "bg-white border border-violet-200/80 text-violet-700 shadow-sm hover:shadow-md hover:border-violet-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-violet-500 to-violet-600 border border-violet-600 text-white shadow-md shadow-violet-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-violet-200/80 text-violet-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-violet-500 to-violet-600 border border-violet-600 text-white shadow-md shadow-violet-500/25 active:scale-[0.98]",
+    },
+    en_pausa: { // #6b7280 (gray)
+        desktopBase: "bg-white border border-gray-200/80 text-gray-600 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-gray-500 to-gray-600 border border-gray-600 text-white shadow-md shadow-gray-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-gray-200/80 text-gray-600 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-gray-500 to-gray-600 border border-gray-600 text-white shadow-md shadow-gray-500/25 active:scale-[0.98]",
+    },
+    resuelto: { // #10b981 (emerald)
+        desktopBase: "bg-white border border-emerald-200/80 text-emerald-700 shadow-sm hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-emerald-500 to-emerald-600 border border-emerald-600 text-white shadow-md shadow-emerald-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-emerald-200/80 text-emerald-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-emerald-500 to-emerald-600 border border-emerald-600 text-white shadow-md shadow-emerald-500/25 active:scale-[0.98]",
+    },
+    cerrado: { // #1e293b (slate-800)
+        desktopBase: "bg-white border border-slate-200/80 text-slate-700 shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-slate-700 to-slate-800 border border-slate-800 text-white shadow-md shadow-slate-800/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-slate-200/80 text-slate-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-slate-700 to-slate-800 border border-slate-800 text-white shadow-md shadow-slate-800/25 active:scale-[0.98]",
+    },
+    rechazado: { // #ef4444 (red)
+        desktopBase: "bg-white border border-red-200/80 text-red-700 shadow-sm hover:shadow-md hover:border-red-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-red-200/80 text-red-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
+    },
+    cancelada: { // #9ca3af (gray-400)
+        desktopBase: "bg-white border border-gray-200/80 text-gray-500 shadow-sm hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-gray-400 to-gray-500 border border-gray-500 text-white shadow-md shadow-gray-400/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-gray-200/80 text-gray-500 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-gray-400 to-gray-500 border border-gray-500 text-white shadow-md shadow-gray-400/25 active:scale-[0.98]",
+    },
+    papelera: { // Alias para PAPELERA que usa rojo
+        desktopBase: "bg-white border border-red-200/80 text-red-700 shadow-sm hover:shadow-md hover:border-red-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 active:shadow-sm",
+        desktopActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
+        mobileBase: "bg-white border border-red-200/80 text-red-700 shadow-sm active:scale-[0.98]",
+        mobileActive: "bg-gradient-to-b from-red-500 to-red-600 border border-red-600 text-white shadow-md shadow-red-500/25 active:scale-[0.98]",
     }
 };
 
@@ -68,13 +128,14 @@ export const SummaryBar = ({
 }) => {
     if (!items.length) return null;
 
-    let gridColsClass = "grid-cols-2 lg:grid-cols-4";
+    let gridColsClass = "grid-cols-5 lg:grid-cols-1";
     if (items.length === 1) gridColsClass = "grid-cols-1 max-w-xs mx-auto";
-    else if (items.length === 2) gridColsClass = "grid-cols-2 max-w-xl mx-auto";
-    else if (items.length === 3) gridColsClass = "grid-cols-3 max-w-3xl mx-auto";
-    else if (items.length === 4) gridColsClass = "grid-cols-2 lg:grid-cols-4";
-    else if (items.length === 5) gridColsClass = "grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
-    else if (items.length >= 6) gridColsClass = "grid-cols-2 md:grid-cols-3 xl:grid-cols-6";
+    else if (items.length === 2) gridColsClass = "grid-cols-2 max-w-full mx-auto";
+    else if (items.length === 3) gridColsClass = "grid-cols-3 max-w-full mx-auto";
+    else if (items.length === 4) gridColsClass = "grid-cols-2 lg:grid-cols-4 max-w-full mx-auto";
+    else if (items.length === 5) gridColsClass = "grid-cols-2 md:grid-cols-3 lg:grid-cols-5 max-w-full mx-auto";
+    else if (items.length === 6) gridColsClass = "grid-cols-2 md:grid-cols-3 xl:grid-cols-6 max-w-full mx-auto";
+    else if (items.length === 7) gridColsClass = "grid-cols-2 md:grid-cols-7 xl:grid-cols-7 max-w-full mx-auto";
 
     // ── Sub-componente chip móvil ─────────────────────────────────────────────
     const renderMobileItem = (item) => {

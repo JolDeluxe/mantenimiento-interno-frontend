@@ -6,27 +6,17 @@ import {
   updateTicket,
   changeTicketStatus,
   getTecnicos,
-  getTicketMetrics,
 } from '../api/tickets-api';
 
 /**
  * Contrato de respuesta del backend /api/tickets:
  * {
- *   status: "success",
- *   pagination: { total, page, limit, totalPages },
- *   data: Ticket[]
+ * status: "success",
+ * pagination: { total, page, limit, totalPages },
+ * totalAbsoluto: n,
+ * resumenEstados: { PENDIENTE: n, ASIGNADA: n, ... },
+ * data: Ticket[]
  * }
- *
- * Contrato de respuesta del backend /api/tickets/metrics:
- * {
- *   status: "success",
- *   data: {
- *     distribucion: { porEstado: { PENDIENTE: n, ASIGNADA: n, ... } }
- *   }
- * }
- *
- * El interceptor de axios ya hace response.data, así que ambas funciones
- * devuelven directamente el objeto anterior.
  */
 export const useTickets = () => {
   const [tickets,    setTickets]    = useState([]);
@@ -34,55 +24,37 @@ export const useTickets = () => {
   const [loading,    setLoading]    = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  /**
-   * meta expone:
-   *  - totalFiltrado   → para el paginador
-   *  - totalPages      → calculado por el backend
-   *  - resumenEstados  → { PENDIENTE: n, ASIGNADA: n, ... } para la SummaryBar
-   */
   const [meta, setMeta] = useState({
     totalFiltrado:  0,
     totalPages:     1,
     resumenEstados: {},
+    totalAbsoluto:  0,
   });
 
-  // ── Lista principal + conteos en paralelo ────────────────────────────────
+  // ── Lista principal (ahora absorbe los conteos automáticamente) ────────
   const fetchTickets = useCallback(async (params = {}) => {
     setLoading(true);
     try {
-      const [listResult, metricsResult] = await Promise.allSettled([
-        getTickets(params),
-        getTicketMetrics(params),
-      ]);
+      const res = await getTickets(params);
 
-      // Procesa la lista
-      if (listResult.status === 'fulfilled') {
-        const res = listResult.value;
-
-        if (Array.isArray(res)) {
-          setTickets(res);
-          setMeta((prev) => ({ ...prev, totalFiltrado: res.length, totalPages: 1 }));
-        } else {
-          const pagination = res.pagination ?? {};
-          setTickets(Array.isArray(res.data) ? res.data : []);
-          setMeta((prev) => ({
-            ...prev,
-            totalFiltrado: pagination.total     ?? 0,
-            totalPages:    pagination.totalPages ?? 1,
-          }));
-        }
+      // Si por alguna razón el backend devuelve arreglo directo (fallback)
+      if (Array.isArray(res)) {
+        setTickets(res);
+        setMeta((prev) => ({ ...prev, totalFiltrado: res.length, totalPages: 1 }));
+      } else {
+        const pagination = res.pagination ?? {};
+        setTickets(Array.isArray(res.data) ? res.data : []);
+        
+        setMeta((prev) => ({
+          ...prev,
+          totalFiltrado:  pagination.total ?? 0,
+          totalPages:     pagination.totalPages ?? 1,
+          resumenEstados: res.resumenEstados ?? prev.resumenEstados,
+          totalAbsoluto:  res.totalAbsoluto ?? prev.totalAbsoluto,
+        }));
       }
-
-      // Procesa los conteos por estado para la SummaryBar
-      if (metricsResult.status === 'fulfilled') {
-        const m = metricsResult.value;
-        // El backend devuelve data.distribucion.porEstado (ver 06_metrics.ts)
-        const porEstado =
-          m?.data?.distribucion?.porEstado ??
-          m?.distribucion?.porEstado ??
-          {};
-        setMeta((prev) => ({ ...prev, resumenEstados: porEstado }));
-      }
+    } catch {
+      // Silencioso, manejado por el controlador visual
     } finally {
       setLoading(false);
     }
@@ -99,7 +71,7 @@ export const useTickets = () => {
           : [];
       setTecnicos(list);
     } catch {
-      // silencioso — no rompe el flujo principal
+      // silencioso
     }
   }, []);
 

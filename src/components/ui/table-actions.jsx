@@ -57,7 +57,7 @@ const ACTION_CONFIG = {
         icon: "cancel",
         tooltip: "Cancelar ticket",
         variant: "error",
-        className: "text-estado-cancelada hover:bg-estado-cancelada/10",
+        className: "text-red-700 hover:bg-red-500/10",
     },
 };
 

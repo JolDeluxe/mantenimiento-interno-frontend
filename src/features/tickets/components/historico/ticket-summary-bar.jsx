@@ -1,26 +1,18 @@
-// src/features/tickets/components/historico/ticket-summary-bar.jsx
 import { SummaryBar, Skeleton } from '@/components/ui/z_index';
 
-/**
- * Estados activos — aparecen en la barra principal de filtros.
- * CANCELADA y RECHAZADO van al toggle de "papelera" (vista separada).
- */
 const ESTADOS_ACTIVOS = [
     { id: 'TODOS', label: 'Total', color: 'gris' },
-    { id: 'PENDIENTE', label: 'Pendiente', color: 'ambar' },
-    { id: 'ASIGNADA', label: 'Asignada', color: 'azul' },
-    { id: 'EN_PROGRESO', label: 'En Progreso', color: 'indigo' },
-    { id: 'EN_PAUSA', label: 'En Pausa', color: 'gris' },
-    { id: 'RESUELTO', label: 'Resuelto', color: 'esmeralda' },
-    { id: 'CERRADO', label: 'Cerrado', color: 'por_defecto' },
+    { id: 'PENDIENTE', label: 'Pendiente', color: 'pendiente' },
+    { id: 'ASIGNADA', label: 'Asignada', color: 'asignada' },
+    { id: 'EN_PROGRESO', label: 'En Progreso', color: 'en_progreso' },
+    { id: 'EN_PAUSA', label: 'En Pausa', color: 'en_pausa' },
+    { id: 'RESUELTO', label: 'Resuelto', color: 'resuelto' },
+    { id: 'CERRADO', label: 'Cerrado', color: 'cerrado' },
 ];
 
-/**
- * Vista de papelera — CANCELADA + RECHAZADO en sus propias pastillas.
- */
 const ESTADOS_PAPELERA = [
-    { id: 'CANCELADA', label: 'Canceladas', color: 'rojo' },
-    { id: 'RECHAZADO', label: 'Rechazados', color: 'rosa' },
+    { id: 'CANCELADA', label: 'Canceladas', color: 'cancelada' },
+    { id: 'RECHAZADO', label: 'Rechazados', color: 'rechazado' },
 ];
 
 const SummaryBarSkeleton = ({ count }) => (
@@ -52,47 +44,53 @@ const SummaryBarSkeleton = ({ count }) => (
     </>
 );
 
-/**
- * Props:
- *   total              → número total (según vista activa)
- *   conteos            → { PENDIENTE: n, ASIGNADA: n, ..., CANCELADA: n, RECHAZADO: n }
- *   filtroActual       → 'TODOS' | EstadoTarea
- *   onFilterChange     → (id: string) => void
- *   loading            → boolean
- *   mostrarPapelera    → boolean — true = muestra CANCELADA + RECHAZADO, false = muestra estados activos
- */
 export const TicketSummaryBar = ({
-    total,
+    totalParaSummary,
     conteos = {},
     filtroActual,
     onFilterChange,
     loading,
     mostrarPapelera,
+    mostrarRechazadas,
 }) => {
-    if (loading && total === 0 && Object.keys(conteos).length === 0) {
-        return <SummaryBarSkeleton count={mostrarPapelera ? 2 : 7} />;
+    if (loading && totalParaSummary === 0 && Object.keys(conteos).length === 0) {
+        // Ajustamos la cantidad de skeletons según la vista activa
+        const count = mostrarRechazadas ? 1 : mostrarPapelera ? 3 : 7;
+        return <SummaryBarSkeleton count={count} />;
     }
 
-    // ── Vista papelera: CANCELADA + RECHAZADO ──────────────────────────────
-    if (mostrarPapelera) {
-        const totalPapelera = (conteos['CANCELADA'] ?? 0) + (conteos['RECHAZADO'] ?? 0);
+    if (mostrarRechazadas) {
         const items = [
-            { id: 'PAPELERA', label: 'Total papelera', value: totalPapelera, color: 'rojo' },
-            { id: 'CANCELADA', label: 'Canceladas', value: conteos['CANCELADA'] ?? 0, color: 'rojo' },
-            { id: 'RECHAZADO', label: 'Rechazados', value: conteos['RECHAZADO'] ?? 0, color: 'rosa' },
+            { id: 'RECHAZADO', label: 'Total Rechazadas', value: conteos['RECHAZADO'] ?? 0, color: 'rojo' }
         ];
         return (
             <SummaryBar
                 items={items}
-                activeId={filtroActual ?? 'PAPELERA'}
-                onSelect={onFilterChange}
+                activeId="RECHAZADO"
+                onSelect={() => { }}
                 loading={loading}
+                separateFirstMobile={true}
             />
         );
     }
 
-    // ── Vista normal: estados activos ──────────────────────────────────────
-    const totalReal = total ?? ESTADOS_ACTIVOS
+    if (mostrarPapelera) {
+        const items = [
+            { id: 'PAPELERA', label: 'Total Canceladas', value: conteos['CANCELADA'] ?? 0, color: 'rojo' },
+        ];
+        return (
+            <SummaryBar
+                items={items}
+                activeId={filtroActual ?? 'CANCELADA'}
+                onSelect={() => { }}
+                loading={loading}
+                separateFirstMobile={true}
+            />
+        );
+    }
+
+    // ── 3. Vista Normal: Estados Activos ──────────────────────────────────
+    const totalReal = totalParaSummary ?? ESTADOS_ACTIVOS
         .filter((e) => e.id !== 'TODOS')
         .reduce((a, e) => a + (conteos[e.id] ?? 0), 0);
 

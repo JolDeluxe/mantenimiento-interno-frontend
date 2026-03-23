@@ -1,4 +1,3 @@
-// src/features/tickets/pages/tickets-historico.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
@@ -36,6 +35,9 @@ export default function TicketsHistoricoPage() {
     const [page, setPage] = useState(1);
     const [sortConfig, setSortConfig] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
+
+    // 🔥 Estados de Vistas Aisladas
+    const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
 
     // ── Carga de datos ───────────────────────────────────────────────────────
@@ -43,15 +45,12 @@ export default function TicketsHistoricoPage() {
         const params = { page, limit: LIMIT };
 
         if (query) params.q = query;
-        if (mostrarPapelera) {
-            // Papelera muestra CANCELADA y RECHAZADO. La SummaryBar luego sub-filtra.
-            // Enviamos sin filtro de estado para que la SummaryBar maneje el sub-filtro.
-            // Si el filtroEstado es uno de los de papelera, lo enviamos.
-            const estadosPapelera = ['CANCELADA', 'RECHAZADO', 'PAPELERA'];
-            if (estadosPapelera.includes(filtroEstado) && filtroEstado !== 'PAPELERA') {
-                params.estado = filtroEstado;
-            }
-            // Sin estado → el hook pedirá todo y la SummaryBar filtra visualmente
+
+        // 🔥 PRIORIDAD ABSOLUTA AL FETCH
+        if (mostrarRechazadas) {
+            params.estado = 'RECHAZADO';
+        } else if (mostrarPapelera) {
+            params.estado = 'CANCELADA'; // Ajusta si tu API espera otro string para papelera
         } else if (filtroEstado !== 'TODOS') {
             params.estado = filtroEstado;
         }
@@ -63,7 +62,7 @@ export default function TicketsHistoricoPage() {
         }
 
         return fetchTickets(params).catch(() => notify.error('Error al cargar tickets.'));
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, sortConfig, mostrarPapelera, fetchTickets]);
+    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, sortConfig, mostrarRechazadas, mostrarPapelera, fetchTickets]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
@@ -75,8 +74,17 @@ export default function TicketsHistoricoPage() {
     const handlePrioridadChange = useCallback((p) => { setFiltroPrioridad(p); setPage(1); }, []);
     const handleSortChange = useCallback((key, dir) => { setSortConfig({ key, direction: dir }); setPage(1); }, []);
 
+    // 🔥 Handlers mutuamente excluyentes
+    const handleToggleRechazadas = useCallback(() => {
+        setMostrarRechazadas((prev) => !prev);
+        setMostrarPapelera(false);
+        setFiltroEstado('TODOS');
+        setPage(1);
+    }, []);
+
     const handleTogglePapelera = useCallback(() => {
         setMostrarPapelera((prev) => !prev);
+        setMostrarRechazadas(false);
         setFiltroEstado('TODOS');
         setPage(1);
     }, []);
@@ -129,15 +137,21 @@ export default function TicketsHistoricoPage() {
         page,
         limit: LIMIT,
         totalPages: meta.totalPages,
-        totalItems: meta.totalFiltrado,
+        totalParaSummary: meta.totalAbsoluto,
+        totalParaPaginador: meta.totalFiltrado,
         conteos: meta.resumenEstados,
         sortConfig,
         query,
         filtroEstado,
         filtroTipo,
         filtroPrioridad,
+
+        // Inyección de estados
+        mostrarRechazadas,
+        onToggleRechazadas: handleToggleRechazadas,
         mostrarPapelera,
         onTogglePapelera: handleTogglePapelera,
+
         onPageChange: setPage,
         onSortChange: handleSortChange,
         onSearchChange: handleSearchChange,

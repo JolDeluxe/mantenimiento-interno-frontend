@@ -51,15 +51,18 @@ export const TicketsHistoricoMobile = ({
     page,
     limit,
     totalPages,
-    totalItems,
+    totalParaSummary,
+    totalParaPaginador,
+    conteos,
     sortConfig,
     query,
     filtroEstado,
     filtroTipo,
     filtroPrioridad,
-    conteos,
     mostrarPapelera,
     onTogglePapelera,
+    mostrarRechazadas,
+    onToggleRechazadas,
     onPageChange,
     onSortChange,
     onSearchChange,
@@ -90,12 +93,13 @@ export const TicketsHistoricoMobile = ({
             {/* ── SummaryBar ── */}
             <div className="mb-3">
                 <TicketSummaryBar
-                    total={totalItems}
+                    totalParaSummary={totalParaSummary}
                     conteos={conteos}
                     filtroActual={filtroEstado}
                     onFilterChange={onFilterChange}
                     loading={loading}
                     mostrarPapelera={mostrarPapelera}
+                    mostrarRechazadas={mostrarRechazadas}
                 />
             </div>
 
@@ -110,7 +114,10 @@ export const TicketsHistoricoMobile = ({
                     onPrioridadChange={onPrioridadChange}
                     mostrarPapelera={mostrarPapelera}
                     onTogglePapelera={onTogglePapelera}
-                    mobileSearchOnly
+                    mostrarRechazadas={mostrarRechazadas}
+                    onToggleRechazadas={onToggleRechazadas}
+                    conteos={conteos}
+                    mobileSearchOnly={false}
                 />
 
                 <div className="flex items-center justify-between gap-3">
@@ -127,6 +134,9 @@ export const TicketsHistoricoMobile = ({
                             onPrioridadChange={onPrioridadChange}
                             mostrarPapelera={mostrarPapelera}
                             onTogglePapelera={onTogglePapelera}
+                            mostrarRechazadas={mostrarRechazadas}
+                            onToggleRechazadas={onToggleRechazadas}
+                            conteos={conteos}
                             mobileChipsOnly
                         />
                     </div>
@@ -171,7 +181,7 @@ export const TicketsHistoricoMobile = ({
                         page={page}
                         limit={limit}
                         totalPages={totalPages}
-                        totalItems={totalItems}
+                        totalItems={totalParaPaginador}
                         sortConfig={sortConfig}
                         onPageChange={onPageChange}
                         onSortChange={onSortChange}
@@ -189,7 +199,7 @@ export const TicketsHistoricoMobile = ({
                     <GlassPaginationPill
                         page={page}
                         totalPages={totalPages}
-                        totalItems={totalItems}
+                        totalItems={totalParaPaginador}
                         onPageChange={onPageChange}
                         loading={loading}
                         bottom="24px"
@@ -271,7 +281,6 @@ export const TicketsHistoricoMobile = ({
                 }}
             />
 
-            {/* Cancelación rápida — usa StatusModal con forcedEstado */}
             <TicketStatusModal
                 isOpen={Boolean(cancelTarget)}
                 onClose={() => setCancelTarget(null)}
