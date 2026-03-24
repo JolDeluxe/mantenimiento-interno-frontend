@@ -15,6 +15,9 @@ const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA', 'RECHAZADO'];
 
 const puedeEditar = ({ rol, id }, ticket) => {
+    // Bloqueo por estado
+    if (['EN_PROGRESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
+
     if (ROLES_ADMIN.includes(rol)) return true;
     if (rol === 'CLIENTE_INTERNO' && ticket.creadorId === id && ticket.estado === 'PENDIENTE') return true;
     return false;
@@ -22,8 +25,10 @@ const puedeEditar = ({ rol, id }, ticket) => {
 
 const puedeAsignar = ({ rol }, ticket) => {
     if (!ROLES_ADMIN.includes(rol)) return false;
-    // Bloquear reasignación si el ticket ya está en ejecución o en proceso de cierre
-    if (['EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
+
+    // Bloquear reasignación si el ticket ya está en ejecución (EN_PROGRESO, EN_PROCESO) o finalizado
+    if (['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
+
     return true;
 };
 

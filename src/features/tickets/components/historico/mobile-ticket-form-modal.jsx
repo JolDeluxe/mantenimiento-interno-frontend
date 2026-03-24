@@ -1,6 +1,6 @@
-// src/features/tickets/components/historico/ticket-form-modal.jsx
+// src/features/tickets/components/historico/mobile-ticket-form-modal.jsx
 import { useState, useEffect, useMemo } from 'react';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
 
 const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
@@ -51,7 +51,7 @@ const TecnicoChip = ({ nombre, onRemove }) => (
     </span>
 );
 
-export const TicketFormModal = ({
+export const MobileTicketFormModal = ({
     isOpen,
     onClose,
     onSuccess,
@@ -181,18 +181,18 @@ export const TicketFormModal = ({
     const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} className="w-full md:max-w-4xl lg:max-w-5xl">
+        <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
                 title={esEdicion
                     ? 'Editar tarea'
                     : esAdmin
                         ? 'Nueva tarea'
-                        : 'Nueva tarea'
+                        : 'Reportar problema'
                 }
                 onClose={onClose}
             />
             <ModalBody>
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6 pb-4 overflow-x-hidden">
 
                     {backendError && (
                         <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700">
@@ -214,13 +214,13 @@ export const TicketFormModal = ({
                             onChange={(e) => setTitulo(e.target.value.slice(0, MAX_TITULO))}
                             error={!!fe.titulo}
                             helperText={fe.titulo}
-                            placeholder="Ej. Fuga de aire en compresor principal"
+                            placeholder="Ej. Fuga de aire en compresor"
                             disabled={isSubmitting}
                         />
                     </div>
 
-                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA ── */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA (Flujo Vertical Mobile) ── */}
+                    <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
                             <Select
@@ -293,15 +293,15 @@ export const TicketFormModal = ({
                                 onChange={(e) => setCategoria(e.target.value)}
                                 error={!!fe.categoria}
                                 helperText={fe.categoria}
-                                placeholder="Ej. Eléctrico, Mecánico, Infraestructura…"
+                                placeholder="Ej. Eléctrico, Mecánico..."
                                 disabled={isSubmitting}
                             />
                         </div>
                     )}
 
-                    {/* ── CAMPOS ADMINISTRATIVOS ── */}
+                    {/* ── CAMPOS ADMINISTRATIVOS (Flujo Vertical Mobile) ── */}
                     {esAdmin && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-tipo">Tipo de tarea</Label>
                                 <Select
@@ -315,7 +315,7 @@ export const TicketFormModal = ({
                                     ))}
                                 </Select>
                             </div>
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1.5 overflow-hidden">
                                 <Label htmlFor="tf-fecha">Fecha de vencimiento</Label>
                                 <Input
                                     id="tf-fecha"
@@ -323,6 +323,7 @@ export const TicketFormModal = ({
                                     value={fechaVencimiento}
                                     onChange={(e) => setFechaVencimiento(e.target.value)}
                                     disabled={isSubmitting}
+                                    style={{ minWidth: 0 }}
                                 />
                             </div>
                             <div className="flex flex-col gap-1.5">
@@ -340,23 +341,28 @@ export const TicketFormModal = ({
                         </div>
                     )}
 
-                    {/* ── ASIGNACIÓN DE TÉCNICOS (admin) + DESCRIPCIÓN ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* ── ASIGNACIÓN DE TÉCNICOS (Nativo) + DESCRIPCIÓN ── */}
+                    <div className="flex flex-col gap-6">
 
-                        {/* Control de Técnicos con Expansión Dinámica */}
                         {esAdmin && tecnicos.length > 0 && (
-                            <div className="flex flex-col gap-2 relative transition-all duration-300 ease-in-out focus-within:pb-52">
-                                <Label>Técnicos asignados (opcional)</Label>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="tf-tecnicos-add">Técnicos asignados (opcional)</Label>
 
-                                <SearchableSelect
-                                    options={opcionesDisponibles}
+                                <Select
+                                    id="tf-tecnicos-add"
                                     value=""
-                                    onChange={handleAddTecnico}
-                                    placeholder="Añadir técnico…"
-                                    icon="engineering"
-                                    allOptionText={null}
+                                    onChange={(e) => handleAddTecnico(e.target.value)}
                                     disabled={isSubmitting || opcionesDisponibles.length === 0}
-                                />
+                                >
+                                    <option value="" disabled hidden>
+                                        {opcionesDisponibles.length === 0 ? 'Todos asignados' : 'Seleccionar técnico…'}
+                                    </option>
+                                    {opcionesDisponibles.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </Select>
 
                                 {responsables.length > 0 ? (
                                     <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
@@ -377,7 +383,7 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
-                        <div className={`flex flex-col gap-1.5 ${(!esAdmin || tecnicos.length === 0) ? 'lg:col-span-2' : ''}`}>
+                        <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
                                 <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
@@ -387,7 +393,7 @@ export const TicketFormModal = ({
                             <Input
                                 id="tf-desc"
                                 multiline
-                                rows={esAdmin && tecnicos.length > 0 ? 5 : 4}
+                                rows={4}
                                 value={descripcion}
                                 onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
                                 error={!!fe.descripcion}

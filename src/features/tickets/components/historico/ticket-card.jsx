@@ -1,21 +1,16 @@
 // src/features/tickets/components/historico/ticket-card.jsx
 import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
+import { formatFecha, isPastDate } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
-const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
-const ROLES_SUPERVISOR = new Set(['SUPER_ADMIN', 'JEFE_MTTO']);
+const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA', 'RECHAZADO'];
-
-const formatFecha = (iso) => {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
-};
 
 const isVencida = (ticket) => {
     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-    if (!ticket.fechaVencimiento) return false;
-    return new Date(ticket.fechaVencimiento) < new Date();
+    return isPastDate(ticket.fechaVencimiento);
 };
 
 export const TicketCard = ({
@@ -29,21 +24,29 @@ export const TicketCard = ({
     onCancel,
 }) => {
     const { rol, id: userId } = currentUser ?? {};
-    const esAdmin = ROLES_ADMIN.has(rol);
-    const esSupervisor = ROLES_SUPERVISOR.has(rol);
+
+    const esAdmin = ROLES_ADMIN.includes(rol);
+    const esSupervisor = ROLES_SUPERVISOR.includes(rol);
     const esTecnico = rol === 'TECNICO';
     const esCliente = rol === 'CLIENTE_INTERNO';
     const esCreador = ticket.creadorId === userId;
     const esResponsable = ticket.responsables?.some((r) => r.id === userId);
+    const tieneResponsables = ticket.responsables && ticket.responsables.length > 0;
     const vencida = isVencida(ticket);
 
+    // LÓGICA ESTRICTA DE PERMISOS (Sincronizada con TableActions)
     const puedeEditar =
-        esAdmin ||
-        (esCliente && esCreador && ticket.estado === 'PENDIENTE');
+        !['EN_PROGRESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado) &&
+        (esAdmin || (esCliente && esCreador && ticket.estado === 'PENDIENTE'));
+
+    const puedeAsignar =
+        esAdmin &&
+        !['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado);
 
     const puedeCambiarEstado =
-        esAdmin ||
-        (esTecnico && esResponsable);
+        tieneResponsables &&
+        ticket.estado !== 'RESUELTO' &&
+        (esAdmin || (esTecnico && esResponsable));
 
     const puedeRevisar =
         ticket.estado === 'RESUELTO' &&
@@ -128,7 +131,7 @@ export const TicketCard = ({
                     <Icon name="visibility" size="sm" />
                 </button>
 
-                {/* Revisar (acción prioritaria: resaltada) */}
+                {/* Revisar */}
                 {puedeRevisar && (
                     <button
                         onClick={() => onReview?.(ticket)}
@@ -151,7 +154,7 @@ export const TicketCard = ({
                 )}
 
                 {/* Asignar */}
-                {esAdmin && (
+                {puedeAsignar && (
                     <button
                         onClick={() => onAssign?.(ticket)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20 active:scale-95 transition-all"
@@ -174,12 +177,11 @@ export const TicketCard = ({
                 {puedeCancelar && (
                     <button
                         onClick={() => onCancel?.(ticket)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-cancelada bg-estado-cancelada/10 hover:bg-estado-cancelada/20 active:scale-95 transition-all ml-auto"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-cancelada/20 active:scale-95 transition-all ml-auto"
                     >
                         <Icon name="cancel" size="xs" />
                     </button>
                 )}
-
             </div>
         </div>
     );

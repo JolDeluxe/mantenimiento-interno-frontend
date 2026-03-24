@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
-import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
+import { MobileTicketFilterBar } from '../components/historico/mobile-ticket-filter-bar';
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketCard } from '../components/historico/ticket-card';
-import { TicketFormModal } from '../components/historico/ticket-form-modal';
+import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
 import { TicketStatusModal } from '../components/historico/ticket-status-modal';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
@@ -15,6 +15,7 @@ import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
 const SKELETON_COUNT = 5;
+const ROLES_CREADORES = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 
 const CardSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -85,8 +86,11 @@ export const TicketsHistoricoMobile = ({
     const hasContent = !loading && tickets.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
 
-    const fabAddBottom = hasPaginator ? '104px' : '84px';
-    const fabRefreshBottom = hasPaginator ? '164px' : '144px';
+    const puedeCrear = ROLES_CREADORES.includes(currentUser?.rol);
+
+    const baseBottom = hasPaginator ? 104 : 84;
+    const fabAddBottom = `${baseBottom}px`;
+    const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
 
     return (
         <>
@@ -103,9 +107,21 @@ export const TicketsHistoricoMobile = ({
                 />
             </div>
 
-            {/* ── Controles ── */}
-            <div className="mb-3 flex flex-col gap-2">
-                <TicketFilterBar
+            {/* ────────────────────────────────────────────────────────────
+                CONTROLES MÓVIL — Orden estricto:
+                1. Selector de formato (Tabla / Cards)
+                2. Barra de búsqueda
+                3. Filtros adaptados (glass dropdowns)
+            ──────────────────────────────────────────────────────────── */}
+            <div className="flex flex-col gap-2.5 mb-3">
+
+                {/* 1. Selector de formato */}
+                <div className="flex items-center">
+                    <GlassViewToggle value={viewMode} onChange={setViewMode} />
+                </div>
+
+                {/* 3. Filtros glass — se wrappean si no caben en una línea */}
+                <MobileTicketFilterBar
                     query={query}
                     onSearchChange={onSearchChange}
                     filtroTipo={filtroTipo}
@@ -117,30 +133,8 @@ export const TicketsHistoricoMobile = ({
                     mostrarRechazadas={mostrarRechazadas}
                     onToggleRechazadas={onToggleRechazadas}
                     conteos={conteos}
-                    mobileSearchOnly={false}
+                    mobileFiltersOnly
                 />
-
-                <div className="flex items-center justify-between gap-3">
-                    <GlassViewToggle value={viewMode} onChange={setViewMode} />
-
-                    {/* Chips de tipo/prioridad/papelera para móvil */}
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                        <TicketFilterBar
-                            query=""
-                            onSearchChange={() => { }}
-                            filtroTipo={filtroTipo}
-                            onTipoChange={onTipoChange}
-                            filtroPrioridad={filtroPrioridad}
-                            onPrioridadChange={onPrioridadChange}
-                            mostrarPapelera={mostrarPapelera}
-                            onTogglePapelera={onTogglePapelera}
-                            mostrarRechazadas={mostrarRechazadas}
-                            onToggleRechazadas={onToggleRechazadas}
-                            conteos={conteos}
-                            mobileChipsOnly
-                        />
-                    </div>
-                </div>
             </div>
 
             {/* ── Contenido ── */}
@@ -218,14 +212,17 @@ export const TicketsHistoricoMobile = ({
                     bottom={fabRefreshBottom}
                     right="20px"
                 />
-                <GlassFab
-                    icon="add"
-                    onClick={onOpenCreate}
-                    variant="primary"
-                    size={56}
-                    bottom={fabAddBottom}
-                    right="20px"
-                />
+
+                {puedeCrear && (
+                    <GlassFab
+                        icon="add"
+                        onClick={onOpenCreate}
+                        variant="primary"
+                        size={56}
+                        bottom={fabAddBottom}
+                        right="20px"
+                    />
+                )}
             </div>
 
             <div className="md:hidden">
@@ -233,7 +230,7 @@ export const TicketsHistoricoMobile = ({
             </div>
 
             {/* ── Modales ── */}
-            <TicketFormModal
+            <MobileTicketFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
                 ticketAEditar={editTarget}

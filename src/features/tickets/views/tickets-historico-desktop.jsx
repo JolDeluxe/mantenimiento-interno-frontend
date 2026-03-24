@@ -5,6 +5,8 @@ import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
 import { RefreshFab } from '@/components/ui/z_index';
 
+const ROLES_CREADORES = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+
 export const TicketsHistoricoDesktop = ({
     tickets,
     loading,
@@ -36,53 +38,56 @@ export const TicketsHistoricoDesktop = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-}) => (
-    <div className="flex flex-col gap-4">
+}) => {
+    const puedeCrear = ROLES_CREADORES.includes(currentUser?.rol);
 
-        <RefreshFab bottom="32px" right="32px" size={48} />
+    return (
+        <div className="flex flex-col gap-4">
+            <RefreshFab bottom="32px" right="32px" size={48} />
 
-        <TicketSummaryBar
-            totalParaSummary={totalParaSummary}
-            conteos={conteos}
-            filtroActual={filtroEstado}
-            onFilterChange={onFilterChange}
-            loading={loading}
-            mostrarPapelera={mostrarPapelera}
-            mostrarRechazadas={mostrarRechazadas}
-        />
+            <TicketSummaryBar
+                totalParaSummary={totalParaSummary}
+                conteos={conteos}
+                filtroActual={filtroEstado}
+                onFilterChange={onFilterChange}
+                loading={loading}
+                mostrarPapelera={mostrarPapelera}
+                mostrarRechazadas={mostrarRechazadas}
+            />
 
-        <TicketAddButton onClick={onOpenCreate} />
+            {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 
-        <TicketFilterBar
-            query={query}
-            onSearchChange={onSearchChange}
-            filtroTipo={filtroTipo}
-            onTipoChange={onTipoChange}
-            filtroPrioridad={filtroPrioridad}
-            onPrioridadChange={onPrioridadChange}
-            mostrarRechazadas={mostrarRechazadas}
-            onToggleRechazadas={onToggleRechazadas}
-            mostrarPapelera={mostrarPapelera}
-            onTogglePapelera={onTogglePapelera}
-            conteos={conteos}
-        />
+            <TicketFilterBar
+                query={query}
+                onSearchChange={onSearchChange}
+                filtroTipo={filtroTipo}
+                onTipoChange={onTipoChange}
+                filtroPrioridad={filtroPrioridad}
+                onPrioridadChange={onPrioridadChange}
+                mostrarRechazadas={mostrarRechazadas}
+                onToggleRechazadas={onToggleRechazadas}
+                mostrarPapelera={mostrarPapelera}
+                onTogglePapelera={onTogglePapelera}
+                conteos={conteos}
+            />
 
-        <TicketsTable
-            tickets={tickets}
-            loading={loading}
-            submitting={submitting}
-            currentUser={currentUser}
-            tecnicos={tecnicos}
-            page={page}
-            limit={limit}
-            totalPages={totalPages}
-            totalItems={totalParaPaginador}
-            sortConfig={sortConfig}
-            onPageChange={onPageChange}
-            onSortChange={onSortChange}
-            onSave={onSave}
-            onChangeStatus={onChangeStatus}
-            onRefresh={onRefresh}
-        />
-    </div>
-);
+            <TicketsTable
+                tickets={tickets}
+                loading={loading}
+                submitting={submitting}
+                currentUser={currentUser}
+                tecnicos={tecnicos}
+                page={page}
+                limit={limit}
+                totalPages={totalPages}
+                totalItems={totalParaPaginador}
+                sortConfig={sortConfig}
+                onPageChange={onPageChange}
+                onSortChange={onSortChange}
+                onSave={onSave}
+                onChangeStatus={onChangeStatus}
+                onRefresh={onRefresh}
+            />
+        </div>
+    );
+};

@@ -8,19 +8,14 @@ import { TicketDetailModal } from './ticket-detail-modal';
 import { TicketAssignModal } from './ticket-assign-modal';
 import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
+import { formatFecha, isPastDate } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
-const formatFecha = (iso) => {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('es-MX', {
-        day: '2-digit', month: 'short', year: 'numeric',
-    });
-};
+const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'];
 
 const isVencida = (ticket) => {
-    if (['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'].includes(ticket.estado)) return false;
-    if (!ticket.fechaVencimiento) return false;
-    return new Date(ticket.fechaVencimiento) < new Date();
+    if (ESTADOS_FINALES.includes(ticket.estado)) return false;
+    return isPastDate(ticket.fechaVencimiento);
 };
 
 export const TicketsTable = ({

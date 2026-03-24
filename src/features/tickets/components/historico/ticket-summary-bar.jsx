@@ -1,3 +1,4 @@
+// src/features/tickets/components/historico/ticket-summary-bar.jsx
 import { SummaryBar, Skeleton } from '@/components/ui/z_index';
 
 const ESTADOS_ACTIVOS = [
@@ -10,10 +11,8 @@ const ESTADOS_ACTIVOS = [
     { id: 'CERRADO', label: 'Cerrado', color: 'cerrado' },
 ];
 
-const ESTADOS_PAPELERA = [
-    { id: 'CANCELADA', label: 'Canceladas', color: 'cancelada' },
-    { id: 'RECHAZADO', label: 'Rechazados', color: 'rechazado' },
-];
+// Estados que nunca forman parte del total "activo"
+const ESTADOS_EXCLUIDOS_DEL_TOTAL = ['RECHAZADO', 'CANCELADA'];
 
 const SummaryBarSkeleton = ({ count }) => (
     <>
@@ -54,49 +53,43 @@ export const TicketSummaryBar = ({
     mostrarRechazadas,
 }) => {
     if (loading && totalParaSummary === 0 && Object.keys(conteos).length === 0) {
-        // Ajustamos la cantidad de skeletons según la vista activa
-        const count = mostrarRechazadas ? 1 : mostrarPapelera ? 3 : 7;
+        const count = mostrarRechazadas ? 1 : mostrarPapelera ? 1 : 7;
         return <SummaryBarSkeleton count={count} />;
     }
 
+    // ── Vista Rechazadas ───────────────────────────────────────────────
     if (mostrarRechazadas) {
-        const items = [
-            { id: 'RECHAZADO', label: 'Total Rechazadas', value: conteos['RECHAZADO'] ?? 0, color: 'rojo' }
-        ];
         return (
             <SummaryBar
-                items={items}
+                items={[{ id: 'RECHAZADO', label: 'Total Rechazadas', value: conteos['RECHAZADO'] ?? 0, color: 'rojo' }]}
                 activeId="RECHAZADO"
                 onSelect={() => { }}
                 loading={loading}
-                separateFirstMobile={true}
             />
         );
     }
 
+    // ── Vista Papelera ─────────────────────────────────────────────────
     if (mostrarPapelera) {
-        const items = [
-            { id: 'PAPELERA', label: 'Total Canceladas', value: conteos['CANCELADA'] ?? 0, color: 'rojo' },
-        ];
         return (
             <SummaryBar
-                items={items}
-                activeId={filtroActual ?? 'CANCELADA'}
+                items={[{ id: 'CANCELADA', label: 'Total Canceladas', value: conteos['CANCELADA'] ?? 0, color: 'cancelada' }]}
+                activeId="CANCELADA"
                 onSelect={() => { }}
                 loading={loading}
-                separateFirstMobile={true}
             />
         );
     }
 
-    // ── 3. Vista Normal: Estados Activos ──────────────────────────────────
-    const totalReal = totalParaSummary ?? ESTADOS_ACTIVOS
-        .filter((e) => e.id !== 'TODOS')
-        .reduce((a, e) => a + (conteos[e.id] ?? 0), 0);
+    // ── Vista Normal: solo estados activos ─────────────────────────────
+    // El total excluye explícitamente RECHAZADO y CANCELADA
+    const totalActivo = ESTADOS_ACTIVOS
+        .filter((e) => e.id !== 'TODOS' && !ESTADOS_EXCLUIDOS_DEL_TOTAL.includes(e.id))
+        .reduce((acc, e) => acc + (conteos[e.id] ?? 0), 0);
 
     const items = ESTADOS_ACTIVOS.map((e) => ({
         ...e,
-        value: e.id === 'TODOS' ? totalReal : (conteos[e.id] ?? 0),
+        value: e.id === 'TODOS' ? totalActivo : (conteos[e.id] ?? 0),
     }));
 
     return (

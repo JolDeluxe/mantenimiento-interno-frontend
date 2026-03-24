@@ -63,7 +63,7 @@ export const TicketTimeline = ({ historial }) => {
 
                     return (
                         <li key={h.id} className="relative pl-6">
-                            <div className={`absolute -left-[7px] top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm 
+                            <div className={`absolute -left-1.75 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm 
                                 ${isAbsoluteLatest ? 'bg-marca-primario ring-4 ring-marca-primario/20 animate-pulse' : 'bg-slate-300'}`}
                             />
 

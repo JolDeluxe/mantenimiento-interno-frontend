@@ -1,3 +1,4 @@
+// src/features/tickets/pages/tickets-historico.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
@@ -6,6 +7,7 @@ import { useTickets } from '../hooks/use-tickets';
 import { TicketsHistoricoDesktop } from '../views/tickets-historico-desktop';
 import { TicketsHistoricoMobile } from '../views/tickets-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
+import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
 
 const LIMIT = 20;
 
@@ -171,15 +173,27 @@ export default function TicketsHistoricoPage() {
                 : <TicketsHistoricoMobile  {...sharedViewProps} />
             }
 
-            <TicketFormModal
-                isOpen={showCreate}
-                onClose={() => setShowCreate(false)}
-                ticketAEditar={null}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={handleCreate}
-            />
+            {isDesktop ? (
+                <TicketFormModal
+                    isOpen={showCreate}
+                    onClose={() => setShowCreate(false)}
+                    ticketAEditar={null}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={handleCreate}
+                />
+            ) : (
+                <MobileTicketFormModal
+                    isOpen={showCreate}
+                    onClose={() => setShowCreate(false)}
+                    ticketAEditar={null}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={handleCreate}
+                />
+            )}
         </div>
     );
 }

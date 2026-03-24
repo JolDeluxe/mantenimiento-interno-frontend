@@ -8,6 +8,8 @@ const GLASS_VARIANTS = {
     action: { bg: 'rgba(59, 130, 246, 0.72)', shadow: '0 10px 30px rgba(59,130,246,0.35), 0 2px 6px rgba(59,130,246,0.18)' },
     success: { bg: 'rgba(16, 185, 129, 0.70)', shadow: '0 10px 30px rgba(16,185,129,0.32), 0 2px 6px rgba(16,185,129,0.16)' },
     danger: { bg: 'rgba(220, 38, 38, 0.72)', shadow: '0 10px 30px rgba(220,38,38,0.30), 0 2px 6px rgba(220,38,38,0.16)' },
+    // NUEVA VARIANTE LIGHT: Para inputs y elementos inactivos sin perder el cristal
+    light: { bg: 'rgba(255, 255, 255, 0.45)', shadow: '0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' },
 };
 
 export const glassBase = (variant = 'primary') => {
@@ -58,9 +60,10 @@ export const GlassIconChip = ({ icon, isActive, variant = 'primary', onClick }) 
     };
 
     const inactiveStyle = {
+        ...glassBase('light'), // Cambiado a light para mayor consistencia
         borderRadius: 10,
-        background: 'transparent',
-        border: '1px solid transparent'
+        position: 'relative',
+        overflow: 'hidden',
     };
 
     return (
@@ -69,11 +72,11 @@ export const GlassIconChip = ({ icon, isActive, variant = 'primary', onClick }) 
             style={isActive ? activeStyle : inactiveStyle}
             className="flex items-center justify-center w-8 h-8 transition-all duration-200 active:scale-90 outline-none select-none shrink-0"
         >
-            {isActive && <GlassSheen />}
+            <GlassSheen />
             <Icon
                 name={icon}
                 size="xs"
-                className={cn('relative transition-colors', isActive ? 'text-white' : 'text-slate-500')}
+                className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}
             />
         </button>
     );
@@ -117,7 +120,7 @@ export const GlassFab = ({
             disabled={disabled || isLoading}
             style={style}
             className={cn(
-                'active:scale-90 transition-transform select-none outline-none',
+                'active:scale-90 transition-transform select-none outline-none overflow-hidden',
                 className
             )}
             aria-label={icon}
@@ -126,7 +129,7 @@ export const GlassFab = ({
             <Icon
                 name={isLoading ? 'progress_activity' : icon}
                 size="md"
-                className={cn('text-white drop-shadow-sm relative', isLoading && 'animate-spin')}
+                className={cn('text-white drop-shadow-sm relative z-10', isLoading && 'animate-spin')}
                 weight={500}
             />
         </button>
@@ -185,6 +188,7 @@ export const GlassPaginationPill = ({
         transition: 'transform 0.12s ease, opacity 0.15s',
         flexShrink: 0,
         position: 'relative',
+        overflow: 'hidden',
     });
 
     return (
@@ -198,10 +202,11 @@ export const GlassPaginationPill = ({
                     className="active:scale-90 transition-transform outline-none"
                     aria-label="Página anterior"
                 >
-                    <Icon name="chevron_left" size="sm" className="text-white relative" />
+                    <GlassSheen />
+                    <Icon name="chevron_left" size="sm" className="text-white relative z-10" />
                 </button>
 
-                <div style={{ textAlign: 'center', minWidth: 56 }}>
+                <div style={{ textAlign: 'center', minWidth: 56, position: 'relative', zIndex: 10 }}>
                     <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2 }}>
                         {page} / {totalPages}
                     </p>
@@ -219,7 +224,8 @@ export const GlassPaginationPill = ({
                     className="active:scale-90 transition-transform outline-none"
                     aria-label="Página siguiente"
                 >
-                    <Icon name="chevron_right" size="sm" className="text-white relative" />
+                    <GlassSheen />
+                    <Icon name="chevron_right" size="sm" className="text-white relative z-10" />
                 </button>
             </div>
         </div>
@@ -229,20 +235,6 @@ export const GlassPaginationPill = ({
 // ─────────────────────────────────────────────────────────────────────────────
 // GlassViewToggle
 // ─────────────────────────────────────────────────────────────────────────────
-/**
- * Toggle genérico con glass. Funciona en dos modos:
- *
- * Modo multi-opción (cards / tabla):
- *   options = [{ id, label, icon }]
- *   value   = id activo
- *   onChange(id)
- *
- * Modo toggle único (inactivos ON/OFF):
- *   options = [{ id: 'inactivos', label: 'Inactivos', icon: 'person_off' }]
- *   value   = 'inactivos' (activo) | null (inactivo)
- *   onChange() — sin argumento, el padre maneja el toggle
- *   activeVariant = 'danger' | 'primary' | 'action' | 'success' | 'neutral'
- */
 const DEFAULT_OPTIONS = [
     { id: 'cards', label: 'Cards', icon: 'grid_view' },
     { id: 'table', label: 'Tabla', icon: 'table_rows' },
@@ -252,24 +244,21 @@ export const GlassViewToggle = ({
     options = DEFAULT_OPTIONS,
     value,
     onChange,
-    activeVariant = 'primary',   // variante glass del item activo
+    activeVariant = 'primary',
 }) => {
     const containerStyle = {
         display: 'inline-flex',
         padding: 4,
         borderRadius: 14,
         gap: 3,
-        backdropFilter: 'blur(16px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(140%)',
-        background: 'rgba(255,255,255,0.18)',
-        border: '1px solid rgba(255,255,255,0.30)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.45) inset',
         position: 'relative',
         overflow: 'hidden',
+        ...glassBase('light'), // Usando la nueva variante light en vez de código quemado
     };
 
     return (
         <div style={containerStyle}>
+            <GlassSheen />
             {options.map((opt) => {
                 const isActive = value === opt.id;
 
@@ -284,6 +273,7 @@ export const GlassViewToggle = ({
                     borderRadius: 10,
                     background: 'transparent',
                     border: '1px solid transparent',
+                    position: 'relative',
                 };
 
                 return (
@@ -291,15 +281,15 @@ export const GlassViewToggle = ({
                         key={opt.id}
                         onClick={() => onChange(opt.id)}
                         style={isActive ? activeStyle : inactiveStyle}
-                        className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none"
+                        className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10"
                     >
                         {isActive && <GlassSheen />}
                         <Icon
                             name={opt.icon}
                             size="xs"
-                            className={cn('relative transition-colors', isActive ? 'text-white' : 'text-slate-500')}
+                            className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}
                         />
-                        <span className={cn('text-xs font-bold relative transition-colors', isActive ? 'text-white' : 'text-slate-500')}>
+                        <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>
                             {opt.label}
                         </span>
                     </button>

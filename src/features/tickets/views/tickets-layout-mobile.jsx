@@ -37,7 +37,7 @@ export default function TicketsLayoutMobile({ children }) {
 
             {/* ── 2. CONTROLES STICKY TRANSPARENTES ── */}
             {/* Eliminados -mx-6 y px-6. Ahora respeta los límites del padre sin generar overflow horizontal */}
-            <div className="sticky top-0 z-30 mb-3 py-2 flex items-center justify-center transition-all">
+            <div className="sticky top-0 z-30 mb-3 py-1 flex items-center justify-center transition-all">
                 <div className="overflow-x-auto no-scrollbar w-full flex justify-center">
                     <GlassViewToggle
                         options={menuOptions}
