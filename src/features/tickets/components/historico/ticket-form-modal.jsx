@@ -1,6 +1,7 @@
 // src/features/tickets/components/historico/ticket-form-modal.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
+import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 
 const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
@@ -37,7 +38,6 @@ const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
 
-// ── Chip de técnico seleccionado ──────────────────────────────────────────
 const TecnicoChip = ({ nombre, onRemove }) => (
     <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
         {nombre}
@@ -104,10 +104,10 @@ export const TicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-            const fv = ticketAEditar.fechaVencimiento
-                ? new Date(ticketAEditar.fechaVencimiento).toISOString().split('T')[0]
-                : '';
+
+            const fv = ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
             setFechaVencimiento(fv);
+
             setTiempoEstimado(ticketAEditar.tiempoEstimado ? String(ticketAEditar.tiempoEstimado) : '');
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
@@ -128,6 +128,18 @@ export const TicketFormModal = ({
             if (!planta.trim()) e.planta = 'Selecciona la planta.';
             if (!area.trim()) e.area = 'El área es obligatoria.';
         }
+
+        // LÓGICA STRICTA DE FECHAS: Bloqueo explícito al submit manual
+        if (esAdmin && fechaVencimiento) {
+            const hoy = getMinDateHoy();
+            if (fechaVencimiento < hoy) {
+                const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
+                if (!esEdicion || fechaVencimiento !== fechaOriginal) {
+                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                }
+            }
+        }
+
         return e;
     };
 
@@ -162,7 +174,7 @@ export const TicketFormModal = ({
 
         if (esAdmin) {
             formData.append('tipo', tipo);
-            if (fechaVencimiento) formData.append('fechaVencimiento', fechaVencimiento);
+            if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
             if (tiempoEstimado) formData.append('tiempoEstimado', tiempoEstimado);
             responsables.forEach((id) => formData.append('responsables', id));
         }
@@ -183,12 +195,7 @@ export const TicketFormModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full md:max-w-4xl lg:max-w-5xl">
             <ModalHeader
-                title={esEdicion
-                    ? 'Editar tarea'
-                    : esAdmin
-                        ? 'Nueva tarea'
-                        : 'Nueva tarea'
-                }
+                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Nueva tarea'}
                 onClose={onClose}
             />
             <ModalBody>
@@ -315,14 +322,29 @@ export const TicketFormModal = ({
                                     ))}
                                 </Select>
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-fecha">Fecha de vencimiento</Label>
+                            <div className="flex flex-col gap-1.5 overflow-hidden">
+                                <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
                                 <Input
                                     id="tf-fecha"
                                     type="date"
                                     value={fechaVencimiento}
-                                    onChange={(e) => setFechaVencimiento(e.target.value)}
+                                    min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                                    onChange={(e) => {
+                                        const nuevaFecha = e.target.value;
+                                        // Calculamos hoy exactamente con la misma regla de tu min para evitar desfases
+                                        const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+                                        // Escudo anti-Safari: Si logra escribir/seleccionar un día viejo, lo forzamos a hoy
+                                        if (nuevaFecha && nuevaFecha < hoyLocal) {
+                                            setFechaVencimiento(hoyLocal);
+                                        } else {
+                                            setFechaVencimiento(nuevaFecha);
+                                        }
+                                    }}
+                                    error={!!fe.fechaVencimiento}
+                                    helperText={fe.fechaVencimiento}
                                     disabled={isSubmitting}
+                                    style={{ minWidth: 0 }}
                                 />
                             </div>
                             <div className="flex flex-col gap-1.5">

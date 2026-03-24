@@ -1,14 +1,7 @@
 // src/features/tickets/components/historico/ticket-timeline.jsx
 import { useState } from 'react';
+import { formatFechaHora } from '@/lib/date';
 import { Icon } from '@/components/ui/z_index';
-
-const formatFecha = (iso) => {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString('es-MX', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
-};
 
 const formatEstado = (estado) => {
     if (!estado) return '';
@@ -69,7 +62,7 @@ export const TicketTimeline = ({ historial }) => {
 
                             <div className="flex items-center gap-2 mb-1">
                                 <p className={`text-[11px] font-bold tracking-wide uppercase ${isAbsoluteLatest ? 'text-marca-primario' : 'text-slate-400'}`}>
-                                    {formatFecha(h.createdAt)}
+                                    {formatFechaHora(h.createdAt)}
                                 </p>
                                 {isAbsoluteLatest && (
                                     <span className="text-[9px] font-extrabold bg-marca-primario text-white px-1.5 py-0.5 rounded-sm uppercase tracking-wider">

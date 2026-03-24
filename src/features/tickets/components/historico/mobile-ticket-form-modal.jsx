@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
+import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
 
 const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
 
@@ -104,10 +105,13 @@ export const MobileTicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
+
+            // Extracción directa cortando en 'T' para evitar el bug de horas UTC que roba 1 día
             const fv = ticketAEditar.fechaVencimiento
-                ? new Date(ticketAEditar.fechaVencimiento).toISOString().split('T')[0]
+                ? ticketAEditar.fechaVencimiento.split('T')[0]
                 : '';
             setFechaVencimiento(fv);
+
             setTiempoEstimado(ticketAEditar.tiempoEstimado ? String(ticketAEditar.tiempoEstimado) : '');
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
@@ -128,6 +132,19 @@ export const MobileTicketFormModal = ({
             if (!planta.trim()) e.planta = 'Selecciona la planta.';
             if (!area.trim()) e.area = 'El área es obligatoria.';
         }
+
+        // LÓGICA STRICTA DE FECHAS: Protege contra escritura manual de fechas pasadas
+        if (esAdmin && fechaVencimiento) {
+            const hoy = getMinDateHoy();
+            if (fechaVencimiento < hoy) {
+                const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
+                // Solo se permite enviar una fecha pasada si es la misma que ya traía el ticket en edición
+                if (!esEdicion || fechaVencimiento !== fechaOriginal) {
+                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                }
+            }
+        }
+
         return e;
     };
 
@@ -162,7 +179,7 @@ export const MobileTicketFormModal = ({
 
         if (esAdmin) {
             formData.append('tipo', tipo);
-            if (fechaVencimiento) formData.append('fechaVencimiento', fechaVencimiento);
+            if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
             if (tiempoEstimado) formData.append('tiempoEstimado', tiempoEstimado);
             responsables.forEach((id) => formData.append('responsables', id));
         }
@@ -183,12 +200,7 @@ export const MobileTicketFormModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
-                title={esEdicion
-                    ? 'Editar tarea'
-                    : esAdmin
-                        ? 'Nueva tarea'
-                        : 'Reportar problema'
-                }
+                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Reportar problema'}
                 onClose={onClose}
             />
             <ModalBody>
@@ -283,22 +295,6 @@ export const MobileTicketFormModal = ({
                         </div>
                     </div>
 
-                    {/* ── CATEGORÍA (solo clientes) ── */}
-                    {!esAdmin && (
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-categoria" error={!!fe.categoria}>Categoría del equipo *</Label>
-                            <Input
-                                id="tf-categoria"
-                                value={categoria}
-                                onChange={(e) => setCategoria(e.target.value)}
-                                error={!!fe.categoria}
-                                helperText={fe.categoria}
-                                placeholder="Ej. Eléctrico, Mecánico..."
-                                disabled={isSubmitting}
-                            />
-                        </div>
-                    )}
-
                     {/* ── CAMPOS ADMINISTRATIVOS (Flujo Vertical Mobile) ── */}
                     {esAdmin && (
                         <div className="flex flex-col gap-4">
@@ -316,12 +312,26 @@ export const MobileTicketFormModal = ({
                                 </Select>
                             </div>
                             <div className="flex flex-col gap-1.5 overflow-hidden">
-                                <Label htmlFor="tf-fecha">Fecha de vencimiento</Label>
+                                <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
                                 <Input
                                     id="tf-fecha"
                                     type="date"
                                     value={fechaVencimiento}
-                                    onChange={(e) => setFechaVencimiento(e.target.value)}
+                                    min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                                    onChange={(e) => {
+                                        const nuevaFecha = e.target.value;
+                                        // Calculamos hoy exactamente con la misma regla de tu min para evitar desfases
+                                        const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+                                        // Escudo anti-Safari: Si logra escribir/seleccionar un día viejo, lo forzamos a hoy
+                                        if (nuevaFecha && nuevaFecha < hoyLocal) {
+                                            setFechaVencimiento(hoyLocal);
+                                        } else {
+                                            setFechaVencimiento(nuevaFecha);
+                                        }
+                                    }}
+                                    error={!!fe.fechaVencimiento}
+                                    helperText={fe.fechaVencimiento}
                                     disabled={isSubmitting}
                                     style={{ minWidth: 0 }}
                                 />

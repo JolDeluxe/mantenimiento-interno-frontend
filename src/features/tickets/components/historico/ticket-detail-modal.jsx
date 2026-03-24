@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
+import { formatFechaHora } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
 
 const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
@@ -17,14 +18,6 @@ const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
         </div>
     </div>
 );
-
-const formatFecha = (iso) => {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString('es-MX', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-    });
-};
 
 export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const [mostrarHistorial, setMostrarHistorial] = useState(false);
@@ -95,8 +88,8 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     <Icon name="schedule" size="sm" className="text-marca-primario" />
                                     Tiempos
                                 </h4>
-                                <DataRow icon="calendar_today" label="Creado" value={formatFecha(ticket.createdAt)} />
-                                <DataRow icon="event" label="Vencimiento" value={formatFecha(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
+                                <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
+                                <DataRow icon="event" label="Vencimiento" value={formatFechaHora(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
                                 <DataRow icon="timer" label="Tiempo estimado" value={ticket.tiempoEstimado ? `${ticket.tiempoEstimado} min` : null} fallback="No especificado" />
                                 <DataRow icon="hourglass_bottom" label="Tiempo real" value={ticket.duracionReal ? `${ticket.duracionReal} min` : null} fallback="Sin registro" />
                             </div>

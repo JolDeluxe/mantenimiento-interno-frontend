@@ -21,14 +21,6 @@ export const UserDetailModal = ({ isOpen, onClose, usuario }) => {
 
     const inicial = usuario.nombre ? usuario.nombre.charAt(0).toUpperCase() : "?";
 
-    const formatFecha = (isoString) => {
-        if (!isoString) return null;
-        return new Date(isoString).toLocaleDateString("es-MX", {
-            year: 'numeric', month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-    };
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
             <ModalHeader title="Detalles del Perfil" onClose={onClose} />
