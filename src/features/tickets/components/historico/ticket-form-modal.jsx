@@ -1,8 +1,9 @@
 // src/features/tickets/components/historico/ticket-form-modal.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
+import { cn } from '@/utils/cn';
 
 const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
 
@@ -38,18 +39,135 @@ const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
 
-const TecnicoChip = ({ nombre, onRemove }) => (
-    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
-        {nombre}
+
+const WorkloadBadge = ({ label, count, colorClass }) => (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
+        {label} <span>{count}</span>
+    </span>
+);
+
+const TecnicoChip = ({ tecnico, onRemove }) => (
+    <span className="inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
+        {tecnico?.imagen ? (
+            <img src={tecnico.imagen} alt={tecnico?.nombre} className="w-5 h-5 rounded-full object-cover" />
+        ) : (
+            <div className="w-5 h-5 rounded-full bg-marca-primario/20 flex items-center justify-center text-[10px]">
+                {tecnico?.nombre?.charAt(0)}
+            </div>
+        )}
+        <span className="pl-1 truncate max-w-[120px]">{tecnico?.nombre}</span>
         <button
             type="button"
             onClick={onRemove}
-            className="flex items-center justify-center w-4 h-4 rounded-full bg-marca-primario/20 hover:bg-marca-primario/40 transition-colors cursor-pointer"
+            className="flex items-center justify-center w-4 h-4 rounded-full bg-marca-primario/20 hover:bg-marca-primario/40 transition-colors cursor-pointer shrink-0"
         >
             <Icon name="close" size="xs" />
         </button>
     </span>
 );
+
+const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setIsOpen(false);
+                onToggle?.(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onToggle]);
+
+    const toggle = () => {
+        if (disabled) return;
+        const next = !isOpen;
+        setIsOpen(next);
+        onToggle?.(next);
+    };
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <div
+                onClick={toggle}
+                className={cn(
+                    "flex items-center justify-between w-full px-3 py-2 text-sm border rounded-lg transition-colors",
+                    disabled
+                        ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
+                        : "bg-white border-slate-300 hover:border-marca-primario text-slate-700 cursor-pointer"
+                )}
+            >
+                <div className="flex items-center gap-2">
+                    <Icon name="engineering" size="sm" className={disabled ? "text-slate-400" : "text-slate-500"} />
+                    <span>Añadir técnico...</span>
+                </div>
+                <Icon name={isOpen ? "expand_less" : "expand_more"} size="sm" />
+            </div>
+
+            {isOpen && !disabled && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {opciones.length === 0 ? (
+                        <div className="p-3 text-sm text-center text-slate-500">No hay más técnicos disponibles</div>
+                    ) : (
+                        opciones.map((opt) => {
+                            const t = opt.tecnico;
+                            const workload = t.workload || { asignadas: 0, enProgreso: 0, enPausa: 0 };
+                            const sinTareas = workload.asignadas === 0 && workload.enProgreso === 0 && workload.enPausa === 0;
+
+                            return (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => {
+                                        onAdd(opt.value);
+                                        setIsOpen(false);
+                                        onToggle?.(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left cursor-pointer border-b border-slate-100 last:border-0"
+                                >
+                                    {/* Avatar */}
+                                    {t.imagen ? (
+                                        <img
+                                            src={t.imagen}
+                                            alt={t.nombre}
+                                            className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
+                                            onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
+                                        />
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full bg-marca-primario/10 flex items-center justify-center text-xs font-bold text-marca-primario shrink-0">
+                                            {t.nombre?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+
+                                    {/* Info */}
+                                    <div className="flex flex-col flex-1 min-w-0">
+                                        <span className="text-sm font-semibold text-slate-800 truncate">{t.nombre}</span>
+                                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                            {t.cargo && (
+                                                <span className="text-[10px] text-slate-400 truncate">{t.cargo}</span>
+                                            )}
+                                            {sinTareas ? (
+                                                <span className="text-[10px] text-estado-resuelto italic">Sin tareas</span>
+                                            ) : (
+                                                <>
+                                                    {workload.asignadas > 0 && <WorkloadBadge label="Asig." count={workload.asignadas} colorClass="bg-estado-asignada/10 text-estado-asignada" />}
+                                                    {workload.enProgreso > 0 && <WorkloadBadge label="Prog." count={workload.enProgreso} colorClass="bg-estado-en-progreso/10 text-estado-en-progreso" />}
+                                                    {workload.enPausa > 0 && <WorkloadBadge label="Pausa" count={workload.enPausa} colorClass="bg-estado-en-pausa/10 text-estado-en-pausa" />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const TicketFormModal = ({
     isOpen,
@@ -76,17 +194,18 @@ export const TicketFormModal = ({
     const [responsables, setResponsables] = useState([]);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const opcionesTecnicos = useMemo(() =>
         tecnicos.map((t) => ({
             value: String(t.id),
-            label: t.nombre + (t.cargo ? ` — ${t.cargo}` : ''),
+            tecnico: t
         })),
         [tecnicos]
     );
 
     const tecnicoMap = useMemo(() =>
-        Object.fromEntries(tecnicos.map((t) => [String(t.id), t.nombre])),
+        Object.fromEntries(tecnicos.map((t) => [String(t.id), t])),
         [tecnicos]
     );
 
@@ -367,17 +486,17 @@ export const TicketFormModal = ({
 
                         {/* Control de Técnicos con Expansión Dinámica */}
                         {esAdmin && tecnicos.length > 0 && (
-                            <div className="flex flex-col gap-2 relative transition-all duration-300 ease-in-out focus-within:pb-52">
+                            <div className={cn(
+                                "flex flex-col gap-2 transition-[padding] duration-300 ease-in-out",
+                                isDropdownOpen ? "pb-[260px]" : "pb-0"
+                            )}>
                                 <Label>Técnicos asignados (opcional)</Label>
 
-                                <SearchableSelect
-                                    options={opcionesDisponibles}
-                                    value=""
-                                    onChange={handleAddTecnico}
-                                    placeholder="Añadir técnico…"
-                                    icon="engineering"
-                                    allOptionText={null}
+                                <TecnicoDropdown
+                                    opciones={opcionesDisponibles}
+                                    onAdd={handleAddTecnico}
                                     disabled={isSubmitting || opcionesDisponibles.length === 0}
+                                    onToggle={setIsDropdownOpen}
                                 />
 
                                 {responsables.length > 0 ? (
@@ -385,7 +504,7 @@ export const TicketFormModal = ({
                                         {responsables.map((id) => (
                                             <TecnicoChip
                                                 key={id}
-                                                nombre={tecnicoMap[id] ?? `ID ${id}`}
+                                                tecnico={tecnicoMap[id]}
                                                 onRemove={() => handleRemoveTecnico(id)}
                                             />
                                         ))}
@@ -399,7 +518,7 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
-                        <div className={`flex flex-col gap-1.5 ${(!esAdmin || tecnicos.length === 0) ? 'lg:col-span-2' : ''}`}>
+                        <div className={cn('flex flex-col gap-1.5', (!esAdmin || tecnicos.length === 0) && 'lg:col-span-2')}>
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
                                 <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>

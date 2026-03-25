@@ -38,10 +38,75 @@ const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
 
+// ── Duration Picker (mobile — selects nativos en grid 2 cols) ─────────────
+const HORAS_OPTIONS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+const DurationPicker = ({ valueMins, onChange, disabled }) => {
+    const horas = Math.floor((valueMins || 0) / 60);
+    const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
+
+    const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
+                {/* Horas */}
+                <div className="relative">
+                    <select
+                        value={horas}
+                        onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                        disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                    >
+                        {HORAS_OPTIONS.map((h) => (
+                            <option key={h} value={h}>{h} h</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+
+                {/* Minutos */}
+                <div className="relative">
+                    <select
+                        value={minutos}
+                        onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                        disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                    >
+                        {MINUTOS_OPTIONS.map((m) => (
+                            <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+            </div>
+
+            {totalLabel && (
+                <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <Icon name="timer" size="xs" />
+                    {totalLabel}
+                </p>
+            )}
+        </div>
+    );
+};
+
 // ── Chip de técnico seleccionado ──────────────────────────────────────────
-const TecnicoChip = ({ nombre, onRemove }) => (
-    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
-        {nombre}
+const TecnicoChip = ({ tecnico, onRemove }) => (
+    <span className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-0.5 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
+        {tecnico?.imagen ? (
+            <img src={tecnico.imagen} alt="" className="w-4 h-4 rounded-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }} />
+        ) : (
+            <div className="w-4 h-4 rounded-full bg-marca-primario/20 flex items-center justify-center text-[8px] font-black">
+                {tecnico?.nombre?.charAt(0).toUpperCase() ?? '?'}
+            </div>
+        )}
+        <span>{tecnico?.nombre ?? '…'}</span>
         <button
             type="button"
             onClick={onRemove}
@@ -52,6 +117,7 @@ const TecnicoChip = ({ nombre, onRemove }) => (
     </span>
 );
 
+// ── Modal principal ───────────────────────────────────────────────────────
 export const MobileTicketFormModal = ({
     isOpen,
     onClose,
@@ -73,22 +139,20 @@ export const MobileTicketFormModal = ({
     const [clasificacion, setClasificacion] = useState('');
     const [tipo, setTipo] = useState('PLANEADA');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
-    const [tiempoEstimado, setTiempoEstimado] = useState('');
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
     const [responsables, setResponsables] = useState([]);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
-    const opcionesTecnicos = useMemo(() =>
-        tecnicos.map((t) => ({
-            value: String(t.id),
-            label: t.nombre + (t.cargo ? ` — ${t.cargo}` : ''),
-        })),
+    const tecnicoMap = useMemo(() =>
+        Object.fromEntries(tecnicos.map((t) => [String(t.id), t])),
         [tecnicos]
     );
 
-    const tecnicoMap = useMemo(() =>
-        Object.fromEntries(tecnicos.map((t) => [String(t.id), t.nombre])),
-        [tecnicos]
+    // Opciones para el <select> nativo — formato: "id|nombre|cargo"
+    const opcionesDisponibles = useMemo(() =>
+        tecnicos.filter((t) => !responsables.includes(String(t.id))),
+        [tecnicos, responsables]
     );
 
     useEffect(() => {
@@ -105,20 +169,15 @@ export const MobileTicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-
-            // Extracción directa cortando en 'T' para evitar el bug de horas UTC que roba 1 día
-            const fv = ticketAEditar.fechaVencimiento
-                ? ticketAEditar.fechaVencimiento.split('T')[0]
-                : '';
+            const fv = ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
             setFechaVencimiento(fv);
-
-            setTiempoEstimado(ticketAEditar.tiempoEstimado ? String(ticketAEditar.tiempoEstimado) : '');
+            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
             setClasificacion(''); setTipo('PLANEADA');
-            setFechaVencimiento(''); setTiempoEstimado(''); setResponsables([]);
+            setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
         }
     }, [isOpen, esEdicion, ticketAEditar]);
 
@@ -132,19 +191,15 @@ export const MobileTicketFormModal = ({
             if (!planta.trim()) e.planta = 'Selecciona la planta.';
             if (!area.trim()) e.area = 'El área es obligatoria.';
         }
-
-        // LÓGICA STRICTA DE FECHAS: Protege contra escritura manual de fechas pasadas
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
             if (fechaVencimiento < hoy) {
                 const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
-                // Solo se permite enviar una fecha pasada si es la misma que ya traía el ticket en edición
                 if (!esEdicion || fechaVencimiento !== fechaOriginal) {
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
                 }
             }
         }
-
         return e;
     };
 
@@ -157,10 +212,21 @@ export const MobileTicketFormModal = ({
         setResponsables((prev) => prev.filter((x) => x !== idStr));
     };
 
-    const opcionesDisponibles = useMemo(() =>
-        opcionesTecnicos.filter((opt) => !responsables.includes(opt.value)),
-        [opcionesTecnicos, responsables]
-    );
+    // Genera label enriquecido para el option nativo
+    const buildOptionLabel = (t) => {
+        const { workload } = t;
+        const sinTareas = !workload ||
+            (workload.asignadas === 0 && workload.enProgreso === 0 && workload.enPausa === 0);
+
+        if (sinTareas) return `${t.nombre}${t.cargo ? ` — ${t.cargo}` : ''} · Sin tareas`;
+
+        const parts = [];
+        if (workload.asignadas > 0) parts.push(`Asig. ${workload.asignadas}`);
+        if (workload.enProgreso > 0) parts.push(`Prog. ${workload.enProgreso}`);
+        if (workload.enPausa > 0) parts.push(`Pausa ${workload.enPausa}`);
+
+        return `${t.nombre}${t.cargo ? ` — ${t.cargo}` : ''} · ${parts.join('  ')}`;
+    };
 
     const handleSubmit = async () => {
         setSubmitted(true);
@@ -180,7 +246,7 @@ export const MobileTicketFormModal = ({
         if (esAdmin) {
             formData.append('tipo', tipo);
             if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-            if (tiempoEstimado) formData.append('tiempoEstimado', tiempoEstimado);
+            if (tiempoEstimadoMins > 0) formData.append('tiempoEstimado', String(tiempoEstimadoMins));
             responsables.forEach((id) => formData.append('responsables', id));
         }
 
@@ -231,86 +297,55 @@ export const MobileTicketFormModal = ({
                         />
                     </div>
 
-                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA (Flujo Vertical Mobile) ── */}
+                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA ── */}
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
-                            <Select
-                                id="tf-clasificacion"
-                                value={clasificacion}
-                                onChange={(e) => setClasificacion(e.target.value)}
-                                error={!!fe.clasificacion}
-                                helperText={fe.clasificacion}
-                                disabled={isSubmitting}
-                            >
+                            <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)} error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
-                                {clasificacionesOpts.map((c) => (
-                                    <option key={c.value} value={c.value}>{c.label}</option>
-                                ))}
+                                {clasificacionesOpts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-prioridad">Prioridad</Label>
-                            <Select
-                                id="tf-prioridad"
-                                value={prioridad}
-                                onChange={(e) => setPrioridad(e.target.value)}
-                                disabled={isSubmitting}
-                            >
-                                {PRIORIDADES.map((p) => (
-                                    <option key={p.value} value={p.value}>{p.label}</option>
-                                ))}
+                            <Select id="tf-prioridad" value={prioridad} onChange={(e) => setPrioridad(e.target.value)} disabled={isSubmitting}>
+                                {PRIORIDADES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </Select>
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-planta" error={!!fe.planta}>Planta {!esAdmin && '*'}</Label>
-                            <Select
-                                id="tf-planta"
-                                value={planta}
-                                onChange={(e) => setPlanta(e.target.value)}
-                                error={!!fe.planta}
-                                helperText={fe.planta}
-                                disabled={isSubmitting}
-                            >
+                            <Select id="tf-planta" value={planta} onChange={(e) => setPlanta(e.target.value)} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
-                                {PLANTAS.map((p) => (
-                                    <option key={p} value={p}>{p}</option>
-                                ))}
+                                {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
                         </div>
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea {!esAdmin && '*'}</Label>
-                            <Input
-                                id="tf-area"
-                                value={area}
-                                onChange={(e) => setArea(e.target.value)}
-                                error={!!fe.area}
-                                helperText={fe.area}
-                                placeholder="Ej. Pespunte, Láser, Almacén…"
-                                disabled={isSubmitting}
-                            />
+                            <Input id="tf-area" value={area} onChange={(e) => setArea(e.target.value)} error={!!fe.area} helperText={fe.area} placeholder="Ej. Pespunte, Láser, Almacén…" disabled={isSubmitting} />
                         </div>
                     </div>
 
-                    {/* ── CAMPOS ADMINISTRATIVOS (Flujo Vertical Mobile) ── */}
+                    {/* ── CATEGORÍA (solo clientes) ── */}
+                    {!esAdmin && (
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="tf-categoria" error={!!fe.categoria}>Categoría del equipo *</Label>
+                            <Input id="tf-categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} error={!!fe.categoria} helperText={fe.categoria} placeholder="Ej. Eléctrico, Mecánico..." disabled={isSubmitting} />
+                        </div>
+                    )}
+
+                    {/* ── CAMPOS ADMINISTRATIVOS ── */}
                     {esAdmin && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-tipo">Tipo de tarea</Label>
-                                <Select
-                                    id="tf-tipo"
-                                    value={tipo}
-                                    onChange={(e) => setTipo(e.target.value)}
-                                    disabled={isSubmitting || esEdicion}
-                                >
-                                    {TIPOS_ADMIN.map((t) => (
-                                        <option key={t.value} value={t.value}>{t.label}</option>
-                                    ))}
+                                <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} disabled={isSubmitting || esEdicion}>
+                                    {TIPOS_ADMIN.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                                 </Select>
                             </div>
+
                             <div className="flex flex-col gap-1.5 overflow-hidden">
                                 <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
                                 <Input
@@ -319,16 +354,9 @@ export const MobileTicketFormModal = ({
                                     value={fechaVencimiento}
                                     min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
                                     onChange={(e) => {
-                                        const nuevaFecha = e.target.value;
-                                        // Calculamos hoy exactamente con la misma regla de tu min para evitar desfases
                                         const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-
-                                        // Escudo anti-Safari: Si logra escribir/seleccionar un día viejo, lo forzamos a hoy
-                                        if (nuevaFecha && nuevaFecha < hoyLocal) {
-                                            setFechaVencimiento(hoyLocal);
-                                        } else {
-                                            setFechaVencimiento(nuevaFecha);
-                                        }
+                                        const v = e.target.value;
+                                        setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
                                     }}
                                     error={!!fe.fechaVencimiento}
                                     helperText={fe.fechaVencimiento}
@@ -336,82 +364,78 @@ export const MobileTicketFormModal = ({
                                     style={{ minWidth: 0 }}
                                 />
                             </div>
+
+                            {/* ── DURACIÓN ESTIMADA ── */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-tiempo">Tiempo estimado (min)</Label>
-                                <Input
-                                    id="tf-tiempo"
-                                    type="number"
-                                    min="1"
-                                    value={tiempoEstimado}
-                                    onChange={(e) => setTiempoEstimado(e.target.value)}
-                                    placeholder="Ej. 60"
+                                <Label>Tiempo estimado</Label>
+                                <DurationPicker
+                                    valueMins={tiempoEstimadoMins}
+                                    onChange={setTiempoEstimadoMins}
                                     disabled={isSubmitting}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── ASIGNACIÓN DE TÉCNICOS (Nativo) + DESCRIPCIÓN ── */}
-                    <div className="flex flex-col gap-6">
+                    {/* ── ASIGNACIÓN DE TÉCNICOS (select nativo con workload en label) ── */}
+                    {esAdmin && tecnicos.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="tf-tecnicos-add">Técnicos asignados (opcional)</Label>
 
-                        {esAdmin && tecnicos.length > 0 && (
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="tf-tecnicos-add">Técnicos asignados (opcional)</Label>
-
-                                <Select
-                                    id="tf-tecnicos-add"
-                                    value=""
-                                    onChange={(e) => handleAddTecnico(e.target.value)}
-                                    disabled={isSubmitting || opcionesDisponibles.length === 0}
-                                >
-                                    <option value="" disabled hidden>
-                                        {opcionesDisponibles.length === 0 ? 'Todos asignados' : 'Seleccionar técnico…'}
+                            <Select
+                                id="tf-tecnicos-add"
+                                value=""
+                                onChange={(e) => handleAddTecnico(e.target.value)}
+                                disabled={isSubmitting || opcionesDisponibles.length === 0}
+                            >
+                                <option value="" disabled hidden>
+                                    {opcionesDisponibles.length === 0 ? 'Todos asignados' : 'Seleccionar técnico…'}
+                                </option>
+                                {opcionesDisponibles.map((t) => (
+                                    <option key={t.id} value={String(t.id)}>
+                                        {buildOptionLabel(t)}
                                     </option>
-                                    {opcionesDisponibles.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
+                                ))}
+                            </Select>
+
+                            {responsables.length > 0 ? (
+                                <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
+                                    {responsables.map((id) => (
+                                        <TecnicoChip
+                                            key={id}
+                                            tecnico={tecnicoMap[id]}
+                                            onRemove={() => handleRemoveTecnico(id)}
+                                        />
                                     ))}
-                                </Select>
-
-                                {responsables.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
-                                        {responsables.map((id) => (
-                                            <TecnicoChip
-                                                key={id}
-                                                nombre={tecnicoMap[id] ?? `ID ${id}`}
-                                                onRemove={() => handleRemoveTecnico(id)}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-dashed border-slate-300 text-slate-400 text-xs italic min-h-12">
-                                        <Icon name="engineering" size="sm" />
-                                        Sin técnicos asignados (la tarea quedará PENDIENTE)
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center">
-                                <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
-                                <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                    {descripcion.length}/{MAX_DESCRIPCION}
-                                </span>
-                            </div>
-                            <Input
-                                id="tf-desc"
-                                multiline
-                                rows={4}
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
-                                error={!!fe.descripcion}
-                                helperText={fe.descripcion}
-                                placeholder="Describe el problema o tarea con el mayor detalle posible…"
-                                disabled={isSubmitting}
-                            />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-dashed border-slate-300 text-slate-400 text-xs italic min-h-12">
+                                    <Icon name="engineering" size="sm" />
+                                    Sin técnicos asignados (la tarea quedará PENDIENTE)
+                                </div>
+                            )}
                         </div>
+                    )}
+
+                    {/* ── DESCRIPCIÓN ── */}
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
+                            <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
+                                {descripcion.length}/{MAX_DESCRIPCION}
+                            </span>
+                        </div>
+                        <Input
+                            id="tf-desc"
+                            multiline
+                            rows={4}
+                            value={descripcion}
+                            onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
+                            error={!!fe.descripcion}
+                            helperText={fe.descripcion}
+                            placeholder="Describe el problema o tarea con el mayor detalle posible…"
+                            disabled={isSubmitting}
+                        />
                     </div>
 
                 </div>

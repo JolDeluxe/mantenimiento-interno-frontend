@@ -15,6 +15,13 @@ const PRIORIDADES = [
     { value: 'CRITICA', label: 'Crítica' },
 ];
 
+const CLASIFICACIONES = [
+    { value: 'CORRECTIVO', label: 'Correctivo' },
+    { value: 'MEJORA', label: 'Mejora' },
+    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
+    { value: 'RUTINA', label: 'Rutina' },
+];
+
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div
         className={`relative overflow-hidden flex items-center ${className}`}
@@ -45,7 +52,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
-    const selected = options.find((o) => o.value === value);
+    const selected = options.find((o) => o.value === value || o.id === value);
     const isActive = Boolean(value);
 
     return (
@@ -57,8 +64,8 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
             >
                 <option value="">{placeholder}</option>
                 {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                    <option key={opt.value || opt.id} value={opt.value || opt.id}>
+                        {opt.label || opt.nombre}
                     </option>
                 ))}
             </select>
@@ -73,7 +80,7 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
                 <GlassSheen />
                 <Icon name={icon} size="xs" className="relative shrink-0 z-10" />
                 <span className="relative flex-1 truncate z-10">
-                    {selected?.label ?? placeholder}
+                    {selected?.label ?? selected?.nombre ?? placeholder}
                 </span>
 
                 {isActive ? (
@@ -115,16 +122,16 @@ const GlassFilterToggleBtn = ({ icon, label, isActive, count, showBadge, onClick
 );
 
 export const MobileTicketFilterBar = ({
-    query,
-    onSearchChange,
-    filtroTipo,
-    onTipoChange,
-    filtroPrioridad,
-    onPrioridadChange,
-    mostrarPapelera,
-    onTogglePapelera,
-    mostrarRechazadas,
-    onToggleRechazadas,
+    query, onSearchChange,
+    filtroTipo, onTipoChange,
+    filtroPrioridad, onPrioridadChange,
+    filtroResponsable, onResponsableChange, opcionesResponsables = [],
+    filtroPlanta, onPlantaChange, opcionesPlantas = [],
+    filtroArea, onAreaChange, opcionesAreas = [],
+    filtroClasificacion, onClasificacionChange,
+    mostrarAtrasadas, onToggleAtrasadas,
+    mostrarPapelera, onTogglePapelera,
+    mostrarRechazadas, onToggleRechazadas,
     conteos = {}
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
@@ -136,16 +143,23 @@ export const MobileTicketFilterBar = ({
     }, [localValue, onSearchChange]);
 
     const totalRechazadas = conteos['RECHAZADO'] ?? 0;
-    const totalCanceladas = conteos['CANCELADA'] ?? 0;
 
-    // Ya no incluimos "mostrarRechazadas" aquí para que el botón de filtros no se encienda por ellas.
-    const hasActiveFilters = Boolean(filtroTipo || filtroPrioridad || mostrarPapelera);
+    // Mide qué filtros están activos excluyendo Canceladas/Rechazadas que tienen botón rápido en Row 1
+    const hasActiveFilters = Boolean(
+        filtroTipo || filtroPrioridad || filtroResponsable ||
+        filtroPlanta || filtroArea || filtroClasificacion || mostrarAtrasadas
+    );
 
     const handleClearFilters = () => {
         if (filtroTipo) onTipoChange('');
         if (filtroPrioridad) onPrioridadChange('');
+        if (filtroResponsable) onResponsableChange('');
+        if (filtroPlanta) onPlantaChange('');
+        if (filtroArea) onAreaChange('');
+        if (filtroClasificacion) onClasificacionChange('');
+        if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarPapelera) onTogglePapelera();
-        if (mostrarRechazadas) onToggleRechazadas(); // Lo limpiamos también por consistencia
+        if (mostrarRechazadas) onToggleRechazadas();
     };
 
     const filterElements = [
@@ -164,27 +178,55 @@ export const MobileTicketFilterBar = ({
             options={PRIORIDADES}
             value={filtroPrioridad}
             onChange={onPrioridadChange}
+        />,
+        <GlassNativeSelect
+            key="clasificacion"
+            icon="style"
+            placeholder="Clasificación"
+            options={CLASIFICACIONES}
+            value={filtroClasificacion}
+            onChange={onClasificacionChange}
+        />,
+        <GlassNativeSelect
+            key="responsable"
+            icon="person"
+            placeholder="Responsable"
+            options={opcionesResponsables}
+            value={filtroResponsable}
+            onChange={onResponsableChange}
+        />,
+        <GlassNativeSelect
+            key="planta"
+            icon="domain"
+            placeholder="Planta"
+            options={opcionesPlantas}
+            value={filtroPlanta}
+            onChange={onPlantaChange}
+        />,
+        <GlassNativeSelect
+            key="area"
+            icon="place"
+            placeholder="Área"
+            options={opcionesAreas}
+            value={filtroArea}
+            onChange={onAreaChange}
+        />,
+        <GlassFilterToggleBtn
+            key="atrasadas"
+            icon="warning"
+            label="Atrasadas"
+            isActive={mostrarAtrasadas}
+            count={0}
+            showBadge={false}
+            onClick={onToggleAtrasadas}
         />
     ];
 
-    filterElements.push(
-        <GlassFilterToggleBtn
-            key="canceladas"
-            icon="delete"
-            label="Canceladas"
-            isActive={mostrarPapelera}
-            count={totalCanceladas}
-            showBadge={false}
-            onClick={onTogglePapelera}
-        />
-    );
-
-    // Condición para mostrar o parpadear el botón de Rechazadas
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     return (
         <div className="w-full flex flex-col gap-2.5">
-            {/* ── Fila 1: Buscador + Rechazadas Rápido + Botón Toggle Filtros ── */}
+            {/* ── Fila 1: Buscador + Canceladas + Rechazadas + Toggle Filtros ── */}
             <div className="flex items-center gap-2">
                 <SearchInput
                     localValue={localValue}
@@ -193,16 +235,30 @@ export const MobileTicketFilterBar = ({
                     className="flex-1 min-w-0"
                 />
 
-                {/* ── Botón Rápido Rechazadas (Aparece si hay rechazadas o el filtro está activo) ── */}
+                {/* Botón Rápido Canceladas (Solo ícono) */}
+                <button
+                    type="button"
+                    onClick={onTogglePapelera}
+                    style={mostrarPapelera ? { ...glassBase('dark'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
+                    className={`
+                        relative overflow-hidden flex items-center justify-center w-[38px] h-[38px] shrink-0 transition-all duration-200 active:scale-95
+                        ${mostrarPapelera ? 'text-white' : 'text-slate-600'}
+                    `}
+                >
+                    <GlassSheen />
+                    <Icon name="delete" size="sm" className="relative z-10" />
+                </button>
+
+                {/* Botón Rápido Rechazadas */}
                 <button
                     type="button"
                     onClick={onToggleRechazadas}
                     style={mostrarRechazadas ? { ...glassBase('danger'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
                     className={`
-                            relative overflow-hidden flex items-center justify-center h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 gap-1.5
-                            ${isRechazadasAlert ? 'animate-pulse border border-red-400 shadow-[0_0_12px_rgba(220,38,38,0.4)]' : ''}
-                            ${mostrarRechazadas ? 'text-white' : 'text-slate-600'}
-                        `}
+                        relative overflow-hidden flex items-center justify-center h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 gap-1.5
+                        ${isRechazadasAlert ? 'animate-pulse border border-red-400 shadow-[0_0_12px_rgba(220,38,38,0.4)]' : ''}
+                        ${mostrarRechazadas ? 'text-white' : 'text-slate-600'}
+                    `}
                 >
                     <GlassSheen />
                     <Icon name="block" size="sm" className={`relative z-10 ${isRechazadasAlert ? 'text-red-500' : ''}`} />
@@ -227,7 +283,6 @@ export const MobileTicketFilterBar = ({
                 >
                     <GlassSheen />
                     <Icon name="filter_alt" size="sm" className="relative z-10" />
-
                     {hasActiveFilters && !showFilters && (
                         <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-marca-acento rounded-full border-2 border-white z-20"></span>
                     )}
@@ -241,7 +296,6 @@ export const MobileTicketFilterBar = ({
                     style={glassBase('light')}
                 >
                     <GlassSheen />
-
                     <div className="grid grid-cols-2 gap-2 relative z-10">
                         {filterElements.map((el, index) => {
                             const isOddLength = filterElements.length % 2 !== 0;
@@ -259,17 +313,17 @@ export const MobileTicketFilterBar = ({
                         <button
                             type="button"
                             onClick={handleClearFilters}
-                            disabled={!hasActiveFilters && !mostrarRechazadas}
-                            style={(hasActiveFilters || mostrarRechazadas) ? { ...glassBase('light'), borderRadius: 10 } : {}}
+                            disabled={!hasActiveFilters && !mostrarRechazadas && !mostrarPapelera}
+                            style={(hasActiveFilters || mostrarRechazadas || mostrarPapelera) ? { ...glassBase('light'), borderRadius: 10 } : {}}
                             className={`
                                 relative overflow-hidden flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 transition-all duration-200
-                                ${(hasActiveFilters || mostrarRechazadas)
+                                ${(hasActiveFilters || mostrarRechazadas || mostrarPapelera)
                                     ? 'text-red-500 active:scale-95'
                                     : 'text-slate-400 pointer-events-none'
                                 }
                             `}
                         >
-                            {(hasActiveFilters || mostrarRechazadas) && <GlassSheen />}
+                            {(hasActiveFilters || mostrarRechazadas || mostrarPapelera) && <GlassSheen />}
                             <Icon name="filter_alt_off" size="xs" className="relative z-10" />
                             <span className="relative z-10">Limpiar filtros</span>
                         </button>

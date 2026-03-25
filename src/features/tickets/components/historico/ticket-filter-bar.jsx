@@ -1,4 +1,3 @@
-// src/features/tickets/components/historico/ticket-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 
@@ -13,6 +12,13 @@ const PRIORIDADES = [
     { value: 'MEDIA', label: 'Media' },
     { value: 'ALTA', label: 'Alta' },
     { value: 'CRITICA', label: 'Crítica' },
+];
+
+const CLASIFICACIONES = [
+    { value: 'CORRECTIVO', label: 'Correctivo' },
+    { value: 'MEJORA', label: 'Mejora' },
+    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
+    { value: 'RUTINA', label: 'Rutina' },
 ];
 
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
@@ -41,16 +47,16 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 export const TicketFilterBar = ({
-    query,
-    onSearchChange,
-    filtroTipo,
-    onTipoChange,
-    filtroPrioridad,
-    onPrioridadChange,
-    mostrarPapelera,
-    onTogglePapelera,
-    mostrarRechazadas,
-    onToggleRechazadas,
+    query, onSearchChange,
+    filtroTipo, onTipoChange,
+    filtroPrioridad, onPrioridadChange,
+    filtroResponsable, onResponsableChange, opcionesResponsables = [],
+    filtroPlanta, onPlantaChange, opcionesPlantas = [],
+    filtroArea, onAreaChange, opcionesAreas = [],
+    filtroClasificacion, onClasificacionChange,
+    mostrarAtrasadas, onToggleAtrasadas,
+    mostrarPapelera, onTogglePapelera,
+    mostrarRechazadas, onToggleRechazadas,
     conteos = {}
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
@@ -69,62 +75,127 @@ export const TicketFilterBar = ({
     };
 
     return (
-        <div className="flex items-center gap-3 w-full pt-2">
-            <SearchInput {...searchProps} className="flex-1 max-w-sm min-w-50" />
+        <div className="flex flex-col gap-3 w-full pt-2">
+            {/* ── Fila 1: Buscador y Acciones Directas ── */}
+            <div className="flex items-center gap-3 w-full">
+                <SearchInput {...searchProps} className="flex-1 max-w-md min-w-50" />
 
-            <div className="w-44 flex-none">
-                <SearchableSelect
-                    options={TIPOS}
-                    value={filtroTipo}
-                    onChange={onTipoChange}
-                    placeholder="Tipo..."
-                    icon="category"
-                    allOptionText="Todos los tipos"
-                    className="w-full"
-                />
-            </div>
+                <div className="flex items-center gap-3 flex-none ml-auto">
+                    <div className="relative">
+                        <Button
+                            variant="filtro_rechazado"
+                            isActive={mostrarRechazadas}
+                            icon={mostrarRechazadas ? 'close' : 'block'}
+                            size="sm"
+                            onClick={onToggleRechazadas}
+                            className="w-34 flex-none justify-center h-9.5"
+                        >
+                            Rechazadas
+                        </Button>
+                        {totalRechazadas > 0 && !mostrarRechazadas && (
+                            <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold border-2 border-white shadow-md z-10 pointer-events-none leading-none">
+                                {totalRechazadas}
+                            </span>
+                        )}
+                    </div>
 
-            <div className="w-40 flex-none">
-                <SearchableSelect
-                    options={PRIORIDADES}
-                    value={filtroPrioridad}
-                    onChange={onPrioridadChange}
-                    placeholder="Prioridad..."
-                    icon="flag"
-                    allOptionText="Todas"
-                    className="w-full"
-                />
-            </div>
-
-            <div className="flex items-center gap-3 flex-none">
-                <div className="relative">
                     <Button
-                        variant="filtro_rechazado"
-                        isActive={mostrarRechazadas}
-                        icon={mostrarRechazadas ? 'close' : 'block'}
+                        variant="filtro_gris"
+                        isActive={mostrarPapelera}
+                        icon={mostrarPapelera ? 'close' : 'delete'}
                         size="sm"
-                        onClick={onToggleRechazadas}
+                        onClick={onTogglePapelera}
                         className="w-34 flex-none justify-center h-9.5"
                     >
-                        Rechazadas
+                        Canceladas
                     </Button>
-                    {totalRechazadas > 0 && !mostrarRechazadas && (
-                        <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold border-2 border-white shadow-md z-10 pointer-events-none leading-none">
-                            {totalRechazadas}
-                        </span>
-                    )}
+
+                    <Button
+                        variant="filtro_gris"
+                        isActive={mostrarAtrasadas}
+                        icon={mostrarAtrasadas ? 'close' : 'warning'}
+                        size="sm"
+                        onClick={onToggleAtrasadas}
+                        className={`w-34 flex-none justify-center h-9.5 ${mostrarAtrasadas ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent ring-0' : ''}`}
+                    >
+                        Atrasadas
+                    </Button>
+                </div>
+            </div>
+
+            {/* ── Fila 2: Selects de Filtros Avanzados ── */}
+            <div className="flex items-center gap-3 w-full flex-wrap">
+                <div className="w-40 flex-none">
+                    <SearchableSelect
+                        options={TIPOS}
+                        value={filtroTipo}
+                        onChange={onTipoChange}
+                        placeholder="Tipo..."
+                        icon="category"
+                        allOptionText="Todos los tipos"
+                        className="w-full"
+                    />
                 </div>
 
-                <Button
-                    variant="filtro_gris"
-                    isActive={mostrarPapelera}
-                    icon={mostrarPapelera ? 'close' : 'delete'}
-                    size="sm"
-                    onClick={onTogglePapelera}
-                    className="w-34 flex-none justify-center h-9.5"
-                >
-                    Canceladas
-                </Button>
+                <div className="w-40 flex-none">
+                    <SearchableSelect
+                        options={PRIORIDADES}
+                        value={filtroPrioridad}
+                        onChange={onPrioridadChange}
+                        placeholder="Prioridad..."
+                        icon="flag"
+                        allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="w-44 flex-none">
+                    <SearchableSelect
+                        options={CLASIFICACIONES}
+                        value={filtroClasificacion}
+                        onChange={onClasificacionChange}
+                        placeholder="Clasificación..."
+                        icon="style"
+                        allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="w-48 flex-none">
+                    <SearchableSelect
+                        options={opcionesResponsables}
+                        value={filtroResponsable}
+                        onChange={onResponsableChange}
+                        placeholder="Responsable..."
+                        icon="person"
+                        allOptionText="Cualquiera"
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="w-40 flex-none">
+                    <SearchableSelect
+                        options={opcionesPlantas}
+                        value={filtroPlanta}
+                        onChange={onPlantaChange}
+                        placeholder="Planta..."
+                        icon="domain"
+                        allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="w-40 flex-none">
+                    <SearchableSelect
+                        options={opcionesAreas}
+                        value={filtroArea}
+                        onChange={onAreaChange}
+                        placeholder="Área..."
+                        icon="place"
+                        allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
             </div>
         </div>
     );

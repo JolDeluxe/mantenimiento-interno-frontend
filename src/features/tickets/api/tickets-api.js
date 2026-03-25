@@ -1,6 +1,4 @@
 // src/features/tickets/api/tickets-api.js
-// ⚠️  REGLA ARQUITECTÓNICA: Único punto de contacto HTTP del feature tickets.
-//     Ninguna vista, modal o hook importa axios directamente.
 import api from '@/lib/axios';
 
 // ── Listado y detalle ──────────────────────────────────────────────────────
@@ -36,38 +34,10 @@ export const changeTicketStatus = (id, data) =>
 // ── Personal asignable ─────────────────────────────────────────────────────
 
 /**
- * Obtiene técnicos Y coordinadores activos para asignación de tareas.
- *
- * El Zod del backend limita `limit` a max 100, por lo que hacemos dos
- * llamadas paralelas (una por rol) y fusionamos los resultados.
- * El interceptor de axios ya desenvuelve response.data, por lo que
- * cada respuesta tiene la forma { status, pagination, data: [] }.
+ * Devuelve personal asignable ya calculado desde el cerebro del backend.
+ * Evitamos procesamientos dobles y sobrecarga de red en el cliente.
  */
 export const getAsignables = async () => {
-    const PARAMS_BASE = { limit: 100, estado: 'ACTIVO' };
-
-    const [resTecnicos, resCoords] = await Promise.all([
-        api.get('/api/usuarios', { params: { ...PARAMS_BASE, rol: 'TECNICO'          } }),
-        api.get('/api/usuarios', { params: { ...PARAMS_BASE, rol: 'COORDINADOR_MTTO' } }),
-    ]);
-
-    const tecnicos     = Array.isArray(resTecnicos?.data)  ? resTecnicos.data  : [];
-    const coordinadores = Array.isArray(resCoords?.data)   ? resCoords.data    : [];
-
-    // Deduplica por id (defensivo, no debería haber duplicados)
-    const seen = new Set();
-    return [...tecnicos, ...coordinadores].filter((u) => {
-        if (seen.has(u.id)) return false;
-        seen.add(u.id);
-        return true;
-    });
+    const res = await api.get('/api/usuarios/workload');
+    return Array.isArray(res?.data) ? res.data : [];
 };
-
-/**
- * @deprecated Usa getAsignables() — solo fetcha TECNICO con limit 500 que
- *             viola el contrato Zod del backend (max 100).
- */
-export const getTecnicos = () =>
-    api.get('/api/usuarios', {
-        params: { rol: 'TECNICO', limit: 100, estado: 'ACTIVO' },
-    });
