@@ -27,7 +27,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
             placeholder="Buscar ticket, área, ID…"
             className="w-full pl-9 pr-8 py-2.5 text-sm border border-slate-200 rounded-xl bg-white
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/20
-                       focus:border-marca-secundario transition-all placeholder:text-slate-400 h-[38px]"
+                       focus:border-marca-secundario transition-all placeholder:text-slate-400 h-9.5"
         />
         {localValue && (
             <button
@@ -70,7 +70,7 @@ export const TicketFilterBar = ({
 
     return (
         <div className="flex items-center gap-3 w-full pt-2">
-            <SearchInput {...searchProps} className="flex-1 max-w-sm min-w-[200px]" />
+            <SearchInput {...searchProps} className="flex-1 max-w-sm min-w-50" />
 
             <div className="w-44 flex-none">
                 <SearchableSelect
@@ -121,7 +121,7 @@ export const TicketFilterBar = ({
                     icon={mostrarPapelera ? 'close' : 'delete'}
                     size="sm"
                     onClick={onTogglePapelera}
-                    className="w-34 flex-none justify-center h-[38px]"
+                    className="w-34 flex-none justify-center h-9.5"
                 >
                     Canceladas
                 </Button>

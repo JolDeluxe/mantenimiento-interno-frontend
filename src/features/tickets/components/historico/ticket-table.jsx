@@ -92,10 +92,11 @@ export const TicketsTable = ({
             header: 'Responsable',
             accessorKey: 'responsables',
             sortable: false,
-            headerClassName: 'w-[10%] min-w-[100px]',
+            headerClassName: 'w-[15%] min-w-[140px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-24 rounded-md" />;
                 const lista = row.responsables ?? [];
+
                 if (lista.length === 0) {
                     return (
                         <span className="inline-flex items-center gap-1 text-xs text-slate-400 italic">
@@ -104,10 +105,32 @@ export const TicketsTable = ({
                         </span>
                     );
                 }
+
                 return (
-                    <span className="text-sm text-slate-700 font-medium truncate block max-w-[150px]">
-                        {lista.map((r) => r.nombre).join(', ')}
-                    </span>
+                    <div className="flex flex-col gap-2 items-start justify-center">
+                        {lista.map((r) => (
+                            <div key={r.id} className="flex items-center gap-2" title={r.nombre}>
+                                {r.imagen ? (
+                                    <img
+                                        src={r.imagen}
+                                        alt={r.nombre}
+                                        className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-50"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = '/img/perfil-no-foto.webp';
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-7 h-7 rounded-full bg-marca-primario/10 flex items-center justify-center text-marca-primario text-xs font-bold border border-marca-primario/20 shrink-0 shadow-sm">
+                                        {r.nombre?.charAt(0).toUpperCase() ?? "?"}
+                                    </div>
+                                )}
+                                <span className="text-sm text-slate-700 font-medium truncate max-w-[120px]">
+                                    {r.nombre}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 );
             },
         },

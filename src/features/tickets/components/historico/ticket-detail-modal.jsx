@@ -1,8 +1,7 @@
-// src/features/tickets/components/historico/ticket-detail-modal.jsx
 import { useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { formatFechaHora } from '@/lib/date';
+import { formatFecha, formatFechaHora } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
 
 const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
@@ -12,7 +11,7 @@ const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
         </div>
         <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-            <span className="text-sm font-medium text-slate-800 mt-0.5 break-words">
+            <span className="text-sm font-medium text-slate-800 mt-0.5 wrap-break-word">
                 {value || <span className="text-slate-400 italic font-normal">{fallback}</span>}
             </span>
         </div>
@@ -32,7 +31,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-[1200px]' : 'md:max-w-3xl lg:max-w-4xl'}`}
+            className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-300' : 'md:max-w-3xl lg:max-w-4xl'}`}
         >
             <ModalHeader title={`Detalle — #${ticket.id}`} onClose={onClose} />
             <ModalBody>
@@ -89,7 +88,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     Tiempos
                                 </h4>
                                 <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
-                                <DataRow icon="event" label="Vencimiento" value={formatFechaHora(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
+                                <DataRow icon="event" label="Vencimiento" value={formatFecha(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
                                 <DataRow icon="timer" label="Tiempo estimado" value={ticket.tiempoEstimado ? `${ticket.tiempoEstimado} min` : null} fallback="No especificado" />
                                 <DataRow icon="hourglass_bottom" label="Tiempo real" value={ticket.duracionReal ? `${ticket.duracionReal} min` : null} fallback="Sin registro" />
                             </div>

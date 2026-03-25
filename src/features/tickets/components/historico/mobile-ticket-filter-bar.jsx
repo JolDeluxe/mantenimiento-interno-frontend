@@ -31,7 +31,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
             placeholder="Buscar ticket, área..."
             className="w-full pl-9 pr-8 py-2.5 text-xs bg-transparent relative z-10 text-slate-700
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 rounded-[14px]
-                       transition-all placeholder:text-slate-500 h-[38px]"
+                       transition-all placeholder:text-slate-500 h-9.5"
         />
         {localValue && (
             <button
@@ -49,7 +49,7 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
     const isActive = Boolean(value);
 
     return (
-        <div className="relative w-full h-[38px]">
+        <div className="relative w-full h-9.5">
             <select
                 value={value || ''}
                 onChange={(e) => onChange(e.target.value)}

@@ -2,12 +2,12 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
-import ProfilePage from '@/features/auth/pages/profile-page';
+import { RoleGuard } from './RoleGuard';
+import { MODULES_CONFIG } from '@/config/modules-config';
 
-// Layouts
+import ProfilePage from '@/features/auth/pages/profile-page';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
 
-// Pages
 import LoginPage from '@/features/auth/pages/login-page';
 import UsersPage from '@/features/usuarios/pages/users-page';
 import HomeDashboard from '@/pages/home-dashboard';
@@ -18,6 +18,15 @@ import TicketsPage from '@/features/tickets/pages/tickets-page';
 import TicketsBandejaPage from '@/features/tickets/pages/tickets-bandeja';
 import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
+
+// Mapeo seguro de la fuente de verdad para inyectar en el router
+const ROLES = {
+  tickets: MODULES_CONFIG.find(m => m.id === 'tickets')?.allowedRoles || [],
+  ticketsHoy: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-hoy')?.allowedRoles || [],
+  ticketsBandeja: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-bandeja')?.allowedRoles || [],
+  ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
+  usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
+};
 
 export const AppRoutes = () => {
   return (
@@ -30,17 +39,35 @@ export const AppRoutes = () => {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+
+          {/* Rutas Base Accesibles */}
           <Route path="/" element={<HomeDashboard />} />
           <Route path="/perfil" element={<ProfilePage />} />
 
-          <Route path="/tickets" element={<TicketsPage />}>
-            <Route index element={<Navigate to="hoy" replace />} />
-            <Route path="bandeja" element={<TicketsBandejaPage />} />
-            <Route path="hoy" element={<TicketsHoyPage />} />
-            <Route path="historico" element={<TicketsHistoricoPage />} />
+          {/* Módulo: Tickets */}
+          <Route element={<RoleGuard allowedRoles={ROLES.tickets} />}>
+            <Route path="/tickets" element={<TicketsPage />}>
+              <Route index element={<Navigate to="hoy" replace />} />
+
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsHoy} />}>
+                <Route path="hoy" element={<TicketsHoyPage />} />
+              </Route>
+
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsBandeja} />}>
+                <Route path="bandeja" element={<TicketsBandejaPage />} />
+              </Route>
+
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsHistorico} />}>
+                <Route path="historico" element={<TicketsHistoricoPage />} />
+              </Route>
+            </Route>
           </Route>
 
-          <Route path="/usuarios" element={<UsersPage />} />
+          {/* Módulo: Usuarios */}
+          <Route element={<RoleGuard allowedRoles={ROLES.usuarios} />}>
+            <Route path="/usuarios" element={<UsersPage />} />
+          </Route>
+
         </Route>
       </Route>
 

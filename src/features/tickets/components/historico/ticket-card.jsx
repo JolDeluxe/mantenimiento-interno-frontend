@@ -45,7 +45,7 @@ export const TicketCard = ({
 
     const puedeCambiarEstado =
         tieneResponsables &&
-        ticket.estado !== 'RESUELTO' &&
+        !['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado) &&
         (esAdmin || (esTecnico && esResponsable));
 
     const puedeRevisar =
@@ -55,6 +55,10 @@ export const TicketCard = ({
     const puedeCancelar =
         !ESTADOS_FINALES.includes(ticket.estado) &&
         (esSupervisor || (esCliente && esCreador && ticket.estado === 'PENDIENTE'));
+
+    // LÓGICA DE ÉNFASIS VISUAL
+    const esAsignarPrimario = ticket.estado === 'PENDIENTE';
+    const esEstadoPrimario = ['ASIGNADA', 'EN_PROGRESO', 'EN_PROCESO', 'EN_PAUSA'].includes(ticket.estado);
 
     return (
         <div className={cn(
@@ -103,12 +107,33 @@ export const TicketCard = ({
                     </p>
                 )}
                 {ticket.responsables?.length > 0 && (
-                    <p className="flex items-center gap-2">
-                        <Icon name="engineering" size="xs" className="text-slate-300 shrink-0" />
-                        <span className="text-xs text-slate-500 truncate">
-                            {ticket.responsables.map((r) => r.nombre).join(', ')}
-                        </span>
-                    </p>
+                    <div className="flex items-start gap-2">
+                        <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
+                        <div className="flex flex-col gap-2 min-w-0">
+                            {ticket.responsables.map((r) => (
+                                <div key={r.id} className="flex items-center gap-2" title={r.nombre}>
+                                    {r.imagen ? (
+                                        <img
+                                            src={r.imagen}
+                                            alt={r.nombre}
+                                            className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-50"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/img/perfil-no-foto.webp';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-6 h-6 rounded-full bg-marca-primario/10 flex items-center justify-center text-marca-primario text-[10px] font-bold border border-marca-primario/20 shrink-0 shadow-sm">
+                                            {r.nombre?.charAt(0).toUpperCase() ?? "?"}
+                                        </div>
+                                    )}
+                                    <span className="text-xs text-slate-500 truncate">
+                                        {r.nombre}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
                 {ticket.fechaVencimiento && (
                     <p className="flex items-center gap-2">
@@ -127,11 +152,12 @@ export const TicketCard = ({
                 <button
                     onClick={() => onViewDetail?.(ticket)}
                     className="flex items-center justify-center p-1.5 rounded-md text-slate-600 hover:bg-slate-600/10 transition-colors"
+                    title="Ver detalle"
                 >
                     <Icon name="visibility" size="sm" />
                 </button>
 
-                {/* Revisar */}
+                {/* Revisar (Siempre Primario cuando aparece) */}
                 {puedeRevisar && (
                     <button
                         onClick={() => onReview?.(ticket)}
@@ -142,34 +168,48 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {/* Editar */}
-                {puedeEditar && (
-                    <button
-                        onClick={() => onEdit?.(ticket)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-prioridad-media active:scale-95 transition-all shadow-sm"
-                    >
-                        <Icon name="edit" size="xs" />
-                        <span className="hidden min-[360px]:inline">Editar</span>
-                    </button>
-                )}
-
-                {/* Asignar */}
+                {/* Asignar (Dinámico) */}
                 {puedeAsignar && (
                     <button
                         onClick={() => onAssign?.(ticket)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20 active:scale-95 transition-all"
+                        className={cn(
+                            "flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all",
+                            esAsignarPrimario
+                                ? "px-3 py-1.5 text-white bg-estado-asignada shadow-sm"
+                                : "px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20"
+                        )}
+                        title="Asignar Técnico"
                     >
                         <Icon name="engineering" size="xs" />
+                        {esAsignarPrimario && <span className="hidden min-[360px]:inline">Asignar</span>}
                     </button>
                 )}
 
-                {/* Cambiar estado */}
+                {/* Cambiar estado (Dinámico) */}
                 {puedeCambiarEstado && (
                     <button
                         onClick={() => onChangeStatus?.(ticket)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20 active:scale-95 transition-all"
+                        className={cn(
+                            "flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all",
+                            esEstadoPrimario
+                                ? "px-3 py-1.5 text-white bg-estado-en-progreso shadow-sm"
+                                : "px-2.5 py-1.5 text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20"
+                        )}
+                        title="Cambiar Estado"
                     >
                         <Icon name="swap_horiz" size="xs" />
+                        {esEstadoPrimario && <span className="hidden min-[360px]:inline">Estado</span>}
+                    </button>
+                )}
+
+                {/* Editar (Siempre Secundario/Subdued) */}
+                {puedeEditar && (
+                    <button
+                        onClick={() => onEdit?.(ticket)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-prioridad-media bg-prioridad-media/10 hover:bg-prioridad-media/20 active:scale-95 transition-all"
+                        title="Editar ticket"
+                    >
+                        <Icon name="edit" size="xs" />
                     </button>
                 )}
 
@@ -178,6 +218,7 @@ export const TicketCard = ({
                     <button
                         onClick={() => onCancel?.(ticket)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-cancelada/20 active:scale-95 transition-all ml-auto"
+                        title="Cancelar ticket"
                     >
                         <Icon name="cancel" size="xs" />
                     </button>
