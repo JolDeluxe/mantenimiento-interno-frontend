@@ -14,8 +14,31 @@ import { cn } from '@/utils/cn';
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'];
 
 const isVencida = (ticket) => {
+    if (!ticket.fechaVencimiento) return false;
     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
     return isPastDate(ticket.fechaVencimiento);
+};
+
+const formatFechaRelativa = (dateString) => {
+    if (!dateString) return '-';
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const fecha = new Date(dateString);
+    fecha.setHours(0, 0, 0, 0);
+
+    const diffTime = fecha.getTime() - hoy.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Hoy';
+    if (diffDays === 1) return 'Mañana';
+    if (diffDays === -1) return 'Ayer';
+
+    return fecha.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).replace(/\./g, '');
 };
 
 export const TicketsTable = ({
@@ -42,7 +65,6 @@ export const TicketsTable = ({
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
 
-    // ── Columnas ─────────────────────────────────────────────────────────────
     const columns = [
         {
             header: 'ID',
@@ -51,15 +73,9 @@ export const TicketsTable = ({
             headerClassName: 'w-[5%] min-w-[64px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-12 rounded-md" />;
-                const vencida = isVencida(row);
                 return (
                     <div className="flex flex-col items-start gap-1">
                         <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
-                        {vencida && (
-                            <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase">
-                                <Icon name="warning" size="xs" /> Vencida
-                            </span>
-                        )}
                     </div>
                 );
             },
@@ -76,9 +92,21 @@ export const TicketsTable = ({
                         <Skeleton className="h-3 w-1/2 rounded-md" />
                     </div>
                 );
+
+                const vencida = isVencida(row);
+
                 return (
                     <div className="flex flex-col">
-                        <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{row.titulo}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
+                                {row.titulo}
+                            </span>
+                            {vencida && (
+                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
+                                    <Icon name="warning" size="xs" /> Vencida
+                                </span>
+                            )}
+                        </div>
                         {row.planta && (
                             <span className="text-xs text-slate-400 mt-0.5 truncate">
                                 {row.planta}{row.area ? ` — ${row.area}` : ''}
@@ -157,13 +185,18 @@ export const TicketsTable = ({
             },
         },
         {
-            header: 'Creado',
-            accessorKey: 'createdAt',
+            header: 'Fecha Entrega',
+            accessorKey: 'fechaVencimiento',
             sortable: true,
             headerClassName: 'w-[10%] min-w-[90px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
-                return <span className="text-xs text-slate-500">{formatFecha(row.createdAt)}</span>;
+                const vencida = isVencida(row);
+                return (
+                    <span className={cn('text-xs font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-500')}>
+                        {formatFechaRelativa(row.fechaVencimiento)}
+                    </span>
+                );
             },
         },
         {
@@ -197,7 +230,6 @@ export const TicketsTable = ({
         ? Array.from({ length: 10 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
         : tickets;
 
-    // ── Manejador de cancelación rápida (confirm inline) ──────────────────
     const handleConfirmCancel = async () => {
         if (!cancelTarget) return;
         const formData = new FormData();
@@ -234,8 +266,6 @@ export const TicketsTable = ({
                     onSortChange(key, direction);
                 }}
             />
-
-            {/* ── Modales ─────────────────────────────────────────────────────── */}
 
             <TicketDetailModal
                 isOpen={Boolean(detailTarget)}
@@ -291,7 +321,6 @@ export const TicketsTable = ({
                 }}
             />
 
-            {/* Confirmación de cancelación — modal ligero reutilizando StatusModal */}
             <TicketStatusModal
                 isOpen={Boolean(cancelTarget)}
                 onClose={() => setCancelTarget(null)}

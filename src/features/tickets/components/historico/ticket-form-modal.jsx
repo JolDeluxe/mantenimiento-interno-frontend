@@ -217,15 +217,18 @@ export const TicketFormModal = ({
     const [categoria, setCategoria] = useState('');
     const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
-    const [prioridad, setPrioridad] = useState('MEDIA');
+    const [prioridad, setPrioridad] = useState('');
     const [clasificacion, setClasificacion] = useState('');
-    const [tipo, setTipo] = useState('PLANEADA');
+    const [tipo, setTipo] = useState('');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
-    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0); // Estado a minutos
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
     const [responsables, setResponsables] = useState([]);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // Detección de Actividad de Rutina
+    const esRutina = String(clasificacion).toUpperCase().includes('RUTINA');
 
     const opcionesTecnicos = useMemo(() =>
         tecnicos.map((t) => ({
@@ -258,12 +261,12 @@ export const TicketFormModal = ({
             const fv = ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
             setFechaVencimiento(fv);
 
-            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0); // Asigna como número
+            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
-            setPlanta(''); setArea(''); setPrioridad('MEDIA');
-            setClasificacion(''); setTipo('PLANEADA');
+            setPlanta(''); setArea(''); setPrioridad('');
+            setClasificacion(''); setTipo('');
             setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
         }
     }, [isOpen, esEdicion, ticketAEditar]);
@@ -273,18 +276,23 @@ export const TicketFormModal = ({
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (!descripcion.trim() || descripcion.length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!clasificacion) e.clasificacion = 'Selecciona la clasificación.';
+        if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
+        if (!planta.trim()) e.planta = 'Selecciona la planta.';
+        if (!area.trim()) e.area = 'El área es obligatoria.';
+
         if (!esAdmin) {
             if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
-            if (!planta.trim()) e.planta = 'Selecciona la planta.';
-            if (!area.trim()) e.area = 'El área es obligatoria.';
         }
 
-        if (esAdmin && fechaVencimiento) {
-            const hoy = getMinDateHoy();
-            if (fechaVencimiento < hoy) {
-                const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
-                if (!esEdicion || fechaVencimiento !== fechaOriginal) {
-                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+        if (esAdmin) {
+            if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
+            if (fechaVencimiento) {
+                const hoy = getMinDateHoy();
+                if (fechaVencimiento < hoy) {
+                    const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
+                    if (!esEdicion || fechaVencimiento !== fechaOriginal) {
+                        e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                    }
                 }
             }
         }
@@ -317,14 +325,14 @@ export const TicketFormModal = ({
         formData.append('descripcion', descripcion);
         formData.append('clasificacion', clasificacion);
         if (categoria) formData.append('categoria', categoria);
-        if (planta) formData.append('planta', planta);
-        if (area) formData.append('area', area);
+        formData.append('planta', planta);
+        formData.append('area', area);
         formData.append('prioridad', prioridad);
 
         if (esAdmin) {
             formData.append('tipo', tipo);
             if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-            if (tiempoEstimadoMins > 0) formData.append('tiempoEstimado', String(tiempoEstimadoMins)); // Envía Integer en string format
+            if (!esRutina && tiempoEstimadoMins > 0) formData.append('tiempoEstimado', String(tiempoEstimadoMins));
             responsables.forEach((id) => formData.append('responsables', id));
         }
 
@@ -344,7 +352,7 @@ export const TicketFormModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full md:max-w-4xl lg:max-w-5xl">
             <ModalHeader
-                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Nueva tarea'}
+                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Reportar problema'}
                 onClose={onClose}
             />
             <ModalBody>
@@ -393,13 +401,16 @@ export const TicketFormModal = ({
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-prioridad">Prioridad</Label>
+                            <Label htmlFor="tf-prioridad" error={!!fe.prioridad}>Prioridad *</Label>
                             <Select
                                 id="tf-prioridad"
                                 value={prioridad}
                                 onChange={(e) => setPrioridad(e.target.value)}
+                                error={!!fe.prioridad}
+                                helperText={fe.prioridad}
                                 disabled={isSubmitting}
                             >
+                                <option value="" disabled hidden>Selecciona…</option>
                                 {PRIORIDADES.map((p) => (
                                     <option key={p.value} value={p.value}>{p.label}</option>
                                 ))}
@@ -407,13 +418,19 @@ export const TicketFormModal = ({
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-planta" error={!!fe.planta}>Planta {!esAdmin && '*'}</Label>
+                            <Label htmlFor="tf-planta" error={!!fe.planta}>Planta *</Label>
                             <Select
                                 id="tf-planta"
                                 value={planta}
                                 onChange={(e) => {
-                                    setPlanta(e.target.value);
-                                    setArea('');
+                                    const val = e.target.value;
+                                    setPlanta(val);
+                                    const areasPosibles = AREAS_POR_PLANTA[val] || AREAS;
+                                    if (areasPosibles.length === 1) {
+                                        setArea(areasPosibles[0]);
+                                    } else {
+                                        setArea('');
+                                    }
                                 }}
                                 error={!!fe.planta}
                                 helperText={fe.planta}
@@ -427,7 +444,7 @@ export const TicketFormModal = ({
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea {!esAdmin && '*'}</Label>
+                            <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea *</Label>
                             <Select
                                 id="tf-area"
                                 value={area}
@@ -462,20 +479,33 @@ export const TicketFormModal = ({
                     {esAdmin && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-tipo">Tipo de tarea</Label>
+                                <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
                                 <Select
                                     id="tf-tipo"
                                     value={tipo}
                                     onChange={(e) => setTipo(e.target.value)}
+                                    error={!!fe.tipo}
+                                    helperText={fe.tipo}
                                     disabled={isSubmitting || esEdicion}
                                 >
+                                    <option value="" disabled hidden>Selecciona…</option>
                                     {TIPOS_ADMIN.map((t) => (
                                         <option key={t.value} value={t.value}>{t.label}</option>
                                     ))}
                                 </Select>
                             </div>
                             <div className="flex flex-col gap-1.5 overflow-hidden">
-                                <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFechaVencimiento(getMinDateHoy())}
+                                        disabled={isSubmitting}
+                                        className="text-xs font-bold text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20 px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer"
+                                    >
+                                        Para hoy
+                                    </button>
+                                </div>
                                 <Input
                                     id="tf-fecha"
                                     type="date"
@@ -496,14 +526,17 @@ export const TicketFormModal = ({
                                     style={{ minWidth: 0 }}
                                 />
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label>Tiempo estimado</Label>
-                                <DurationPicker
-                                    valueMins={tiempoEstimadoMins}
-                                    onChange={setTiempoEstimadoMins}
-                                    disabled={isSubmitting}
-                                />
-                            </div>
+
+                            {!esRutina && (
+                                <div className="flex flex-col gap-1.5">
+                                    <Label>Tiempo estimado</Label>
+                                    <DurationPicker
+                                        valueMins={tiempoEstimadoMins}
+                                        onChange={setTiempoEstimadoMins}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 

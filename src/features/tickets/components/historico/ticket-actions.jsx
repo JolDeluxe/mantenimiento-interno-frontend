@@ -5,10 +5,10 @@
  * revisar_ticket    → solo estado RESUELTO + actor es admin/supervisor o cliente creador
  * editar            → admin | cliente si es creador y estado PENDIENTE
  * asignar_tecnico   → SUPER_ADMIN, JEFE_MTTO, COORDINADOR_MTTO (Bloqueado si está en proceso o posterior)
- * cambiar_estado    → admin | técnico asignado (Bloqueado si no hay responsables o está RESUELTO)
- * cancelar_ticket   → supervisor | cliente si es creador y estado PENDIENTE
+ * cambiar_estado    → admin | técnico asignado (Bloqueado si no hay responsables o está RESUELTO o finalizado)
+ * cancelar_ticket   → admin | cliente si es creador y estado PENDIENTE
  */
-import { TableActions, Icon, Tooltip } from '@/components/ui/z_index';
+import { TableActions } from '@/components/ui/z_index';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
@@ -36,8 +36,8 @@ const puedeCambiarEstado = ({ rol, id }, ticket) => {
     // Bloqueo universal: No hay transición de estado manual posible sin un técnico responsable
     if (!ticket.responsables || ticket.responsables.length === 0) return false;
 
-    // Bloqueo universal: Si está RESUELTO, la transición se transfiere a la acción de revisión
-    if (ticket.estado === 'RESUELTO') return false;
+    // Bloqueo universal: Si está RESUELTO o en estado FINAL, se bloquea el cambio manual
+    if (['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
 
     if (ROLES_ADMIN.includes(rol)) return true;
     if (rol === 'TECNICO') return ticket.responsables.some((r) => r.id === id);
@@ -57,13 +57,16 @@ const puedeRevisar = ({ rol, id }, ticket) => {
 };
 
 /**
- * Cancelar = forzar estado CANCELADA desde cualquier estado activo.
- * Supervisor siempre. Cliente solo si es su ticket y está PENDIENTE.
+ * Cancelar = forzar estado CANCELADA desde cualquier estado activo permitido.
+ * Bloqueado si ya está RESUELTO, CERRADO o CANCELADA.
+ * Permitido desde: PENDIENTE, ASIGNADA, EN_PROGRESO, EN_PAUSA, RECHAZADO.
  */
 const puedeCancelar = ({ rol, id }, ticket) => {
-    if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-    if (ROLES_SUPERVISOR.includes(rol)) return true;
+    if (['RESUELTO', 'CERRADO', 'CANCELADA'].includes(ticket.estado)) return false;
+
+    if (ROLES_ADMIN.includes(rol)) return true;
     if (rol === 'CLIENTE_INTERNO' && ticket.creadorId === id && ticket.estado === 'PENDIENTE') return true;
+
     return false;
 };
 
@@ -79,27 +82,8 @@ export const TicketActions = ({
 }) => {
     if (!ticket || !currentUser) return null;
 
-    // Renderizados exclusivos inmutables para estados finales requeridos
-    if (ticket.estado === 'CERRADO') {
-        return (
-            <Tooltip text="Cerrado" variant="dark">
-                <div className="flex justify-center p-1.5 text-slate-400 cursor-default">
-                    <Icon name="task_alt" size="sm" />
-                </div>
-            </Tooltip>
-        );
-    }
-
-    if (ticket.estado === 'CANCELADA') {
-        return (
-            <Tooltip text="Cancelado" variant="dark">
-                <div className="flex justify-center p-1.5 text-slate-400 cursor-default">
-                    <Icon name="cancel" size="sm" />
-                </div>
-            </Tooltip>
-        );
-    }
-
+    // Se eliminan los retornos estáticos para estados finales.
+    // TableActions iterará y solo habilitará 'ver_detalle' para CERRADO y CANCELADA.
     return (
         <TableActions
             row={ticket}

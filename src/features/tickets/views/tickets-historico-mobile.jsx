@@ -1,4 +1,3 @@
-// src/features/tickets/views/tickets-historico-mobile.jsx
 import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
@@ -10,7 +9,7 @@ import { MobileTicketFormModal } from '../components/historico/mobile-ticket-for
 import { TicketStatusModal } from '../components/historico/ticket-status-modal';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
-import { TicketReviewModal } from '../components/historico/ticket-review-modal';
+import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
@@ -284,7 +283,7 @@ export const TicketsHistoricoMobile = ({
                 }}
             />
 
-            <TicketReviewModal
+            <MobileTicketReviewModal
                 isOpen={Boolean(reviewTarget)}
                 onClose={() => setReviewTarget(null)}
                 ticket={reviewTarget}

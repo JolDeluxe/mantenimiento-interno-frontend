@@ -66,7 +66,7 @@ export const ModalHeader = ({ title, onClose, className = "" }) => (
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 text-slate-400 hover:text-marca-primario transition-colors cursor-pointer p-1 rounded-full hover:bg-slate-100"
+        className="absolute top-4 right-4 text-slate-400 hover:text-marca-primario transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"
       >
         <Icon name="close" size="24px" weight={600} />
       </button>

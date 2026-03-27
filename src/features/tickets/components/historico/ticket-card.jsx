@@ -1,7 +1,7 @@
 // src/features/tickets/components/historico/ticket-card.jsx
 import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { formatFecha, isPastDate } from '@/lib/date';
+import { isPastDate } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
@@ -9,8 +9,31 @@ const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA', 'RECHAZADO'];
 
 const isVencida = (ticket) => {
+    if (!ticket.fechaVencimiento) return false;
     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
     return isPastDate(ticket.fechaVencimiento);
+};
+
+const formatFechaRelativa = (dateString) => {
+    if (!dateString) return '-';
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const fecha = new Date(dateString);
+    fecha.setHours(0, 0, 0, 0);
+
+    const diffTime = fecha.getTime() - hoy.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Hoy';
+    if (diffDays === 1) return 'Mañana';
+    if (diffDays === -1) return 'Ayer';
+
+    return fecha.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).replace(/\./g, '');
 };
 
 export const TicketCard = ({
@@ -34,7 +57,6 @@ export const TicketCard = ({
     const tieneResponsables = ticket.responsables && ticket.responsables.length > 0;
     const vencida = isVencida(ticket);
 
-    // LÓGICA ESTRICTA DE PERMISOS (Sincronizada con TableActions)
     const puedeEditar =
         !['EN_PROGRESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado) &&
         (esAdmin || (esCliente && esCreador && ticket.estado === 'PENDIENTE'));
@@ -56,7 +78,6 @@ export const TicketCard = ({
         !ESTADOS_FINALES.includes(ticket.estado) &&
         (esSupervisor || (esCliente && esCreador && ticket.estado === 'PENDIENTE'));
 
-    // LÓGICA DE ÉNFASIS VISUAL
     const esAsignarPrimario = ticket.estado === 'PENDIENTE';
     const esEstadoPrimario = ['ASIGNADA', 'EN_PROGRESO', 'EN_PROCESO', 'EN_PAUSA'].includes(ticket.estado);
 
@@ -65,8 +86,6 @@ export const TicketCard = ({
             'bg-white border rounded-2xl p-4 shadow-sm',
             vencida ? 'border-estado-rechazado/30 bg-red-50/30' : 'border-slate-200'
         )}>
-
-            {/* ── Cabecera ── */}
             <div
                 className="flex items-start justify-between gap-2 mb-2 active:opacity-70 transition-opacity cursor-pointer"
                 onClick={() => onViewDetail?.(ticket)}
@@ -74,15 +93,17 @@ export const TicketCard = ({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-mono font-bold text-slate-400">#{ticket.id}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                            {ticket.titulo}
+                        </h3>
                         {vencida && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/30 px-1.5 py-0.5 rounded-md uppercase">
+                            <span className="flex items-center gap-0.5 text-[10px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/30 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                 <Icon name="warning" size="xs" /> Vencida
                             </span>
                         )}
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                        {ticket.titulo}
-                    </h3>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                     <TicketStatusBadge estado={ticket.estado} />
@@ -90,8 +111,7 @@ export const TicketCard = ({
                 </div>
             </div>
 
-            {/* ── Datos secundarios ── */}
-            <div className="space-y-1.5 mb-3 ml-1">
+            <div className="space-y-1.5 mb-3 ml-1 mt-2">
                 {ticket.planta && (
                     <p className="flex items-center gap-2">
                         <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
@@ -137,18 +157,15 @@ export const TicketCard = ({
                 )}
                 {ticket.fechaVencimiento && (
                     <p className="flex items-center gap-2">
-                        <Icon name="event" size="xs" className="text-slate-300 shrink-0" />
+                        <Icon name="event" size="xs" className={cn('shrink-0', vencida ? 'text-estado-rechazado/70' : 'text-slate-300')} />
                         <span className={cn('text-xs font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-500')}>
-                            {formatFecha(ticket.fechaVencimiento)}
+                            Entrega: {formatFechaRelativa(ticket.fechaVencimiento)}
                         </span>
                     </p>
                 )}
             </div>
 
-            {/* ── Acciones ── */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap">
-
-                {/* Ver */}
                 <button
                     onClick={() => onViewDetail?.(ticket)}
                     className="flex items-center justify-center p-1.5 rounded-md text-slate-600 hover:bg-slate-600/10 transition-colors"
@@ -157,7 +174,6 @@ export const TicketCard = ({
                     <Icon name="visibility" size="sm" />
                 </button>
 
-                {/* Revisar (Siempre Primario cuando aparece) */}
                 {puedeRevisar && (
                     <button
                         onClick={() => onReview?.(ticket)}
@@ -168,7 +184,6 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {/* Asignar (Dinámico) */}
                 {puedeAsignar && (
                     <button
                         onClick={() => onAssign?.(ticket)}
@@ -185,7 +200,6 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {/* Cambiar estado (Dinámico) */}
                 {puedeCambiarEstado && (
                     <button
                         onClick={() => onChangeStatus?.(ticket)}
@@ -202,7 +216,6 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {/* Editar (Siempre Secundario/Subdued) */}
                 {puedeEditar && (
                     <button
                         onClick={() => onEdit?.(ticket)}
@@ -213,7 +226,6 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {/* Cancelar */}
                 {puedeCancelar && (
                     <button
                         onClick={() => onCancel?.(ticket)}
