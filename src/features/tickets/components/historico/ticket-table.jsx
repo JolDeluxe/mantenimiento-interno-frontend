@@ -11,7 +11,7 @@ import { TicketActions } from './ticket-actions';
 import { formatFecha, isPastDate } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
-const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'];
+const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
 const isVencida = (ticket) => {
     if (!ticket.fechaVencimiento) return false;

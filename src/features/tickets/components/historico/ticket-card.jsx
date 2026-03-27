@@ -6,7 +6,7 @@ import { cn } from '@/utils/cn';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
-const ESTADOS_FINALES = ['CERRADO', 'CANCELADA', 'RECHAZADO'];
+const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
 
 const isVencida = (ticket) => {
     if (!ticket.fechaVencimiento) return false;
@@ -79,7 +79,7 @@ export const TicketCard = ({
         (esSupervisor || (esCliente && esCreador && ticket.estado === 'PENDIENTE'));
 
     const esAsignarPrimario = ticket.estado === 'PENDIENTE';
-    const esEstadoPrimario = ['ASIGNADA', 'EN_PROGRESO', 'EN_PROCESO', 'EN_PAUSA'].includes(ticket.estado);
+    const esEstadoPrimario = ['ASIGNADA', 'EN_PROGRESO', 'EN_PROCESO', 'EN_PAUSA', 'RECHAZADO'].includes(ticket.estado);
 
     return (
         <div className={cn(

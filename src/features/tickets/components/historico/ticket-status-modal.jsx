@@ -7,6 +7,7 @@ import { TicketStartModal } from './status-modals/ticket-start-modal';
 import { TicketProgressModal } from './status-modals/ticket-progress-modal';
 import { TicketPausaModal } from './status-modals/ticket-pausa-modal';
 import { TicketCheckModal } from './status-modals/ticket-check-modal';
+import { TicketRechazadoModal } from './status-modals/ticket-rechazado-modal'; // <- NUEVO
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
 import { useState, useEffect } from 'react';
@@ -194,7 +195,8 @@ export const TicketStatusModal = ({
             return <TicketStartModal {...baseProps} esReinicio={false} />;
 
         case TIPO.REINICIAR:
-            return <TicketStartModal {...baseProps} esReinicio={true} />;
+            // SE SUSTITUYE TicketStartModal POR EL NUEVO MODAL ESPECÍFICO
+            return <TicketRechazadoModal {...baseProps} />;
 
         case TIPO.EN_PROGRESO:
             return <TicketProgressModal {...baseProps} />;

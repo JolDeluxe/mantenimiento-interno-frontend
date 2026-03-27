@@ -12,7 +12,7 @@ import { TableActions } from '@/components/ui/z_index';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
-const ESTADOS_FINALES = ['CERRADO', 'CANCELADA', 'RECHAZADO'];
+const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
 
 const puedeEditar = ({ rol, id }, ticket) => {
     // Bloqueo por estado

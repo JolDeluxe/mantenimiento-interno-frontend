@@ -127,18 +127,30 @@ export default function TicketsHistoricoPage() {
     }, []);
 
     // ── Handlers de mutaciones ───────────────────────────────────────────────
-    const handleCreate = async (payload) => {
+    const handleCreate = async (payloads) => {
+        // Normaliza: acepta un solo FormData (edit mode) o un array (cart mode)
+        const items = Array.isArray(payloads) ? payloads : [payloads];
+
         try {
-            await createTicket(payload);
-            notify.success('Ticket creado correctamente.');
+            for (const payload of items) {
+                await createTicket(payload);
+            }
+            const msg = items.length > 1
+                ? `${items.length} tareas creadas correctamente.`
+                : 'Tarea creada correctamente.';
+            notify.success(msg);
             setShowCreate(false);
             await loadTickets();
         } catch (err) {
-            const msg = err?.response?.data?.error || err?.response?.data?.message || 'Error al crear el ticket.';
+            const msg =
+                err?.response?.data?.error ||
+                err?.response?.data?.message ||
+                'Error al crear la tarea.';
             notify.error(msg);
             throw err;
         }
     };
+
 
     const handleUpdate = async (id, payload) => {
         try {
