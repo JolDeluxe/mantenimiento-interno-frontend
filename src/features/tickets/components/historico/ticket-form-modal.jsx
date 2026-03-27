@@ -4,41 +4,74 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSel
 import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-
-const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
-
-const CLASIFICACIONES_CLIENTE = [
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-];
-
-const CLASIFICACIONES_ADMIN = [
-    { value: 'PREVENTIVO', label: 'Preventivo' },
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'INSPECCION', label: 'Inspección' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
-];
-
-const PRIORIDADES = [
-    { value: 'BAJA', label: 'Baja' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Crítica' },
-];
-
-const TIPOS_ADMIN = [
-    { value: 'PLANEADA', label: 'Planeada' },
-    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
-];
-
-const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
+import {
+    PLANTAS,
+    CLASIFICACIONES_CLIENTE,
+    CLASIFICACIONES_ADMIN,
+    PRIORIDADES,
+    TIPOS_ADMIN,
+    ROLES_ADMIN,
+    AREAS_POR_PLANTA,
+    AREAS
+} from '../../constants';
 
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
 
+// ── Duration Picker ───────────────────────────────────────────────────────
+const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
+const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+const DurationPicker = ({ valueMins, onChange, disabled }) => {
+    const horas = Math.floor((valueMins || 0) / 60);
+    const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
+
+    const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                    <select
+                        value={horas}
+                        onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                        disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                    >
+                        {HORAS_OPTIONS.map((h) => (
+                            <option key={h} value={h}>{h} h</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+
+                <div className="relative">
+                    <select
+                        value={minutos}
+                        onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                        disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                    >
+                        {MINUTOS_OPTIONS.map((m) => (
+                            <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+            </div>
+            {totalLabel && (
+                <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <Icon name="timer" size="xs" />
+                    {totalLabel}
+                </p>
+            )}
+        </div>
+    );
+};
 
 const WorkloadBadge = ({ label, count, colorClass }) => (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
@@ -127,7 +160,6 @@ const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
                                     }}
                                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left cursor-pointer border-b border-slate-100 last:border-0"
                                 >
-                                    {/* Avatar */}
                                     {t.imagen ? (
                                         <img
                                             src={t.imagen}
@@ -141,7 +173,6 @@ const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
                                         </div>
                                     )}
 
-                                    {/* Info */}
                                     <div className="flex flex-col flex-1 min-w-0">
                                         <span className="text-sm font-semibold text-slate-800 truncate">{t.nombre}</span>
                                         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -190,7 +221,7 @@ export const TicketFormModal = ({
     const [clasificacion, setClasificacion] = useState('');
     const [tipo, setTipo] = useState('PLANEADA');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
-    const [tiempoEstimado, setTiempoEstimado] = useState('');
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0); // Estado a minutos
     const [responsables, setResponsables] = useState([]);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
@@ -227,13 +258,13 @@ export const TicketFormModal = ({
             const fv = ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
             setFechaVencimiento(fv);
 
-            setTiempoEstimado(ticketAEditar.tiempoEstimado ? String(ticketAEditar.tiempoEstimado) : '');
+            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0); // Asigna como número
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
             setClasificacion(''); setTipo('PLANEADA');
-            setFechaVencimiento(''); setTiempoEstimado(''); setResponsables([]);
+            setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
         }
     }, [isOpen, esEdicion, ticketAEditar]);
 
@@ -248,7 +279,6 @@ export const TicketFormModal = ({
             if (!area.trim()) e.area = 'El área es obligatoria.';
         }
 
-        // LÓGICA STRICTA DE FECHAS: Bloqueo explícito al submit manual
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
             if (fechaVencimiento < hoy) {
@@ -294,7 +324,7 @@ export const TicketFormModal = ({
         if (esAdmin) {
             formData.append('tipo', tipo);
             if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-            if (tiempoEstimado) formData.append('tiempoEstimado', tiempoEstimado);
+            if (tiempoEstimadoMins > 0) formData.append('tiempoEstimado', String(tiempoEstimadoMins)); // Envía Integer en string format
             responsables.forEach((id) => formData.append('responsables', id));
         }
 
@@ -326,7 +356,6 @@ export const TicketFormModal = ({
                         </div>
                     )}
 
-                    {/* ── TÍTULO ── */}
                     <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
                             <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
@@ -345,7 +374,6 @@ export const TicketFormModal = ({
                         />
                     </div>
 
-                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA ── */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
@@ -383,7 +411,10 @@ export const TicketFormModal = ({
                             <Select
                                 id="tf-planta"
                                 value={planta}
-                                onChange={(e) => setPlanta(e.target.value)}
+                                onChange={(e) => {
+                                    setPlanta(e.target.value);
+                                    setArea('');
+                                }}
                                 error={!!fe.planta}
                                 helperText={fe.planta}
                                 disabled={isSubmitting}
@@ -397,19 +428,22 @@ export const TicketFormModal = ({
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea {!esAdmin && '*'}</Label>
-                            <Input
+                            <Select
                                 id="tf-area"
                                 value={area}
                                 onChange={(e) => setArea(e.target.value)}
                                 error={!!fe.area}
                                 helperText={fe.area}
-                                placeholder="Ej. Pespunte, Láser, Almacén…"
                                 disabled={isSubmitting}
-                            />
+                            >
+                                <option value="" disabled hidden>Selecciona…</option>
+                                {(planta && AREAS_POR_PLANTA[planta] ? AREAS_POR_PLANTA[planta] : AREAS).map((a) => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </Select>
                         </div>
                     </div>
 
-                    {/* ── CATEGORÍA (solo clientes) ── */}
                     {!esAdmin && (
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-categoria" error={!!fe.categoria}>Categoría del equipo *</Label>
@@ -425,7 +459,6 @@ export const TicketFormModal = ({
                         </div>
                     )}
 
-                    {/* ── CAMPOS ADMINISTRATIVOS ── */}
                     {esAdmin && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="flex flex-col gap-1.5">
@@ -450,10 +483,7 @@ export const TicketFormModal = ({
                                     min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
                                     onChange={(e) => {
                                         const nuevaFecha = e.target.value;
-                                        // Calculamos hoy exactamente con la misma regla de tu min para evitar desfases
                                         const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-
-                                        // Escudo anti-Safari: Si logra escribir/seleccionar un día viejo, lo forzamos a hoy
                                         if (nuevaFecha && nuevaFecha < hoyLocal) {
                                             setFechaVencimiento(hoyLocal);
                                         } else {
@@ -467,24 +497,17 @@ export const TicketFormModal = ({
                                 />
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-tiempo">Tiempo estimado (min)</Label>
-                                <Input
-                                    id="tf-tiempo"
-                                    type="number"
-                                    min="1"
-                                    value={tiempoEstimado}
-                                    onChange={(e) => setTiempoEstimado(e.target.value)}
-                                    placeholder="Ej. 60"
+                                <Label>Tiempo estimado</Label>
+                                <DurationPicker
+                                    valueMins={tiempoEstimadoMins}
+                                    onChange={setTiempoEstimadoMins}
                                     disabled={isSubmitting}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── ASIGNACIÓN DE TÉCNICOS (admin) + DESCRIPCIÓN ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                        {/* Control de Técnicos con Expansión Dinámica */}
                         {esAdmin && tecnicos.length > 0 && (
                             <div className={cn(
                                 "flex flex-col gap-2 transition-[padding] duration-300 ease-in-out",

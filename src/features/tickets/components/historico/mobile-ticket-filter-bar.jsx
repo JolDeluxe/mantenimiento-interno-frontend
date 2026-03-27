@@ -1,26 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
 
-const TIPOS = [
-    { value: 'TICKET', label: 'Ticket' },
-    { value: 'PLANEADA', label: 'Planeada' },
-    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
-];
-
-const PRIORIDADES = [
-    { value: 'BAJA', label: 'Baja' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Crítica' },
-];
-
-const CLASIFICACIONES = [
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
-];
+const normalizeOpts = (opts = []) => opts.map(o => {
+    if (typeof o === 'string') return { value: o, label: o };
+    return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
+});
 
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div
@@ -52,20 +38,20 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
-    const selected = options.find((o) => o.value === value || o.id === value);
+    const selected = options.find((o) => o.value === String(value));
     const isActive = Boolean(value);
 
     return (
         <div className="relative w-full h-9.5">
             <select
-                value={value || ''}
+                value={value ? String(value) : ''}
                 onChange={(e) => onChange(e.target.value)}
                 className="absolute inset-0 w-full h-full opacity-0 z-20 appearance-none cursor-pointer"
             >
                 <option value="">{placeholder}</option>
                 {options.map((opt) => (
-                    <option key={opt.value || opt.id} value={opt.value || opt.id}>
-                        {opt.label || opt.nombre}
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
                     </option>
                 ))}
             </select>
@@ -80,7 +66,7 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
                 <GlassSheen />
                 <Icon name={icon} size="xs" className="relative shrink-0 z-10" />
                 <span className="relative flex-1 truncate z-10">
-                    {selected?.label ?? selected?.nombre ?? placeholder}
+                    {selected?.label ?? placeholder}
                 </span>
 
                 {isActive ? (
@@ -126,8 +112,8 @@ export const MobileTicketFilterBar = ({
     filtroTipo, onTipoChange,
     filtroPrioridad, onPrioridadChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
-    filtroPlanta, onPlantaChange, opcionesPlantas = [],
-    filtroArea, onAreaChange, opcionesAreas = [],
+    filtroPlanta, onPlantaChange,
+    filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
     mostrarAtrasadas, onToggleAtrasadas,
     mostrarPapelera, onTogglePapelera,
@@ -138,13 +124,18 @@ export const MobileTicketFilterBar = ({
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => onSearchChange(localValue), 450);
+        setLocalValue(query || '');
+    }, [query]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localValue !== query) onSearchChange(localValue);
+        }, 450);
         return () => clearTimeout(timer);
-    }, [localValue, onSearchChange]);
+    }, [localValue, query, onSearchChange]);
 
     const totalRechazadas = conteos['RECHAZADO'] ?? 0;
 
-    // Mide qué filtros están activos excluyendo Canceladas/Rechazadas que tienen botón rápido en Row 1
     const hasActiveFilters = Boolean(
         filtroTipo || filtroPrioridad || filtroResponsable ||
         filtroPlanta || filtroArea || filtroClasificacion || mostrarAtrasadas
@@ -161,6 +152,15 @@ export const MobileTicketFilterBar = ({
         if (mostrarPapelera) onTogglePapelera();
         if (mostrarRechazadas) onToggleRechazadas();
     };
+
+    const handlePlantaChange = (nuevaPlanta) => {
+        onPlantaChange(nuevaPlanta);
+        onAreaChange('');
+    };
+
+    const areasDisponibles = (filtroPlanta && AREAS_POR_PLANTA[filtroPlanta])
+        ? AREAS_POR_PLANTA[filtroPlanta]
+        : AREAS;
 
     const filterElements = [
         <GlassNativeSelect
@@ -191,7 +191,7 @@ export const MobileTicketFilterBar = ({
             key="responsable"
             icon="person"
             placeholder="Responsable"
-            options={opcionesResponsables}
+            options={normalizeOpts(opcionesResponsables)}
             value={filtroResponsable}
             onChange={onResponsableChange}
         />,
@@ -199,15 +199,15 @@ export const MobileTicketFilterBar = ({
             key="planta"
             icon="domain"
             placeholder="Planta"
-            options={opcionesPlantas}
+            options={normalizeOpts(PLANTAS)}
             value={filtroPlanta}
-            onChange={onPlantaChange}
+            onChange={handlePlantaChange}
         />,
         <GlassNativeSelect
             key="area"
             icon="place"
             placeholder="Área"
-            options={opcionesAreas}
+            options={normalizeOpts(areasDisponibles)}
             value={filtroArea}
             onChange={onAreaChange}
         />,
@@ -226,7 +226,6 @@ export const MobileTicketFilterBar = ({
 
     return (
         <div className="w-full flex flex-col gap-2.5">
-            {/* ── Fila 1: Buscador + Canceladas + Rechazadas + Toggle Filtros ── */}
             <div className="flex items-center gap-2">
                 <SearchInput
                     localValue={localValue}
@@ -235,7 +234,6 @@ export const MobileTicketFilterBar = ({
                     className="flex-1 min-w-0"
                 />
 
-                {/* Botón Rápido Canceladas (Solo ícono) */}
                 <button
                     type="button"
                     onClick={onTogglePapelera}
@@ -249,7 +247,6 @@ export const MobileTicketFilterBar = ({
                     <Icon name="delete" size="sm" className="relative z-10" />
                 </button>
 
-                {/* Botón Rápido Rechazadas */}
                 <button
                     type="button"
                     onClick={onToggleRechazadas}
@@ -289,7 +286,6 @@ export const MobileTicketFilterBar = ({
                 </button>
             </div>
 
-            {/* ── Fila 2: Cuadrícula Expandible (Contenedor Glass) ── */}
             {showFilters && (
                 <div
                     className="flex flex-col gap-3 p-3 rounded-[20px] relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"

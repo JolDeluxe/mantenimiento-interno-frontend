@@ -3,37 +3,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
-
-const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'ADMINISTRATIVOS', 'GENERAL'];
-
-const CLASIFICACIONES_CLIENTE = [
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-];
-
-const CLASIFICACIONES_ADMIN = [
-    { value: 'PREVENTIVO', label: 'Preventivo' },
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'INSPECCION', label: 'Inspección' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
-];
-
-const PRIORIDADES = [
-    { value: 'BAJA', label: 'Baja' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Crítica' },
-];
-
-const TIPOS_ADMIN = [
-    { value: 'PLANEADA', label: 'Planeada' },
-    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
-];
-
-const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
+import {
+    PLANTAS,
+    CLASIFICACIONES_CLIENTE,
+    CLASIFICACIONES_ADMIN,
+    PRIORIDADES,
+    TIPOS_ADMIN,
+    ROLES_ADMIN,
+    AREAS_POR_PLANTA,
+    AREAS
+} from '../../constants';
 
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
@@ -316,7 +295,7 @@ export const MobileTicketFormModal = ({
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-planta" error={!!fe.planta}>Planta {!esAdmin && '*'}</Label>
-                            <Select id="tf-planta" value={planta} onChange={(e) => setPlanta(e.target.value)} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
+                            <Select id="tf-planta" value={planta} onChange={(e) => { setPlanta(e.target.value); setArea(''); }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
@@ -324,7 +303,12 @@ export const MobileTicketFormModal = ({
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea {!esAdmin && '*'}</Label>
-                            <Input id="tf-area" value={area} onChange={(e) => setArea(e.target.value)} error={!!fe.area} helperText={fe.area} placeholder="Ej. Pespunte, Láser, Almacén…" disabled={isSubmitting} />
+                            <Select id="tf-area" value={area} onChange={(e) => setArea(e.target.value)} error={!!fe.area} helperText={fe.area} disabled={isSubmitting}>
+                                <option value="" disabled hidden>Selecciona…</option>
+                                {(planta && AREAS_POR_PLANTA[planta] ? AREAS_POR_PLANTA[planta] : AREAS).map((a) => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </Select>
                         </div>
                     </div>
 

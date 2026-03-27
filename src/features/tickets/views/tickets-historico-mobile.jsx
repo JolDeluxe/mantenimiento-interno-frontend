@@ -12,10 +12,10 @@ import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { hardReload } from '@/utils/hard-reload';
+import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
 const SKELETON_COUNT = 5;
-const ROLES_CREADORES = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 
 const CardSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -60,16 +60,26 @@ export const TicketsHistoricoMobile = ({
     filtroEstado,
     filtroTipo,
     filtroPrioridad,
+    filtroClasificacion,
+    filtroResponsable,
+    filtroPlanta,
+    filtroArea,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
     onToggleRechazadas,
+    mostrarAtrasadas,
+    onToggleAtrasadas,
     onPageChange,
     onSortChange,
     onSearchChange,
     onFilterChange,
     onTipoChange,
     onPrioridadChange,
+    onClasificacionChange,
+    onResponsableChange,
+    onPlantaChange,
+    onAreaChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -86,7 +96,7 @@ export const TicketsHistoricoMobile = ({
     const hasContent = !loading && tickets.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
 
-    const puedeCrear = ROLES_CREADORES.includes(currentUser?.rol);
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
     const baseBottom = hasPaginator ? 104 : 84;
     const fabAddBottom = `${baseBottom}px`;
@@ -94,7 +104,6 @@ export const TicketsHistoricoMobile = ({
 
     return (
         <>
-            {/* ── SummaryBar ── */}
             <div className="mb-3">
                 <TicketSummaryBar
                     totalParaSummary={totalParaSummary}
@@ -107,37 +116,48 @@ export const TicketsHistoricoMobile = ({
                 />
             </div>
 
-            {/* ────────────────────────────────────────────────────────────
-                CONTROLES MÓVIL — Orden estricto:
-                1. Selector de formato (Tabla / Cards)
-                2. Barra de búsqueda
-                3. Filtros adaptados (glass dropdowns)
-            ──────────────────────────────────────────────────────────── */}
             <div className="flex flex-col gap-2.5 mb-3">
-
-                {/* 1. Selector de formato */}
                 <div className="flex items-center">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
 
-                {/* 3. Filtros glass — se wrappean si no caben en una línea */}
                 <MobileTicketFilterBar
                     query={query}
                     onSearchChange={onSearchChange}
+
                     filtroTipo={filtroTipo}
                     onTipoChange={onTipoChange}
+
                     filtroPrioridad={filtroPrioridad}
                     onPrioridadChange={onPrioridadChange}
+
+                    filtroClasificacion={filtroClasificacion}
+                    onClasificacionChange={onClasificacionChange}
+
+                    filtroResponsable={filtroResponsable}
+                    onResponsableChange={onResponsableChange}
+                    opcionesResponsables={tecnicos}
+
+                    filtroPlanta={filtroPlanta}
+                    onPlantaChange={onPlantaChange}
+
+                    filtroArea={filtroArea}
+                    onAreaChange={onAreaChange}
+
                     mostrarPapelera={mostrarPapelera}
                     onTogglePapelera={onTogglePapelera}
+
                     mostrarRechazadas={mostrarRechazadas}
                     onToggleRechazadas={onToggleRechazadas}
+
+                    mostrarAtrasadas={mostrarAtrasadas}
+                    onToggleAtrasadas={onToggleAtrasadas}
+
                     conteos={conteos}
                     mobileFiltersOnly
                 />
             </div>
 
-            {/* ── Contenido ── */}
             {viewMode === 'cards' ? (
                 <div className={cn('flex flex-col gap-3 px-1 pt-1', hasPaginator ? 'pb-56' : 'pb-44')}>
                     {loading
@@ -187,7 +207,6 @@ export const TicketsHistoricoMobile = ({
                 </div>
             )}
 
-            {/* ── Paginador flotante ── */}
             {hasPaginator && (
                 <div className="md:hidden">
                     <GlassPaginationPill
@@ -201,7 +220,6 @@ export const TicketsHistoricoMobile = ({
                 </div>
             )}
 
-            {/* ── FABs ── */}
             <div className="md:hidden">
                 <GlassFab
                     icon="refresh"
@@ -229,7 +247,6 @@ export const TicketsHistoricoMobile = ({
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
-            {/* ── Modales ── */}
             <MobileTicketFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}

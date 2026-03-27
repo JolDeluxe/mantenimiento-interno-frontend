@@ -1,11 +1,9 @@
-// src/features/tickets/views/tickets-historico-desktop.jsx
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
 import { RefreshFab } from '@/components/ui/z_index';
-
-const ROLES_CREADORES = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+import { ROLES_ADMIN } from '../constants';
 
 export const TicketsHistoricoDesktop = ({
     tickets,
@@ -23,23 +21,33 @@ export const TicketsHistoricoDesktop = ({
     filtroEstado,
     filtroTipo,
     filtroPrioridad,
+    filtroClasificacion,
+    filtroResponsable,
+    filtroPlanta,
+    filtroArea,
     conteos,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
     onToggleRechazadas,
+    mostrarAtrasadas,
+    onToggleAtrasadas,
     onPageChange,
     onSortChange,
     onSearchChange,
     onFilterChange,
     onTipoChange,
     onPrioridadChange,
+    onClasificacionChange,
+    onResponsableChange,
+    onPlantaChange,
+    onAreaChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
     onRefresh,
 }) => {
-    const puedeCrear = ROLES_CREADORES.includes(currentUser?.rol);
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
     return (
         <div className="flex flex-col gap-4">
@@ -60,14 +68,36 @@ export const TicketsHistoricoDesktop = ({
             <TicketFilterBar
                 query={query}
                 onSearchChange={onSearchChange}
+
                 filtroTipo={filtroTipo}
                 onTipoChange={onTipoChange}
+
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
+
+                filtroClasificacion={filtroClasificacion}
+                onClasificacionChange={onClasificacionChange}
+
+                filtroResponsable={filtroResponsable}
+                onResponsableChange={onResponsableChange}
+                opcionesResponsables={tecnicos}
+
+                filtroPlanta={filtroPlanta}
+                onPlantaChange={onPlantaChange}
+
+                filtroArea={filtroArea}
+                onAreaChange={onAreaChange}
+                opcionesAreas={[]}
+
                 mostrarRechazadas={mostrarRechazadas}
                 onToggleRechazadas={onToggleRechazadas}
+
                 mostrarPapelera={mostrarPapelera}
                 onTogglePapelera={onTogglePapelera}
+
+                mostrarAtrasadas={mostrarAtrasadas}
+                onToggleAtrasadas={onToggleAtrasadas}
+
                 conteos={conteos}
             />
 

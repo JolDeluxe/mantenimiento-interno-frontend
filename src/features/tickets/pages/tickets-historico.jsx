@@ -1,4 +1,3 @@
-// src/features/tickets/pages/tickets-historico.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
@@ -29,18 +28,25 @@ export default function TicketsHistoricoPage() {
         changeStatus,
     } = useTickets();
 
-    // ── Estado de la página ──────────────────────────────────────────────────
+    // ── Estado de la página (Paginación y Búsqueda) ──────────────────────────
     const [query, setQuery] = useState('');
-    const [filtroEstado, setFiltroEstado] = useState('TODOS');
-    const [filtroTipo, setFiltroTipo] = useState('');
-    const [filtroPrioridad, setFiltroPrioridad] = useState('');
     const [page, setPage] = useState(1);
     const [sortConfig, setSortConfig] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
 
-    // 🔥 Estados de Vistas Aisladas
+    // ── Estados de Filtros Estándar y Avanzados ──────────────────────────────
+    const [filtroEstado, setFiltroEstado] = useState('TODOS');
+    const [filtroTipo, setFiltroTipo] = useState('');
+    const [filtroPrioridad, setFiltroPrioridad] = useState('');
+    const [filtroClasificacion, setFiltroClasificacion] = useState('');
+    const [filtroResponsable, setFiltroResponsable] = useState('');
+    const [filtroPlanta, setFiltroPlanta] = useState('');
+    const [filtroArea, setFiltroArea] = useState('');
+
+    // ── Estados de Vistas Aisladas (Mutuamente Excluyentes) ──────────────────
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
+    const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
     // ── Carga de datos ───────────────────────────────────────────────────────
     const loadTickets = useCallback(() => {
@@ -48,38 +54,58 @@ export default function TicketsHistoricoPage() {
 
         if (query) params.q = query;
 
-        // 🔥 PRIORIDAD ABSOLUTA AL FETCH
+        // PRIORIDAD ABSOLUTA AL FETCH: Estados aislados
         if (mostrarRechazadas) {
             params.estado = 'RECHAZADO';
         } else if (mostrarPapelera) {
-            params.estado = 'CANCELADA'; // Ajusta si tu API espera otro string para papelera
+            params.estado = 'CANCELADA';
         } else if (filtroEstado !== 'TODOS') {
             params.estado = filtroEstado;
         }
 
+        // Mapeo estricto de filtros avanzados
         if (filtroTipo) params.tipo = filtroTipo;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
+        if (filtroClasificacion) params.clasificacion = filtroClasificacion;
+        if (filtroPlanta) params.planta = filtroPlanta;
+        if (filtroArea) params.area = filtroArea;
+
+        // Mapeo estructural hacia Zod Backend
+        if (filtroResponsable) params.responsableId = filtroResponsable;
+        if (mostrarAtrasadas) params.vencidos = true;
+
         if (sortConfig?.key) {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
 
         return fetchTickets(params).catch(() => notify.error('Error al cargar tickets.'));
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, sortConfig, mostrarRechazadas, mostrarPapelera, fetchTickets]);
+    }, [
+        page, query, filtroEstado, filtroTipo, filtroPrioridad,
+        filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea,
+        sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
+        fetchTickets
+    ]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    // ── Handlers de filtros ──────────────────────────────────────────────────
+    // ── Handlers de filtros estándar ─────────────────────────────────────────
     const handleSearchChange = useCallback((q) => { setQuery(q); setPage(1); }, []);
     const handleFilterChange = useCallback((e) => { setFiltroEstado(e); setPage(1); }, []);
     const handleTipoChange = useCallback((t) => { setFiltroTipo(t); setPage(1); }, []);
     const handlePrioridadChange = useCallback((p) => { setFiltroPrioridad(p); setPage(1); }, []);
     const handleSortChange = useCallback((key, dir) => { setSortConfig({ key, direction: dir }); setPage(1); }, []);
 
-    // 🔥 Handlers mutuamente excluyentes
+    const handleClasificacionChange = useCallback((c) => { setFiltroClasificacion(c); setPage(1); }, []);
+    const handleResponsableChange = useCallback((r) => { setFiltroResponsable(r); setPage(1); }, []);
+    const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
+    const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
+
+    // ── Handlers de vistas aisladas mutuamente excluyentes ───────────────────
     const handleToggleRechazadas = useCallback(() => {
         setMostrarRechazadas((prev) => !prev);
         setMostrarPapelera(false);
+        setMostrarAtrasadas(false);
         setFiltroEstado('TODOS');
         setPage(1);
     }, []);
@@ -87,6 +113,15 @@ export default function TicketsHistoricoPage() {
     const handleTogglePapelera = useCallback(() => {
         setMostrarPapelera((prev) => !prev);
         setMostrarRechazadas(false);
+        setMostrarAtrasadas(false);
+        setFiltroEstado('TODOS');
+        setPage(1);
+    }, []);
+
+    const handleToggleAtrasadas = useCallback(() => {
+        setMostrarAtrasadas((prev) => !prev);
+        setMostrarRechazadas(false);
+        setMostrarPapelera(false);
         setFiltroEstado('TODOS');
         setPage(1);
     }, []);
@@ -129,7 +164,7 @@ export default function TicketsHistoricoPage() {
         }
     };
 
-    // ── Props compartidos ────────────────────────────────────────────────────
+    // ── Props compartidos a Vistas ───────────────────────────────────────────
     const sharedViewProps = {
         tickets,
         loading,
@@ -144,22 +179,39 @@ export default function TicketsHistoricoPage() {
         conteos: meta.resumenEstados,
         sortConfig,
         query,
+
+        // Estado de Filtros Estándar y Avanzados
         filtroEstado,
         filtroTipo,
         filtroPrioridad,
+        filtroClasificacion,
+        filtroResponsable,
+        filtroPlanta,
+        filtroArea,
 
-        // Inyección de estados
+        // Estado de Vistas Excluyentes
         mostrarRechazadas,
-        onToggleRechazadas: handleToggleRechazadas,
         mostrarPapelera,
-        onTogglePapelera: handleTogglePapelera,
+        mostrarAtrasadas,
 
+        // Handlers Estándar y Avanzados
         onPageChange: setPage,
         onSortChange: handleSortChange,
         onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange,
         onTipoChange: handleTipoChange,
         onPrioridadChange: handlePrioridadChange,
+        onClasificacionChange: handleClasificacionChange,
+        onResponsableChange: handleResponsableChange,
+        onPlantaChange: handlePlantaChange,
+        onAreaChange: handleAreaChange,
+
+        // Handlers Excluyentes
+        onToggleRechazadas: handleToggleRechazadas,
+        onTogglePapelera: handleTogglePapelera,
+        onToggleAtrasadas: handleToggleAtrasadas,
+
+        // Acciones Globales
         onSave: handleUpdate,
         onChangeStatus: handleChangeStatus,
         onOpenCreate: () => setShowCreate(true),

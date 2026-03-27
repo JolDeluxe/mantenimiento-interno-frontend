@@ -1,25 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
 
-const TIPOS = [
-    { value: 'TICKET', label: 'Ticket' },
-    { value: 'PLANEADA', label: 'Planeada' },
-    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
-];
-
-const PRIORIDADES = [
-    { value: 'BAJA', label: 'Baja' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Crítica' },
-];
-
-const CLASIFICACIONES = [
-    { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
-];
+const normalizeOpts = (opts = []) => opts.map(o => {
+    if (typeof o === 'string') return { value: o, label: o };
+    return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
+});
 
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div className={`relative ${className}`}>
@@ -51,8 +37,8 @@ export const TicketFilterBar = ({
     filtroTipo, onTipoChange,
     filtroPrioridad, onPrioridadChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
-    filtroPlanta, onPlantaChange, opcionesPlantas = [],
-    filtroArea, onAreaChange, opcionesAreas = [],
+    filtroPlanta, onPlantaChange,
+    filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
     mostrarAtrasadas, onToggleAtrasadas,
     mostrarPapelera, onTogglePapelera,
@@ -62,9 +48,15 @@ export const TicketFilterBar = ({
     const [localValue, setLocalValue] = useState(query || '');
 
     useEffect(() => {
-        const timer = setTimeout(() => onSearchChange(localValue), 450);
+        setLocalValue(query || '');
+    }, [query]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localValue !== query) onSearchChange(localValue);
+        }, 450);
         return () => clearTimeout(timer);
-    }, [localValue, onSearchChange]);
+    }, [localValue, query, onSearchChange]);
 
     const totalRechazadas = conteos['RECHAZADO'] ?? 0;
 
@@ -74,9 +66,20 @@ export const TicketFilterBar = ({
         onClear: () => setLocalValue(''),
     };
 
+    // 1. Interceptor: Si cambia la planta, reseteamos el filtro de área
+    const handlePlantaChange = (nuevaPlanta) => {
+        onPlantaChange(nuevaPlanta);
+        onAreaChange('');
+    };
+
+    // 2. Select Dinámico: Resuelve las áreas filtradas o muestra todas
+    const areasDisponibles = (filtroPlanta && AREAS_POR_PLANTA[filtroPlanta])
+        ? AREAS_POR_PLANTA[filtroPlanta]
+        : AREAS;
+
     return (
         <div className="flex flex-col gap-3 w-full pt-2">
-            {/* ── Fila 1: Buscador y Acciones Directas ── */}
+            {/* Fila 1: Mantenemos tu código exacto original */}
             <div className="flex items-center gap-3 w-full">
                 <SearchInput {...searchProps} className="flex-1 max-w-md min-w-50" />
 
@@ -123,9 +126,9 @@ export const TicketFilterBar = ({
                 </div>
             </div>
 
-            {/* ── Fila 2: Selects de Filtros Avanzados ── */}
+            {/* Fila 2: Implementación de adaptación elástica (min-w y w-auto) */}
             <div className="flex items-center gap-3 w-full flex-wrap">
-                <div className="w-40 flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={TIPOS}
                         value={filtroTipo}
@@ -137,7 +140,7 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="w-40 flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={PRIORIDADES}
                         value={filtroPrioridad}
@@ -149,7 +152,7 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="w-44 flex-none">
+                <div className="min-w-44 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={CLASIFICACIONES}
                         value={filtroClasificacion}
@@ -161,10 +164,10 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="w-48 flex-none">
+                <div className="min-w-48 w-auto max-w-full flex-none">
                     <SearchableSelect
-                        options={opcionesResponsables}
-                        value={filtroResponsable}
+                        options={normalizeOpts(opcionesResponsables)} // Viene de BD (props)
+                        value={filtroResponsable ? String(filtroResponsable) : ''}
                         onChange={onResponsableChange}
                         placeholder="Responsable..."
                         icon="person"
@@ -173,11 +176,11 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="w-40 flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
-                        options={opcionesPlantas}
-                        value={filtroPlanta}
-                        onChange={onPlantaChange}
+                        options={normalizeOpts(PLANTAS)}
+                        value={filtroPlanta ? String(filtroPlanta) : ''}
+                        onChange={handlePlantaChange}
                         placeholder="Planta..."
                         icon="domain"
                         allOptionText="Todas"
@@ -185,10 +188,10 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="w-40 flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
-                        options={opcionesAreas}
-                        value={filtroArea}
+                        options={normalizeOpts(areasDisponibles)}
+                        value={filtroArea ? String(filtroArea) : ''}
                         onChange={onAreaChange}
                         placeholder="Área..."
                         icon="place"
