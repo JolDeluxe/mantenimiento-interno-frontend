@@ -106,7 +106,12 @@ export const TicketRechazadoModal = ({
             </ModalBody>
 
             <ModalFooter>
-                <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>
+                <Button
+                    variant="cancelar"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
                     Cancelar
                 </Button>
                 <Button
@@ -115,6 +120,7 @@ export const TicketRechazadoModal = ({
                     isLoading={isSubmitting}
                     disabled={!activado}
                     onClick={handleConfirmar}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                 >
                     Reiniciar ahora
                 </Button>

@@ -534,7 +534,12 @@ export const TicketPausaModal = ({
             </ModalBody>
 
             <ModalFooter>
-                <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>
+                <Button
+                    variant="cancelar"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
                     Cancelar
                 </Button>
                 <Button
@@ -543,8 +548,9 @@ export const TicketPausaModal = ({
                     isLoading={isSubmitting}
                     disabled={disableConfirm}
                     onClick={handleConfirmar}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm px-1"
                 >
-                    {accion === 'resolver' ? 'Confirmar resolución' : accion === 'reanudar' ? 'Confirmar reanudación' : 'Selecciona una acción'}
+                    {accion === 'resolver' ? 'Confirmar' : accion === 'reanudar' ? 'Confirmar' : 'Selecciona una acción'}
                 </Button>
             </ModalFooter>
         </Modal>

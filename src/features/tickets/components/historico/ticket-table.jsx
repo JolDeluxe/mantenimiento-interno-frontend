@@ -41,6 +41,57 @@ const formatFechaRelativa = (dateString) => {
     }).replace(/\./g, '');
 };
 
+const ResponsablesCell = ({ lista }) => {
+    const [expanded, setExpanded] = useState(false);
+
+    if (!lista || lista.length === 0) {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs text-slate-400 italic">
+                <Icon name="person_off" size="xs" />
+                Sin asignar
+            </span>
+        );
+    }
+
+    const mostrar = expanded ? lista : lista.slice(0, 3);
+    const extra = lista.length - 3;
+
+    return (
+        <div className="flex flex-col gap-2 items-start justify-center">
+            {mostrar.map((r) => (
+                <div key={r.id} className="flex items-center gap-2" title={r.nombre}>
+                    {r.imagen ? (
+                        <img
+                            src={r.imagen}
+                            alt={r.nombre}
+                            className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-50"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = '/img/perfil-no-foto.webp';
+                            }}
+                        />
+                    ) : (
+                        <div className="w-7 h-7 rounded-full bg-marca-primario/10 flex items-center justify-center text-marca-primario text-xs font-bold border border-marca-primario/20 shrink-0 shadow-sm">
+                            {r.nombre?.charAt(0).toUpperCase() ?? "?"}
+                        </div>
+                    )}
+                    <span className="text-sm text-slate-700 font-medium truncate max-w-[120px]">
+                        {r.nombre}
+                    </span>
+                </div>
+            ))}
+            {extra > 0 && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                    className="text-[10px] font-bold text-marca-primario hover:underline ml-9"
+                >
+                    {expanded ? 'Ver menos' : `+ ${extra} ver más`}
+                </button>
+            )}
+        </div>
+    );
+};
+
 export const TicketsTable = ({
     tickets,
     loading,
@@ -103,7 +154,7 @@ export const TicketsTable = ({
                             </span>
                             {vencida && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                    <Icon name="warning" size="xs" /> Vencida
+                                    <Icon name="warning" size="xs" /> ATRASADA
                                 </span>
                             )}
                         </div>
@@ -123,43 +174,7 @@ export const TicketsTable = ({
             headerClassName: 'w-[15%] min-w-[140px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-24 rounded-md" />;
-                const lista = row.responsables ?? [];
-
-                if (lista.length === 0) {
-                    return (
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 italic">
-                            <Icon name="person_off" size="xs" />
-                            Sin asignar
-                        </span>
-                    );
-                }
-
-                return (
-                    <div className="flex flex-col gap-2 items-start justify-center">
-                        {lista.map((r) => (
-                            <div key={r.id} className="flex items-center gap-2" title={r.nombre}>
-                                {r.imagen ? (
-                                    <img
-                                        src={r.imagen}
-                                        alt={r.nombre}
-                                        className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-50"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = '/img/perfil-no-foto.webp';
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="w-7 h-7 rounded-full bg-marca-primario/10 flex items-center justify-center text-marca-primario text-xs font-bold border border-marca-primario/20 shrink-0 shadow-sm">
-                                        {r.nombre?.charAt(0).toUpperCase() ?? "?"}
-                                    </div>
-                                )}
-                                <span className="text-sm text-slate-700 font-medium truncate max-w-[120px]">
-                                    {r.nombre}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                );
+                return <ResponsablesCell lista={row.responsables} />;
             },
         },
         {

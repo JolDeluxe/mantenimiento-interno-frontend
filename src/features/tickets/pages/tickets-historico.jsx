@@ -19,9 +19,11 @@ export default function TicketsHistoricoPage() {
         tickets,
         tecnicos,
         meta,
+        metricas,
         loading,
         submitting,
         fetchTickets,
+        fetchMetricas,
         fetchTecnicos,
         createTicket,
         updateTicket,
@@ -78,12 +80,13 @@ export default function TicketsHistoricoPage() {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
 
+        fetchMetricas(params);
         return fetchTickets(params).catch(() => notify.error('Error al cargar tickets.'));
     }, [
         page, query, filtroEstado, filtroTipo, filtroPrioridad,
         filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea,
         sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
-        fetchTickets
+        fetchTickets, fetchMetricas
     ]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
@@ -189,6 +192,8 @@ export default function TicketsHistoricoPage() {
         totalParaSummary: meta.totalAbsoluto,
         totalParaPaginador: meta.totalFiltrado,
         conteos: meta.resumenEstados,
+        existenciaGlobal: metricas?.existenciaGlobal || {},
+        totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
         sortConfig,
         query,
 

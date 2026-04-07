@@ -447,8 +447,13 @@ export const TicketProgressModal = ({
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            // Calculamos la base pero limitamos a 23h 55min (1435 mins) 
+                                            // para que no rompa la coherencia visual del TimePicker
                                             const base = elapsedMins > 0 ? elapsedMins : 60;
-                                            setTiempoManualMins(Math.round(base / 5) * 5 || 60);
+                                            const redondeado = Math.round(base / 5) * 5;
+                                            const capped = Math.min(redondeado, 1435); // Máximo 23:55
+
+                                            setTiempoManualMins(capped || 60);
                                             setTimePhase('manual');
                                         }}
                                         className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
@@ -478,24 +483,24 @@ export const TicketProgressModal = ({
 
                         {timePhase !== 'preguntando' && (
                             <>
-                                <div className="flex items-center justify-between px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
-                                    <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                        <Icon name="timer" size="sm" className="text-estado-resuelto" />
-                                        Tiempo total a registrar
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
+                                    <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                        <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
+                                        <span>Tiempo total a registrar</span>
                                         {timePhase === 'manual' && (
                                             <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
                                                 Manual
                                             </span>
                                         )}
                                     </span>
-                                    <span className="text-lg font-extrabold font-mono text-estado-resuelto">
+                                    <span className="text-base sm:text-lg font-extrabold font-mono text-estado-resuelto self-start sm:self-auto ml-5 sm:ml-0">
                                         {tiempoDisplay}
                                     </span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <Label htmlFor="nota-resolver">
-                                        Nota de resolución <span className="font-normal text-slate-400">(opcional)</span>
+                                        Nota de resolución <span className="font-normal text-slate-400 text-xs sm:text-sm">(opcional)</span>
                                     </Label>
                                     <textarea
                                         id="nota-resolver"
@@ -503,7 +508,7 @@ export const TicketProgressModal = ({
                                         value={notaResolver}
                                         onChange={(e) => setNotaResolver(e.target.value)}
                                         placeholder="Describe las acciones realizadas para resolver el ticket..."
-                                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
+                                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-base sm:text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
                                     />
                                 </div>
 
@@ -521,14 +526,24 @@ export const TicketProgressModal = ({
 
             <ModalFooter>
                 {vista === 'principal' && (
-                    <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>
+                    <Button
+                        variant="cancelar"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
+                    >
                         Cerrar
                     </Button>
                 )}
 
                 {vista === 'pausar' && (
                     <>
-                        <Button variant="cancelar" onClick={() => setVista('principal')} disabled={isSubmitting}>
+                        <Button
+                            variant="cancelar"
+                            onClick={() => setVista('principal')}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        >
                             Volver
                         </Button>
                         <Button
@@ -536,6 +551,7 @@ export const TicketProgressModal = ({
                             icon="pause"
                             isLoading={isSubmitting}
                             onClick={handleConfirmarPausar}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
                         >
                             Pausar tarea
                         </Button>
@@ -544,7 +560,12 @@ export const TicketProgressModal = ({
 
                 {vista === 'resolver' && (
                     <>
-                        <Button variant="cancelar" onClick={() => setVista('principal')} disabled={isSubmitting}>
+                        <Button
+                            variant="cancelar"
+                            onClick={() => setVista('principal')}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        >
                             Volver
                         </Button>
                         {timePhase !== 'preguntando' && (
@@ -554,8 +575,9 @@ export const TicketProgressModal = ({
                                 isLoading={isSubmitting}
                                 disabled={resolverDisabled}
                                 onClick={handleConfirmarResolver}
+                                className="flex-1 sm:flex-none text-xs sm:text-sm"
                             >
-                                Confirmar resolución
+                                Confirmar
                             </Button>
                         )}
                     </>

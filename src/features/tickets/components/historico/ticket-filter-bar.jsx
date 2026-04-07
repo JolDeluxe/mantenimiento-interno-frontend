@@ -43,7 +43,8 @@ export const TicketFilterBar = ({
     mostrarAtrasadas, onToggleAtrasadas,
     mostrarPapelera, onTogglePapelera,
     mostrarRechazadas, onToggleRechazadas,
-    conteos = {}
+    existenciaGlobal = {},
+    totalAtrasadasGlobal = 0
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
 
@@ -58,7 +59,9 @@ export const TicketFilterBar = ({
         return () => clearTimeout(timer);
     }, [localValue, query, onSearchChange]);
 
-    const totalRechazadas = conteos['RECHAZADO'] ?? 0;
+    const totalRechazadas = existenciaGlobal['RECHAZADO'] ?? 0;
+    const totalCanceladas = existenciaGlobal['CANCELADA'] ?? 0;
+    const totalAtrasadas = totalAtrasadasGlobal;
 
     const searchProps = {
         localValue,
@@ -84,6 +87,26 @@ export const TicketFilterBar = ({
                 <SearchInput {...searchProps} className="flex-1 max-w-md min-w-50" />
 
                 <div className="flex items-center gap-3 flex-none ml-auto">
+                    {/* 1. Botón Atrasadas (CON BADGE) */}
+                    <div className="relative">
+                        <Button
+                            variant="filtro_gris"
+                            isActive={mostrarAtrasadas}
+                            icon={mostrarAtrasadas ? 'close' : 'warning'}
+                            size="sm"
+                            onClick={onToggleAtrasadas}
+                            className={`w-34 flex-none justify-center h-9.5 ${mostrarAtrasadas ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent ring-0' : ''}`}
+                        >
+                            Atrasadas
+                        </Button>
+                        {totalAtrasadas > 0 && !mostrarAtrasadas && (
+                            <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold border-2 border-white shadow-md z-10 pointer-events-none leading-none">
+                                {totalAtrasadas}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* 2. Botón Rechazadas (CON BADGE) */}
                     <div className="relative">
                         <Button
                             variant="filtro_rechazado"
@@ -102,27 +125,19 @@ export const TicketFilterBar = ({
                         )}
                     </div>
 
-                    <Button
-                        variant="filtro_gris"
-                        isActive={mostrarPapelera}
-                        icon={mostrarPapelera ? 'close' : 'delete'}
-                        size="sm"
-                        onClick={onTogglePapelera}
-                        className="w-34 flex-none justify-center h-9.5"
-                    >
-                        Canceladas
-                    </Button>
-
-                    <Button
-                        variant="filtro_gris"
-                        isActive={mostrarAtrasadas}
-                        icon={mostrarAtrasadas ? 'close' : 'warning'}
-                        size="sm"
-                        onClick={onToggleAtrasadas}
-                        className={`w-34 flex-none justify-center h-9.5 ${mostrarAtrasadas ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent ring-0' : ''}`}
-                    >
-                        Atrasadas
-                    </Button>
+                    {/* 3. Botón Canceladas (SIN BADGE) */}
+                    <div className="relative">
+                        <Button
+                            variant="filtro_gris"
+                            isActive={mostrarPapelera}
+                            icon={mostrarPapelera ? 'close' : 'delete'}
+                            size="sm"
+                            onClick={onTogglePapelera}
+                            className="w-34 flex-none justify-center h-9.5"
+                        >
+                            Canceladas
+                        </Button>
+                    </div>
                 </div>
             </div>
 

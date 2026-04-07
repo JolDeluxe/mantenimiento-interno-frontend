@@ -26,6 +26,8 @@ export const TicketsHistoricoDesktop = ({
     filtroPlanta,
     filtroArea,
     conteos,
+    existenciaGlobal,
+    totalAtrasadasGlobal,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
@@ -97,6 +99,9 @@ export const TicketsHistoricoDesktop = ({
 
                 mostrarAtrasadas={mostrarAtrasadas}
                 onToggleAtrasadas={onToggleAtrasadas}
+
+                existenciaGlobal={existenciaGlobal}
+                totalAtrasadasGlobal={totalAtrasadasGlobal}
 
                 conteos={conteos}
             />

@@ -54,6 +54,8 @@ export const TicketsHistoricoMobile = ({
     totalParaSummary,
     totalParaPaginador,
     conteos,
+    existenciaGlobal,
+    totalAtrasadasGlobal,
     sortConfig,
     query,
     filtroEstado,
@@ -153,6 +155,8 @@ export const TicketsHistoricoMobile = ({
                     onToggleAtrasadas={onToggleAtrasadas}
 
                     conteos={conteos}
+                    existenciaGlobal={existenciaGlobal}
+                    totalAtrasadasGlobal={totalAtrasadasGlobal}
                     mobileFiltersOnly
                 />
             </div>

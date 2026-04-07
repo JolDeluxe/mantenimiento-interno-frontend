@@ -1,4 +1,4 @@
-// src/features/tickets/components/historico/ticket-card.jsx
+import { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
 import { isPastDate } from '@/lib/date';
@@ -34,6 +34,20 @@ const formatFechaRelativa = (dateString) => {
         month: 'short',
         year: 'numeric'
     }).replace(/\./g, '');
+};
+
+const getEstadoActionMeta = (estado) => {
+    switch (estado) {
+        case 'ASIGNADA':
+            return { text: 'Iniciar', icon: 'play_arrow' };
+        case 'EN_PROGRESO':
+        case 'EN_PROCESO':
+            return { text: 'Finalizar', icon: 'check_circle' };
+        case 'EN_PAUSA':
+            return { text: 'Reanudar', icon: 'play_arrow' };
+        default:
+            return { text: 'Estado', icon: 'swap_horiz' };
+    }
 };
 
 export const TicketCard = ({
@@ -81,6 +95,14 @@ export const TicketCard = ({
     const esAsignarPrimario = ticket.estado === 'PENDIENTE';
     const esEstadoPrimario = ['ASIGNADA', 'EN_PROGRESO', 'EN_PROCESO', 'EN_PAUSA', 'RECHAZADO'].includes(ticket.estado);
 
+    const actionMeta = getEstadoActionMeta(ticket.estado);
+    const [responsablesExpanded, setResponsablesExpanded] = useState(false);
+
+    const responsablesExtra = (ticket.responsables?.length || 0) - 3;
+    const responsablesMostrar = responsablesExpanded
+        ? ticket.responsables
+        : ticket.responsables?.slice(0, 3);
+
     return (
         <div className={cn(
             'bg-white border rounded-2xl p-4 shadow-sm',
@@ -100,7 +122,7 @@ export const TicketCard = ({
                         </h3>
                         {vencida && (
                             <span className="flex items-center gap-0.5 text-[10px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/30 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                <Icon name="warning" size="xs" /> Vencida
+                                <Icon name="warning" size="xs" /> ATRASADA
                             </span>
                         )}
                     </div>
@@ -130,7 +152,7 @@ export const TicketCard = ({
                     <div className="flex items-start gap-2">
                         <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
                         <div className="flex flex-col gap-2 min-w-0">
-                            {ticket.responsables.map((r) => (
+                            {responsablesMostrar.map((r) => (
                                 <div key={r.id} className="flex items-center gap-2" title={r.nombre}>
                                     {r.imagen ? (
                                         <img
@@ -152,6 +174,14 @@ export const TicketCard = ({
                                     </span>
                                 </div>
                             ))}
+                            {responsablesExtra > 0 && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setResponsablesExpanded(!responsablesExpanded); }}
+                                    className="text-[10px] font-bold text-marca-primario hover:underline self-start mt-0.5"
+                                >
+                                    {responsablesExpanded ? 'Ver menos' : `+ ${responsablesExtra} ver más`}
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -165,7 +195,20 @@ export const TicketCard = ({
                 )}
             </div>
 
-            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap">
+            {/* BARRA DE ACCIONES: UX Thumb-Zone Optimizada */}
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap w-full">
+
+                {/* Zona Izquierda: Destructivas / Consulta */}
+                {puedeCancelar && (
+                    <button
+                        onClick={() => onCancel?.(ticket)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-cancelada/20 active:scale-95 transition-all"
+                        title="Cancelar ticket"
+                    >
+                        <Icon name="cancel" size="xs" />
+                    </button>
+                )}
+
                 <button
                     onClick={() => onViewDetail?.(ticket)}
                     className="flex items-center justify-center p-1.5 rounded-md text-slate-600 hover:bg-slate-600/10 transition-colors"
@@ -174,13 +217,33 @@ export const TicketCard = ({
                     <Icon name="visibility" size="sm" />
                 </button>
 
-                {puedeRevisar && (
+                {/* Espaciador dinámico: Empuja los siguientes botones a la derecha */}
+                <div className="flex-1 min-w-[8px]"></div>
+
+                {/* Zona Derecha: Acciones principales en orden de importancia (der. a izq.) */}
+                {puedeEditar && (
                     <button
-                        onClick={() => onReview?.(ticket)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-estado-resuelto active:scale-95 transition-all shadow-sm"
+                        onClick={() => onEdit?.(ticket)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-prioridad-media bg-prioridad-media/10 hover:bg-prioridad-media/20 active:scale-95 transition-all"
+                        title="Editar ticket"
                     >
-                        <Icon name="fact_check" size="xs" />
-                        <span className="hidden min-[360px]:inline">Revisar</span>
+                        <Icon name="edit" size="xs" />
+                    </button>
+                )}
+
+                {puedeCambiarEstado && (
+                    <button
+                        onClick={() => onChangeStatus?.(ticket)}
+                        className={cn(
+                            "flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all",
+                            esEstadoPrimario
+                                ? "px-3 py-1.5 text-white bg-estado-en-progreso shadow-sm"
+                                : "px-2.5 py-1.5 text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20"
+                        )}
+                        title={actionMeta.text}
+                    >
+                        <Icon name={actionMeta.icon} size="xs" />
+                        {esEstadoPrimario && <span className="hidden min-[360px]:inline">{actionMeta.text}</span>}
                     </button>
                 )}
 
@@ -200,39 +263,13 @@ export const TicketCard = ({
                     </button>
                 )}
 
-                {puedeCambiarEstado && (
+                {puedeRevisar && (
                     <button
-                        onClick={() => onChangeStatus?.(ticket)}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all",
-                            esEstadoPrimario
-                                ? "px-3 py-1.5 text-white bg-estado-en-progreso shadow-sm"
-                                : "px-2.5 py-1.5 text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20"
-                        )}
-                        title="Cambiar Estado"
+                        onClick={() => onReview?.(ticket)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-estado-resuelto active:scale-95 transition-all shadow-sm"
                     >
-                        <Icon name="swap_horiz" size="xs" />
-                        {esEstadoPrimario && <span className="hidden min-[360px]:inline">Estado</span>}
-                    </button>
-                )}
-
-                {puedeEditar && (
-                    <button
-                        onClick={() => onEdit?.(ticket)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-prioridad-media bg-prioridad-media/10 hover:bg-prioridad-media/20 active:scale-95 transition-all"
-                        title="Editar ticket"
-                    >
-                        <Icon name="edit" size="xs" />
-                    </button>
-                )}
-
-                {puedeCancelar && (
-                    <button
-                        onClick={() => onCancel?.(ticket)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-cancelada/20 active:scale-95 transition-all ml-auto"
-                        title="Cancelar ticket"
-                    >
-                        <Icon name="cancel" size="xs" />
+                        <Icon name="fact_check" size="xs" />
+                        <span className="hidden min-[360px]:inline">Revisar</span>
                     </button>
                 )}
             </div>

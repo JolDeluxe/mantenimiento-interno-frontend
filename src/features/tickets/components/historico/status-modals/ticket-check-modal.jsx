@@ -203,7 +203,12 @@ export const TicketCheckModal = ({
             </ModalBody>
 
             <ModalFooter>
-                <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>
+                <Button
+                    variant="cancelar"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                >
                     Cancelar
                 </Button>
                 <Button
@@ -212,6 +217,7 @@ export const TicketCheckModal = ({
                     isLoading={isSubmitting}
                     disabled={!marcada}
                     onClick={handleConfirmar}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                 >
                     Marcar Completada
                 </Button>

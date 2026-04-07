@@ -6,6 +6,7 @@ import {
     updateTicket,
     changeTicketStatus,
     getAsignables,
+    getTicketMetrics,
 } from '../api/tickets-api';
 
 export const useTickets = () => {
@@ -13,6 +14,7 @@ export const useTickets = () => {
     const [tecnicos,   setTecnicos]   = useState([]);   // técnicos + coordinadores asignables
     const [loading,    setLoading]    = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [metricas,   setMetricas]   = useState({});
 
     const [meta, setMeta] = useState({
         totalFiltrado:  0,
@@ -77,13 +79,24 @@ export const useTickets = () => {
         finally { setSubmitting(false); }
     }, []);
 
+    const fetchMetricas = useCallback(async (params = {}) => {
+        try {
+            const res = await getTicketMetrics(params);
+            if (res?.data) setMetricas(res.data);
+        } catch {
+            // Silencioso, manejado por UI global si es necesario
+        }
+    }, []);
+
     return {
         tickets,
         tecnicos,
         meta,
+        metricas,
         loading,
         submitting,
         fetchTickets,
+        fetchMetricas,
         fetchTecnicos,
         createTicket:  handleCreate,
         updateTicket:  handleUpdate,

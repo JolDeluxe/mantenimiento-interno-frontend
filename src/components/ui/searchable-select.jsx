@@ -3,7 +3,7 @@ import { Icon, Tooltip } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
 
 export const SearchableSelect = ({
-    options = [], // Formato: [{ value: '1', label: 'Mantenimiento' }]
+    options = [],
     value,
     onChange,
     placeholder = "Seleccionar...",
@@ -75,7 +75,7 @@ export const SearchableSelect = ({
                                 e.stopPropagation();
                                 handleSelect('');
                             }}
-                            className="p-1 hover:bg-red-100 rounded-full text-red-600 transition-colors ml-2 flex-shrink-0"
+                            className="flex items-center justify-center w-6 h-6 hover:bg-red-100 rounded-full text-red-600 transition-colors ml-2 flex-shrink-0"
                         >
                             <Icon name="close" size="xs" />
                         </div>
