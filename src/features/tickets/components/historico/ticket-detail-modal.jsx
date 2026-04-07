@@ -360,22 +360,17 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                     </div>
                 </ModalBody>
 
-                <ModalFooter className="flex justify-between items-center w-full">
-                    <div className="flex-1">
-                        {tieneHistorial && (
-                            <Button
-                                variant="accion"
-                                size="sm"
-                                icon={mostrarHistorial ? 'visibility_off' : 'history'}
-                                onClick={() => setMostrarHistorial(prev => !prev)}
-                            >
-                                {mostrarHistorial ? 'Ocultar línea de tiempo' : 'Ver línea de tiempo'}
-                            </Button>
-                        )}
-                    </div>
-                    <Button variant="cancelar" size="sm" onClick={onClose}>
-                        Cerrar
-                    </Button>
+                <ModalFooter className="flex justify-end w-full">
+                    {tieneHistorial && (
+                        <Button
+                            variant="accion"
+                            size="sm"
+                            icon={mostrarHistorial ? 'visibility_off' : 'history'}
+                            onClick={() => setMostrarHistorial(prev => !prev)}
+                        >
+                            {mostrarHistorial ? 'Ocultar línea de tiempo' : 'Ver línea de tiempo'}
+                        </Button>
+                    )}
                 </ModalFooter>
             </Modal>
 

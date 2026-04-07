@@ -77,16 +77,17 @@ export const TableActions = ({ row, actions = [] }) => {
                         key={key}
                         text={tooltip}
                         variant={config.variant || 'default'}
-                        className="text-sm px-3 py-1.5"
+                        // Reducción drástica del tamaño del Tooltip:
+                        className="text-[13px] px-2 py-0.5 font-bold tracking-tight"
                     >
                         <button
                             onClick={() => onClick?.(row)}
                             className={cn(
-                                "p-1.5 rounded-md transition-colors cursor-pointer",
+                                "p-1.5 rounded-md transition-colors cursor-pointer", // Padding del botón intacto
                                 config.className
                             )}
                         >
-                            <Icon name={config.icon} size="sm" />
+                            <Icon name={config.icon} size="sm" /> {/* Icono intacto */}
                         </button>
                     </Tooltip>
                 );

@@ -1,16 +1,113 @@
-import React from 'react';
-import { Icon } from '@/components/ui/z_index';
+// src/features/tickets/pages/tickets-bandeja.jsx
+import React, { useState, useMemo, useEffect } from 'react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTickets } from '@/features/tickets/hooks/use-tickets';
+import { notify } from '@/components/notification/adaptive-notify';
+
+// Views & Modals
+import TicketsBandejaDesktop from '../views/tickets-bandeja-desktop';
+import TicketsBandejaMobile from '../views/tickets-bandeja-mobile';
+import { BandejaAssignModal } from '../components/bandeja/bandeja-assign-modal';
+import { BandejaDetailModal } from '../components/bandeja/bandeja-detail-modal';
 
 export default function TicketsBandejaPage() {
+    const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+    const [sortOrder, setSortOrder] = useState('asc');
+
+    const {
+        tickets,
+        loading: isLoading,
+        fetchTickets,
+        updateTicket
+    } = useTickets();
+
+    useEffect(() => {
+        fetchTickets({
+            tipo: 'TICKET',
+            estado: 'PENDIENTE',
+            sort: `[{"createdAt":"${sortOrder}"}]`
+        });
+    }, [fetchTickets, sortOrder]);
+
+    const unassignedTickets = useMemo(() => {
+        if (!tickets || tickets.length === 0) return [];
+        return tickets.filter(t => !t.responsables || t.responsables.length === 0);
+    }, [tickets]);
+
+    const [selectedTicket, setSelectedTicket] = useState(null);
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleOpenAssignModal = (ticket) => {
+        setSelectedTicket(ticket);
+        setIsAssignModalOpen(true);
+    };
+
+    const handleOpenDetailModal = (ticket) => {
+        setSelectedTicket(ticket);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleConfirmAssign = async (payload) => {
+        try {
+            setIsSubmitting(true);
+            await updateTicket(payload.ticketId, {
+                responsables: payload.responsables,
+                fechaProgramada: payload.fechaProgramada,
+                prioridad: payload.prioridad,
+                estado: payload.estado
+            });
+
+            notify.success('Ticket asignado correctamente');
+            fetchTickets({ tipo: 'TICKET', estado: 'PENDIENTE', sort: `[{"createdAt":"${sortOrder}"}]` });
+            setIsAssignModalOpen(false);
+            setTimeout(() => setSelectedTicket(null), 200);
+        } catch (error) {
+            notify.error(error.response?.data?.message || 'Ocurrió un error al asignar');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-fade-in">
-            <div className="bg-slate-100 p-4 rounded-full mb-4">
-                <Icon name="inbox" size="48px" className="text-slate-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-2">Bandeja de Entrada</h2>
-            <p className="text-slate-500 max-w-md">
-                (En construcción) Aquí los gerentes verán los nuevos reportes para asignarlos.
-            </p>
-        </div>
+        <>
+            {isDesktop ? (
+                <TicketsBandejaDesktop
+                    tickets={unassignedTickets}
+                    isLoading={isLoading}
+                    onAssignTicket={handleOpenAssignModal}
+                    onViewDetails={handleOpenDetailModal}
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                />
+            ) : (
+                <TicketsBandejaMobile
+                    tickets={unassignedTickets}
+                    isLoading={isLoading}
+                    onAssignTicket={handleOpenAssignModal}
+                    onViewDetails={handleOpenDetailModal}
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                />
+            )}
+
+            <BandejaAssignModal
+                isOpen={isAssignModalOpen}
+                onClose={() => setIsAssignModalOpen(false)}
+                ticket={selectedTicket}
+                onConfirm={handleConfirmAssign}
+                isSubmitting={isSubmitting}
+            />
+
+            {selectedTicket && (
+                <BandejaDetailModal
+                    isOpen={isDetailModalOpen}
+                    onClose={() => setIsDetailModalOpen(false)}
+                    ticket={selectedTicket}
+                />
+            )}
+        </>
     );
 }
