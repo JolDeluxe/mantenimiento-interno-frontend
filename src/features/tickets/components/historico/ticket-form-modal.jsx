@@ -1,6 +1,6 @@
 // src/features/tickets/components/historico/ticket-form-modal.jsx
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
@@ -52,13 +52,277 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
     );
 };
 
-// ─── Edit-mode multi-tech sub-components (sin cambios) ───────────────────────
+// ─── Workload Badge ───────────────────────────────────────────────────────────
 const WorkloadBadge = ({ label, count, colorClass }) => (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
         {label} <span>{count}</span>
     </span>
 );
 
+// ─── Technician row for dropdown list ─────────────────────────────────────────
+const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
+    const wl = tecnico.workload || { asignadas: 0, enProgreso: 0, enPausa: 0 };
+    const sinTareas = wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0;
+    const totalTareas = wl.asignadas + wl.enProgreso + wl.enPausa;
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors border-b border-slate-50 last:border-0 cursor-pointer',
+                isSelected
+                    ? 'bg-marca-primario/8 hover:bg-marca-primario/10'
+                    : 'bg-white hover:bg-slate-50'
+            )}
+        >
+            {/* Avatar */}
+            {tecnico.imagen ? (
+                <img
+                    src={tecnico.imagen}
+                    alt={tecnico.nombre}
+                    className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                    onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
+                />
+            ) : (
+                <div className={cn(
+                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0',
+                    isSelected ? 'bg-marca-primario text-white' : 'bg-marca-primario/10 text-marca-primario'
+                )}>
+                    {tecnico.nombre?.charAt(0).toUpperCase() ?? '?'}
+                </div>
+            )}
+
+            {/* Info */}
+            <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+                <div className="flex items-center justify-between gap-2">
+                    <span className={cn(
+                        'text-sm font-bold truncate',
+                        isSelected ? 'text-marca-primario' : 'text-slate-800'
+                    )}>
+                        {tecnico.nombre}
+                    </span>
+                    {/* Carga total visual */}
+                    {sinTareas ? (
+                        <span className="text-[10px] font-bold text-estado-resuelto bg-estado-resuelto/10 px-1.5 py-0.5 rounded-full shrink-0">
+                            Sin Tareas
+                        </span>
+                    ) : (
+                        <span className={cn(
+                            'text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
+                            totalTareas >= 5
+                                ? 'bg-estado-rechazado/10 text-estado-rechazado'
+                                : totalTareas >= 3
+                                    ? 'bg-prioridad-alta/10 text-prioridad-alta'
+                                    : 'bg-estado-pendiente/10 text-estado-pendiente'
+                        )}>
+                            {totalTareas} tarea{totalTareas !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {tecnico.cargo && (
+                        <span className="text-[10px] text-slate-400 truncate">{tecnico.cargo}</span>
+                    )}
+                    {!sinTareas && (
+                        <>
+                            {tecnico.cargo && <span className="text-[10px] text-slate-300">·</span>}
+                            {wl.asignadas > 0 && (
+                                <WorkloadBadge label="Asig." count={wl.asignadas} colorClass="bg-estado-asignada/10 text-estado-asignada" />
+                            )}
+                            {wl.enProgreso > 0 && (
+                                <WorkloadBadge label="Prog." count={wl.enProgreso} colorClass="bg-estado-en-progreso/10 text-estado-en-progreso" />
+                            )}
+                            {wl.enPausa > 0 && (
+                                <WorkloadBadge label="Pausa" count={wl.enPausa} colorClass="bg-estado-en-pausa/10 text-estado-en-pausa" />
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Check indicator */}
+            <div className={cn(
+                'shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+                isSelected ? 'bg-marca-primario border-marca-primario' : 'border-slate-300 bg-white'
+            )}>
+                {isSelected && <Icon name="check" size="xs" className="text-white" />}
+            </div>
+        </button>
+    );
+};
+
+// ─── TecnicoCartSelector — single-select con workload ─────────────────────────
+const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder = 'Buscar y seleccionar técnico...' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [busqueda, setBusqueda] = useState('');
+    const containerRef = useRef(null);
+    const searchRef = useRef(null);
+
+    const tecnicoSeleccionado = useMemo(
+        () => tecnicos.find(t => String(t.id) === String(value)),
+        [tecnicos, value]
+    );
+
+    const tecnicosFiltrados = useMemo(() => {
+        const q = busqueda.toLowerCase();
+        return tecnicos.filter(t =>
+            t.nombre.toLowerCase().includes(q) ||
+            (t.cargo ?? '').toLowerCase().includes(q)
+        );
+    }, [tecnicos, busqueda]);
+
+    // Click outside
+    useEffect(() => {
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Auto-focus search on open
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => searchRef.current?.focus(), 50);
+        } else {
+            setBusqueda('');
+        }
+    }, [isOpen]);
+
+    const handleSelect = (tecnico) => {
+        onChange(String(tecnico.id));
+        setIsOpen(false);
+    };
+
+    const handleClear = (e) => {
+        e.stopPropagation();
+        onChange('');
+    };
+
+    const wl = tecnicoSeleccionado?.workload;
+    const sinTareasSelected = !wl || (wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0);
+
+    return (
+        <div className="relative" ref={containerRef}>
+            {/* Trigger */}
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 border rounded-lg text-sm text-left transition-all',
+                    disabled
+                        ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                        : isOpen
+                            ? 'border-marca-secundario ring-2 ring-marca-secundario/20 bg-white cursor-pointer'
+                            : value
+                                ? 'border-marca-primario/30 bg-marca-primario/5 cursor-pointer'
+                                : 'border-slate-300 bg-white hover:border-slate-400 cursor-pointer'
+                )}
+            >
+                {tecnicoSeleccionado ? (
+                    <>
+                        {/* Avatar mini del seleccionado */}
+                        {tecnicoSeleccionado.imagen ? (
+                            <img
+                                src={tecnicoSeleccionado.imagen}
+                                alt=""
+                                className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0"
+                                onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
+                            />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-marca-primario/10 flex items-center justify-center text-[10px] font-black text-marca-primario shrink-0">
+                                {tecnicoSeleccionado.nombre?.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <span className="text-sm font-bold text-marca-primario truncate">
+                                {tecnicoSeleccionado.nombre}
+                            </span>
+                            {sinTareasSelected ? (
+                                <span className="text-[10px] font-bold text-estado-resuelto bg-estado-resuelto/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                    Libre
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-estado-pendiente bg-estado-pendiente/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                    {(wl.asignadas + wl.enProgreso + wl.enPausa)} tareas
+                                </span>
+                            )}
+                        </div>
+                        {!disabled && (
+                            <button
+                                type="button"
+                                onClick={handleClear}
+                                className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-500 transition-colors"
+                            >
+                                <Icon name="close" size="xs" />
+                            </button>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <Icon name="person_search" size="sm" className="text-slate-400 shrink-0" />
+                        <span className="flex-1 text-slate-400">{placeholder}</span>
+                        <Icon
+                            name="expand_more"
+                            size="sm"
+                            className={cn('text-slate-400 shrink-0 transition-transform', isOpen && 'rotate-180')}
+                        />
+                    </>
+                )}
+            </button>
+
+            {/* Dropdown */}
+            {isOpen && !disabled && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                    {/* Search */}
+                    <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
+                        <div className="relative">
+                            <Icon name="search" size="xs" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <input
+                                ref={searchRef}
+                                type="text"
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                placeholder="Buscar por nombre o cargo..."
+                                className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
+                            />
+                        </div>
+                    </div>
+
+                    {/* List */}
+                    <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                        {tecnicos.length === 0 ? (
+                            <div className="flex flex-col items-center py-8 text-slate-400 gap-2">
+                                <Icon name="engineering" size="xl" />
+                                <p className="text-sm italic">No hay personal disponible.</p>
+                            </div>
+                        ) : tecnicosFiltrados.length === 0 ? (
+                            <div className="py-6 text-center text-sm text-slate-400 italic">
+                                Sin resultados para "{busqueda}"
+                            </div>
+                        ) : (
+                            tecnicosFiltrados.map(t => (
+                                <TecnicoRow
+                                    key={t.id}
+                                    tecnico={t}
+                                    isSelected={String(t.id) === String(value)}
+                                    onClick={() => handleSelect(t)}
+                                />
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Edit-mode multi-tech sub-components ─────────────────────────────────────
 const TecnicoChip = ({ tecnico, onRemove }) => (
     <span className="inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
         {tecnico?.imagen ? (
@@ -167,7 +431,6 @@ const CarritoItem = ({ item, index, onRemove }) => {
             "rounded-xl border overflow-hidden transition-all duration-200",
             expanded ? 'border-marca-primario/30 shadow-sm' : 'border-slate-200'
         )}>
-            {/* Row principal */}
             <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white">
                 <span className="w-6 h-6 rounded-full bg-marca-primario/10 text-marca-primario text-[11px] font-extrabold flex items-center justify-center shrink-0">
                     {index + 1}
@@ -186,24 +449,19 @@ const CarritoItem = ({ item, index, onRemove }) => {
                         )}
                     </div>
                 </div>
-                {/* Eye button */}
                 <button type="button" onClick={() => setExpanded(!expanded)} title={expanded ? 'Ocultar' : 'Ver detalles'}
                     className={cn(
                         "p-1.5 rounded-md transition-colors shrink-0",
-                        expanded
-                            ? 'bg-marca-primario/10 text-marca-primario'
-                            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                        expanded ? 'bg-marca-primario/10 text-marca-primario' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                     )}>
                     <Icon name={expanded ? 'visibility_off' : 'visibility'} size="xs" />
                 </button>
-                {/* Remove button */}
                 <button type="button" onClick={() => onRemove(item._id)} title="Quitar tarea"
                     className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0">
                     <Icon name="close" size="xs" />
                 </button>
             </div>
 
-            {/* Detalle expandido */}
             {expanded && (
                 <div className="px-4 pb-3 pt-2 bg-slate-50 border-t border-slate-100 space-y-2.5">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -247,7 +505,6 @@ export const TicketFormModal = ({
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
-    // modoCarrito: only for admin creating new tasks
     const modoCarrito = !esEdicion && esAdmin;
 
     // ── Cart state ────────────────────────────────────────────────────────
@@ -273,7 +530,6 @@ export const TicketFormModal = ({
     const [submitted, setSubmitted] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    // Derived
     const esRutina = clasificacion === 'RUTINA';
     const carritoLocked = carrito.length > 0;
     const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
@@ -288,12 +544,6 @@ export const TicketFormModal = ({
     const opcionesDisponiblesEdit = useMemo(() =>
         opcionesTecnicos.filter(opt => !responsables.includes(opt.value)),
         [opcionesTecnicos, responsables]);
-
-    const opcionesTecnicoCarrito = useMemo(() =>
-        tecnicos.map(t => ({
-            value: String(t.id),
-            label: t.nombre + (t.cargo ? ` — ${t.cargo}` : ''),
-        })), [tecnicos]);
 
     // ── Reset on open ─────────────────────────────────────────────────────
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,7 +626,6 @@ export const TicketFormModal = ({
         setCarrito(prev => prev.filter(item => item._id !== _id));
     };
 
-    // ── Build FormData from a cart item ───────────────────────────────────
     const buildFormData = (item) => {
         const fd = new FormData();
         fd.append('titulo', item.titulo);
@@ -440,7 +689,6 @@ export const TicketFormModal = ({
             return;
         }
 
-        // Cart mode: pass array to parent
         if (carrito.length === 0) {
             setBackendError('Agrega al menos una tarea antes de guardar.');
             return;
@@ -454,6 +702,17 @@ export const TicketFormModal = ({
             setBackendError(msg);
         }
     };
+
+    const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    const dManana = new Date();
+    dManana.setDate(dManana.getDate() + 1);
+    const mananaLocal = new Date(dManana.getTime() - dManana.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+    const setToday = () => setFechaVencimiento(hoyLocal);
+    const setTomorrow = () => setFechaVencimiento(mananaLocal);
+
+    const isHoy = fechaVencimiento === hoyLocal;
+    const isManana = fechaVencimiento === mananaLocal;
 
     const fe = submitted ? getErrors() : {};
     const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
@@ -481,7 +740,7 @@ export const TicketFormModal = ({
                         {/* ── Technician selector ── */}
                         {esAdmin && tecnicos.length > 0 && (
                             modoCarrito ? (
-                                // CART MODE: single selector, lockable
+                                // CART MODE: TecnicoCartSelector con workload
                                 <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex flex-col gap-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -496,50 +755,39 @@ export const TicketFormModal = ({
                                         )}
                                     </div>
 
-                                    {tecnicoCart ? (
-                                        // Locked chip
-                                        <div className={cn(
-                                            "flex items-center gap-3 p-2.5 rounded-lg border transition-colors",
-                                            carritoLocked
-                                                ? "bg-marca-primario/5 border-marca-primario/20"
-                                                : "bg-white border-slate-200"
-                                        )}>
-                                            {tecnicoCart.imagen ? (
-                                                <img src={tecnicoCart.imagen} alt={tecnicoCart.nombre}
-                                                    className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
-                                                    onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }} />
-                                            ) : (
-                                                <div className="w-9 h-9 rounded-full bg-marca-primario/10 flex items-center justify-center text-sm font-bold text-marca-primario shrink-0">
-                                                    {tecnicoCart.nombre?.charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-slate-800 truncate">{tecnicoCart.nombre}</p>
-                                                {tecnicoCart.cargo && <p className="text-xs text-slate-400 truncate">{tecnicoCart.cargo}</p>}
+                                    <TecnicoCartSelector
+                                        tecnicos={tecnicos}
+                                        value={tecnicoCartId}
+                                        onChange={(val) => { if (!carritoLocked) setTecnicoCartId(val); }}
+                                        disabled={isSubmitting || carritoLocked}
+                                        placeholder="Buscar y seleccionar técnico..."
+                                    />
+
+                                    {/* Resumen de carga del seleccionado (expandido) */}
+                                    {tecnicoCart && (() => {
+                                        const wl = tecnicoCart.workload;
+                                        const sinTareas = !wl || (wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0);
+                                        return (
+                                            <div className={cn(
+                                                'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs',
+                                                sinTareas
+                                                    ? 'bg-estado-resuelto/5 border-estado-resuelto/20 text-estado-resuelto'
+                                                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                                            )}>
+                                                <Icon name={sinTareas ? 'check_circle' : 'assignment'} size="xs" className="shrink-0" />
+                                                {sinTareas ? (
+                                                    <span><strong>{tecnicoCart.nombre}</strong> no tiene tareas activas — ideal para asignar.</span>
+                                                ) : (
+                                                    <span>
+                                                        <strong>{tecnicoCart.nombre}</strong> tiene {(wl.asignadas + wl.enProgreso + wl.enPausa)} tarea(s) activa(s).
+                                                    </span>
+                                                )}
                                             </div>
-                                            {!carritoLocked && (
-                                                <button type="button" onClick={() => setTecnicoCartId('')}
-                                                    className="p-1.5 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors shrink-0">
-                                                    <Icon name="close" size="xs" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        // Selector
-                                        <SearchableSelect
-                                            options={opcionesTecnicoCarrito}
-                                            value={tecnicoCartId}
-                                            onChange={(val) => { if (!carritoLocked) setTecnicoCartId(val); }}
-                                            placeholder="Buscar técnico..."
-                                            icon="person_search"
-                                            allOptionText={null}
-                                            disabled={isSubmitting || carritoLocked}
-                                            className="w-full"
-                                        />
-                                    )}
+                                        );
+                                    })()}
                                 </div>
                             ) : (
-                                // EDIT MODE: multi-tech (unchanged)
+                                // EDIT MODE: multi-tech (sin cambios)
                                 <div className={cn("flex flex-col gap-2 transition-[padding] duration-300", isDropdownOpen ? "pb-[260px]" : "pb-0")}>
                                     <Label>Técnicos asignados (opcional)</Label>
                                     <TecnicoDropdown
@@ -645,10 +893,30 @@ export const TicketFormModal = ({
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
                                     <div className="flex justify-between items-center">
                                         <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
-                                        <button type="button" onClick={() => setFechaVencimiento(getMinDateHoy())} disabled={isSubmitting}
-                                            className="text-xs font-bold text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20 px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer">
-                                            Para hoy
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={setToday}
+                                                disabled={isSubmitting}
+                                                className={cn(
+                                                    "text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                    isHoy ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20"
+                                                )}
+                                            >
+                                                Hoy
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={setTomorrow}
+                                                disabled={isSubmitting}
+                                                className={cn(
+                                                    "text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                    isManana ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20"
+                                                )}
+                                            >
+                                                Mañana
+                                            </button>
+                                        </div>
                                     </div>
                                     <Input id="tf-fecha" type="date" value={fechaVencimiento}
                                         min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
@@ -684,7 +952,7 @@ export const TicketFormModal = ({
                                 disabled={isSubmitting} />
                         </div>
 
-                        {/* ── Add to cart button (cart mode only) ── */}
+                        {/* ── Add to cart button ── */}
                         {modoCarrito && (
                             <div className="flex items-center gap-3 pt-1">
                                 <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
@@ -699,10 +967,9 @@ export const TicketFormModal = ({
                         )}
                     </div>
 
-                    {/* ══ CART PANEL (cart mode only) ════════════════════════ */}
+                    {/* ══ CART PANEL ════════════════════════════════════════ */}
                     {modoCarrito && (
                         <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col gap-3">
-                            {/* Header */}
                             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
                                     <Icon name="list_alt" size="sm" className="text-slate-500" />
@@ -723,7 +990,6 @@ export const TicketFormModal = ({
                                 </div>
                             </div>
 
-                            {/* Items or placeholder */}
                             {carrito.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center gap-3 py-14 text-center">
                                     <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
@@ -745,15 +1011,14 @@ export const TicketFormModal = ({
                                 </div>
                             )}
 
-                            {/* Tech assignment summary */}
                             {carrito.length > 0 && (
                                 <div className={cn(
-                                    "flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-colors",
+                                    'flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-colors',
                                     tecnicoCart
-                                        ? "bg-marca-primario/5 border-marca-primario/15 text-marca-primario"
-                                        : "bg-slate-50 border-slate-200 text-slate-500"
+                                        ? 'bg-marca-primario/5 border-marca-primario/15 text-marca-primario'
+                                        : 'bg-slate-50 border-slate-200 text-slate-500'
                                 )}>
-                                    <Icon name={tecnicoCart ? "engineering" : "person_off"} size="xs" className="shrink-0" />
+                                    <Icon name={tecnicoCart ? 'engineering' : 'person_off'} size="xs" className="shrink-0" />
                                     {tecnicoCart ? (
                                         <span>Asignadas a <strong>{tecnicoCart.nombre}</strong></span>
                                     ) : (

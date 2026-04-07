@@ -5,8 +5,8 @@ import { useTickets } from '@/features/tickets/hooks/use-tickets';
 import { notify } from '@/components/notification/adaptive-notify';
 
 // Views & Modals
-import TicketsBandejaDesktop from '../views/tickets-bandeja-desktop';
-import TicketsBandejaMobile from '../views/tickets-bandeja-mobile';
+import { TicketsBandejaDesktop } from '../views/tickets-bandeja-desktop';
+import { TicketsBandejaMobile } from '../views/tickets-bandeja-mobile';
 import { BandejaAssignModal } from '../components/bandeja/bandeja-assign-modal';
 import { BandejaDetailModal } from '../components/bandeja/bandeja-detail-modal';
 
@@ -14,9 +14,11 @@ export default function TicketsBandejaPage() {
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
     const [sortOrder, setSortOrder] = useState('asc');
+    const [page, setPage] = useState(1);
 
     const {
         tickets,
+        pagination,
         loading: isLoading,
         fetchTickets,
         updateTicket
@@ -26,9 +28,11 @@ export default function TicketsBandejaPage() {
         fetchTickets({
             tipo: 'TICKET',
             estado: 'PENDIENTE',
-            sort: `[{"createdAt":"${sortOrder}"}]`
+            sort: `[{"createdAt":"${sortOrder}"}]`,
+            page: page,
+            limit: 12
         });
-    }, [fetchTickets, sortOrder]);
+    }, [fetchTickets, sortOrder, page]);
 
     const unassignedTickets = useMemo(() => {
         if (!tickets || tickets.length === 0) return [];
@@ -61,7 +65,13 @@ export default function TicketsBandejaPage() {
             });
 
             notify.success('Ticket asignado correctamente');
-            fetchTickets({ tipo: 'TICKET', estado: 'PENDIENTE', sort: `[{"createdAt":"${sortOrder}"}]` });
+            fetchTickets({
+                tipo: 'TICKET',
+                estado: 'PENDIENTE',
+                sort: `[{"createdAt":"${sortOrder}"}]`,
+                page: page,
+                limit: 12
+            });
             setIsAssignModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
         } catch (error) {
@@ -69,6 +79,11 @@ export default function TicketsBandejaPage() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleSortChange = (val) => {
+        setSortOrder(val);
+        setPage(1); // Reiniciamos a página 1 al cambiar orden
     };
 
     return (
@@ -80,7 +95,9 @@ export default function TicketsBandejaPage() {
                     onAssignTicket={handleOpenAssignModal}
                     onViewDetails={handleOpenDetailModal}
                     sortOrder={sortOrder}
-                    onSortChange={setSortOrder}
+                    onSortChange={handleSortChange}
+                    pagination={pagination}
+                    onPageChange={setPage}
                 />
             ) : (
                 <TicketsBandejaMobile
@@ -89,7 +106,9 @@ export default function TicketsBandejaPage() {
                     onAssignTicket={handleOpenAssignModal}
                     onViewDetails={handleOpenDetailModal}
                     sortOrder={sortOrder}
-                    onSortChange={setSortOrder}
+                    onSortChange={handleSortChange}
+                    pagination={pagination}
+                    onPageChange={setPage}
                 />
             )}
 

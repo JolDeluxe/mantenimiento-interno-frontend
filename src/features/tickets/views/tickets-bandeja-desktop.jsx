@@ -1,17 +1,19 @@
 // src/features/tickets/views/tickets-bandeja-desktop.jsx
 import React from 'react';
-import { Spinner, Icon } from '@/components/ui/z_index';
-import { Select } from '@/components/form/z_index';
+import { Spinner, Icon, Pagination } from '@/components/ui/z_index';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
+import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
 
-export default function TicketsBandejaDesktop({
+export const TicketsBandejaDesktop = ({
     tickets,
     isLoading,
     onAssignTicket,
     onViewDetails,
     sortOrder,
-    onSortChange
-}) {
+    onSortChange,
+    pagination,
+    onPageChange
+}) => {
     if (isLoading) {
         return (
             <div className="h-full w-full flex items-center justify-center min-h-[400px]">
@@ -34,27 +36,11 @@ export default function TicketsBandejaDesktop({
 
     return (
         <div className="flex flex-col gap-6 animate-fade-in">
-            <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-800 font-heading tracking-tight">
-                        Bandeja de Entrada
-                    </h2>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Mostrando <span className="font-bold text-slate-700">{tickets.length}</span> ticket(s) sin asignar.
-                    </p>
-                </div>
-
-                <div className="w-64">
-                    <Select
-                        options={[
-                            { value: 'asc', label: 'Más antiguos primero' },
-                            { value: 'desc', label: 'Más recientes primero' }
-                        ]}
-                        value={sortOrder}
-                        onChange={(val) => onSortChange(val)}
-                    />
-                </div>
-            </div>
+            <BandejaFiltro
+                totalTickets={tickets.length}
+                sortOrder={sortOrder}
+                onSortChange={onSortChange}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {tickets.map(ticket => (
@@ -66,6 +52,17 @@ export default function TicketsBandejaDesktop({
                     />
                 ))}
             </div>
+
+            {/* Paginación Desktop */}
+            {pagination && pagination.totalPages > 1 && (
+                <div className="mt-4 flex justify-center sm:justify-end">
+                    <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={onPageChange}
+                    />
+                </div>
+            )}
         </div>
     );
-}
+};
