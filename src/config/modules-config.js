@@ -1,3 +1,4 @@
+// src/config/modules-config.js
 /**
  * Configuración centralizada de módulos del sistema
  * Cada módulo define: nombre, icono, ruta y roles permitidos
@@ -11,7 +12,7 @@ export const MODULES_CONFIG = [
     route: '/',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
   },
-{
+  {
     id: 'tickets',
     name: 'Gestión de Actividades',
     icon: 'assignment',
@@ -34,7 +35,8 @@ export const MODULES_CONFIG = [
         id: 'tickets-historico',
         name: 'Histórico',
         route: '/tickets/historico',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+        // Modificado para que todos los roles puedan verlo. La API protege las acciones internas.
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
       }
     ]
   },

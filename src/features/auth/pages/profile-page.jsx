@@ -7,7 +7,7 @@ import { notify } from '@/components/notification/adaptive-notify';
 
 const ProfilePage = () => {
   const isDesktop = useIsDesktop();
-  
+
   const {
     profile,
     loading,
@@ -36,18 +36,18 @@ const ProfilePage = () => {
     }
   }, [success, clearSuccess]);
 
-useEffect(() => {
+  useEffect(() => {
     if (error?.message) {
       const msg = error.message.toLowerCase();
-      
+
       // Silenciamos estrictamente los errores que los formularios ya manejan en su propia UI
-      const isSilencedError = 
-        msg.includes('contraseña') || 
+      const isSilencedError =
+        msg.includes('contraseña') ||
         msg.includes('datos de entrada inválidos') ||
         msg.includes('correo') || // Error silenciado para que lo maneje GeneralForm
         msg.includes('usuario ya existe') || // Error silenciado para que lo maneje GeneralForm
         msg.includes('nombre de usuario'); // Error silenciado para que lo maneje GeneralForm
-      
+
       // Si NO es un error silenciado (ej. 500 Server Error o Red), entonces sí lanzamos el Toast
       if (!isSilencedError) {
         notify.error(error.message);
@@ -71,13 +71,14 @@ useEffect(() => {
   };
 
   return (
-    <div className="space-y-4 max-w-370 mx-auto">
-
-      {isDesktop ? (
-        <ProfileDesktop {...viewProps} />
-      ) : (
-        <ProfileMobile {...viewProps} />
-      )}
+    <div className="max-w-full mx-auto">
+      <div className="p-2 lg:p-4 space-y-4">
+        {isDesktop ? (
+          <ProfileDesktop {...viewProps} />
+        ) : (
+          <ProfileMobile {...viewProps} />
+        )}
+      </div>
     </div>
   );
 };

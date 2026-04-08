@@ -1,48 +1,161 @@
-import React from 'react';
-import { Icon } from '@/components/ui/z_index';
+// src/features/tickets/pages/tickets-hoy.jsx
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { useAuthStore } from '@/stores/auth-store';
+import { notify } from '@/components/notification/adaptive-notify';
+import { useTickets } from '../hooks/use-tickets';
+import { TicketsHoyDesktop } from '../views/tickets-hoy-desktop';
+import { TicketsHoyMobile } from '../views/tickets-hoy-mobile';
+import { HoyFormModal } from '../components/hoy/hoy-form-modal';
+import { MobileHoyFormModal } from '../components/hoy/mobile-hoy-form-modal';
+
+// ── Utilidades de fecha ──────────────────────────────────────────────────────
+const getDateBounds = (offset = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+    const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    return { start, end };
+};
+
+const isOnDate = (isoStr, offset = 0) => {
+    if (!isoStr) return false;
+    const { start, end } = getDateBounds(offset);
+    const d = new Date(isoStr);
+    return d >= start && d <= end;
+};
 
 export default function TicketsHoyPage() {
-    return (
-        <div className="flex flex-col animate-fade-in pb-24">
-            {/* Header de la vista vacía */}
-            <div className="flex flex-col items-center justify-center text-center py-8">
-                <div className="bg-slate-200/50 p-4 rounded-full mb-4">
-                    <Icon name="today" size="48px" className="text-slate-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-slate-700 mb-2">Tareas de Hoy</h2>
-                <p className="text-slate-500 max-w-md px-4 text-sm">
-                    (En construcción) Contenido de prueba generado para evaluar la responsividad y el comportamiento sticky del layout.
-                </p>
-            </div>
+    const isDesktop = useIsDesktop();
+    const { user } = useAuthStore();
+    const currentUser = user?.data ?? user;
 
-            {/* Mock Data para forzar el Scroll */}
-            <div className="flex flex-col gap-3 px-1 mt-4">
-                {Array.from({ length: 15 }).map((_, index) => (
-                    <div
-                        key={index}
-                        className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2"
-                    >
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                                TCK-2024-{String(index + 1).padStart(3, '0')}
-                            </span>
-                            <span className="text-[10px] font-bold bg-marca-primario/10 text-marca-primario px-2 py-0.5 rounded-full">
-                                PENDIENTE
-                            </span>
-                        </div>
-                        <h3 className="text-sm font-bold text-slate-800 leading-snug">
-                            Revisión de Mantenimiento Equipo #{index + 1}
-                        </h3>
-                        <p className="text-xs text-slate-500 line-clamp-2">
-                            Se requiere inspección física y actualización de la bitácora para asegurar que las métricas operativas se mantengan dentro del umbral permitido.
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-                            <Icon name="schedule" size="xs" className="text-slate-400" />
-                            <span className="text-xs text-slate-400 font-medium">Hace 2 horas</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+    const {
+        tickets: allTickets,
+        tecnicos,
+        loading,
+        submitting,
+        fetchTickets,
+        fetchTecnicos,
+        createTicket,
+        updateTicket,
+        changeStatus,
+    } = useTickets();
+
+    const [dateOffset, setDateOffset] = useState(0); // 0 = hoy, 1 = mañana
+    const [showCreate, setShowCreate] = useState(false);
+
+    // ── Fetch: traemos activos + los que vencen hoy/mañana ─────────────────
+    const loadTickets = useCallback(() => {
+        // Pedimos un rango amplio de activos al backend; el filtro de fecha es local
+        fetchTickets({
+            limit: 200,
+            // No filtramos estado para ver todas las activas asignadas
+        }).catch(() => notify.error('Error al cargar las tareas.'));
+    }, [fetchTickets]);
+
+    useEffect(() => { loadTickets(); }, [loadTickets]);
+    useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
+
+    // ── Filtro local por fecha de vencimiento ────────────────────────────────
+    const ticketsFiltrados = useMemo(() => {
+        return allTickets.filter((t) => isOnDate(t.fechaVencimiento, dateOffset));
+    }, [allTickets, dateOffset]);
+
+    const totalHoy = useMemo(() => allTickets.filter((t) => isOnDate(t.fechaVencimiento, 0)).length, [allTickets]);
+    const totalManana = useMemo(() => allTickets.filter((t) => isOnDate(t.fechaVencimiento, 1)).length, [allTickets]);
+
+    // ── Handlers ─────────────────────────────────────────────────────────────
+    const handleCreate = async (payloads) => {
+        const items = Array.isArray(payloads) ? payloads : [payloads];
+        try {
+            for (const payload of items) {
+                await createTicket(payload);
+            }
+            notify.success(
+                items.length > 1
+                    ? `${items.length} tareas creadas correctamente.`
+                    : 'Tarea creada correctamente.'
+            );
+            setShowCreate(false);
+            loadTickets();
+        } catch (err) {
+            const msg = err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la tarea.';
+            notify.error(msg);
+            throw err;
+        }
+    };
+
+    const handleUpdate = async (id, payload) => {
+        try {
+            await updateTicket(id, payload);
+            notify.success('Tarea actualizada correctamente.');
+            loadTickets();
+        } catch (err) {
+            const msg = err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar.';
+            notify.error(msg);
+            throw err;
+        }
+    };
+
+    const handleChangeStatus = async (id, payload) => {
+        try {
+            await changeStatus(id, payload);
+            notify.success('Estado actualizado correctamente.');
+            loadTickets();
+        } catch (err) {
+            const msg = err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado.';
+            notify.error(msg);
+            throw err;
+        }
+    };
+
+    // ── Props compartidos ────────────────────────────────────────────────────
+    const sharedProps = {
+        tickets: ticketsFiltrados,
+        loading,
+        submitting,
+        currentUser,
+        tecnicos,
+        dateOffset,
+        onDateOffsetChange: setDateOffset,
+        totalHoy,
+        totalManana,
+        onSave: handleUpdate,
+        onChangeStatus: handleChangeStatus,
+        onOpenCreate: () => setShowCreate(true),
+        onRefresh: loadTickets,
+    };
+
+    return (
+        <div className="max-w-full mx-auto">
+            {isDesktop
+                ? <TicketsHoyDesktop {...sharedProps} />
+                : <TicketsHoyMobile  {...sharedProps} />
+            }
+
+            {/* Modal de creación global (controlado por el padre) */}
+            {isDesktop ? (
+                <HoyFormModal
+                    isOpen={showCreate}
+                    onClose={() => setShowCreate(false)}
+                    ticketAEditar={null}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={handleCreate}
+                />
+            ) : (
+                <MobileHoyFormModal
+                    isOpen={showCreate}
+                    onClose={() => setShowCreate(false)}
+                    ticketAEditar={null}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={handleCreate}
+                />
+            )}
         </div>
     );
 }

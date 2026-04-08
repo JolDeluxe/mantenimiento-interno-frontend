@@ -135,15 +135,15 @@ export const Button = ({
   icon,
   iconSize,
   isLoading = false,
-  isActive = false, // <-- TE FALTÓ ESTO
+  isActive = false,
   disabled = false,
   className,
   type = 'button',
   ...props
 }) => {
-  const baseClass = "rounded-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 ease-out active:scale-95 font-lectura cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:transform-none shadow-sm hover:shadow-md hover:-translate-y-0.5";
+  const baseClass = "rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ease-out active:scale-95 font-lectura cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:transform-none shadow-sm hover:shadow-md hover:-translate-y-0.5";
 
-  let variantClass = variants[variant] || variants.primario; // <-- DEBE SER LET, NO CONST
+  let variantClass = variants[variant] || variants.primario;
 
   // <-- TE FALTÓ ESTA LÓGICA PARA EVALUAR LOS FILTROS
   if (typeof variantClass === 'object') {

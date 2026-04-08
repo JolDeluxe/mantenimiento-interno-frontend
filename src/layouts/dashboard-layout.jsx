@@ -1,10 +1,11 @@
+// src/layouts/dashboard-layout.jsx
 import React, { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { profileService } from '@/features/auth/api/profile-api.js';
 import { DesktopLayout } from './desktop-layout.jsx';
 import { MobileLayout } from './mobile-layout.jsx';
-import { RefreshFab } from '@/components/ui/z_index'; // Importación centralizada
+import { RefreshFab } from '@/components/ui/z_index';
 
 export const DashboardLayout = () => {
   const isDesktop = useIsDesktop();
@@ -31,16 +32,19 @@ export const DashboardLayout = () => {
       {isDesktop ? <DesktopLayout /> : <MobileLayout />}
 
       {/* BOTÓN GLOBAL 
-          zIndex 60 para estar por encima de Sidebars y Headers 
-          En móvil se posiciona automáticamente por los props default del componente
+          Solo se renderiza en Desktop.
+          En Móvil, cada vista (Capa 2) renderiza y apila sus propios FABs 
+          dinámicamente dependiendo de si hay paginador, botón de añadir, etc.
       */}
-      <div className="print:hidden">
-        <RefreshFab
-          zIndex={60}
-          size={isDesktop ? 48 : 50}
-          bottom={isDesktop ? "32px" : "145px"} // Ajuste para no tapar el GlassPaginationPill en móvil
-        />
-      </div>
+      {isDesktop && (
+        <div className="print:hidden">
+          <RefreshFab
+            zIndex={60}
+            size={48}
+            bottom="32px"
+          />
+        </div>
+      )}
     </>
   );
 };

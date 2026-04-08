@@ -10,10 +10,27 @@ import { TicketsBandejaMobile } from '../views/tickets-bandeja-mobile';
 import { BandejaAssignModal } from '../components/bandeja/bandeja-assign-modal';
 import { BandejaDetailModal } from '../components/bandeja/bandeja-detail-modal';
 
+// Traductor de ordenamiento para el Backend
+const getSortPayload = (order) => {
+    switch (order) {
+        case 'prioridad-desc':
+            return JSON.stringify([{ prioridad: 'desc' }]);
+        case 'prioridad-asc':
+            return JSON.stringify([{ prioridad: 'asc' }]);
+        case 'vencimiento-asc':
+            return JSON.stringify([{ fechaVencimiento: 'asc' }]);
+        case 'asc':
+            return JSON.stringify([{ createdAt: 'asc' }]);
+        case 'desc':
+        default:
+            return JSON.stringify([{ createdAt: 'desc' }]);
+    }
+};
+
 export default function TicketsBandejaPage() {
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-    const [sortOrder, setSortOrder] = useState('asc');
+    const [sortOrder, setSortOrder] = useState('desc'); // Mejor empezar con los más recientes
     const [page, setPage] = useState(1);
 
     const {
@@ -28,7 +45,7 @@ export default function TicketsBandejaPage() {
         fetchTickets({
             tipo: 'TICKET',
             estado: 'PENDIENTE',
-            sort: `[{"createdAt":"${sortOrder}"}]`,
+            sort: getSortPayload(sortOrder),
             page: page,
             limit: 12
         });
@@ -68,7 +85,7 @@ export default function TicketsBandejaPage() {
             fetchTickets({
                 tipo: 'TICKET',
                 estado: 'PENDIENTE',
-                sort: `[{"createdAt":"${sortOrder}"}]`,
+                sort: getSortPayload(sortOrder),
                 page: page,
                 limit: 12
             });

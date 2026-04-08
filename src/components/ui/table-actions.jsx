@@ -49,7 +49,7 @@ const ACTION_CONFIG = {
     },
     revisar_ticket: {
         icon: "fact_check",
-        tooltip: "Revisar / Validar resolución",
+        tooltip: "Revisar",
         variant: "dark",
         className: "text-estado-resuelto hover:bg-estado-resuelto/10",
     },

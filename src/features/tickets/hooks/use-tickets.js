@@ -1,5 +1,6 @@
 // src/features/tickets/hooks/use-tickets.js
 import { useState, useCallback } from 'react';
+import { useAuthStore } from '@/stores/auth-store';
 import {
     getTickets,
     createTicket,
@@ -52,6 +53,15 @@ export const useTickets = () => {
 
     // ── Personal asignable (técnicos + coordinadores) ─────────────────────
     const fetchTecnicos = useCallback(async () => {
+        // Obtenemos el snapshot de la sesión sin suscribir el hook a re-renders
+        const user = useAuthStore.getState().user;
+        const rolesGestion = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+
+        // Guardrail: Abortamos la llamada silenciosamente si el rol no tiene privilegios
+        if (!user || !rolesGestion.includes(user.rol)) {
+            return; 
+        }
+
         try {
             const lista = await getAsignables();
             setTecnicos(Array.isArray(lista) ? lista : []);
