@@ -33,14 +33,24 @@ const MESES_FULL = [
     { num: 12, name: 'Diciembre' },
 ];
 
-// Extrae los años dinámicamente desde el backend. Si no hay datos, muestra el año actual.
+// Extrae años dinámicamente, filtra basura (NaN) y garantiza que el año actual siempre exista
 const extractAvailableYears = (existenciaGlobal) => {
-    if (!existenciaGlobal || Object.keys(existenciaGlobal).length === 0) {
-        return [new Date().getFullYear()];
+    const currentYear = new Date().getFullYear();
+
+    if (!existenciaGlobal || typeof existenciaGlobal !== 'object') {
+        return [currentYear];
     }
-    return Object.keys(existenciaGlobal)
+
+    const years = Object.keys(existenciaGlobal)
         .map(Number)
-        .sort((a, b) => b - a); // Orden descendente (más recientes primero)
+        .filter(n => !isNaN(n) && n > 2000); // Bloquea llaves como "total"
+
+    // Garantizar existencia del año actual para el botón de acceso rápido
+    if (!years.includes(currentYear)) {
+        years.push(currentYear);
+    }
+
+    return years.sort((a, b) => b - a); // Orden descendente
 };
 
 // ── Vista Desktop ─────────────────────────────────────────────────────────────
@@ -48,19 +58,40 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
     const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
     const isFiltered = year !== null;
 
-    // Helper robusto para evaluar si el mes tiene registros en el año actual
+    // Helper blindado: Fuerza evaluación matemática para ignorar strings "0"
     const checkMonthHasData = (mNum) => {
         if (!year) return false;
-        const data = existenciaGlobal?.[year];
+        const data = existenciaGlobal?.[year] || existenciaGlobal?.[String(year)];
         if (!data) return false;
-        if (Array.isArray(data)) return data.includes(mNum);
-        return !!data[mNum];
+
+        if (Array.isArray(data)) {
+            if (data.length > 0 && typeof data[0] === 'object') {
+                const obj = data.find(item => Number(item.mes || item.month || item.id) === mNum);
+                return obj ? Number(obj.total || obj.count || obj.conteo || 0) > 0 : false;
+            }
+            return data.some(val => Number(val) === mNum);
+        }
+
+        if (typeof data === 'object') {
+            const val = data[mNum] ?? data[String(mNum)];
+            if (val === undefined || val === null) return false;
+            if (typeof val === 'boolean') return val;
+            return Number(val) > 0;
+        }
+
+        return false;
+    };
+
+    const handleGoToCurrent = () => {
+        const now = new Date();
+        onYearChange(now.getFullYear());
+        onMonthChange(now.getMonth() + 1);
     };
 
     return (
         <div className="flex flex-col gap-3 w-full bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
 
-            {/* Fila superior: Año + indicador de filtro activo */}
+            {/* Fila superior: Año + indicador de filtro activo + Botón mes actual */}
             <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5 shrink-0">
                     <Icon name="calendar_month" size="sm" className="text-marca-primario" />
@@ -87,17 +118,29 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                     </div>
                 </div>
 
+                {/* Botón de acceso rápido al mes actual */}
+                <button
+                    type="button"
+                    onClick={handleGoToCurrent}
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-600
+                               bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full
+                               transition-colors cursor-pointer border border-slate-200"
+                >
+                    <Icon name="today" size="xs" className="text-marca-primario" />
+                    Mes actual
+                </button>
+
                 {/* Badge de limpieza cuando hay filtro activo */}
                 {isFiltered && (
                     <button
                         type="button"
                         onClick={() => { onYearChange(null); onMonthChange(0); }}
                         className="flex items-center gap-1 text-xs font-bold text-marca-primario
-                                   bg-marca-primario/10 hover:bg-marca-primario/20 px-2.5 py-1
+                                   bg-marca-primario/10 hover:bg-marca-primario/20 px-2.5 py-1.5
                                    rounded-full transition-colors cursor-pointer border border-marca-primario/20"
                     >
                         <Icon name="close" size="xs" />
-                        Limpiar filtro de fecha
+                        Limpiar filtro
                     </button>
                 )}
             </div>
@@ -132,7 +175,7 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                                     isSelected
                                         ? 'bg-marca-primario text-white shadow-sm' // Seleccionado (Prioridad)
                                         : hasData
-                                            ? 'bg-marca-primario/10 text-marca-primario hover:bg-marca-primario/20 border border-marca-primario/10' // Tiene registros pero no seleccionado
+                                            ? 'bg-marca-primario/10 text-marca-primario hover:bg-marca-primario/20 border border-marca-primario/10' // Tiene registros
                                             : 'bg-slate-50 text-slate-400/60 opacity-60 hover:opacity-100 hover:bg-slate-100 hover:text-slate-500' // Sin registros (Opaco)
                                 )}
                             >
@@ -158,6 +201,12 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
     const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
     const isFiltered = year !== null;
 
+    const handleGoToCurrent = () => {
+        const now = new Date();
+        onYearChange(now.getFullYear());
+        onMonthChange(now.getMonth() + 1);
+    };
+
     return (
         <div
             className="flex flex-col gap-2.5 p-3 rounded-[18px] relative overflow-hidden"
@@ -165,26 +214,40 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
         >
             <GlassSheen />
 
-            {/* Header con ícono y limpiar */}
+            {/* Header con ícono, mes actual y limpiar */}
             <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <Icon name="calendar_month" size="xs" className="text-slate-600" />
                     <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                        Filtro por período
+                        Período
                     </span>
                 </div>
-                {isFiltered && (
+
+                <div className="flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={() => { onYearChange(null); onMonthChange(0); }}
-                        className="flex items-center gap-1 text-[10px] font-bold text-red-500
-                                   bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-full
-                                   transition-colors cursor-pointer border border-red-200"
+                        onClick={handleGoToCurrent}
+                        className="flex items-center gap-1 text-[10px] font-bold text-slate-600
+                                   bg-white/60 hover:bg-white/80 px-2 py-0.5 rounded-full
+                                   transition-colors cursor-pointer border border-white/80 shadow-sm"
                     >
-                        <Icon name="close" size="xs" />
-                        Limpiar
+                        <Icon name="today" size="xs" className="text-marca-primario" />
+                        Mes actual
                     </button>
-                )}
+
+                    {isFiltered && (
+                        <button
+                            type="button"
+                            onClick={() => { onYearChange(null); onMonthChange(0); }}
+                            className="flex items-center gap-1 text-[10px] font-bold text-red-500
+                                       bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-full
+                                       transition-colors cursor-pointer border border-red-200"
+                        >
+                            <Icon name="close" size="xs" />
+                            Limpiar
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Selectores en grid 2 cols */}
@@ -202,7 +265,7 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
                         className="w-full appearance-none bg-white/70 border border-white/50 rounded-xl
                                    pl-3 pr-7 py-2 text-xs font-bold text-slate-700
                                    focus:outline-none focus:ring-2 focus:ring-marca-secundario/30
-                                   cursor-pointer transition-all"
+                                   cursor-pointer transition-all shadow-sm"
                     >
                         <option value="">Todos los años</option>
                         {years.map((y) => (
@@ -223,7 +286,7 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
                             className="w-full appearance-none bg-white/70 border border-white/50 rounded-xl
                                        pl-3 pr-7 py-2 text-xs font-bold text-slate-700
                                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/30
-                                       cursor-pointer transition-all"
+                                       cursor-pointer transition-all shadow-sm"
                         >
                             <option value={0}>Todos los meses</option>
                             {MESES_FULL.map((m) => (
