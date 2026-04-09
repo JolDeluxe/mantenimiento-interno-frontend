@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
-import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { isPastDate } from '@/lib/date';
+import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge.jsx';
+import { isPastDate, formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
@@ -12,28 +12,6 @@ const isVencida = (ticket) => {
     if (!ticket.fechaVencimiento) return false;
     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
     return isPastDate(ticket.fechaVencimiento);
-};
-
-const formatFechaRelativa = (dateString) => {
-    if (!dateString) return '-';
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    const fecha = new Date(dateString);
-    fecha.setHours(0, 0, 0, 0);
-
-    const diffTime = fecha.getTime() - hoy.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Mañana';
-    if (diffDays === -1) return 'Ayer';
-
-    return fecha.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).replace(/\./g, '');
 };
 
 const getEstadoActionMeta = (estado) => {
@@ -134,6 +112,14 @@ export const TicketCard = ({
             </div>
 
             <div className="space-y-1.5 mb-3 ml-1 mt-2">
+                {ticket.createdAt && (
+                    <p className="flex items-center gap-2">
+                        <Icon name="calendar_today" size="xs" className="text-slate-300 shrink-0" />
+                        <span className="text-xs text-slate-500">
+                            Creado: {formatFecha(ticket.createdAt)}
+                        </span>
+                    </p>
+                )}
                 {ticket.planta && (
                     <p className="flex items-center gap-2">
                         <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
@@ -195,10 +181,7 @@ export const TicketCard = ({
                 )}
             </div>
 
-            {/* BARRA DE ACCIONES: UX Thumb-Zone Optimizada */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap w-full">
-
-                {/* Zona Izquierda: Destructivas / Consulta */}
                 {puedeCancelar && (
                     <button
                         onClick={() => onCancel?.(ticket)}
@@ -217,10 +200,8 @@ export const TicketCard = ({
                     <Icon name="visibility" size="sm" />
                 </button>
 
-                {/* Espaciador dinámico: Empuja los siguientes botones a la derecha */}
                 <div className="flex-1 min-w-[8px]"></div>
 
-                {/* Zona Derecha: Acciones principales en orden de importancia (der. a izq.) */}
                 {puedeEditar && (
                     <button
                         onClick={() => onEdit?.(ticket)}

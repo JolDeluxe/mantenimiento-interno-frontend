@@ -1,4 +1,3 @@
-// src/features/tickets/components/historico/ticket-table.jsx
 import { useState } from 'react';
 import { Table, Skeleton, Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
@@ -8,7 +7,7 @@ import { TicketDetailModal } from './ticket-detail-modal';
 import { TicketAssignModal } from './ticket-assign-modal';
 import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
-import { formatFecha, isPastDate } from '@/lib/date';
+import { formatFecha, formatFechaRelativa, isPastDate } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
@@ -17,28 +16,6 @@ const isVencida = (ticket) => {
     if (!ticket.fechaVencimiento) return false;
     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
     return isPastDate(ticket.fechaVencimiento);
-};
-
-const formatFechaRelativa = (dateString) => {
-    if (!dateString) return '-';
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    const fecha = new Date(dateString);
-    fecha.setHours(0, 0, 0, 0);
-
-    const diffTime = fecha.getTime() - hoy.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Mañana';
-    if (diffDays === -1) return 'Ayer';
-
-    return fecha.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).replace(/\./g, '');
 };
 
 const ResponsablesCell = ({ lista }) => {
@@ -164,6 +141,20 @@ export const TicketsTable = ({
                             </span>
                         )}
                     </div>
+                );
+            },
+        },
+        {
+            header: 'Fecha Creación',
+            accessorKey: 'createdAt',
+            sortable: true,
+            headerClassName: 'w-[12%] min-w-[110px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
+                return (
+                    <span className="text-xs font-medium text-slate-600">
+                        {formatFecha(row.createdAt)}
+                    </span>
                 );
             },
         },

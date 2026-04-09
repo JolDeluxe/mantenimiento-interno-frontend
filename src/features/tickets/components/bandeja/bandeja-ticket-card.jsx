@@ -5,12 +5,14 @@ import { formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
+
+    // Purga de instanciación Date a favor de matemática simple y segura 
     const calculateDaysWaiting = (createdAt) => {
-        const created = new Date(createdAt);
-        const today = new Date();
-        created.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-        const diffTime = Math.abs(today - created);
+        if (!createdAt) return 0;
+        const createdMs = Date.parse(createdAt);
+        if (isNaN(createdMs)) return 0;
+
+        const diffTime = Math.abs(Date.now() - createdMs);
         return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     };
 
@@ -51,7 +53,6 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
             statusTheme.cardBorder,
             statusTheme.cardBg
         )}>
-            {/* Cabecera clickeable con Tooltip */}
             <div
                 className="flex items-start justify-between gap-2 mb-2 active:opacity-70 transition-opacity cursor-pointer"
                 onClick={() => onViewDetails?.(ticket)}
@@ -71,7 +72,6 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
                 </div>
             </div>
 
-            {/* Información de Contexto */}
             <div className="space-y-1.5 mb-3 ml-1 mt-2 flex-grow">
                 {(ticket.planta || ticket.area) && (
                     <p className="flex items-center gap-2">
@@ -104,7 +104,6 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
                 </div>
             </div>
 
-            {/* BARRA DE ACCIONES */}
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap w-full mt-auto">
                 <Tooltip text="Ver detalle" variant="dark">
                     <button

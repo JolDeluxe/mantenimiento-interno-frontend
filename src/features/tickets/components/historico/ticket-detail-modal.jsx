@@ -119,41 +119,46 @@ const ESTADO_CONTEXT_CONFIG = {
         icon: 'pause_circle',
         label: 'Motivo de la pausa',
         cls: 'bg-slate-100 border-slate-300',
-        iconCls: 'text-estado-en-pausa',
+        iconCls: 'text-slate-500',
         textCls: 'text-slate-700',
         labelCls: 'text-slate-500',
+        borderLeftCls: 'bg-slate-400'
     },
     RECHAZADO: {
         icon: 'report',
         label: 'Motivo del rechazo',
         cls: 'bg-red-50 border-red-200',
-        iconCls: 'text-estado-rechazado',
+        iconCls: 'text-red-600',
         textCls: 'text-red-800',
-        labelCls: 'text-red-500',
+        labelCls: 'text-red-600',
+        borderLeftCls: 'bg-red-400'
     },
     RESUELTO: {
         icon: 'check_circle',
-        label: 'Resolución del técnico — esperando tu validación',
-        cls: 'bg-violet-50 border-violet-200',
-        iconCls: 'text-estado-resuelto',
-        textCls: 'text-violet-800',
-        labelCls: 'text-violet-500',
+        label: 'Resolución del técnico',
+        cls: 'bg-green-50 border-green-200',
+        iconCls: 'text-green-600',
+        textCls: 'text-green-800',
+        labelCls: 'text-green-600',
+        borderLeftCls: 'bg-green-500'
     },
     EN_PROGRESO: {
         icon: 'play_circle',
         label: 'Progreso registrado',
-        cls: 'bg-blue-50 border-blue-200',
-        iconCls: 'text-estado-asignada',
-        textCls: 'text-blue-800',
-        labelCls: 'text-blue-500',
+        cls: 'bg-purple-50 border-purple-200',
+        iconCls: 'text-purple-600',
+        textCls: 'text-purple-800',
+        labelCls: 'text-purple-600',
+        borderLeftCls: 'bg-purple-500'
     },
     CERRADO: {
         icon: 'lock',
         label: 'Nota de cierre',
-        cls: 'bg-emerald-50 border-emerald-200',
-        iconCls: 'text-estado-resuelto',
-        textCls: 'text-emerald-800',
-        labelCls: 'text-emerald-500',
+        cls: 'bg-gray-100 border-gray-300',
+        iconCls: 'text-gray-600',
+        textCls: 'text-gray-800',
+        labelCls: 'text-gray-600',
+        borderLeftCls: 'bg-gray-400'
     },
 };
 
@@ -186,6 +191,80 @@ const getContextualImages = (entry, ticket) => {
     return [];
 };
 
+// Parseador de notas compatible con formatos legacy y nuevos metadatos
+const ParsedNote = ({ notaRaw, config }) => {
+    if (!notaRaw) return null;
+
+    let cleanNota = notaRaw;
+    let timeBadge = null;
+    let isRutina = false;
+
+    // 1. Compatibilidad Legacy: Limpiar string viejo de "Cambio de estado"
+    const stateChangeRegex = /Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i;
+    cleanNota = cleanNota.replace(stateChangeRegex, '').trim();
+
+    // 2. Extraer tiempo manual (Formato Legacy)
+    const oldTimeRegex = /Tiempo declarado manualmente:\s*(\d+\s*minutos?)/i;
+    const oldTimeMatch = cleanNota.match(oldTimeRegex);
+    if (oldTimeMatch) {
+        timeBadge = oldTimeMatch[1];
+        cleanNota = cleanNota.replace(oldTimeRegex, '').trim();
+    }
+
+    // 3. Extraer tiempo manual (Nuevo Metadato Backend)
+    const newTimeRegex = /\[TIEMPO_MANUAL:(\d+)\]/i;
+    const newTimeMatch = cleanNota.match(newTimeRegex);
+    if (newTimeMatch) {
+        timeBadge = `${newTimeMatch[1]} minutos`;
+        cleanNota = cleanNota.replace(newTimeRegex, '').trim();
+    }
+
+    // 4. Extraer flag de rutina (Legacy y Nuevo)
+    const rutinaRegex = /\[RUTINA\]|\(Rutina Completada\)/i;
+    isRutina = rutinaRegex.test(cleanNota);
+    cleanNota = cleanNota.replace(rutinaRegex, '').trim();
+
+    // Limpieza final de caracteres residuales
+    cleanNota = cleanNota.replace(/^[-:]\s*/, '').trim();
+
+    // Estado por defecto estructurado
+    if (!cleanNota) cleanNota = "Sin observaciones";
+
+    const isDefault = cleanNota === "Sin observaciones";
+
+    return (
+        <div className="flex flex-col gap-2.5 my-1">
+            <div className="bg-white/60 px-4 py-3 rounded-xl border border-black/5 shadow-sm relative overflow-hidden">
+                <div className={`absolute top-0 left-0 w-1.5 h-full ${config.borderLeftCls}`}></div>
+                <p className={`text-sm font-medium leading-relaxed ${isDefault ? 'text-slate-400 italic font-normal' : config.textCls}`}>
+                    {cleanNota}
+                </p>
+            </div>
+
+            {(timeBadge || isRutina) && (
+                <div className="flex flex-wrap gap-2 items-center mt-1">
+                    {timeBadge && (
+                        <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm">
+                            <Icon name="timer" size="sm" className={config.iconCls} />
+                            <span className={`text-xs font-bold ${config.textCls}`}>
+                                {timeBadge} (Manual)
+                            </span>
+                        </div>
+                    )}
+                    {isRutina && (
+                        <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm">
+                            <Icon name="event_available" size="sm" className={config.iconCls} />
+                            <span className={`text-xs font-bold ${config.textCls}`}>
+                                Rutina completada
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ── Banner contextual ───────────────────────────────────────────────────────
 const ContextualBanner = ({ ticket, onImageExpand }) => {
     const config = ESTADO_CONTEXT_CONFIG[ticket.estado];
@@ -208,12 +287,8 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
                 </span>
             </div>
 
-            {/* Nota */}
-            {nota && (
-                <p className={`text-sm font-medium leading-relaxed ${config.textCls} italic`}>
-                    "{nota}"
-                </p>
-            )}
+            {/* Nota Mejorada y Tiempo Parseado */}
+            <ParsedNote notaRaw={nota} config={config} />
 
             {/* Imágenes */}
             {images.length > 0 && (
@@ -222,12 +297,12 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
 
             {/* Actor que realizó la acción */}
             {actor && (
-                <div className="flex items-center gap-2 pt-1 border-t border-black/5">
+                <div className="flex items-center gap-2 pt-2 mt-1 border-t border-black/5">
                     {actor.imagen ? (
                         <img
                             src={actor.imagen}
                             alt=""
-                            className="w-5 h-5 rounded-full object-cover border border-white/50 shrink-0"
+                            className="w-5 h-5 rounded-full object-cover border border-white/50 shrink-0 shadow-sm"
                             onError={(e) => { e.target.style.display = 'none'; }}
                         />
                     ) : (
@@ -235,11 +310,11 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
                             <Icon name="person" size="xs" className={config.iconCls} />
                         </div>
                     )}
-                    <span className={`text-xs font-semibold ${config.textCls} opacity-80`}>
+                    <span className={`text-xs font-semibold ${config.textCls} opacity-90`}>
                         {actor.nombre}
                     </span>
                     {entry?.createdAt && (
-                        <span className={`text-[10px] ${config.textCls} opacity-50 ml-auto shrink-0`}>
+                        <span className={`text-[10px] font-bold ${config.textCls} opacity-60 ml-auto shrink-0 tracking-wide uppercase`}>
                             {formatFechaHora(entry.createdAt)}
                         </span>
                     )}
@@ -271,6 +346,20 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const creador = ticket.creador;
     const responsables = ticket.responsables ?? [];
     const tieneHistorial = ticket.historial && ticket.historial.length > 0;
+
+    // Extracción de la fecha real de finalización basada en el historial
+    const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
+    const fechaFinalizada = entryResuelto?.createdAt;
+
+    // Evaluar blindado vía Regex si alguna entrada de historial indica que el tiempo fue insertado manualmente
+    const esTiempoManual = Boolean(
+        ticket.historial?.some(h =>
+            h && typeof h.nota === 'string' && (
+                /Tiempo declarado manualmente/i.test(h.nota) ||
+                /\[TIEMPO_MANUAL/i.test(h.nota)
+            )
+        )
+    );
 
     const handleImageExpand = (images, index) => setVisor({ images, index });
 
@@ -346,9 +435,26 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         Tiempos
                                     </h4>
                                     <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
+                                    {fechaFinalizada && (
+                                        <DataRow icon="task_alt" label="Finalizado" value={formatFechaHora(fechaFinalizada)} />
+                                    )}
                                     <DataRow icon="event" label="Vencimiento" value={formatFecha(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
                                     <DataRow icon="timer" label="Tiempo estimado" value={ticket.tiempoEstimado ? `${ticket.tiempoEstimado} min` : null} fallback="No especificado" />
-                                    <DataRow icon="hourglass_bottom" label="Tiempo real" value={ticket.duracionReal ? `${ticket.duracionReal} min` : null} fallback="Sin registro" />
+
+                                    {/* DataRow modificado con Badge dinámico de tiempo */}
+                                    <DataRow
+                                        icon="hourglass_bottom"
+                                        label="Tiempo real"
+                                        value={ticket.duracionReal ? (
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span>{ticket.duracionReal} min</span>
+                                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest border ${esTiempoManual ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                    {esTiempoManual ? 'Manual' : 'Automático'}
+                                                </span>
+                                            </div>
+                                        ) : null}
+                                        fallback="Sin registro"
+                                    />
                                 </div>
 
                             </div>

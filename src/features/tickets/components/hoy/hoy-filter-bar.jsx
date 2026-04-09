@@ -70,31 +70,72 @@ export const HoyFilterBar = ({
     // TECNICO: solo filtro de estado
     if (!esAdmin) {
         return (
-            <div className="flex items-center gap-3 w-full pt-1">
-                <SearchableSelect
-                    options={ESTADOS_HOY}
-                    value={filtroEstado}
-                    onChange={onEstadoChange}
-                    placeholder="Todos los estados"
-                    icon="swap_horiz"
-                    allOptionText="Todos los estados"
-                    className="w-56"
-                />
+            <div className="flex flex-col gap-3 w-full pt-1">
+                {/* Fila 1: búsqueda */}
+                <div className="flex items-center gap-3 w-full">
+                    <SearchInput
+                        localValue={localValue}
+                        onChange={setLocalValue}
+                        onClear={() => setLocalValue('')}
+                        className="flex-1 max-w-md min-w-[180px]"
+                    />
+                </div>
+
+                {/* Fila 2: filtros adicionales elásticos */}
+                <div className="flex items-center gap-3 w-full flex-wrap">
+                    <div className="min-w-52 w-auto max-w-full flex-none">
+                        <SearchableSelect
+                            options={ESTADOS_HOY}
+                            value={filtroEstado}
+                            onChange={onEstadoChange}
+                            placeholder="Todos los estados"
+                            icon="swap_horiz"
+                            allOptionText="Todos los estados"
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="min-w-40 w-auto max-w-full flex-none">
+                        <SearchableSelect
+                            options={TIPOS}
+                            value={filtroTipo}
+                            onChange={onTipoChange}
+                            placeholder="Tipo..."
+                            icon="category"
+                            allOptionText="Todos los tipos"
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="min-w-40 w-auto max-w-full flex-none">
+                        <SearchableSelect
+                            options={PRIORIDADES}
+                            value={filtroPrioridad}
+                            onChange={onPrioridadChange}
+                            placeholder="Prioridad..."
+                            icon="flag"
+                            allOptionText="Todas"
+                            className="w-full"
+                        />
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="flex flex-col gap-3 w-full pt-1">
-            {/* Fila 1: búsqueda + estado */}
-            <div className="flex items-center gap-3 flex-wrap">
+            {/* Fila 1: búsqueda */}
+            <div className="flex items-center gap-3 w-full">
                 <SearchInput
                     localValue={localValue}
                     onChange={setLocalValue}
                     onClear={() => setLocalValue('')}
                     className="flex-1 max-w-md min-w-[180px]"
                 />
-                <div className="flex-none">
+            </div>
+
+            {/* Fila 2: filtros adicionales elásticos */}
+            <div className="flex items-center gap-3 w-full flex-wrap">
+                <div className="min-w-52 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={ESTADOS_HOY}
                         value={filtroEstado}
@@ -102,14 +143,10 @@ export const HoyFilterBar = ({
                         placeholder="Todos los estados"
                         icon="swap_horiz"
                         allOptionText="Todos los estados"
-                        className="w-52"
+                        className="w-full"
                     />
                 </div>
-            </div>
-
-            {/* Fila 2: filtros adicionales */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={TIPOS}
                         value={filtroTipo}
@@ -117,10 +154,10 @@ export const HoyFilterBar = ({
                         placeholder="Tipo..."
                         icon="category"
                         allOptionText="Todos los tipos"
-                        className="w-40"
+                        className="w-full"
                     />
                 </div>
-                <div className="flex-none">
+                <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={PRIORIDADES}
                         value={filtroPrioridad}
@@ -128,11 +165,11 @@ export const HoyFilterBar = ({
                         placeholder="Prioridad..."
                         icon="flag"
                         allOptionText="Todas"
-                        className="w-40"
+                        className="w-full"
                     />
                 </div>
                 {opcionesResponsables.length > 0 && (
-                    <div className="flex-none">
+                    <div className="min-w-48 w-auto max-w-full flex-none">
                         <SearchableSelect
                             options={normalizeOpts(opcionesResponsables)}
                             value={filtroResponsable ? String(filtroResponsable) : ''}
@@ -140,7 +177,7 @@ export const HoyFilterBar = ({
                             placeholder="Responsable..."
                             icon="person"
                             allOptionText="Cualquiera"
-                            className="w-48"
+                            className="w-full"
                         />
                     </div>
                 )}

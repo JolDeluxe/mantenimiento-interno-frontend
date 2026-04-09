@@ -123,24 +123,9 @@ export const MobileHoyFilterBar = ({
         if (filtroResponsable) onResponsableChange('');
     };
 
-    // TECNICO: solo filtro de estado
-    if (!esAdmin) {
-        return (
-            <div className="w-full">
-                <GlassNativeSelect
-                    icon="swap_horiz"
-                    placeholder="Todos los estados"
-                    options={ESTADOS_HOY}
-                    value={filtroEstado}
-                    onChange={onEstadoChange}
-                />
-            </div>
-        );
-    }
-
     return (
         <div className="w-full flex flex-col gap-2.5">
-            {/* Barra superior: búsqueda + estado + toggle */}
+            {/* Barra superior: búsqueda + estado + toggle (Visible para todos) */}
             <div className="flex items-center gap-1.5">
                 <SearchInput
                     localValue={localValue}
@@ -182,6 +167,7 @@ export const MobileHoyFilterBar = ({
                 >
                     <GlassSheen />
                     <div className="grid grid-cols-2 gap-2 relative z-10">
+                        {/* Filtros Tipo y Prioridad visibles para todos */}
                         <GlassNativeSelect
                             icon="category"
                             placeholder="Tipo"
@@ -196,7 +182,9 @@ export const MobileHoyFilterBar = ({
                             value={filtroPrioridad}
                             onChange={onPrioridadChange}
                         />
-                        {opcionesResponsables.length > 0 && (
+
+                        {/* Restricción aplicada: Solo el Admin ve el filtro de Responsable */}
+                        {esAdmin && opcionesResponsables.length > 0 && (
                             <div className="col-span-2">
                                 <GlassNativeSelect
                                     icon="person"

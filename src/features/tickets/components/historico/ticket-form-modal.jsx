@@ -1,7 +1,6 @@
-// src/features/tickets/components/historico/ticket-form-modal.jsx
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
-import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import {
@@ -12,7 +11,6 @@ import {
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
 
-// ─── Duration Picker ──────────────────────────────────────────────────────────
 const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
@@ -52,14 +50,12 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
     );
 };
 
-// ─── Workload Badge ───────────────────────────────────────────────────────────
 const WorkloadBadge = ({ label, count, colorClass }) => (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
         {label} <span>{count}</span>
     </span>
 );
 
-// ─── Technician row for dropdown list ─────────────────────────────────────────
 const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
     const wl = tecnico.workload || { asignadas: 0, enProgreso: 0, enPausa: 0 };
     const sinTareas = wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0;
@@ -76,7 +72,6 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                     : 'bg-white hover:bg-slate-50'
             )}
         >
-            {/* Avatar */}
             {tecnico.imagen ? (
                 <img
                     src={tecnico.imagen}
@@ -93,7 +88,6 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                 </div>
             )}
 
-            {/* Info */}
             <div className="flex flex-col flex-1 min-w-0 gap-0.5">
                 <div className="flex items-center justify-between gap-2">
                     <span className={cn(
@@ -102,7 +96,6 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                     )}>
                         {tecnico.nombre}
                     </span>
-                    {/* Carga total visual */}
                     {sinTareas ? (
                         <span className="text-[10px] font-bold text-estado-resuelto bg-estado-resuelto/10 px-1.5 py-0.5 rounded-full shrink-0">
                             Sin Tareas
@@ -142,7 +135,6 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                 </div>
             </div>
 
-            {/* Check indicator */}
             <div className={cn(
                 'shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
                 isSelected ? 'bg-marca-primario border-marca-primario' : 'border-slate-300 bg-white'
@@ -153,7 +145,6 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
     );
 };
 
-// ─── TecnicoCartSelector — single-select con workload ─────────────────────────
 const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder = 'Buscar y seleccionar técnico...' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [busqueda, setBusqueda] = useState('');
@@ -173,7 +164,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
         );
     }, [tecnicos, busqueda]);
 
-    // Click outside
     useEffect(() => {
         const handler = (e) => {
             if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -184,7 +174,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    // Auto-focus search on open
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => searchRef.current?.focus(), 50);
@@ -208,7 +197,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
 
     return (
         <div className="relative" ref={containerRef}>
-            {/* Trigger */}
             <button
                 type="button"
                 disabled={disabled}
@@ -226,7 +214,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
             >
                 {tecnicoSeleccionado ? (
                     <>
-                        {/* Avatar mini del seleccionado */}
                         {tecnicoSeleccionado.imagen ? (
                             <img
                                 src={tecnicoSeleccionado.imagen}
@@ -276,10 +263,8 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                 )}
             </button>
 
-            {/* Dropdown */}
             {isOpen && !disabled && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-                    {/* Search */}
                     <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
                         <div className="relative">
                             <Icon name="search" size="xs" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -294,7 +279,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                         </div>
                     </div>
 
-                    {/* List */}
                     <div className="max-h-64 overflow-y-auto custom-scrollbar">
                         {tecnicos.length === 0 ? (
                             <div className="flex flex-col items-center py-8 text-slate-400 gap-2">
@@ -322,7 +306,6 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
     );
 };
 
-// ─── Edit-mode multi-tech sub-components ─────────────────────────────────────
 const TecnicoChip = ({ tecnico, onRemove }) => (
     <span className="inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
         {tecnico?.imagen ? (
@@ -420,7 +403,6 @@ const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
     );
 };
 
-// ─── Cart Item Component ──────────────────────────────────────────────────────
 const CarritoItem = ({ item, index, onRemove }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
@@ -498,7 +480,6 @@ const CarritoItem = ({ item, index, onRemove }) => {
     );
 };
 
-// ─── Main Modal ───────────────────────────────────────────────────────────────
 export const TicketFormModal = ({
     isOpen, onClose, onSuccess,
     ticketAEditar, currentUser, tecnicos = [], isSubmitting,
@@ -507,18 +488,15 @@ export const TicketFormModal = ({
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
     const modoCarrito = !esEdicion && esAdmin;
 
-    // ── Logic for locking base fields based on Role/Department ────────────
     const isSameDepartment = currentUser?.departamentoId === ticketAEditar?.departamentoId;
     const isJefeOwner = currentUser?.rol === 'JEFE_MTTO' && isSameDepartment;
     const isCoordinador = currentUser?.rol === 'COORDINADOR';
     const isTicket = esEdicion ? ticketAEditar?.tipo === 'TICKET' : false;
     const lockBaseFields = esEdicion && isTicket && !isJefeOwner && !isCoordinador;
 
-    // ── Cart state ────────────────────────────────────────────────────────
     const [carrito, setCarrito] = useState([]);
     const [tecnicoCartId, setTecnicoCartId] = useState('');
 
-    // ── Form fields ───────────────────────────────────────────────────────
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [categoria, setCategoria] = useState('');
@@ -530,7 +508,6 @@ export const TicketFormModal = ({
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
 
-    // ── Edit-mode multi-tech state ────────────────────────────────────────
     const [responsables, setResponsables] = useState([]);
 
     const [backendError, setBackendError] = useState('');
@@ -541,7 +518,6 @@ export const TicketFormModal = ({
     const carritoLocked = carrito.length > 0;
     const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
 
-    // ── Tech option maps ──────────────────────────────────────────────────
     const opcionesTecnicos = useMemo(() =>
         tecnicos.map(t => ({ value: String(t.id), tecnico: t })), [tecnicos]);
 
@@ -552,8 +528,10 @@ export const TicketFormModal = ({
         opcionesTecnicos.filter(opt => !responsables.includes(opt.value)),
         [opcionesTecnicos, responsables]);
 
-    // ── Reset on open ─────────────────────────────────────────────────────
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Motor Date.js Centralizado (Previene el uso de new Date() para mutaciones lógicas)
+    const hoyLocal = getMinDateHoy();
+    const mananaLocal = isoToDateInput(Date.now() + 86400000);
+
     useEffect(() => {
         if (!isOpen) return;
         setSubmitted(false);
@@ -572,13 +550,8 @@ export const TicketFormModal = ({
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
 
-            // Solución de desfase de fecha UTC a Local
-            let localDateStr = '';
-            if (ticketAEditar.fechaVencimiento) {
-                const d = new Date(ticketAEditar.fechaVencimiento);
-                localDateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            }
-            setFechaVencimiento(localDateStr);
+            // Uso de isoToDateInput de la librería en vez de manipulaciones crudas de String/UTC
+            setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
 
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
@@ -588,9 +561,8 @@ export const TicketFormModal = ({
             setClasificacion(''); setTipo(''); setFechaVencimiento('');
             setTiempoEstimadoMins(0); setResponsables([]);
         }
-    }, [isOpen]);
+    }, [isOpen, esEdicion, ticketAEditar]);
 
-    // ── Validation ────────────────────────────────────────────────────────
     const getErrors = () => {
         const e = {};
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
@@ -602,14 +574,8 @@ export const TicketFormModal = ({
         if (!esAdmin && !categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (esAdmin && !tipo) e.tipo = 'El tipo de tarea es obligatorio.';
         if (esAdmin && fechaVencimiento) {
-            const hoy = getMinDateHoy();
-            if (fechaVencimiento < hoy) {
-                // Cálculo corregido para la evaluación de validación comparando locales.
-                let fechaOriginal = '';
-                if (ticketAEditar?.fechaVencimiento) {
-                    const d = new Date(ticketAEditar.fechaVencimiento);
-                    fechaOriginal = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-                }
+            if (fechaVencimiento < hoyLocal) {
+                const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
                 if (!esEdicion || fechaVencimiento !== fechaOriginal)
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
@@ -617,7 +583,6 @@ export const TicketFormModal = ({
         return e;
     };
 
-    // ── Cart actions ──────────────────────────────────────────────────────
     const resetFormFields = () => {
         setTitulo(''); setDescripcion(''); setCategoria('');
         setPlanta(''); setArea(''); setPrioridad('');
@@ -664,7 +629,6 @@ export const TicketFormModal = ({
         return fd;
     };
 
-    // ── Edit-mode tech handlers ───────────────────────────────────────────
     const handleAddTecnicoEdit = (idStr) => {
         if (!idStr || responsables.includes(idStr)) return;
         setResponsables(prev => [...prev, idStr]);
@@ -673,7 +637,6 @@ export const TicketFormModal = ({
         setResponsables(prev => prev.filter(x => x !== idStr));
     };
 
-    // ── Submit ────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         setBackendError('');
 
@@ -722,11 +685,6 @@ export const TicketFormModal = ({
         }
     };
 
-    const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-    const dManana = new Date();
-    dManana.setDate(dManana.getDate() + 1);
-    const mananaLocal = new Date(dManana.getTime() - dManana.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
 
@@ -747,7 +705,6 @@ export const TicketFormModal = ({
             <ModalBody>
                 <div className={cn("flex gap-6", modoCarrito ? "flex-col lg:flex-row" : "flex-col")}>
 
-                    {/* ══ FORM PANEL ══════════════════════════════════════════ */}
                     <div className="flex-1 min-w-0 flex flex-col gap-5">
 
                         {backendError && (
@@ -756,10 +713,8 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
-                        {/* ── Technician selector ── */}
                         {esAdmin && tecnicos.length > 0 && (
                             modoCarrito ? (
-                                // CART MODE: TecnicoCartSelector con workload
                                 <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex flex-col gap-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -782,7 +737,6 @@ export const TicketFormModal = ({
                                         placeholder="Buscar y seleccionar técnico..."
                                     />
 
-                                    {/* Resumen de carga del seleccionado (expandido) */}
                                     {tecnicoCart && (() => {
                                         const wl = tecnicoCart.workload;
                                         const sinTareas = !wl || (wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0);
@@ -806,7 +760,6 @@ export const TicketFormModal = ({
                                     })()}
                                 </div>
                             ) : (
-                                // EDIT MODE: multi-tech (sin cambios)
                                 <div className={cn("flex flex-col gap-2 transition-[padding] duration-300", isDropdownOpen ? "pb-[260px]" : "pb-0")}>
                                     <Label>Técnicos asignados (opcional)</Label>
                                     <TecnicoDropdown
@@ -830,7 +783,6 @@ export const TicketFormModal = ({
                             )
                         )}
 
-                        {/* ── Title ── */}
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
@@ -845,7 +797,6 @@ export const TicketFormModal = ({
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
 
-                        {/* ── Clasificación / Prioridad / Planta / Área ── */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-clas" error={!!fe.clasificacion}>Clasificación *</Label>
@@ -887,7 +838,6 @@ export const TicketFormModal = ({
                             </div>
                         </div>
 
-                        {/* ── Categoría (non-admin) ── */}
                         {!esAdmin && (
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
@@ -897,7 +847,6 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
-                        {/* ── Admin: Tipo / Fecha / Tiempo ── */}
                         {esAdmin && (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="flex flex-col gap-1.5">
@@ -906,7 +855,6 @@ export const TicketFormModal = ({
                                         error={!!fe.tipo} helperText={fe.tipo}
                                         disabled={isSubmitting || lockBaseFields}>
                                         <option value="" disabled hidden>Selecciona…</option>
-                                        {/* Inyección dinámica para no romper el contrato visual si es un Ticket preexistente */}
                                         {isTicket && <option value="TICKET">Ticket</option>}
                                         {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
@@ -940,10 +888,9 @@ export const TicketFormModal = ({
                                         </div>
                                     </div>
                                     <Input id="tf-fecha" type="date" value={fechaVencimiento}
-                                        min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                                        min={hoyLocal}
                                         onChange={(e) => {
                                             const v = e.target.value;
-                                            const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                                             setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
                                         }}
                                         error={!!fe.fechaVencimiento} helperText={fe.fechaVencimiento}
@@ -958,7 +905,6 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
-                        {/* ── Descripción ── */}
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
@@ -973,7 +919,6 @@ export const TicketFormModal = ({
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
 
-                        {/* ── Add to cart button ── */}
                         {modoCarrito && (
                             <div className="flex items-center gap-3 pt-1">
                                 <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
@@ -988,7 +933,6 @@ export const TicketFormModal = ({
                         )}
                     </div>
 
-                    {/* ══ CART PANEL ════════════════════════════════════════ */}
                     {modoCarrito && (
                         <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col gap-3">
                             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { cn } from '@/utils/cn';
+import { getMinDateHoy } from '@/lib/date';
 
 const MESES = [
     { num: 1, name: 'Ene' },
@@ -33,9 +34,9 @@ const MESES_FULL = [
     { num: 12, name: 'Diciembre' },
 ];
 
-// Extrae años dinámicamente, filtra basura (NaN) y garantiza que el año actual siempre exista
+// Extracción segura que depende de la única fuente de verdad (getMinDateHoy)
 const extractAvailableYears = (existenciaGlobal) => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = Number(getMinDateHoy().split('-')[0]);
 
     if (!existenciaGlobal || typeof existenciaGlobal !== 'object') {
         return [currentYear];
@@ -43,22 +44,20 @@ const extractAvailableYears = (existenciaGlobal) => {
 
     const years = Object.keys(existenciaGlobal)
         .map(Number)
-        .filter(n => !isNaN(n) && n > 2000); // Bloquea llaves como "total"
+        .filter(n => !isNaN(n) && n > 2000);
 
-    // Garantizar existencia del año actual para el botón de acceso rápido
     if (!years.includes(currentYear)) {
         years.push(currentYear);
     }
 
-    return years.sort((a, b) => b - a); // Orden descendente
+    return years.sort((a, b) => b - a);
 };
 
-// ── Vista Desktop ─────────────────────────────────────────────────────────────
+
 const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existenciaGlobal }) => {
     const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
     const isFiltered = year !== null;
 
-    // Helper blindado: Fuerza evaluación matemática para ignorar strings "0"
     const checkMonthHasData = (mNum) => {
         if (!year) return false;
         const data = existenciaGlobal?.[year] || existenciaGlobal?.[String(year)];
@@ -82,23 +81,22 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
         return false;
     };
 
+    // Navegación aislada delegando a la fecha de formulario segura YYYY-MM-DD
     const handleGoToCurrent = () => {
-        const now = new Date();
-        onYearChange(now.getFullYear());
-        onMonthChange(now.getMonth() + 1);
+        const [y, m] = getMinDateHoy().split('-');
+        onYearChange(Number(y));
+        onMonthChange(Number(m));
     };
 
     return (
         <div className="flex flex-col gap-3 w-full bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
 
-            {/* Fila superior: Año + indicador de filtro activo + Botón mes actual */}
             <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5 shrink-0">
                     <Icon name="calendar_month" size="sm" className="text-marca-primario" />
                     <span className="text-sm font-bold text-slate-700">Período</span>
                 </div>
 
-                {/* Selector de año */}
                 <div className="relative shrink-0">
                     <select
                         value={year ?? ''}
@@ -118,7 +116,6 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                     </div>
                 </div>
 
-                {/* Botón de acceso rápido al mes actual */}
                 <button
                     type="button"
                     onClick={handleGoToCurrent}
@@ -130,7 +127,6 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                     Mes actual
                 </button>
 
-                {/* Badge de limpieza cuando hay filtro activo */}
                 {isFiltered && (
                     <button
                         type="button"
@@ -145,7 +141,6 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                 )}
             </div>
 
-            {/* Fila inferior: Meses (solo visibles si hay un año seleccionado) */}
             {isFiltered && (
                 <div className="flex items-center gap-1.5 flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
                     <button
@@ -173,10 +168,10 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                                 className={cn(
                                     'px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer',
                                     isSelected
-                                        ? 'bg-marca-primario text-white shadow-sm' // Seleccionado (Prioridad)
+                                        ? 'bg-marca-primario text-white shadow-sm'
                                         : hasData
-                                            ? 'bg-marca-primario/10 text-marca-primario hover:bg-marca-primario/20 border border-marca-primario/10' // Tiene registros
-                                            : 'bg-slate-50 text-slate-400/60 opacity-60 hover:opacity-100 hover:bg-slate-100 hover:text-slate-500' // Sin registros (Opaco)
+                                            ? 'bg-marca-primario/10 text-marca-primario hover:bg-marca-primario/20 border border-marca-primario/10'
+                                            : 'bg-slate-50 text-slate-400/60 opacity-60 hover:opacity-100 hover:bg-slate-100 hover:text-slate-500'
                                 )}
                             >
                                 {m.name}
@@ -186,7 +181,6 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
                 </div>
             )}
 
-            {/* Hint cuando no hay año seleccionado */}
             {!isFiltered && (
                 <p className="text-xs text-slate-400 italic">
                     Selecciona un año para filtrar por mes específico.
@@ -196,15 +190,14 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
     );
 };
 
-// ── Vista Mobile ──────────────────────────────────────────────────────────────
 const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenciaGlobal }) => {
     const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
     const isFiltered = year !== null;
 
     const handleGoToCurrent = () => {
-        const now = new Date();
-        onYearChange(now.getFullYear());
-        onMonthChange(now.getMonth() + 1);
+        const [y, m] = getMinDateHoy().split('-');
+        onYearChange(Number(y));
+        onMonthChange(Number(m));
     };
 
     return (
@@ -214,7 +207,6 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
         >
             <GlassSheen />
 
-            {/* Header con ícono, mes actual y limpiar */}
             <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <Icon name="calendar_month" size="xs" className="text-slate-600" />
@@ -250,10 +242,8 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
                 </div>
             </div>
 
-            {/* Selectores en grid 2 cols */}
             <div className={cn('relative z-10 grid gap-2', isFiltered ? 'grid-cols-2' : 'grid-cols-1')}>
 
-                {/* Selector Año */}
                 <div className="relative">
                     <select
                         value={year ?? ''}
@@ -277,7 +267,6 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
                     </div>
                 </div>
 
-                {/* Selector Mes (solo si hay año) */}
                 {isFiltered && (
                     <div className="relative animate-in fade-in slide-in-from-right-2 duration-200">
                         <select
@@ -300,7 +289,6 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
                 )}
             </div>
 
-            {/* Indicador visual del período activo */}
             {isFiltered && (
                 <div className="relative z-10 flex items-center gap-1.5 px-2 py-1 bg-marca-primario/10
                                 border border-marca-primario/20 rounded-lg">
@@ -317,11 +305,9 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
     );
 };
 
-// ── Componente Exportado (Adaptive) ───────────────────────────────────────────
 export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existenciaGlobal = {} }) => {
     return (
         <>
-            {/* Desktop */}
             <div className="hidden lg:block">
                 <TicketFechasDesktop
                     year={year}
@@ -331,8 +317,6 @@ export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existen
                     existenciaGlobal={existenciaGlobal}
                 />
             </div>
-
-            {/* Mobile */}
             <div className="lg:hidden">
                 <TicketFechasMobile
                     year={year}

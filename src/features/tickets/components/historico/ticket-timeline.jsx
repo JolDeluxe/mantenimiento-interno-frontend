@@ -115,6 +115,15 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
         ? h.imagenes.map(i => (typeof i === 'string' ? i : i?.url)).filter(Boolean)
         : [];
 
+    // Limpieza agresiva de metadatos y strings crudos de auditoría del backend
+    let cleanNota = h.nota || '';
+    cleanNota = cleanNota.replace(/\[TIEMPO_MANUAL:\d+\]/gi, '');
+    cleanNota = cleanNota.replace(/\[RUTINA\]|\(Rutina Completada\)/gi, '');
+    cleanNota = cleanNota.replace(/Tiempo declarado manualmente:\s*\d+\s*minutos?/i, '');
+    cleanNota = cleanNota.replace(/Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i, '');
+    cleanNota = cleanNota.replace(/Edición \([A-Z_]+\):\s*/i, '');
+    cleanNota = cleanNota.replace(/^[-:]\s*/, '').trim();
+
     return (
         <li className="relative flex gap-3 pb-5 last:pb-0">
             {/* Línea vertical conectora */}
@@ -195,9 +204,9 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
                 )}
 
                 {/* Nota */}
-                {h.nota && (
+                {cleanNota && (
                     <p className="text-xs text-slate-600 bg-slate-50 border-l-2 border-slate-300 px-3 py-2 rounded-r-lg leading-relaxed mb-2 italic">
-                        "{h.nota}"
+                        "{cleanNota}"
                     </p>
                 )}
 
