@@ -40,7 +40,10 @@ const esAtrasadaActiva = (ticket) =>
     isPastDate(ticket.fechaVencimiento) &&
     ESTADOS_VALIDOS_ATRASADAS.includes(ticket.estado);
 
+// BYPASS ESTRICTO: Las tareas rechazadas SIEMPRE se consideran de "Hoy" para obligar su atención.
 const perteneceAHoy = (ticket) => {
+    if (ticket.estado === 'RECHAZADO') return true;
+
     if (!ticket.fechaVencimiento) return false;
     return isOnDate(ticket.fechaVencimiento, 0) || esAtrasadaActiva(ticket);
 };
@@ -171,6 +174,17 @@ export default function TicketsHoyPage() {
     const totalHoy = useMemo(() => getBaseTickets().filter(perteneceAHoy).length, [getBaseTickets]);
     const totalManana = useMemo(() => getBaseTickets().filter(t => isOnDate(t.fechaVencimiento, 1)).length, [getBaseTickets]);
     const totalAtrasadas = useMemo(() => getBaseTickets().filter(esAtrasadaActiva).length, [getBaseTickets]);
+
+    // ── Auditoría visual (Console Logs) ───────────────────────────────────────
+    useEffect(() => {
+        if (!loading) {
+            console.groupCollapsed('🔍 AUDITORÍA DE TICKETS: HOY');
+            console.log('1. Tickets crudos (Desde Backend):', allTickets);
+            console.log('2. Tickets Base (Filtrados por Rol/Excluidos):', getBaseTickets());
+            console.log('3. Tickets Finales (Renderizados):', ticketsFiltrados);
+            console.groupEnd();
+        }
+    }, [allTickets, getBaseTickets, ticketsFiltrados, loading]);
 
     // ── Handlers de mutaciones ────────────────────────────────────────────────
     const handleCreate = async (payloads) => {

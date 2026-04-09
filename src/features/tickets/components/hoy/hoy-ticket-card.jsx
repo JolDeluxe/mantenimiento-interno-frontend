@@ -17,6 +17,15 @@ const isVencida = (ticket) => {
 
 // Generador de etiquetas descriptivas unificadas para estados que requieren atención especial
 const getStatusLabelData = (ticket) => {
+    if (ticket.estado === 'RECHAZADO') {
+        return {
+            label: 'Atención requerida: Tarea rechazada',
+            icon: 'warning',
+            colorClasses: 'text-white bg-estado-rechazado border-estado-rechazado shadow-sm',
+            pulse: true
+        };
+    }
+
     if (ticket.estado === 'RESUELTO') {
         return {
             label: 'Tarea en espera de aprobación',
@@ -119,6 +128,7 @@ export const HoyTicketCard = ({
     const tieneResponsables = ticket.responsables?.length > 0;
 
     const vencida = isVencida(ticket);
+    const esRechazada = ticket.estado === 'RECHAZADO';
     const statusLabelData = getStatusLabelData(ticket);
     const actionMeta = getEstadoActionMeta(ticket.estado);
 
@@ -154,8 +164,9 @@ export const HoyTicketCard = ({
 
     return (
         <div className={cn(
-            'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full',
-            vencida ? 'border-estado-rechazado/30 bg-red-50/30' : 'border-slate-200',
+            'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full transition-colors',
+            esRechazada ? 'border-estado-rechazado/40 bg-red-50/40' :
+                vencida ? 'border-orange-300/50 bg-orange-50/30' : 'border-slate-200',
             className
         )}>
             <div
@@ -163,11 +174,16 @@ export const HoyTicketCard = ({
                 onClick={() => onViewDetail?.(ticket)}
             >
                 <div className="flex-1 min-w-0">
-                    <span className="text-xs font-mono font-bold text-slate-400 block mb-1">
-                        #{ticket.id}
+                    <span className="flex items-center flex-wrap gap-2 text-xs font-mono font-bold text-slate-400 mb-1.5">
+                        <span>#{ticket.id}</span>
                         {ticket.tipo && (
-                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
                                 {ticket.tipo}
+                            </span>
+                        )}
+                        {vencida && !esRechazada && (
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-white bg-red-500 px-1.5 py-0.5 rounded-md shadow-sm">
+                                Atrasada
                             </span>
                         )}
                     </span>
@@ -175,11 +191,6 @@ export const HoyTicketCard = ({
                         <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 flex-1">
                             {ticket.titulo}
                         </h3>
-                        {vencida && (
-                            <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                <Icon name="warning" size="xs" /> ATRASADA
-                            </span>
-                        )}
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
@@ -251,8 +262,8 @@ export const HoyTicketCard = ({
                 )}
                 {ticket.fechaVencimiento && (
                     <p className="flex items-center gap-2">
-                        <Icon name="event" size="xs" className={cn('shrink-0', vencida ? 'text-estado-rechazado/70' : 'text-slate-300')} />
-                        <span className={cn('text-xs font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-500')}>
+                        <Icon name="event" size="xs" className={cn('shrink-0', vencida ? 'text-orange-500/80' : 'text-slate-300')} />
+                        <span className={cn('text-xs font-medium', vencida ? 'text-orange-600 font-bold' : 'text-slate-500')}>
                             {formatFechaHora(ticket.fechaVencimiento)}
                         </span>
                     </p>

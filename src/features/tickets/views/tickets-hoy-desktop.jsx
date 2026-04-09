@@ -181,19 +181,27 @@ export const TicketsHoyDesktop = ({
                                 </p>
                             </div>
                         )
-                        : tickets.map((ticket) => (
-                            <HoyTicketCard
-                                key={ticket.id}
-                                ticket={ticket}
-                                currentUser={currentUser}
-                                onViewDetail={setDetailTarget}
-                                onEdit={setEditTarget}
-                                onAssign={setAssignTarget}
-                                onChangeStatus={setStatusTarget}
-                                onReview={setReviewTarget}
-                                onCancel={setCancelTarget}
-                            />
-                        ))
+                        : [...tickets]
+                            .sort((a, b) => {
+                                const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
+                                if (!priorizaRechazos) return 0;
+                                if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
+                                if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
+                                return 0;
+                            })
+                            .map((ticket) => (
+                                <HoyTicketCard
+                                    key={ticket.id}
+                                    ticket={ticket}
+                                    currentUser={currentUser}
+                                    onViewDetail={setDetailTarget}
+                                    onEdit={setEditTarget}
+                                    onAssign={setAssignTarget}
+                                    onChangeStatus={setStatusTarget}
+                                    onReview={setReviewTarget}
+                                    onCancel={setCancelTarget}
+                                />
+                            ))
                 }
             </div>
 
