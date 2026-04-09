@@ -9,6 +9,7 @@ import { MobileTicketFormModal } from '../components/historico/mobile-ticket-for
 import { TicketStatusModal } from '../components/historico/ticket-status-modal';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
+import { TicketFechas } from '../components/historico/ticket-fechas';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
@@ -85,6 +86,10 @@ export const TicketsHistoricoMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
+    filtroYear,
+    filtroMonth,
+    onYearChange,
+    onMonthChange,
 }) => {
     const [viewMode, setViewMode] = useState('cards');
     const [editTarget, setEditTarget] = useState(null);
@@ -105,6 +110,15 @@ export const TicketsHistoricoMobile = ({
 
     return (
         <>
+            <div className="mb-3">
+                <TicketFechas
+                    year={filtroYear}
+                    month={filtroMonth}
+                    onYearChange={onYearChange}
+                    onMonthChange={onMonthChange}
+                />
+            </div>
+
             <div className="mb-3">
                 <TicketSummaryBar
                     totalParaSummary={totalParaSummary}

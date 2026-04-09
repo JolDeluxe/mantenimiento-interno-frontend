@@ -1,4 +1,3 @@
-// src/features/tickets/views/tickets-hoy-desktop.jsx
 import { useState } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
@@ -9,6 +8,7 @@ import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { HoyAddButton } from '../components/hoy/hoy-add-button';
+import { HoyFilterBar } from '../components/hoy/hoy-filter-bar';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -37,12 +37,12 @@ const CardSkeleton = () => (
     </div>
 );
 
-const DateToggle = ({ selected, onChange, totalHoy, totalManana }) => (
+const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => (
     <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-sm">
         {[
-            { value: 0, label: 'Hoy', icon: 'today', count: totalHoy },
-            { value: 1, label: 'Mañana', icon: 'event', count: totalManana },
-        ].map(({ value, label, icon, count }) => (
+            { value: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
+            { value: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
+        ].map(({ value, label, icon, count, alert }) => (
             <button
                 key={value}
                 type="button"
@@ -61,7 +61,9 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana }) => (
                         'text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none',
                         selected === value
                             ? 'bg-white/20 text-white'
-                            : 'bg-slate-200 text-slate-600'
+                            : alert
+                                ? 'bg-red-100 text-red-600 animate-pulse'
+                                : 'bg-slate-200 text-slate-600'
                     )}>
                         {count}
                     </span>
@@ -81,6 +83,17 @@ export const TicketsHoyDesktop = ({
     onDateOffsetChange,
     totalHoy,
     totalManana,
+    totalAtrasadas,
+    query,
+    onSearchChange,
+    filtroEstado,
+    onEstadoChange,
+    filtroTipo,
+    onTipoChange,
+    filtroPrioridad,
+    onPrioridadChange,
+    filtroResponsable,
+    onResponsableChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -98,40 +111,59 @@ export const TicketsHoyDesktop = ({
         <div className="flex flex-col gap-5">
             <RefreshFab bottom="32px" right="32px" size={48} />
 
+            {/* Encabezado */}
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
                     Tareas del Día
                 </h2>
                 <p className="text-sm text-slate-500 mt-0.5">
-                    {loading ? 'Cargando…' : dateOffset === 0
-                        ? `${tickets.length} tarea${tickets.length !== 1 ? 's' : ''} para hoy`
-                        : `${tickets.length} tarea${tickets.length !== 1 ? 's' : ''} para mañana`
-                    }
+                    {loading ? 'Cargando…' : (
+                        <>
+                            {tickets.length} tarea{tickets.length !== 1 ? 's' : ''}
+                            {dateOffset === 0 ? ' para hoy' : ' para mañana'}
+                            {dateOffset === 0 && totalAtrasadas > 0 && (
+                                <span className="ml-2 font-semibold text-estado-rechazado">
+                                    · {totalAtrasadas} atrasada{totalAtrasadas !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                        </>
+                    )}
                 </p>
             </div>
 
-
-            {/* Encabezado */}
+            {/* Toggle de fecha + botón crear */}
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
-                {/* Lado Izquierdo: Título y Toggle */}
-                <div className="flex items-center gap-6 flex-wrap">
-                    <DateToggle
-                        selected={dateOffset}
-                        onChange={onDateOffsetChange}
-                        totalHoy={totalHoy}
-                        totalManana={totalManana}
-                    />
-                </div>
-
-                {/* Lado Derecho: Botón de Crear */}
+                <DateToggle
+                    selected={dateOffset}
+                    onChange={onDateOffsetChange}
+                    totalHoy={totalHoy}
+                    totalManana={totalManana}
+                    totalAtrasadas={totalAtrasadas}
+                />
                 {puedeCrear && (
-                    <div className="shrink-0 flex justify-end">
+                    <div className="shrink-0">
                         <HoyAddButton onClick={onOpenCreate} isMobile={false} />
                     </div>
                 )}
             </div>
 
-            {/* Grid */}
+            {/* Barra de filtros */}
+            <HoyFilterBar
+                query={query}
+                onSearchChange={onSearchChange}
+                filtroEstado={filtroEstado}
+                onEstadoChange={onEstadoChange}
+                filtroTipo={filtroTipo}
+                onTipoChange={onTipoChange}
+                filtroPrioridad={filtroPrioridad}
+                onPrioridadChange={onPrioridadChange}
+                filtroResponsable={filtroResponsable}
+                onResponsableChange={onResponsableChange}
+                opcionesResponsables={tecnicos}
+                currentUser={currentUser}
+            />
+
+            {/* Grid de tarjetas */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
@@ -165,13 +197,12 @@ export const TicketsHoyDesktop = ({
                 }
             </div>
 
-            {/* Modals */}
+            {/* Modales */}
             <HoyDetailModal
                 isOpen={Boolean(detailTarget)}
                 onClose={() => setDetailTarget(null)}
                 ticket={detailTarget}
             />
-
             <HoyFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
@@ -179,47 +210,31 @@ export const TicketsHoyDesktop = ({
                 currentUser={currentUser}
                 tecnicos={tecnicos}
                 isSubmitting={submitting}
-                onSuccess={async (payload) => {
-                    await onSave(editTarget.id, payload);
-                    setEditTarget(null);
-                }}
+                onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }}
             />
-
             <TicketAssignModal
                 isOpen={Boolean(assignTarget)}
                 onClose={() => setAssignTarget(null)}
                 ticket={assignTarget}
                 tecnicos={tecnicos}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onSave(id, payload);
-                    setAssignTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }}
             />
-
             <HoyStatusModal
                 isOpen={Boolean(statusTarget)}
                 onClose={() => setStatusTarget(null)}
                 ticket={statusTarget}
                 currentUser={currentUser}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setStatusTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }}
             />
-
             <TicketReviewModal
                 isOpen={Boolean(reviewTarget)}
                 onClose={() => setReviewTarget(null)}
                 ticket={reviewTarget}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setReviewTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }}
             />
-
             <HoyStatusModal
                 isOpen={Boolean(cancelTarget)}
                 onClose={() => setCancelTarget(null)}
@@ -227,10 +242,7 @@ export const TicketsHoyDesktop = ({
                 currentUser={currentUser}
                 isSubmitting={submitting}
                 forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setCancelTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }}
             />
         </div>
     );

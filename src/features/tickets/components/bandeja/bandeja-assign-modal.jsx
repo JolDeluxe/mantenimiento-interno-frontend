@@ -350,10 +350,15 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         if (Object.keys(errors).length > 0) return;
 
         try {
+            // Conversión segura de la fecha a formato ISO 8601 exigido por Zod en el backend
+            const dateISO = new Date(`${fechaProgramada}T23:59:59`).toISOString();
+
             await onConfirm({
                 ticketId: ticket.id,
                 responsables: seleccionados.map(Number),
-                fechaProgramada: `${fechaProgramada}T23:59:59`,
+                // REGLA APLICADA: Se cambia la clave 'fechaProgramada' por 'fechaVencimiento' 
+                // para hacer match exacto con el esquema de Zod en updateTicketSchema.
+                fechaVencimiento: dateISO,
                 prioridad,
                 estado: 'ASIGNADO',
             });

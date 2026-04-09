@@ -1,8 +1,8 @@
 // src/components/ui/modal.jsx
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/utils/cn';
-import { Icon } from './z_index';
+import { Icon } from './z_index'; // O el nombre correcto de tu barrel index
 
 export const Modal = ({
   isOpen,
@@ -10,18 +10,14 @@ export const Modal = ({
   children,
   className = ""
 }) => {
-  const mouseDownInside = useRef(false);
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) onClose();
     };
-
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
@@ -33,12 +29,6 @@ export const Modal = ({
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) mouseDownInside.current = false;
-      }}
-      onMouseUp={(e) => {
-        if (!mouseDownInside.current && e.target === e.currentTarget) onClose();
-      }}
       role="dialog"
       aria-modal="true"
     >
@@ -47,7 +37,6 @@ export const Modal = ({
           "bg-white rounded-lg shadow-2xl relative flex flex-col max-h-[90vh] w-full max-w-2xl animate-in zoom-in-95 duration-200",
           className
         )}
-        onMouseDown={() => { mouseDownInside.current = true; }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

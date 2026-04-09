@@ -74,9 +74,12 @@ export default function TicketsBandejaPage() {
     const handleConfirmAssign = async (payload) => {
         try {
             setIsSubmitting(true);
+
+            // REGLA APLICADA: El backend de Cuadra con Zod exige explícitamente 
+            // la propiedad 'fechaVencimiento', no 'fechaProgramada'.
             await updateTicket(payload.ticketId, {
                 responsables: payload.responsables,
-                fechaProgramada: payload.fechaProgramada,
+                fechaVencimiento: payload.fechaVencimiento || payload.fechaProgramada, // Soporta ambos si el modal manda cualquiera de los dos
                 prioridad: payload.prioridad,
                 estado: payload.estado
             });

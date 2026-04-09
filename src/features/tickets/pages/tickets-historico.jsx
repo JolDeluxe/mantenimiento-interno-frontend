@@ -10,6 +10,24 @@ import { MobileTicketFormModal } from '../components/historico/mobile-ticket-for
 
 const LIMIT = 20;
 
+const buildDateParams = (year, month) => {
+    if (!year) return {};
+
+    if (month === 0) {
+        return {
+            fechaInicio: `${year}-01-01`,
+            fechaFin: `${year}-12-31`,
+        };
+    }
+
+    const lastDay = new Date(year, month, 0).getDate();
+    const mm = String(month).padStart(2, '0');
+    return {
+        fechaInicio: `${year}-${mm}-01`,
+        fechaFin: `${year}-${mm}-${lastDay}`,
+    };
+};
+
 export default function TicketsHistoricoPage() {
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
@@ -30,13 +48,11 @@ export default function TicketsHistoricoPage() {
         changeStatus,
     } = useTickets();
 
-    // ── Estado de la página (Paginación y Búsqueda) ──────────────────────────
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [sortConfig, setSortConfig] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
 
-    // ── Estados de Filtros Estándar y Avanzados ──────────────────────────────
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
@@ -45,18 +61,18 @@ export default function TicketsHistoricoPage() {
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
-    // ── Estados de Vistas Aisladas (Mutuamente Excluyentes) ──────────────────
+    const [filtroYear, setFiltroYear] = useState(null);
+    const [filtroMonth, setFiltroMonth] = useState(0);
+
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
-    // ── Carga de datos ───────────────────────────────────────────────────────
     const loadTickets = useCallback(() => {
         const params = { page, limit: LIMIT };
 
         if (query) params.q = query;
 
-        // PRIORIDAD ABSOLUTA AL FETCH: Estados aislados
         if (mostrarRechazadas) {
             params.estado = 'RECHAZADO';
         } else if (mostrarPapelera) {
@@ -65,16 +81,17 @@ export default function TicketsHistoricoPage() {
             params.estado = filtroEstado;
         }
 
-        // Mapeo estricto de filtros avanzados
         if (filtroTipo) params.tipo = filtroTipo;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroClasificacion) params.clasificacion = filtroClasificacion;
         if (filtroPlanta) params.planta = filtroPlanta;
         if (filtroArea) params.area = filtroArea;
 
-        // Mapeo estructural hacia Zod Backend
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
+
+        const dateParams = buildDateParams(filtroYear, filtroMonth);
+        Object.assign(params, dateParams);
 
         if (sortConfig?.key) {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
@@ -86,13 +103,13 @@ export default function TicketsHistoricoPage() {
         page, query, filtroEstado, filtroTipo, filtroPrioridad,
         filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea,
         sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
+        filtroYear, filtroMonth,
         fetchTickets, fetchMetricas
     ]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    // ── Handlers de filtros estándar ─────────────────────────────────────────
     const handleSearchChange = useCallback((q) => { setQuery(q); setPage(1); }, []);
     const handleFilterChange = useCallback((e) => { setFiltroEstado(e); setPage(1); }, []);
     const handleTipoChange = useCallback((t) => { setFiltroTipo(t); setPage(1); }, []);
@@ -104,7 +121,17 @@ export default function TicketsHistoricoPage() {
     const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
     const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
 
-    // ── Handlers de vistas aisladas mutuamente excluyentes ───────────────────
+    const handleYearChange = useCallback((year) => {
+        setFiltroYear(year);
+        setFiltroMonth(0);
+        setPage(1);
+    }, []);
+
+    const handleMonthChange = useCallback((month) => {
+        setFiltroMonth(month);
+        setPage(1);
+    }, []);
+
     const handleToggleRechazadas = useCallback(() => {
         setMostrarRechazadas((prev) => !prev);
         setMostrarPapelera(false);
@@ -129,9 +156,7 @@ export default function TicketsHistoricoPage() {
         setPage(1);
     }, []);
 
-    // ── Handlers de mutaciones ───────────────────────────────────────────────
     const handleCreate = async (payloads) => {
-        // Normaliza: acepta un solo FormData (edit mode) o un array (cart mode)
         const items = Array.isArray(payloads) ? payloads : [payloads];
 
         try {
@@ -153,7 +178,6 @@ export default function TicketsHistoricoPage() {
             throw err;
         }
     };
-
 
     const handleUpdate = async (id, payload) => {
         try {
@@ -179,7 +203,6 @@ export default function TicketsHistoricoPage() {
         }
     };
 
-    // ── Props compartidos a Vistas ───────────────────────────────────────────
     const sharedViewProps = {
         tickets,
         loading,
@@ -188,16 +211,15 @@ export default function TicketsHistoricoPage() {
         tecnicos,
         page,
         limit: LIMIT,
-        totalPages: meta.totalPages,
-        totalParaSummary: meta.totalAbsoluto,
-        totalParaPaginador: meta.totalFiltrado,
-        conteos: meta.resumenEstados,
+        totalPages: meta?.totalPages || 1,
+        totalParaSummary: meta?.totalAbsoluto || 0,
+        totalParaPaginador: meta?.totalFiltrado || 0,
+        conteos: meta?.resumenEstados || [],
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
         sortConfig,
         query,
 
-        // Estado de Filtros Estándar y Avanzados
         filtroEstado,
         filtroTipo,
         filtroPrioridad,
@@ -205,13 +227,13 @@ export default function TicketsHistoricoPage() {
         filtroResponsable,
         filtroPlanta,
         filtroArea,
+        filtroYear,
+        filtroMonth,
 
-        // Estado de Vistas Excluyentes
         mostrarRechazadas,
         mostrarPapelera,
         mostrarAtrasadas,
 
-        // Handlers Estándar y Avanzados
         onPageChange: setPage,
         onSortChange: handleSortChange,
         onSearchChange: handleSearchChange,
@@ -222,13 +244,13 @@ export default function TicketsHistoricoPage() {
         onResponsableChange: handleResponsableChange,
         onPlantaChange: handlePlantaChange,
         onAreaChange: handleAreaChange,
+        onYearChange: handleYearChange,
+        onMonthChange: handleMonthChange,
 
-        // Handlers Excluyentes
         onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera,
         onToggleAtrasadas: handleToggleAtrasadas,
 
-        // Acciones Globales
         onSave: handleUpdate,
         onChangeStatus: handleChangeStatus,
         onOpenCreate: () => setShowCreate(true),

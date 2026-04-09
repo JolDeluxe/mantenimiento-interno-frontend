@@ -507,6 +507,13 @@ export const TicketFormModal = ({
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
     const modoCarrito = !esEdicion && esAdmin;
 
+    // ── Logic for locking base fields based on Role/Department ────────────
+    const isSameDepartment = currentUser?.departamentoId === ticketAEditar?.departamentoId;
+    const isJefeOwner = currentUser?.rol === 'JEFE_MTTO' && isSameDepartment;
+    const isCoordinador = currentUser?.rol === 'COORDINADOR';
+    const isTicket = esEdicion ? ticketAEditar?.tipo === 'TICKET' : false;
+    const lockBaseFields = esEdicion && isTicket && !isJefeOwner && !isCoordinador;
+
     // ── Cart state ────────────────────────────────────────────────────────
     const [carrito, setCarrito] = useState([]);
     const [tecnicoCartId, setTecnicoCartId] = useState('');
@@ -564,7 +571,15 @@ export const TicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-            setFechaVencimiento(ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '');
+
+            // Solución de desfase de fecha UTC a Local
+            let localDateStr = '';
+            if (ticketAEditar.fechaVencimiento) {
+                const d = new Date(ticketAEditar.fechaVencimiento);
+                localDateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            }
+            setFechaVencimiento(localDateStr);
+
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
         } else {
@@ -589,8 +604,12 @@ export const TicketFormModal = ({
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
             if (fechaVencimiento < hoy) {
-                const fechaOriginal = ticketAEditar?.fechaVencimiento
-                    ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
+                // Cálculo corregido para la evaluación de validación comparando locales.
+                let fechaOriginal = '';
+                if (ticketAEditar?.fechaVencimiento) {
+                    const d = new Date(ticketAEditar.fechaVencimiento);
+                    fechaOriginal = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                }
                 if (!esEdicion || fechaVencimiento !== fechaOriginal)
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
@@ -823,7 +842,7 @@ export const TicketFormModal = ({
                                 onChange={(e) => setTitulo(e.target.value.slice(0, MAX_TITULO))}
                                 error={!!fe.titulo} helperText={fe.titulo}
                                 placeholder="Ej. Fuga de aire en compresor principal"
-                                disabled={isSubmitting} />
+                                disabled={isSubmitting || lockBaseFields} />
                         </div>
 
                         {/* ── Clasificación / Prioridad / Planta / Área ── */}
@@ -851,7 +870,7 @@ export const TicketFormModal = ({
                                     setPlanta(val);
                                     const posibles = AREAS_POR_PLANTA[val] || AREAS;
                                     setArea(posibles.length === 1 ? posibles[0] : '');
-                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
+                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || lockBaseFields}>
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {PLANTAS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </Select>
@@ -859,7 +878,7 @@ export const TicketFormModal = ({
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea *</Label>
                                 <Select id="tf-area" value={area} onChange={(e) => setArea(e.target.value)}
-                                    error={!!fe.area} helperText={fe.area} disabled={isSubmitting}>
+                                    error={!!fe.area} helperText={fe.area} disabled={isSubmitting || lockBaseFields}>
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {(planta && AREAS_POR_PLANTA[planta] ? AREAS_POR_PLANTA[planta] : AREAS).map(a => (
                                         <option key={a} value={a}>{a}</option>
@@ -885,8 +904,10 @@ export const TicketFormModal = ({
                                     <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
                                     <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
                                         error={!!fe.tipo} helperText={fe.tipo}
-                                        disabled={isSubmitting || esEdicion}>
+                                        disabled={isSubmitting || lockBaseFields}>
                                         <option value="" disabled hidden>Selecciona…</option>
+                                        {/* Inyección dinámica para no romper el contrato visual si es un Ticket preexistente */}
+                                        {isTicket && <option value="TICKET">Ticket</option>}
                                         {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
                                 </div>
@@ -949,7 +970,7 @@ export const TicketFormModal = ({
                                 onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
                                 error={!!fe.descripcion} helperText={fe.descripcion}
                                 placeholder="Describe el problema o tarea con el mayor detalle posible…"
-                                disabled={isSubmitting} />
+                                disabled={isSubmitting || lockBaseFields} />
                         </div>
 
                         {/* ── Add to cart button ── */}

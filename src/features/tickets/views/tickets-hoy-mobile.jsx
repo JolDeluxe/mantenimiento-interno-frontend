@@ -1,14 +1,14 @@
-// src/features/tickets/views/tickets-hoy-mobile.jsx
 import { useState } from 'react';
-import { GlassFab, GlassPaginationPill, Icon, Skeleton } from '@/components/ui/z_index';
+import { GlassFab, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
-import { glassBase, GlassSheen, GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
+import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { HoyTicketCard } from '../components/hoy/hoy-ticket-card';
 import { HoyDetailModal } from '../components/hoy/hoy-detail-modal';
 import { MobileHoyFormModal } from '../components/hoy/mobile-hoy-form-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
+import { MobileHoyFilterBar } from '../components/hoy/mobile-hoy-filter-bar';
 import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
@@ -40,10 +40,10 @@ const CardSkeleton = () => (
     </div>
 );
 
-const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana }) => {
+const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => {
     const options = [
-        { id: 0, label: 'Hoy', icon: 'today', count: totalHoy },
-        { id: 1, label: 'Mañana', icon: 'event', count: totalManana },
+        { id: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
+        { id: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
     ];
 
     const containerStyle = {
@@ -72,14 +72,22 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana }) => {
                         className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10"
                     >
                         {isActive && <GlassSheen />}
-                        <Icon name={opt.icon} size="xs" className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')} />
+                        <Icon
+                            name={opt.icon}
+                            size="xs"
+                            className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}
+                        />
                         <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>
                             {opt.label}
                         </span>
                         {opt.count > 0 && (
                             <span className={cn(
                                 'text-[9px] font-extrabold px-1 py-0.5 rounded-full relative z-10 leading-none',
-                                isActive ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-600'
+                                isActive
+                                    ? 'bg-white/25 text-white'
+                                    : opt.alert
+                                        ? 'bg-red-100 text-red-600 animate-pulse'
+                                        : 'bg-slate-200 text-slate-600'
                             )}>
                                 {opt.count}
                             </span>
@@ -101,6 +109,17 @@ export const TicketsHoyMobile = ({
     onDateOffsetChange,
     totalHoy,
     totalManana,
+    totalAtrasadas,
+    query,
+    onSearchChange,
+    filtroEstado,
+    onEstadoChange,
+    filtroTipo,
+    onTipoChange,
+    filtroPrioridad,
+    onPrioridadChange,
+    filtroResponsable,
+    onResponsableChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -113,15 +132,13 @@ export const TicketsHoyMobile = ({
     const [cancelTarget, setCancelTarget] = useState(null);
 
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
-    const hasContent = !loading && tickets.length > 0;
-
-    // Cálculo dinámico riguroso (Idéntico a Histórico pero sin paginador)
     const baseBottom = 84;
     const fabAddBottom = `${baseBottom}px`;
     const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
 
     return (
         <>
+            {/* Toggle de fecha */}
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
                     <GlassDateToggle
@@ -129,10 +146,28 @@ export const TicketsHoyMobile = ({
                         onChange={onDateOffsetChange}
                         totalHoy={totalHoy}
                         totalManana={totalManana}
+                        totalAtrasadas={totalAtrasadas}
                     />
                 </div>
+
+                {/* Barra de filtros */}
+                <MobileHoyFilterBar
+                    query={query}
+                    onSearchChange={onSearchChange}
+                    filtroEstado={filtroEstado}
+                    onEstadoChange={onEstadoChange}
+                    filtroTipo={filtroTipo}
+                    onTipoChange={onTipoChange}
+                    filtroPrioridad={filtroPrioridad}
+                    onPrioridadChange={onPrioridadChange}
+                    filtroResponsable={filtroResponsable}
+                    onResponsableChange={onResponsableChange}
+                    opcionesResponsables={tecnicos}
+                    currentUser={currentUser}
+                />
             </div>
 
+            {/* Lista de tarjetas */}
             <div className={cn('flex flex-col gap-3 px-1 pt-1', 'pb-44')}>
                 {loading
                     ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
@@ -140,7 +175,11 @@ export const TicketsHoyMobile = ({
                         ? (
                             <div className="flex flex-col items-center justify-center h-52 gap-4 text-center">
                                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                                    <Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" />
+                                    <Icon
+                                        name={dateOffset === 0 ? 'today' : 'event'}
+                                        size="xl"
+                                        className="text-slate-300"
+                                    />
                                 </div>
                                 <p className="text-sm font-bold text-slate-400">
                                     Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}
@@ -163,7 +202,7 @@ export const TicketsHoyMobile = ({
                 }
             </div>
 
-            {/* Pila Dinámica de FABs Móviles */}
+            {/* FABs */}
             <div className="md:hidden">
                 <GlassFab
                     icon="refresh"
@@ -190,12 +229,12 @@ export const TicketsHoyMobile = ({
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
+            {/* Modales */}
             <HoyDetailModal
                 isOpen={Boolean(detailTarget)}
                 onClose={() => setDetailTarget(null)}
                 ticket={detailTarget}
             />
-
             <MobileHoyFormModal
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
@@ -203,47 +242,31 @@ export const TicketsHoyMobile = ({
                 currentUser={currentUser}
                 tecnicos={tecnicos}
                 isSubmitting={submitting}
-                onSuccess={async (payload) => {
-                    await onSave(editTarget.id, payload);
-                    setEditTarget(null);
-                }}
+                onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }}
             />
-
             <TicketAssignModal
                 isOpen={Boolean(assignTarget)}
                 onClose={() => setAssignTarget(null)}
                 ticket={assignTarget}
                 tecnicos={tecnicos}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onSave(id, payload);
-                    setAssignTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }}
             />
-
             <HoyStatusModal
                 isOpen={Boolean(statusTarget)}
                 onClose={() => setStatusTarget(null)}
                 ticket={statusTarget}
                 currentUser={currentUser}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setStatusTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }}
             />
-
             <MobileTicketReviewModal
                 isOpen={Boolean(reviewTarget)}
                 onClose={() => setReviewTarget(null)}
                 ticket={reviewTarget}
                 isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setReviewTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }}
             />
-
             <HoyStatusModal
                 isOpen={Boolean(cancelTarget)}
                 onClose={() => setCancelTarget(null)}
@@ -251,10 +274,7 @@ export const TicketsHoyMobile = ({
                 currentUser={currentUser}
                 isSubmitting={submitting}
                 forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setCancelTarget(null);
-                }}
+                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }}
             />
         </>
     );

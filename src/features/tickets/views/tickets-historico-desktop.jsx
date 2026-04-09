@@ -2,6 +2,7 @@ import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
+import { TicketFechas } from '../components/historico/ticket-fechas';
 import { RefreshFab } from '@/components/ui/z_index';
 import { ROLES_ADMIN } from '../constants';
 
@@ -48,12 +49,23 @@ export const TicketsHistoricoDesktop = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
+    filtroYear,
+    filtroMonth,
+    onYearChange,
+    onMonthChange,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
     return (
         <div className="flex flex-col gap-4">
             <RefreshFab bottom="32px" right="32px" size={48} />
+
+            <TicketFechas
+                year={filtroYear}
+                month={filtroMonth}
+                onYearChange={onYearChange}
+                onMonthChange={onMonthChange}
+            />
 
             <TicketSummaryBar
                 totalParaSummary={totalParaSummary}
