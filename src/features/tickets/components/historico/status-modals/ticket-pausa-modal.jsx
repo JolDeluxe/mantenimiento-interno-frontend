@@ -1,7 +1,9 @@
 // src/features/tickets/components/historico/status-modals/ticket-pausa-modal.jsx
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
+import { Label } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
+import { isPastDate, isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
 
 // ── Constantes de Tiempo ───────────────────────────────────────────────────
 const MIN_TECNICO = 5;
@@ -26,7 +28,19 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
-const evaluarTiempo = (mins, tiempoEstimado) => {
+const evaluarTiempo = (mins, ticket) => {
+    const fechaVencimiento = ticket.fechaLimite || ticket.fechaVencimiento;
+
+    if (fechaVencimiento && isPastDate(fechaVencimiento)) {
+        return {
+            alerta: true,
+            tipo: 'alto',
+            mensaje: 'La tarea ha superado su fecha límite en el calendario.',
+        };
+    }
+
+    const tiempoEstimado = ticket.tiempoEstimado;
+
     if (mins < MIN_TECNICO) {
         return {
             alerta: true,
@@ -189,20 +203,17 @@ export const TicketPausaModal = ({
     isSubmitting,
     onConfirm,
 }) => {
-    const [accion, setAccion] = useState(null); // 'reanudar' | 'resolver' | null
+    const [accion, setAccion] = useState(null);
 
-    // Estados para Reanudar
     const [nota, setNota] = useState('');
-
-    // Estados para Resolver
     const [archivos, setArchivos] = useState([]);
     const [notaResolver, setNotaResolver] = useState('');
     const [elapsedMins, setElapsedMins] = useState(0);
     const [evaluacion, setEvaluacion] = useState(null);
     const [timePhase, setTimePhase] = useState('confirmado');
     const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [fechaFinManual, setFechaFinManual] = useState('');
 
-    // Limpieza de Object URLs
     useEffect(() => {
         return () => {
             archivos.forEach((item) => URL.revokeObjectURL(item.preview));
@@ -218,10 +229,15 @@ export const TicketPausaModal = ({
             setEvaluacion(null);
             setTimePhase('confirmado');
             setTiempoManualMins(0);
+            setFechaFinManual('');
         }
     }, [isOpen]);
 
     if (!ticket) return null;
+
+    const minDate = isoToDateInput(ticket.createdAt);
+    const maxDate = isoToDateInput(new Date().toISOString());
+    const isFechaFinValida = fechaFinManual && fechaFinManual >= minDate && fechaFinManual <= maxDate;
 
     const obtenerTiempoEnPausa = () => {
         const ahora = Date.now();
@@ -241,16 +257,9 @@ export const TicketPausaModal = ({
         return m > 0 ? `${h} h ${m} min en pausa` : `${h} h en pausa`;
     };
 
-    const tiempoPausa = obtenerTiempoEnPausa();
-
-    // Handlers
     const handleSelectReanudar = () => {
-        if (accion === 'reanudar') {
-            setAccion(null);
-        } else {
-            setAccion('reanudar');
-            setNota('');
-        }
+        setAccion(accion === 'reanudar' ? null : 'reanudar');
+        setNota('');
     };
 
     const handleSelectResolver = () => {
@@ -261,13 +270,9 @@ export const TicketPausaModal = ({
         setAccion('resolver');
         const mins = calcElapsedMins(ticket);
         setElapsedMins(mins);
-        const ev = evaluarTiempo(mins, ticket.tiempoEstimado);
+        const ev = evaluarTiempo(mins, ticket);
         setEvaluacion(ev);
-        if (ev.alerta) {
-            setTimePhase('preguntando');
-        } else {
-            setTimePhase('confirmado');
-        }
+        setTimePhase(ev.alerta ? 'preguntando' : 'confirmado');
     };
 
     const handleAgregar = useCallback((items) => {
@@ -288,20 +293,23 @@ export const TicketPausaModal = ({
 
         if (accion === 'reanudar') {
             fd.append('estado', 'EN_PROGRESO');
-            const notaFinal = nota.trim()
-                ? `Tarea reanudada. El cronómetro continúa.\n\nNotas: ${nota.trim()}`
-                : 'Tarea reanudada. El cronómetro continúa.';
-            fd.append('nota', notaFinal);
+            fd.append('nota', nota.trim() || 'Tarea reanudada.');
         } else if (accion === 'resolver') {
             fd.append('estado', 'RESUELTO');
-            if (notaResolver.trim()) {
-                fd.append('nota', notaResolver.trim());
+            if (notaResolver.trim()) fd.append('nota', notaResolver.trim());
+
+            let timePayload = {};
+            if (timePhase === 'manual') {
+                timePayload = { duracionManualMinutos: tiempoManualMins };
+            } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
+                timePayload = {
+                    finManual: new Date(fechaInputToISOLocal(fechaFinManual)).toISOString(),
+                    duracionManualMinutos: tiempoManualMins
+                };
             }
-            if (timePhase === 'manual' && tiempoManualMins > 0) {
-                fd.append(
-                    'registroTiempoManual',
-                    JSON.stringify({ duracionManualMinutos: tiempoManualMins })
-                );
+
+            if (Object.keys(timePayload).length > 0) {
+                fd.append('registroTiempoManual', JSON.stringify(timePayload));
             }
             archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
         }
@@ -309,248 +317,154 @@ export const TicketPausaModal = ({
         onConfirm(ticket.id, fd);
     };
 
-    const tiempoDisplay = timePhase === 'manual' ? formatMins(tiempoManualMins) : formatMins(elapsedMins);
-    const disableConfirm = !accion || (accion === 'resolver' && (timePhase === 'preguntando' || (timePhase === 'manual' && tiempoManualMins === 0)));
+    const tiempoDisplay = (timePhase === 'manual' || timePhase === 'atrasada_fecha')
+        ? formatMins(tiempoManualMins)
+        : formatMins(elapsedMins);
+
+    const isAtrasada = evaluacion?.tipo === 'alto';
+    const disableConfirm = !accion || (accion === 'resolver' && (
+        timePhase === 'preguntando' ||
+        ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && tiempoManualMins === 0) ||
+        (timePhase === 'atrasada_fecha' && !isFechaFinValida)
+    ));
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()}>
-            <ModalHeader
-                title="Tarea en Pausa"
-                onClose={() => !isSubmitting && onClose()}
-            />
+            <ModalHeader title="Tarea en Pausa" onClose={() => !isSubmitting && onClose()} />
             <ModalBody>
                 <div className="flex flex-col gap-5 py-2">
-
-                    {/* Cabecera */}
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-16 h-16 rounded-full bg-estado-en-pausa/15 flex items-center justify-center">
                             <Icon name="pause_circle" size="32px" className="text-estado-en-pausa" fill />
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">
-                                {ticket.titulo}
-                            </p>
-                            {tiempoPausa && (
+                            <p className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">{ticket.titulo}</p>
+                            {obtenerTiempoEnPausa() && (
                                 <p className="text-xs text-estado-en-pausa font-bold mt-1 flex items-center justify-center gap-1">
-                                    <Icon name="schedule" size="xs" />
-                                    {tiempoPausa}
+                                    <Icon name="schedule" size="xs" /> {obtenerTiempoEnPausa()}
                                 </p>
                             )}
                         </div>
                     </div>
 
-                    {/* Opciones seleccionables */}
                     <div className="flex flex-col gap-3">
-                        <button
-                            type="button"
-                            onClick={handleSelectReanudar}
-                            disabled={isSubmitting}
-                            className={cn(
-                                "flex items-center gap-4 p-4 rounded-xl border-2 transition-all active:scale-95 cursor-pointer outline-none w-full text-left disabled:opacity-50 disabled:cursor-not-allowed",
-                                accion === 'reanudar'
-                                    ? "border-estado-asignada bg-estado-asignada/10 ring-4 ring-estado-asignada/20"
-                                    : "border-slate-200 bg-white hover:border-estado-asignada/40 hover:bg-estado-asignada/5"
-                            )}
-                        >
-                            <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                accion === 'reanudar' ? "bg-estado-asignada text-white shadow-md shadow-estado-asignada/30" : "bg-estado-asignada/15 text-estado-asignada"
-                            )}>
+                        <button type="button" onClick={handleSelectReanudar} disabled={isSubmitting}
+                            className={cn("flex items-center gap-4 p-4 rounded-xl border-2 transition-all active:scale-95 w-full text-left",
+                                accion === 'reanudar' ? "border-estado-asignada bg-estado-asignada/10 ring-4 ring-estado-asignada/20" : "border-slate-200 bg-white")}>
+                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                accion === 'reanudar' ? "bg-estado-asignada text-white shadow-md" : "bg-estado-asignada/15 text-estado-asignada")}>
                                 <Icon name="play_circle" size="24px" fill={accion === 'reanudar'} />
                             </div>
                             <div>
-                                <p className={cn("text-sm font-bold transition-colors", accion === 'reanudar' ? "text-estado-asignada" : "text-slate-700")}>
-                                    Reanudar tarea
-                                </p>
-                                <p className="text-xs text-slate-500 mt-0.5">El cronómetro continuará desde donde se detuvo</p>
+                                <p className={cn("text-sm font-bold", accion === 'reanudar' ? "text-estado-asignada" : "text-slate-700")}>Reanudar tarea</p>
+                                <p className="text-xs text-slate-500 mt-0.5">El cronómetro continuará su curso</p>
                             </div>
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={handleSelectResolver}
-                            disabled={isSubmitting}
-                            className={cn(
-                                "flex items-center gap-4 p-4 rounded-xl border-2 transition-all active:scale-95 cursor-pointer outline-none w-full text-left disabled:opacity-50 disabled:cursor-not-allowed",
-                                accion === 'resolver'
-                                    ? "border-estado-resuelto bg-estado-resuelto/10 ring-4 ring-estado-resuelto/20"
-                                    : "border-slate-200 bg-white hover:border-estado-resuelto/40 hover:bg-estado-resuelto/5"
-                            )}
-                        >
-                            <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                accion === 'resolver' ? "bg-estado-resuelto text-white shadow-md shadow-estado-resuelto/30" : "bg-estado-resuelto/10 text-estado-resuelto"
-                            )}>
+                        <button type="button" onClick={handleSelectResolver} disabled={isSubmitting}
+                            className={cn("flex items-center gap-4 p-4 rounded-xl border-2 transition-all active:scale-95 w-full text-left",
+                                accion === 'resolver' ? "border-estado-resuelto bg-estado-resuelto/10 ring-4 ring-estado-resuelto/20" : "border-slate-200 bg-white")}>
+                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                accion === 'resolver' ? "bg-estado-resuelto text-white shadow-md" : "bg-estado-resuelto/10 text-estado-resuelto")}>
                                 <Icon name="check_circle" size="24px" fill={accion === 'resolver'} />
                             </div>
                             <div>
-                                <p className={cn("text-sm font-bold transition-colors", accion === 'resolver' ? "text-estado-resuelto" : "text-slate-700")}>
-                                    Resolver directamente
-                                </p>
-                                <p className="text-xs text-slate-500 mt-0.5">Evaluar tiempo y marcar como terminada</p>
+                                <p className={cn("text-sm font-bold", accion === 'resolver' ? "text-estado-resuelto" : "text-slate-700")}>Resolver directamente</p>
+                                <p className="text-xs text-slate-500 mt-0.5">Finalizar la actividad ahora</p>
                             </div>
                         </button>
                     </div>
 
-                    {/* Formularios Expandibles */}
                     {accion === 'reanudar' && (
-                        <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 mt-1">
-                            <div className="flex items-start gap-3 px-4 py-3 border rounded-xl bg-estado-asignada/10 border-estado-asignada/20">
-                                <Icon name="info" size="sm" className="shrink-0 mt-0.5 text-estado-asignada" />
-                                <p className="text-sm text-slate-700 leading-relaxed">
-                                    El cronómetro de la tarea volverá a correr. Puedes agregar una nota de reanudación si lo deseas.
-                                </p>
-                            </div>
-                            <div className="w-full text-left">
-                                <label className="text-sm font-semibold text-slate-700 block mb-1.5">
-                                    Nota de reanudación <span className="font-normal text-slate-400">(opcional)</span>
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={nota}
-                                    onChange={(e) => setNota(e.target.value)}
-                                    placeholder="Describe brevemente por qué se retoma el trabajo..."
-                                    className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
-                                />
-                            </div>
+                        <div className="w-full flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 mt-1 text-left">
+                            <Label>Nota de reanudación <span className="font-normal text-slate-400">(opcional)</span></Label>
+                            <textarea rows={3} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="¿Alguna observación al retomar?"
+                                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:ring-2 focus:ring-marca-secundario/30 outline-none" />
                         </div>
                     )}
 
                     {accion === 'resolver' && (
                         <div className="w-full flex flex-col gap-5 animate-in fade-in slide-in-from-top-2 duration-200 mt-1">
-                            {timePhase === 'preguntando' && evaluacion?.alerta && (
+                            {timePhase === 'preguntando' && (
                                 <div className="flex flex-col gap-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
                                     <div className="flex items-start gap-3">
                                         <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
                                             <Icon name="timer" size="sm" className="text-amber-700" fill />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-amber-800">
-                                                ¿El tiempo registrado es correcto?
-                                            </p>
+                                        <div className="text-left">
+                                            <p className="text-sm font-bold text-amber-800">{isAtrasada ? '¿La tarea se entregó fuera de tiempo?' : '¿El tiempo registrado es correcto?'}</p>
                                             <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                                                {evaluacion.mensaje}
+                                                {isAtrasada ? `Supera el límite. Puedes ingresar el día y el tiempo real trabajado.` : evaluacion.mensaje}
                                             </p>
                                         </div>
                                     </div>
-
                                     <div className="text-center py-2">
-                                        <span className="text-4xl font-extrabold font-mono text-amber-700">
-                                            {formatMins(elapsedMins)}
-                                        </span>
-                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">
-                                            Tiempo medido por el sistema
-                                        </p>
+                                        <span className="text-4xl font-extrabold font-mono text-amber-700">{formatMins(elapsedMins)}</span>
+                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">Sistema</p>
                                     </div>
-
                                     <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setTimePhase('confirmado')}
-                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
-                                        >
-                                            <Icon name="check" size="sm" />
-                                            Sí, es correcto
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const base = elapsedMins > 0 ? elapsedMins : 60;
-                                                setTiempoManualMins(Math.round(base / 5) * 5 || 60);
+                                        <Button variant="accion" className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100" onClick={() => setTimePhase('confirmado')}>
+                                            <Icon name="check" size="xs" /> Sí
+                                        </Button>
+                                        <Button variant="accion" className="bg-amber-600 text-white" onClick={() => {
+                                            if (isAtrasada) {
+                                                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                setTimePhase('atrasada_fecha');
+                                            } else {
                                                 setTimePhase('manual');
-                                            }}
-                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
-                                        >
-                                            <Icon name="edit" size="sm" />
-                                            No, corregir
-                                        </button>
+                                            }
+                                            const base = elapsedMins > 0 ? elapsedMins : 60;
+                                            setTiempoManualMins(Math.round(base / 5) * 5 || 60);
+                                        }}>
+                                            <Icon name="edit" size="xs" /> No, corregir
+                                        </Button>
                                     </div>
                                 </div>
                             )}
 
                             {timePhase === 'manual' && (
-                                <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="flex items-center gap-2">
-                                        <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
-                                        <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
-                                    </div>
+                                <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                                    <p className="text-sm font-bold text-slate-700">Tiempo real trabajado</p>
                                     <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
-                                    {tiempoManualMins === 0 && (
-                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
-                                            <Icon name="warning" size="xs" />
-                                            El tiempo debe ser mayor a 0 minutos
-                                        </p>
-                                    )}
+                                </div>
+                            )}
+
+                            {timePhase === 'atrasada_fecha' && (
+                                <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                                    <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
+                                        <Label>Día que la terminaste *</Label>
+                                        <input type="date" min={minDate} max={maxDate} value={fechaFinManual} onChange={(e) => setFechaFinManual(e.target.value)}
+                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white outline-none" />
+                                    </div>
+                                    <div className="flex flex-col gap-3">
+                                        <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                    </div>
                                 </div>
                             )}
 
                             {timePhase !== 'preguntando' && (
-                                <>
+                                <div className="flex flex-col gap-4 text-left">
                                     <div className="flex items-center justify-between px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
                                         <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                            <Icon name="timer" size="sm" className="text-estado-resuelto" />
-                                            Tiempo total a registrar
-                                            {timePhase === 'manual' && (
-                                                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                    Manual
-                                                </span>
-                                            )}
+                                            <Icon name="timer" size="sm" className="text-estado-resuelto" /> Tiempo final
                                         </span>
-                                        <span className="text-lg font-extrabold font-mono text-estado-resuelto">
-                                            {tiempoDisplay}
-                                        </span>
+                                        <span className="text-lg font-extrabold font-mono text-estado-resuelto">{tiempoDisplay}</span>
                                     </div>
-
-                                    <div className="w-full text-left">
-                                        <label className="text-sm font-semibold text-slate-700 block mb-1.5">
-                                            Nota de resolución <span className="font-normal text-slate-400">(opcional)</span>
-                                        </label>
-                                        <textarea
-                                            rows={3}
-                                            value={notaResolver}
-                                            onChange={(e) => setNotaResolver(e.target.value)}
-                                            placeholder="Describe las acciones realizadas para resolver el ticket..."
-                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
-                                        />
-                                    </div>
-
-                                    <EvidenceSection
-                                        archivos={archivos}
-                                        onAgregar={handleAgregar}
-                                        onEliminar={handleEliminar}
-                                    />
-                                </>
+                                    <Label>Nota de resolución <span className="font-normal text-slate-400">(opcional)</span></Label>
+                                    <textarea rows={3} value={notaResolver} onChange={(e) => setNotaResolver(e.target.value)} placeholder="Acciones realizadas..."
+                                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:ring-2 focus:ring-marca-secundario/30 outline-none" />
+                                    <EvidenceSection archivos={archivos} onAgregar={handleAgregar} onEliminar={handleEliminar} />
+                                </div>
                             )}
-                        </div>
-                    )}
-
-                    {!accion && (
-                        <div className="flex items-center justify-center gap-2 px-4 py-2.5 mt-2 bg-slate-100 border border-slate-200 rounded-full text-sm font-medium text-slate-400">
-                            <Icon name="touch_app" size="sm" />
-                            Selecciona una acción para continuar
                         </div>
                     )}
                 </div>
             </ModalBody>
-
             <ModalFooter>
-                <Button
-                    variant="cancelar"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                    className="flex-1 sm:flex-none text-xs sm:text-sm"
-                >
-                    Cancelar
-                </Button>
-                <Button
-                    variant={accion === 'resolver' ? 'guardar' : 'accion'}
-                    icon={accion === 'resolver' ? 'check_circle' : accion === 'reanudar' ? 'play_circle' : 'touch_app'}
-                    isLoading={isSubmitting}
-                    disabled={disableConfirm}
-                    onClick={handleConfirmar}
-                    className="flex-1 sm:flex-none text-xs sm:text-sm px-1"
-                >
-                    {accion === 'resolver' ? 'Confirmar' : accion === 'reanudar' ? 'Confirmar' : 'Selecciona una acción'}
+                <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+                <Button variant={accion === 'resolver' ? 'guardar' : 'accion'} isLoading={isSubmitting} disabled={disableConfirm} onClick={handleConfirmar}>
+                    Confirmar
                 </Button>
             </ModalFooter>
         </Modal>

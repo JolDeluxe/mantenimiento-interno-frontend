@@ -11,34 +11,34 @@ export const getMinDateHoy = () => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    // CRÍTICO: No alterar. HTML5 <input type="date"> exige este formato.
     return `${y}-${m}-${day}`;
 };
 
 export const fechaInputToISOLocal = (dateStr) => {
     if (!dateStr) return null;
-    return `${dateStr}T23:59:59`;
+    // Fix: Prevenir crash de "Invalid Date" en Safari/iOS al concatenar "T23:59:59" crudo.
+    // Instanciamos usando el constructor local y exportamos en formato ISO estricto para Zod.
+    const [year, month, day] = dateStr.split('-');
+    const d = new Date(year, month - 1, day, 23, 59, 59);
+    return d.toISOString(); 
 };
 
 export const isoToDateInput = (iso) => {
     if (!iso) return '';
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return ''; // Protección contra Invalid Date
+    if (isNaN(d.getTime())) return '';
+    
+    // Extracción segura en zona local para inputs de HTML5
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    // CRÍTICO: No alterar. HTML5 <input type="date"> exige este formato.
     return `${y}-${m}-${day}`;
 };
-
 
 // ----------------------------------------------------------------------
 // 2. FORMATOS DE VISTA / DISPLAY (Formato de México DD/MM/YYYY)
 // ----------------------------------------------------------------------
 
-/**
- * Retorna: 09/04/2026
- */
 export const formatFechaNumerica = (iso, fallback = null) => {
     if (!iso) return fallback;
     const d = new Date(iso);
@@ -48,9 +48,6 @@ export const formatFechaNumerica = (iso, fallback = null) => {
     });
 };
 
-/**
- * Retorna: 09 abr 2026
- */
 export const formatFecha = (iso, fallback = null) => {
     if (!iso) return fallback;
     const d = new Date(iso);
@@ -60,9 +57,6 @@ export const formatFecha = (iso, fallback = null) => {
     }).replace(/\./g, '');
 };
 
-/**
- * Retorna: 9 de abril de 2026, 10:51
- */
 export const formatFechaHora = (iso, fallback = null) => {
     if (!iso) return fallback;
     const d = new Date(iso);
@@ -115,7 +109,6 @@ export const formatRelativo = (iso, fallback = null) => {
     return formatFecha(iso, fallback);
 };
 
-
 // ----------------------------------------------------------------------
 // 3. UTILIDADES LÓGICAS
 // ----------------------------------------------------------------------
@@ -125,8 +118,15 @@ export const isPastDate = (iso) => {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return false;
     
+    // Fix: Cortamos los milisegundos para evaluar estrictamente el cambio de día.
+    // Una tarea se marca como atrasada solo si su día límite ya concluyó en su totalidad.
     const hoy = new Date();
-    return d < hoy;
+    hoy.setHours(0, 0, 0, 0);
+
+    const limite = new Date(d);
+    limite.setHours(0, 0, 0, 0);
+
+    return limite < hoy;
 };
 
 export const isToday = (iso) => {

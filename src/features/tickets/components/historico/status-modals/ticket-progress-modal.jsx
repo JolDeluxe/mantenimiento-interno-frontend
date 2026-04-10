@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
+import { isPastDate, isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
 const MIN_TECNICO = 5;
@@ -37,7 +38,19 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
-const evaluarTiempo = (mins, tiempoEstimado) => {
+const evaluarTiempo = (mins, ticket) => {
+    const fechaVencimiento = ticket.fechaLimite || ticket.fechaVencimiento;
+
+    if (fechaVencimiento && isPastDate(fechaVencimiento)) {
+        return {
+            alerta: true,
+            tipo: 'alto',
+            mensaje: 'La tarea ha superado su fecha límite en el calendario.',
+        };
+    }
+
+    const tiempoEstimado = ticket.tiempoEstimado;
+
     if (mins < MIN_TECNICO) {
         return {
             alerta: true,
@@ -59,6 +72,7 @@ const evaluarTiempo = (mins, tiempoEstimado) => {
             mensaje: `El tiempo registrado (${formatMins(mins)}) es inusualmente alto.`,
         };
     }
+
     return { alerta: false };
 };
 
@@ -211,6 +225,7 @@ export const TicketProgressModal = ({
     const [evaluacion, setEvaluacion] = useState(null);
     const [timePhase, setTimePhase] = useState('confirmado');
     const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [fechaFinManual, setFechaFinManual] = useState('');
     const [errorPausa, setErrorPausa] = useState(false);
 
     useEffect(() => {
@@ -229,22 +244,25 @@ export const TicketProgressModal = ({
             setEvaluacion(null);
             setTimePhase('confirmado');
             setTiempoManualMins(0);
+            setFechaFinManual('');
             setErrorPausa(false);
         }
     }, [isOpen]);
 
     if (!ticket) return null;
 
+    const minDate = isoToDateInput(ticket.createdAt);
+    const maxDate = isoToDateInput(new Date().toISOString());
+    const isFechaFinValida = fechaFinManual && fechaFinManual >= minDate && fechaFinManual <= maxDate;
+
     const handleEntrarResolver = () => {
         const mins = calcElapsedMins(ticket);
         setElapsedMins(mins);
-        const ev = evaluarTiempo(mins, ticket.tiempoEstimado);
+
+        const ev = evaluarTiempo(mins, ticket);
         setEvaluacion(ev);
-        if (ev.alerta) {
-            setTimePhase('preguntando');
-        } else {
-            setTimePhase('confirmado');
-        }
+
+        setTimePhase('preguntando');
         setVista('resolver');
     };
 
@@ -277,12 +295,28 @@ export const TicketProgressModal = ({
         if (notaResolver.trim()) {
             fd.append('nota', notaResolver.trim());
         }
-        if (timePhase === 'manual' && tiempoManualMins > 0) {
-            fd.append(
-                'registroTiempoManual',
-                JSON.stringify({ duracionManualMinutos: tiempoManualMins })
-            );
+
+        // Fix: Construcción segura del payload para Zod
+        // Ya no enviamos "inicioManual" ni "finManual" en el frontend si solo queremos sobreescribir la duración real
+        // Zod en backend se actualizará para aceptar solo "finManual" y "duracionManualMinutos" de forma aislada
+
+        let timePayload = {};
+
+        if (timePhase === 'manual') {
+            timePayload = { duracionManualMinutos: tiempoManualMins };
+        } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
+            // Forzamos la fecha para que termine en ISO estricto. El backend y Zod le pondrán la hora.
+            const finStr = fechaInputToISOLocal(fechaFinManual);
+            timePayload = {
+                finManual: new Date(finStr).toISOString(),
+                duracionManualMinutos: tiempoManualMins
+            };
         }
+
+        if (Object.keys(timePayload).length > 0) {
+            fd.append('registroTiempoManual', JSON.stringify(timePayload));
+        }
+
         archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
         return fd;
     };
@@ -297,11 +331,17 @@ export const TicketProgressModal = ({
         onConfirm(ticket.id, buildFdResolver());
     };
 
-    const tiempoDisplay = timePhase === 'manual'
-        ? formatMins(tiempoManualMins)
-        : formatMins(elapsedMins);
+    let tiempoDisplay = formatMins(elapsedMins);
+    if (timePhase === 'manual' || timePhase === 'atrasada_fecha') {
+        tiempoDisplay = formatMins(tiempoManualMins);
+    }
 
-    const resolverDisabled = timePhase === 'preguntando' || (timePhase === 'manual' && tiempoManualMins === 0);
+    const resolverDisabled =
+        timePhase === 'preguntando' ||
+        (timePhase === 'manual' && tiempoManualMins === 0) ||
+        (timePhase === 'atrasada_fecha' && (!isFechaFinValida || tiempoManualMins === 0));
+
+    const isAtrasada = evaluacion?.tipo === 'alto';
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()}>
@@ -410,7 +450,7 @@ export const TicketProgressModal = ({
 
                 {vista === 'resolver' && (
                     <div className="flex flex-col gap-5">
-                        {timePhase === 'preguntando' && evaluacion?.alerta && (
+                        {timePhase === 'preguntando' && (
                             <div className="flex flex-col gap-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
                                 <div className="flex items-start gap-3">
                                     <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
@@ -418,10 +458,13 @@ export const TicketProgressModal = ({
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-amber-800">
-                                            ¿El tiempo registrado es correcto?
+                                            {isAtrasada ? '¿La tarea se entregó fuera de tiempo?' : '¿El tiempo registrado es correcto?'}
                                         </p>
                                         <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                                            {evaluacion.mensaje}
+                                            {isAtrasada
+                                                ? `El tiempo registrado (${formatMins(elapsedMins)}) supera el límite. Si concluiste la tarea antes y olvidaste registrarla, puedes ingresar la fecha y el tiempo real trabajado.`
+                                                : `El sistema ha medido un total de ${formatMins(elapsedMins)}. Puedes confirmarlo o ajustarlo manualmente.`
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -435,32 +478,47 @@ export const TicketProgressModal = ({
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setTimePhase('confirmado')}
                                         className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
                                     >
                                         <Icon name="check" size="sm" />
-                                        Sí, es correcto
+                                        {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            // Calculamos la base pero limitamos a 23h 55min (1435 mins) 
-                                            // para que no rompa la coherencia visual del TimePicker
-                                            const base = elapsedMins > 0 ? elapsedMins : 60;
-                                            const redondeado = Math.round(base / 5) * 5;
-                                            const capped = Math.min(redondeado, 1435); // Máximo 23:55
 
-                                            setTiempoManualMins(capped || 60);
-                                            setTimePhase('manual');
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
-                                    >
-                                        <Icon name="edit" size="sm" />
-                                        No, corregir
-                                    </button>
+                                    {isAtrasada ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                const redondeado = Math.round(base / 5) * 5;
+                                                setTiempoManualMins(Math.min(redondeado, 1435) || 60);
+                                                setTimePhase('atrasada_fecha');
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="event" size="sm" />
+                                            No, especificar cierre
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                const redondeado = Math.round(base / 5) * 5;
+                                                const capped = Math.min(redondeado, 1435);
+                                                setTiempoManualMins(capped || 60);
+                                                setTimePhase('manual');
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="edit" size="sm" />
+                                            No, corregir tiempo
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -481,13 +539,56 @@ export const TicketProgressModal = ({
                             </div>
                         )}
 
+                        {timePhase === 'atrasada_fecha' && (
+                            <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="event_available" size="sm" className="text-marca-primario" />
+                                        <p className="text-sm font-bold text-slate-700">Fecha real de término</p>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="fecha-fin-manual">Selecciona el día que la terminaste *</Label>
+                                        <input
+                                            id="fecha-fin-manual"
+                                            type="date"
+                                            min={minDate}
+                                            max={maxDate}
+                                            value={fechaFinManual}
+                                            onChange={(e) => setFechaFinManual(e.target.value)}
+                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
+                                        />
+                                        {!isFechaFinValida && (
+                                            <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                                <Icon name="warning" size="xs" />
+                                                La fecha debe estar entre la creación del ticket y hoy.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
+                                        <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
+                                    </div>
+                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                    {tiempoManualMins === 0 && (
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                            <Icon name="warning" size="xs" />
+                                            El tiempo debe ser mayor a 0 minutos
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {timePhase !== 'preguntando' && (
                             <>
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
                                     <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
                                         <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
                                         <span>Tiempo total a registrar</span>
-                                        {timePhase === 'manual' && (
+                                        {(timePhase === 'manual' || timePhase === 'atrasada_fecha') && (
                                             <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
                                                 Manual
                                             </span>
