@@ -1,7 +1,19 @@
+// src/features/tickets/components/historico/mobile-ticket-review-modal.jsx
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
+import { isPastDate, formatFechaHora } from '@/lib/date';
+import { cn } from '@/utils/cn';
+
+// Helper local para formatear los minutos del sistema
+const formatMins = (mins) => {
+    if (!mins) return '0 min';
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h} h ${m} min` : `${h} h`;
+};
 
 const NativeImageStack = ({ images, onExpand, sensitivity = 50 }) => {
     const [stack, setStack] = useState(() => images.map((url, i) => ({ id: i, originalIndex: i, url })));
@@ -124,6 +136,12 @@ export const MobileTicketReviewModal = ({
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
     const notaTecnico = resolucion?.nota || '';
+    const actorResolucion = resolucion?.usuario || resolucion?.actor || null;
+    const fechaResolucion = resolucion?.createdAt || null;
+
+    // Lógica DTO: El frontend es ciego, obedece al boolean de la Base de Datos
+    const isManual = Boolean(resolucion?.esTiempoManual);
+    const tiempoAMostrar = formatMins(ticket?.duracionReal || 0);
 
     const imagenesEvidenciaBrutas = resolucion?.imagenes?.length > 0
         ? resolucion.imagenes
@@ -165,6 +183,13 @@ export const MobileTicketReviewModal = ({
                 <ModalBody>
                     <div className="flex flex-col gap-6">
 
+                        {isPastDate(ticket?.fechaVencimiento) && (
+                            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm">
+                                <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
+                                <p><strong>¡Aviso de Retraso!</strong> Esta tarea fue entregada por el técnico <strong>fuera de tiempo</strong> según su fecha de vencimiento.</p>
+                            </div>
+                        )}
+
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Detalles del ticket</p>
                             <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
@@ -176,11 +201,31 @@ export const MobileTicketReviewModal = ({
                             )}
                         </div>
 
-                        {(notaTecnico || imagenesEvidenciaUrls?.length > 0) && (
+                        {(notaTecnico || imagenesEvidenciaUrls?.length > 0 || actorResolucion) && (
                             <div className="bg-blue-50/40 border border-blue-100 rounded-xl p-4 shadow-sm">
                                 <p className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5">
                                     <Icon name="info" size="xs" /> Evidencia del Técnico
                                 </p>
+
+                                {/* Banner Indicador de Tiempo (Manual vs Sistema) Adaptado a Móvil */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm mb-4">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
+                                            <Icon name={isManual ? "edit_note" : "timer"} size="sm" className={isManual ? "text-amber-600" : "text-blue-600"} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                Tiempo total
+                                            </span>
+                                            <span className="text-sm font-extrabold font-mono text-slate-700">
+                                                {tiempoAMostrar}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className={cn("px-2 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider text-center self-start sm:self-auto", isManual ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-600 border border-blue-100")}>
+                                        {isManual ? 'Registro Manual' : 'Medido por Sistema'}
+                                    </div>
+                                </div>
 
                                 {notaTecnico && (
                                     <div className="relative mb-4">
@@ -197,6 +242,32 @@ export const MobileTicketReviewModal = ({
                                             images={imagenesEvidenciaUrls}
                                             onExpand={(originalIndex) => setPreviewIndex(originalIndex)}
                                         />
+                                    </div>
+                                )}
+
+                                {/* Perfil de Actor que resolvió */}
+                                {actorResolucion && (
+                                    <div className="flex items-center gap-2 pt-3 mt-1 border-t border-blue-200/50">
+                                        {actorResolucion.imagen ? (
+                                            <img
+                                                src={actorResolucion.imagen}
+                                                alt=""
+                                                className="w-6 h-6 rounded-full object-cover border border-white shrink-0 shadow-sm"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-blue-100 text-blue-600">
+                                                <Icon name="person" size="xs" />
+                                            </div>
+                                        )}
+                                        <span className="text-xs font-semibold text-slate-700 opacity-90">
+                                            {actorResolucion.nombre}
+                                        </span>
+                                        {fechaResolucion && (
+                                            <span className="text-[10px] font-bold text-slate-500 opacity-80 ml-auto shrink-0 tracking-wide uppercase">
+                                                {formatFechaHora(fechaResolucion)}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -1,0 +1,57 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet } from 'react-router-dom';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
+import DashboardLayoutDesktop from '../views/dashboard-layout-desktop';
+import DashboardLayoutMobile from '../views/dashboard-layout-mobile';
+import { useMetricas } from '../hooks/use-metricas';
+import { getMinDateHoy } from '@/lib/date';
+
+// 1. Importamos el contexto desde su propio archivo
+import { DashboardContext } from '../context/dashboard-context';
+
+const getCurrentYear = () => Number(getMinDateHoy().split('-')[0]);
+const getCurrentMonth = () => Number(getMinDateHoy().split('-')[1]);
+
+export default function DashboardPage() {
+    const isDesktop = useIsDesktop();
+    const { data, loading, fetchMetricas } = useMetricas();
+
+    const [filtro, setFiltro] = useState({
+        year: getCurrentYear(),
+        month: getCurrentMonth(),
+    });
+
+    const load = useCallback(() => {
+        const params = {};
+        if (filtro.year) params.year = filtro.year;
+        if (filtro.month) params.month = filtro.month;
+        fetchMetricas(params);
+    }, [filtro, fetchMetricas]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const handleFiltroChange = useCallback(({ year, month }) => {
+        setFiltro({ year: year ?? null, month: month ?? 0 });
+    }, []);
+
+    const contextData = { data, loading, filtro, onFiltroChange: handleFiltroChange };
+
+    return (
+        // 2. Proveemos el contexto limpio
+        <DashboardContext.Provider value={contextData}>
+            <div className="max-w-full mx-auto">
+                <div className="p-1 lg:p-4">
+                    {isDesktop ? (
+                        <DashboardLayoutDesktop contextData={contextData}>
+                            <Outlet />
+                        </DashboardLayoutDesktop>
+                    ) : (
+                        <DashboardLayoutMobile contextData={contextData}>
+                            <Outlet />
+                        </DashboardLayoutMobile>
+                    )}
+                </div>
+            </div>
+        </DashboardContext.Provider>
+    );
+}

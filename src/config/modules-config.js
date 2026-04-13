@@ -1,4 +1,3 @@
-// src/config/modules-config.js
 /**
  * Configuración centralizada de módulos del sistema
  * Cada módulo define: nombre, icono, ruta y roles permitidos
@@ -35,8 +34,34 @@ export const MODULES_CONFIG = [
         id: 'tickets-historico',
         name: 'Histórico',
         route: '/tickets/historico',
-        // Modificado para que todos los roles puedan verlo. La API protege las acciones internas.
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+      }
+    ]
+  },
+  {
+    id: 'reportes',
+    name: 'Reportes y KPIs',
+    icon: 'bar_chart',
+    route: '/reportes',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    children: [
+      {
+        id: 'reportes-general',
+        name: 'General',
+        route: '/reportes/general',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'reportes-equipo',
+        name: 'Equipo',
+        route: '/reportes/equipo',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'reportes-area',
+        name: 'Área',
+        route: '/reportes/area',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       }
     ]
   },
@@ -62,13 +87,6 @@ export const MODULES_CONFIG = [
     allowedRoles: ['SUPER_ADMIN'],
   },
   {
-    id: 'reportes',
-    name: 'Reportes',
-    icon: 'bar_chart',
-    route: '/reportes',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
-  },
-  {
     id: 'notificaciones',
     name: 'Notificaciones',
     icon: 'notifications',
@@ -84,20 +102,11 @@ export const MODULES_CONFIG = [
   },
 ];
 
-/**
- * Filtra módulos según el rol del usuario
- */
 export const getModulesByRole = (userRole) => {
   if (!userRole) return [];
-  
-  return MODULES_CONFIG.filter(module => 
-    module.allowedRoles.includes(userRole)
-  );
+  return MODULES_CONFIG.filter(module => module.allowedRoles.includes(userRole));
 };
 
-/**
- * Verifica si un usuario tiene acceso a un módulo específico
- */
 export const canAccessModule = (userRole, moduleId) => {
   const module = MODULES_CONFIG.find(m => m.id === moduleId);
   return module ? module.allowedRoles.includes(userRole) : false;

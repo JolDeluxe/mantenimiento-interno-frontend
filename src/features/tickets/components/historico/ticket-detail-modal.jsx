@@ -333,13 +333,10 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
     const fechaFinalizada = entryResuelto?.createdAt;
 
+    // AQUI ESTABA EL ERROR: El Thin Client ahora confía ciegamente en el booleano del Backend.
+    // Cero lógica de Regex. Cero evaluación de strings.
     const esTiempoManual = Boolean(
-        ticket.historial?.some(h =>
-            h && typeof h.nota === 'string' && (
-                /Tiempo declarado manualmente/i.test(h.nota) ||
-                /\[TIEMPO_MANUAL/i.test(h.nota)
-            )
-        )
+        ticket.historial?.some(h => h.esTiempoManual === true)
     );
 
     const handleImageExpand = (images, index) => setVisor({ images, index });

@@ -8,7 +8,6 @@ export const SidebarItem = ({ module }) => {
   const location = useLocation();
 
   const hasChildren = module.children && module.children.length > 0;
-
   const isActiveChild = hasChildren && module.children.some(child => location.pathname.includes(child.route));
   const [isOpen, setIsOpen] = useState(isActiveChild);
 
@@ -46,7 +45,6 @@ export const SidebarItem = ({ module }) => {
         >
           <Icon name={module.icon} size="24px" className="shrink-0" />
 
-          {/* CORRECCIÓN: whitespace-nowrap para texto completo y overflow-hidden para animación suave */}
           <span className={`
             ml-3 text-sm text-left transition-all duration-300 ease-in-out whitespace-nowrap
             ${sidebarExpanded ? 'flex-1 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-4 overflow-hidden'}
@@ -67,7 +65,6 @@ export const SidebarItem = ({ module }) => {
         <div
           className={`
             grid transition-all duration-300 ease-in-out overflow-hidden
-            /* Si el sidebar no está expandido, forzamos SIEMPRE filas en 0 y opacidad 0 */
             ${isOpen && sidebarExpanded
               ? 'grid-rows-[1fr] opacity-100 mt-1'
               : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'
@@ -75,7 +72,6 @@ export const SidebarItem = ({ module }) => {
           `}
         >
           <ul className="min-h-0 flex flex-col gap-1 pl-11 pr-2 relative">
-            {/* LÍNEA DE JERARQUÍA */}
             <div className="absolute left-[23px] top-0 bottom-2 w-[1.5px] bg-white/10 rounded-full" />
 
             {module.children.map(child => (
@@ -91,7 +87,6 @@ export const SidebarItem = ({ module }) => {
                     }
                   `}
                 >
-                  {/* INDICADOR ACTIVO */}
                   {location.pathname.includes(child.route) && (
                     <div className="absolute left-[-21px] w-3 h-[1.5px] bg-marca-acento shadow-[0_0_5px_var(--color-marca-acento)]" />
                   )}
