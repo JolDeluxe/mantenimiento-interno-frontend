@@ -1,13 +1,7 @@
+// src/features/tickets/components/hoy/hoy-filter-bar.jsx
 import { useState, useEffect } from 'react';
-import { Icon, SearchableSelect } from '@/components/ui/z_index';
+import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { TIPOS, PRIORIDADES, ROLES_ADMIN } from '../../constants';
-
-const ESTADOS_HOY = [
-    { value: 'ASIGNADA', label: 'Asignada' },
-    { value: 'EN_PAUSA', label: 'En Pausa' },
-    { value: 'EN_PROGRESO', label: 'En Progreso' },
-    { value: 'RESUELTO', label: 'Resuelto' },
-];
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
@@ -44,8 +38,6 @@ const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) =>
 export const HoyFilterBar = ({
     query,
     onSearchChange,
-    filtroEstado,
-    onEstadoChange,
     filtroTipo,
     onTipoChange,
     filtroPrioridad,
@@ -53,6 +45,12 @@ export const HoyFilterBar = ({
     filtroResponsable,
     onResponsableChange,
     opcionesResponsables = [],
+    mostrarAtrasadas,
+    onToggleAtrasadas,
+    mostrarRechazadas,
+    onToggleRechazadas,
+    existenciaGlobal = {},
+    totalAtrasadasGlobal = 0,
     currentUser,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
@@ -67,63 +65,11 @@ export const HoyFilterBar = ({
         return () => clearTimeout(timer);
     }, [localValue, query, onSearchChange]);
 
-    // TECNICO: solo filtro de estado
-    if (!esAdmin) {
-        return (
-            <div className="flex flex-col gap-3 w-full pt-1">
-                {/* Fila 1: búsqueda */}
-                <div className="flex items-center gap-3 w-full">
-                    <SearchInput
-                        localValue={localValue}
-                        onChange={setLocalValue}
-                        onClear={() => setLocalValue('')}
-                        className="flex-1 max-w-md min-w-[180px]"
-                    />
-                </div>
-
-                {/* Fila 2: filtros adicionales elásticos */}
-                <div className="flex items-center gap-3 w-full flex-wrap">
-                    <div className="min-w-52 w-auto max-w-full flex-none">
-                        <SearchableSelect
-                            options={ESTADOS_HOY}
-                            value={filtroEstado}
-                            onChange={onEstadoChange}
-                            placeholder="Todos los estados"
-                            icon="swap_horiz"
-                            allOptionText="Todos los estados"
-                            className="w-full"
-                        />
-                    </div>
-                    <div className="min-w-40 w-auto max-w-full flex-none">
-                        <SearchableSelect
-                            options={TIPOS}
-                            value={filtroTipo}
-                            onChange={onTipoChange}
-                            placeholder="Tipo..."
-                            icon="category"
-                            allOptionText="Todos los tipos"
-                            className="w-full"
-                        />
-                    </div>
-                    <div className="min-w-40 w-auto max-w-full flex-none">
-                        <SearchableSelect
-                            options={PRIORIDADES}
-                            value={filtroPrioridad}
-                            onChange={onPrioridadChange}
-                            placeholder="Prioridad..."
-                            icon="flag"
-                            allOptionText="Todas"
-                            className="w-full"
-                        />
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const totalRechazadas = existenciaGlobal['RECHAZADO'] ?? 0;
+    const totalAtrasadas = totalAtrasadasGlobal;
 
     return (
         <div className="flex flex-col gap-3 w-full pt-1">
-            {/* Fila 1: búsqueda */}
             <div className="flex items-center gap-3 w-full">
                 <SearchInput
                     localValue={localValue}
@@ -131,21 +77,47 @@ export const HoyFilterBar = ({
                     onClear={() => setLocalValue('')}
                     className="flex-1 max-w-md min-w-[180px]"
                 />
+
+                <div className="flex items-center gap-3 flex-none ml-auto">
+                    <div className="relative">
+                        <Button
+                            variant="filtro_gris"
+                            isActive={mostrarAtrasadas}
+                            icon={mostrarAtrasadas ? 'close' : 'warning'}
+                            size="sm"
+                            onClick={onToggleAtrasadas}
+                            className={`w-34 flex-none justify-center h-[38px] ${mostrarAtrasadas ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent ring-0' : ''}`}
+                        >
+                            Atrasadas
+                        </Button>
+                        {totalAtrasadas > 0 && !mostrarAtrasadas && (
+                            <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold border-2 border-white shadow-md z-10 pointer-events-none leading-none">
+                                {totalAtrasadas}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="relative">
+                        <Button
+                            variant="filtro_rechazado"
+                            isActive={mostrarRechazadas}
+                            icon={mostrarRechazadas ? 'close' : 'block'}
+                            size="sm"
+                            onClick={onToggleRechazadas}
+                            className="w-34 flex-none justify-center h-[38px]"
+                        >
+                            Rechazadas
+                        </Button>
+                        {totalRechazadas > 0 && !mostrarRechazadas && (
+                            <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold border-2 border-white shadow-md z-10 pointer-events-none leading-none">
+                                {totalRechazadas}
+                            </span>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Fila 2: filtros adicionales elásticos */}
             <div className="flex items-center gap-3 w-full flex-wrap">
-                <div className="min-w-52 w-auto max-w-full flex-none">
-                    <SearchableSelect
-                        options={ESTADOS_HOY}
-                        value={filtroEstado}
-                        onChange={onEstadoChange}
-                        placeholder="Todos los estados"
-                        icon="swap_horiz"
-                        allOptionText="Todos los estados"
-                        className="w-full"
-                    />
-                </div>
                 <div className="min-w-40 w-auto max-w-full flex-none">
                     <SearchableSelect
                         options={TIPOS}
@@ -168,7 +140,7 @@ export const HoyFilterBar = ({
                         className="w-full"
                     />
                 </div>
-                {opcionesResponsables.length > 0 && (
+                {esAdmin && opcionesResponsables.length > 0 && (
                     <div className="min-w-48 w-auto max-w-full flex-none">
                         <SearchableSelect
                             options={normalizeOpts(opcionesResponsables)}

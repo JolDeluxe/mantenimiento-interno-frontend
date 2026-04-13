@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '../historico/ticket-status-badge';
 import { formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
+    const location = useLocation();
+    const cardRef = useRef(null);
+    const isHighlighted = location.hash === `#ticket-${ticket.id}`;
+
+    useEffect(() => {
+        if (isHighlighted && cardRef.current) {
+            cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [isHighlighted]);
 
     // Purga de instanciación Date a favor de matemática simple y segura 
     const calculateDaysWaiting = (createdAt) => {
@@ -48,11 +58,14 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
     }
 
     return (
-        <div className={cn(
-            'border rounded-2xl p-4 shadow-sm flex flex-col h-full',
-            statusTheme.cardBorder,
-            statusTheme.cardBg
-        )}>
+        <div
+            ref={cardRef}
+            id={`ticket-${ticket.id}`}
+            className={cn(
+                'border rounded-2xl p-4 shadow-sm flex flex-col h-full transition-all duration-700',
+                isHighlighted ? 'ring-4 ring-yellow-400 bg-yellow-50 border-yellow-400' : statusTheme.cardBg,
+                !isHighlighted && statusTheme.cardBorder
+            )}>
             <div
                 className="flex items-start justify-between gap-2 mb-2 active:opacity-70 transition-opacity cursor-pointer"
                 onClick={() => onViewDetails?.(ticket)}

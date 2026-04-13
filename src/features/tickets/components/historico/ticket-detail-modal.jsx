@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { formatFecha, formatFechaHora } from '@/lib/date';
+import { formatFecha, formatFechaHora, isPastDate } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
@@ -162,7 +162,6 @@ const ESTADO_CONTEXT_CONFIG = {
     },
 };
 
-// Tipo de evidencia por estado
 const EVIDENCIA_TIPO = {
     RESUELTO: 'EVIDENCIA_SOLUCION',
     RECHAZADO: 'EVIDENCIA_RECHAZO',
@@ -170,13 +169,11 @@ const EVIDENCIA_TIPO = {
     EN_PROGRESO: 'EVIDENCIA_AVANCE',
 };
 
-// Obtiene la entrada de historial más reciente que transicionó AL estado actual
 const getContextualEntry = (historial, estado) => {
     if (!historial?.length || !estado) return null;
     return historial.find(h => h.estadoNuevo === estado) ?? null;
 };
 
-// Extrae URLs de imágenes: primero desde la entrada de historial, luego desde ticket.imagenes
 const getContextualImages = (entry, ticket) => {
     if (entry?.imagenes?.length > 0) {
         return entry.imagenes.map(i => (typeof i === 'string' ? i : i?.url)).filter(Boolean);
@@ -191,7 +188,6 @@ const getContextualImages = (entry, ticket) => {
     return [];
 };
 
-// Parseador de notas compatible con formatos legacy y nuevos metadatos
 const ParsedNote = ({ notaRaw, config }) => {
     if (!notaRaw) return null;
 
@@ -199,11 +195,9 @@ const ParsedNote = ({ notaRaw, config }) => {
     let timeBadge = null;
     let isRutina = false;
 
-    // 1. Compatibilidad Legacy: Limpiar string viejo de "Cambio de estado"
     const stateChangeRegex = /Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i;
     cleanNota = cleanNota.replace(stateChangeRegex, '').trim();
 
-    // 2. Extraer tiempo manual (Formato Legacy)
     const oldTimeRegex = /Tiempo declarado manualmente:\s*(\d+\s*minutos?)/i;
     const oldTimeMatch = cleanNota.match(oldTimeRegex);
     if (oldTimeMatch) {
@@ -211,7 +205,6 @@ const ParsedNote = ({ notaRaw, config }) => {
         cleanNota = cleanNota.replace(oldTimeRegex, '').trim();
     }
 
-    // 3. Extraer tiempo manual (Nuevo Metadato Backend)
     const newTimeRegex = /\[TIEMPO_MANUAL:(\d+)\]/i;
     const newTimeMatch = cleanNota.match(newTimeRegex);
     if (newTimeMatch) {
@@ -219,15 +212,12 @@ const ParsedNote = ({ notaRaw, config }) => {
         cleanNota = cleanNota.replace(newTimeRegex, '').trim();
     }
 
-    // 4. Extraer flag de rutina (Legacy y Nuevo)
     const rutinaRegex = /\[RUTINA\]|\(Rutina Completada\)/i;
     isRutina = rutinaRegex.test(cleanNota);
     cleanNota = cleanNota.replace(rutinaRegex, '').trim();
 
-    // Limpieza final de caracteres residuales
     cleanNota = cleanNota.replace(/^[-:]\s*/, '').trim();
 
-    // Estado por defecto estructurado
     if (!cleanNota) cleanNota = "Sin observaciones";
 
     const isDefault = cleanNota === "Sin observaciones";
@@ -265,7 +255,6 @@ const ParsedNote = ({ notaRaw, config }) => {
     );
 };
 
-// ── Banner contextual ───────────────────────────────────────────────────────
 const ContextualBanner = ({ ticket, onImageExpand }) => {
     const config = ESTADO_CONTEXT_CONFIG[ticket.estado];
     if (!config) return null;
@@ -279,7 +268,6 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
 
     return (
         <div className={`flex flex-col gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${config.cls}`}>
-            {/* Cabecera */}
             <div className="flex items-center gap-2">
                 <Icon name={config.icon} size="sm" className={config.iconCls} fill />
                 <span className={`text-[10px] font-extrabold uppercase tracking-widest ${config.labelCls}`}>
@@ -287,15 +275,12 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
                 </span>
             </div>
 
-            {/* Nota Mejorada y Tiempo Parseado */}
             <ParsedNote notaRaw={nota} config={config} />
 
-            {/* Imágenes */}
             {images.length > 0 && (
                 <MiniImageGrid urls={images} onExpand={(i) => onImageExpand(images, i)} />
             )}
 
-            {/* Actor que realizó la acción */}
             {actor && (
                 <div className="flex items-center gap-2 pt-2 mt-1 border-t border-black/5">
                     {actor.imagen ? (
@@ -329,10 +314,8 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const [mostrarHistorial, setMostrarHistorial] = useState(false);
     const [visor, setVisor] = useState({ images: [], index: null });
 
-    // Cierra la línea de tiempo siempre que se abra un nuevo ticket
     useEffect(() => {
         if (!isOpen) {
-            // Respetamos los 300ms de la animación de salida del modal antes de desmontar el historial
             const timer = setTimeout(() => {
                 setMostrarHistorial(false);
                 setVisor({ images: [], index: null });
@@ -347,11 +330,9 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const responsables = ticket.responsables ?? [];
     const tieneHistorial = ticket.historial && ticket.historial.length > 0;
 
-    // Extracción de la fecha real de finalización basada en el historial
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
     const fechaFinalizada = entryResuelto?.createdAt;
 
-    // Evaluar blindado vía Regex si alguna entrada de historial indica que el tiempo fue insertado manualmente
     const esTiempoManual = Boolean(
         ticket.historial?.some(h =>
             h && typeof h.nota === 'string' && (
@@ -363,22 +344,75 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
 
     const handleImageExpand = (images, index) => setVisor({ images, index });
 
+    const renderDetalleCreador = () => {
+        if (!creador) return null;
+        const esInterno = ['JEFE', 'COORDINADOR', 'ADMIN'].includes(creador.rol?.toUpperCase());
+
+        if (esInterno) {
+            return (
+                <div className="flex flex-col">
+                    <span className="text-sm">{creador.nombre}</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">{creador.rol || 'Staff Interno'}</span>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex flex-col">
+                <span className="text-sm font-semibold text-slate-800">{creador.nombre}</span>
+                {creador.email && <span className="text-xs text-slate-500 font-normal mt-0.5">{creador.email}</span>}
+                {creador.telefono && <span className="text-xs text-slate-500 font-normal">{creador.telefono}</span>}
+            </div>
+        );
+    };
+
+    const isResolvedOrClosed = ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO';
+    let statusRetraso = null;
+
+    if (ticket.fechaVencimiento) {
+        if (isResolvedOrClosed && fechaFinalizada) {
+            const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
+            const fFin = new Date(fechaFinalizada).setHours(0, 0, 0, 0);
+            if (fFin > fVenc) {
+                statusRetraso = (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-red-50 text-red-700 border-red-200 uppercase tracking-wide">
+                        Entregada con Retraso
+                    </span>
+                );
+            } else {
+                statusRetraso = (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-green-50 text-green-700 border-green-200 uppercase tracking-wide">
+                        Entregada a Tiempo
+                    </span>
+                );
+            }
+        } else if (!isResolvedOrClosed && isPastDate(ticket.fechaVencimiento)) {
+            statusRetraso = (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-red-100 text-red-800 border-red-300 uppercase tracking-wide">
+                    Atrasada
+                </span>
+            );
+        }
+    }
+
     return (
         <>
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}
-                className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-300' : 'md:max-w-3xl lg:max-w-4xl'}`}
+                /* En desktop ampliamos el ancho del modal para que los paneles se acomoden sin compactarse, 
+                   y quitamos toda atadura de altura para que el scroll nativo fluya si hace falta. */
+                className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-[1100px]' : 'md:max-w-3xl lg:max-w-4xl'}`}
             >
                 <ModalHeader title={`Detalle — #${ticket.id}`} onClose={onClose} />
 
+                {/* Quitamos los bloqueos y restauramos el comportamiento estándar */}
                 <ModalBody>
                     <div className="flex flex-col lg:flex-row gap-8 items-start">
 
                         {/* Panel izquierdo: información principal */}
                         <div className="flex-1 w-full min-w-0 flex flex-col gap-5">
 
-                            {/* Badges de estado / prioridad / tipo */}
                             <div className="flex flex-wrap items-center gap-2">
                                 <TicketStatusBadge estado={ticket.estado} />
                                 <TicketPriorityBadge prioridad={ticket.prioridad} />
@@ -387,12 +421,11 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         {ticket.tipo}
                                     </span>
                                 )}
+                                {statusRetraso}
                             </div>
 
-                            {/* Banner contextual basado en estado */}
                             <ContextualBanner ticket={ticket} onImageExpand={handleImageExpand} />
 
-                            {/* Descripción */}
                             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
                                 <h3 className="text-lg font-extrabold text-slate-900 leading-tight mb-3">
                                     {ticket.titulo}
@@ -402,7 +435,6 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                 </p>
                             </div>
 
-                            {/* Grid de datos: ubicación / personal / tiempos */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                                 <div className="space-y-4">
@@ -420,7 +452,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         <Icon name="group" size="sm" className="text-marca-primario" />
                                         Personal
                                     </h4>
-                                    <DataRow icon="person" label="Reportado por" value={creador?.nombre} />
+                                    <DataRow icon="person" label="Reportado por" value={renderDetalleCreador()} />
                                     <DataRow
                                         icon="engineering"
                                         label="Técnico(s) asignado(s)"
@@ -441,13 +473,18 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     <DataRow icon="event" label="Vencimiento" value={formatFecha(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
                                     <DataRow icon="timer" label="Tiempo estimado" value={ticket.tiempoEstimado ? `${ticket.tiempoEstimado} min` : null} fallback="No especificado" />
 
-                                    {/* DataRow modificado con Badge dinámico de tiempo */}
                                     <DataRow
                                         icon="hourglass_bottom"
                                         label="Tiempo real"
                                         value={ticket.duracionReal ? (
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <span>{ticket.duracionReal} min</span>
+                                                <span className={
+                                                    ticket.tiempoEstimado
+                                                        ? (ticket.duracionReal > ticket.tiempoEstimado ? 'text-red-600 font-bold' : 'text-green-600 font-bold')
+                                                        : 'text-slate-800 font-bold'
+                                                }>
+                                                    {ticket.duracionReal} min
+                                                </span>
                                                 <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest border ${esTiempoManual ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                                                     {esTiempoManual ? 'Manual' : 'Automático'}
                                                 </span>
@@ -460,8 +497,12 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                             </div>
                         </div>
 
-                        {/* Panel derecho: línea de tiempo condicional */}
-                        {mostrarHistorial && <TicketTimeline historial={ticket.historial} responsables={responsables} />}
+                        {/* Panel derecho: línea de tiempo condicional. Fluye naturalmente de arriba hacia abajo sin scrollbars internos forzados. */}
+                        {mostrarHistorial && (
+                            <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-6">
+                                <TicketTimeline historial={ticket.historial} responsables={responsables} />
+                            </div>
+                        )}
 
                     </div>
                 </ModalBody>

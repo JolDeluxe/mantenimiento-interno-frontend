@@ -333,6 +333,15 @@ export const TicketPausaModal = ({
             <ModalHeader title="Tarea en Pausa" onClose={() => !isSubmitting && onClose()} />
             <ModalBody>
                 <div className="flex flex-col gap-5 py-2">
+
+                    {/* Alerta de Retraso Global para el Modal */}
+                    {isPastDate(ticket?.fechaVencimiento) && (
+                        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
+                            <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
+                            <p><strong>¡Atención!</strong> La tarea que estás gestionando ya se encuentra <strong>atrasada</strong>.</p>
+                        </div>
+                    )}
+
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-16 h-16 rounded-full bg-estado-en-pausa/15 flex items-center justify-center">
                             <Icon name="pause_circle" size="32px" className="text-estado-en-pausa" fill />

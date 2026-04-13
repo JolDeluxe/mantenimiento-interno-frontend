@@ -18,6 +18,23 @@ const isVencida = (ticket) => {
     return isPastDate(ticket.fechaVencimiento);
 };
 
+const isEntregadaTarde = (ticket) => {
+    if (!ticket.fechaVencimiento) return false;
+    // Solo se evalúa si el ticket ya fue terminado
+    if (ticket.estado !== 'RESUELTO' && ticket.estado !== 'CERRADO') return false;
+
+    // Extraemos la fecha en la que realmente se resolvió (o el updatedAt si el historial no viene populado)
+    const entryResuelto = ticket.historial?.find(h => h.estadoNuevo === 'RESUELTO');
+    const fechaFin = entryResuelto?.createdAt || ticket.updatedAt;
+
+    if (!fechaFin) return false;
+
+    const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
+    const fFin = new Date(fechaFin).setHours(0, 0, 0, 0);
+
+    return fFin > fVenc;
+};
+
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
 
@@ -122,6 +139,7 @@ export const TicketsTable = ({
                 );
 
                 const vencida = isVencida(row);
+                const entregadaTarde = isEntregadaTarde(row);
 
                 return (
                     <div className="flex flex-col">
@@ -132,6 +150,11 @@ export const TicketsTable = ({
                             {vencida && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="warning" size="xs" /> ATRASADA
+                                </span>
+                            )}
+                            {entregadaTarde && (
+                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
+                                    <Icon name="timer_off" size="xs" /> CON RETRASO
                                 </span>
                             )}
                         </div>
@@ -194,14 +217,52 @@ export const TicketsTable = ({
             header: 'Fecha Entrega',
             accessorKey: 'fechaVencimiento',
             sortable: true,
-            headerClassName: 'w-[10%] min-w-[90px]',
+            headerClassName: 'w-[12%] min-w-[130px]',
             cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
+                if (row.isSkeleton) return <Skeleton className="h-8 w-24 rounded-md" />;
+
+                const isResolvedOrClosed = row.estado === 'RESUELTO' || row.estado === 'CERRADO';
                 const vencida = isVencida(row);
+
+                if (isResolvedOrClosed) {
+                    const entryResuelto = row.historial?.find(h => h.estadoNuevo === 'RESUELTO');
+                    const fechaFin = entryResuelto?.createdAt || row.updatedAt;
+                    const entregadaTarde = isEntregadaTarde(row);
+
+                    return (
+                        <div className="flex flex-col gap-0.5 text-[10px] w-full">
+                            {row.fechaVencimiento ? (
+                                <div className="flex items-center justify-items-end-safe gap-1">
+                                    <span className="text-slate-400 font-bold uppercase tracking-wider">F. Venc:</span>
+                                    <span className="text-slate-600 font-medium text-right">{formatFecha(row.fechaVencimiento)}</span>
+                                </div>
+                            ) : (
+                                <div className="text-slate-400 italic">Sin fecha límite</div>
+                            )}
+
+                            {fechaFin && (
+                                <div className="flex items-center justify-items-end-safe gap-1">
+                                    <span className="text-slate-400 font-bold uppercase tracking-wider">F. Concl:</span>
+                                    <span className={cn("font-bold text-right", entregadaTarde ? "text-red-600" : "text-emerald-600")}>
+                                        {formatFecha(fechaFin)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+
                 return (
-                    <span className={cn('text-xs font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-500')}>
-                        {formatFechaRelativa(row.fechaVencimiento)}
-                    </span>
+                    <div className="flex flex-col gap-0.5 text-xs">
+                        <span className={cn('font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-600')}>
+                            {row.fechaVencimiento ? formatFechaRelativa(row.fechaVencimiento) : 'Sin fecha límite'}
+                        </span>
+                        {row.fechaVencimiento && (
+                            <span className="text-[10px] text-slate-400">
+                                {formatFecha(row.fechaVencimiento)}
+                            </span>
+                        )}
+                    </div>
                 );
             },
         },

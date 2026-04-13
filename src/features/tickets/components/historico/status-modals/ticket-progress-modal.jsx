@@ -188,7 +188,7 @@ const EvidenceSection = ({ archivos, onAgregar, onEliminar }) => {
                         type="file"
                         accept="image/jpeg, image/png, image/webp"
                         multiple
-                        capture="environment"
+                        // capture="environment"
                         className="hidden"
                         onChange={handleFileChange}
                     />
@@ -355,274 +355,284 @@ export const TicketProgressModal = ({
             />
 
             <ModalBody>
-                {vista === 'principal' && (
-                    <div className="flex flex-col gap-4">
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">En progreso</p>
-                            <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
+                <div className="flex flex-col gap-4 py-1">
+                    {/* ALERTA DE RETRASO GLOBAL PARA ESTE MODAL */}
+                    {isPastDate(ticket?.fechaVencimiento) && (
+                        <div className="w-full flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
+                            <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
+                            <p><strong>¡Atención!</strong> Esta tarea se encuentra con <strong>retraso</strong> según su fecha de vencimiento.</p>
                         </div>
+                    )}
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setVista('pausar')}
-                                className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-en-pausa/50 hover:bg-estado-en-pausa/5 transition-all duration-200 active:scale-95 cursor-pointer"
-                            >
-                                <div className="w-14 h-14 rounded-full bg-estado-en-pausa/10 flex items-center justify-center">
-                                    <Icon name="pause_circle" size="32px" className="text-estado-en-pausa" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Pausar</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
-                                        El tiempo se detendrá
-                                    </p>
-                                </div>
-                            </button>
+                    {vista === 'principal' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">En progreso</p>
+                                <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
+                            </div>
 
-                            <button
-                                type="button"
-                                onClick={handleEntrarResolver}
-                                className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5 transition-all duration-200 active:scale-95 cursor-pointer"
-                            >
-                                <div className="w-14 h-14 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
-                                    <Icon name="check_circle" size="32px" className="text-estado-resuelto" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Resolver</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
-                                        Marcar como terminada
-                                    </p>
-                                </div>
-                            </button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setVista('pausar')}
+                                    className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-en-pausa/50 hover:bg-estado-en-pausa/5 transition-all duration-200 active:scale-95 cursor-pointer"
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-estado-en-pausa/10 flex items-center justify-center">
+                                        <Icon name="pause_circle" size="32px" className="text-estado-en-pausa" fill />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-slate-700">Pausar</p>
+                                        <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                                            El tiempo se detendrá
+                                        </p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleEntrarResolver}
+                                    className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5 transition-all duration-200 active:scale-95 cursor-pointer"
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
+                                        <Icon name="check_circle" size="32px" className="text-estado-resuelto" fill />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-slate-700">Resolver</p>
+                                        <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                                            Marcar como terminada
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {vista === 'pausar' && (
-                    <div className="flex flex-col gap-5">
-                        <div className="flex items-start gap-3 px-4 py-3 bg-estado-en-pausa/10 border border-estado-en-pausa/20 rounded-xl">
-                            <Icon name="timer_off" size="sm" className="text-estado-en-pausa shrink-0 mt-0.5" />
-                            <p className="text-sm font-medium text-slate-700 leading-relaxed">
-                                El tiempo <strong>dejará de ser medido</strong> hasta que reanudes la tarea.
-                            </p>
-                        </div>
+                    {vista === 'pausar' && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-start gap-3 px-4 py-3 bg-estado-en-pausa/10 border border-estado-en-pausa/20 rounded-xl">
+                                <Icon name="timer_off" size="sm" className="text-estado-en-pausa shrink-0 mt-0.5" />
+                                <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                                    El tiempo <strong>dejará de ser medido</strong> hasta que reanudes la tarea.
+                                </p>
+                            </div>
 
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="motivo-pausa" error={errorPausa && !motivoPausa}>
-                                Motivo de pausa *
-                            </Label>
-                            <Select
-                                id="motivo-pausa"
-                                value={motivoPausa}
-                                onChange={(e) => { setMotivoPausa(e.target.value); setErrorPausa(false); }}
-                                error={errorPausa && !motivoPausa}
-                                helperText={errorPausa && !motivoPausa ? 'Selecciona un motivo para continuar.' : ''}
-                            >
-                                <option value="" disabled hidden>Selecciona el motivo…</option>
-                                {MOTIVOS_PAUSA.map((m) => (
-                                    <option key={m} value={m}>{m}</option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        {motivoPausa === 'Otro motivo' && (
-                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <Label htmlFor="nota-otro" error={errorPausa && !notaOtro.trim()}>
-                                    Describe el motivo *
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="motivo-pausa" error={errorPausa && !motivoPausa}>
+                                    Motivo de pausa *
                                 </Label>
-                                <textarea
-                                    id="nota-otro"
-                                    rows={3}
-                                    value={notaOtro}
-                                    onChange={(e) => { setNotaOtro(e.target.value); setErrorPausa(false); }}
-                                    placeholder="Explica brevemente el motivo de la pausa…"
-                                    className={cn(
-                                        'w-full border rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 transition-all',
-                                        errorPausa && !notaOtro.trim()
-                                            ? 'border-red-400 focus:ring-red-200'
-                                            : 'border-slate-300 focus:ring-marca-secundario/30 focus:border-marca-secundario'
-                                    )}
-                                />
+                                <Select
+                                    id="motivo-pausa"
+                                    value={motivoPausa}
+                                    onChange={(e) => { setMotivoPausa(e.target.value); setErrorPausa(false); }}
+                                    error={errorPausa && !motivoPausa}
+                                    helperText={errorPausa && !motivoPausa ? 'Selecciona un motivo para continuar.' : ''}
+                                >
+                                    <option value="" disabled hidden>Selecciona el motivo…</option>
+                                    {MOTIVOS_PAUSA.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </Select>
                             </div>
-                        )}
-                    </div>
-                )}
 
-                {vista === 'resolver' && (
-                    <div className="flex flex-col gap-5">
-                        {timePhase === 'preguntando' && (
-                            <div className="flex flex-col gap-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
-                                        <Icon name="timer" size="sm" className="text-amber-700" fill />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-amber-800">
-                                            {isAtrasada ? '¿La tarea se entregó fuera de tiempo?' : '¿El tiempo registrado es correcto?'}
-                                        </p>
-                                        <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                                            {isAtrasada
-                                                ? `El tiempo registrado (${formatMins(elapsedMins)}) supera el límite. Si concluiste la tarea antes y olvidaste registrarla, puedes ingresar la fecha y el tiempo real trabajado.`
-                                                : `El sistema ha medido un total de ${formatMins(elapsedMins)}. Puedes confirmarlo o ajustarlo manualmente.`
-                                            }
-                                        </p>
-                                    </div>
+                            {motivoPausa === 'Otro motivo' && (
+                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <Label htmlFor="nota-otro" error={errorPausa && !notaOtro.trim()}>
+                                        Describe el motivo *
+                                    </Label>
+                                    <textarea
+                                        id="nota-otro"
+                                        rows={3}
+                                        value={notaOtro}
+                                        onChange={(e) => { setNotaOtro(e.target.value); setErrorPausa(false); }}
+                                        placeholder="Explica brevemente el motivo de la pausa…"
+                                        className={cn(
+                                            'w-full border rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 transition-all',
+                                            errorPausa && !notaOtro.trim()
+                                                ? 'border-red-400 focus:ring-red-200'
+                                                : 'border-slate-300 focus:ring-marca-secundario/30 focus:border-marca-secundario'
+                                        )}
+                                    />
                                 </div>
+                            )}
+                        </div>
+                    )}
 
-                                <div className="text-center py-2">
-                                    <span className="text-4xl font-extrabold font-mono text-amber-700">
-                                        {formatMins(elapsedMins)}
-                                    </span>
-                                    <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">
-                                        Tiempo medido por el sistema
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setTimePhase('confirmado')}
-                                        className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
-                                    >
-                                        <Icon name="check" size="sm" />
-                                        {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
-                                    </button>
-
-                                    {isAtrasada ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFechaFinManual(isoToDateInput(new Date().toISOString()));
-                                                const base = elapsedMins > 0 ? elapsedMins : 60;
-                                                const redondeado = Math.round(base / 5) * 5;
-                                                setTiempoManualMins(Math.min(redondeado, 1435) || 60);
-                                                setTimePhase('atrasada_fecha');
-                                            }}
-                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
-                                        >
-                                            <Icon name="event" size="sm" />
-                                            No, especificar cierre
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const base = elapsedMins > 0 ? elapsedMins : 60;
-                                                const redondeado = Math.round(base / 5) * 5;
-                                                const capped = Math.min(redondeado, 1435);
-                                                setTiempoManualMins(capped || 60);
-                                                setTimePhase('manual');
-                                            }}
-                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
-                                        >
-                                            <Icon name="edit" size="sm" />
-                                            No, corregir tiempo
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {timePhase === 'manual' && (
-                            <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex items-center gap-2">
-                                    <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
-                                    <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
-                                </div>
-                                <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
-                                {tiempoManualMins === 0 && (
-                                    <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
-                                        <Icon name="warning" size="xs" />
-                                        El tiempo debe ser mayor a 0 minutos
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        {timePhase === 'atrasada_fecha' && (
-                            <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
-                                    <div className="flex items-center gap-2">
-                                        <Icon name="event_available" size="sm" className="text-marca-primario" />
-                                        <p className="text-sm font-bold text-slate-700">Fecha real de término</p>
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <Label htmlFor="fecha-fin-manual">Selecciona el día que la terminaste *</Label>
-                                        <input
-                                            id="fecha-fin-manual"
-                                            type="date"
-                                            min={minDate}
-                                            max={maxDate}
-                                            value={fechaFinManual}
-                                            onChange={(e) => setFechaFinManual(e.target.value)}
-                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
-                                        />
-                                        {!isFechaFinValida && (
-                                            <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
-                                                <Icon name="warning" size="xs" />
-                                                La fecha debe estar entre la creación del ticket y hoy.
+                    {vista === 'resolver' && (
+                        <div className="flex flex-col gap-5">
+                            {timePhase === 'preguntando' && (
+                                <div className="flex flex-col gap-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
+                                            <Icon name="timer" size="sm" className="text-amber-700" fill />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-amber-800">
+                                                {isAtrasada ? '¿La tarea se entregó fuera de tiempo?' : '¿El tiempo registrado es correcto?'}
                                             </p>
+                                            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                                                {isAtrasada
+                                                    ? `El tiempo registrado (${formatMins(elapsedMins)}) supera el límite. Si concluiste la tarea antes y olvidaste registrarla, puedes ingresar la fecha y el tiempo real trabajado.`
+                                                    : `El sistema ha medido un total de ${formatMins(elapsedMins)}. Puedes confirmarlo o ajustarlo manualmente.`
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-center py-2">
+                                        <span className="text-4xl font-extrabold font-mono text-amber-700">
+                                            {formatMins(elapsedMins)}
+                                        </span>
+                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">
+                                            Tiempo medido por el sistema
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setTimePhase('confirmado')}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="check" size="sm" />
+                                            {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
+                                        </button>
+
+                                        {isAtrasada ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                    const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                    const redondeado = Math.round(base / 5) * 5;
+                                                    setTiempoManualMins(Math.min(redondeado, 1435) || 60);
+                                                    setTimePhase('atrasada_fecha');
+                                                }}
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                            >
+                                                <Icon name="event" size="sm" />
+                                                No, especificar cierre
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                    const redondeado = Math.round(base / 5) * 5;
+                                                    const capped = Math.min(redondeado, 1435);
+                                                    setTiempoManualMins(capped || 60);
+                                                    setTimePhase('manual');
+                                                }}
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                            >
+                                                <Icon name="edit" size="sm" />
+                                                No, corregir tiempo
+                                            </button>
                                         )}
                                     </div>
                                 </div>
+                            )}
 
-                                <div className="flex flex-col gap-3">
+                            {timePhase === 'manual' && (
+                                <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="flex items-center gap-2">
                                         <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
-                                        <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
+                                        <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
                                     </div>
                                     <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
                                     {tiempoManualMins === 0 && (
-                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
                                             <Icon name="warning" size="xs" />
                                             El tiempo debe ser mayor a 0 minutos
                                         </p>
                                     )}
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {timePhase !== 'preguntando' && (
-                            <>
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
-                                    <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                        <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
-                                        <span>Tiempo total a registrar</span>
-                                        {(timePhase === 'manual' || timePhase === 'atrasada_fecha') && (
-                                            <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                Manual
-                                            </span>
+                            {timePhase === 'atrasada_fecha' && (
+                                <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name="event_available" size="sm" className="text-marca-primario" />
+                                            <p className="text-sm font-bold text-slate-700">Fecha real de término</p>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label htmlFor="fecha-fin-manual">Selecciona el día que la terminaste *</Label>
+                                            <input
+                                                id="fecha-fin-manual"
+                                                type="date"
+                                                min={minDate}
+                                                max={maxDate}
+                                                value={fechaFinManual}
+                                                onChange={(e) => setFechaFinManual(e.target.value)}
+                                                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
+                                            />
+                                            {!isFechaFinValida && (
+                                                <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                                    <Icon name="warning" size="xs" />
+                                                    La fecha debe estar entre la creación del ticket y hoy.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
+                                            <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
+                                        </div>
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                        {tiempoManualMins === 0 && (
+                                            <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                                <Icon name="warning" size="xs" />
+                                                El tiempo debe ser mayor a 0 minutos
+                                            </p>
                                         )}
-                                    </span>
-                                    <span className="text-base sm:text-lg font-extrabold font-mono text-estado-resuelto self-start sm:self-auto ml-5 sm:ml-0">
-                                        {tiempoDisplay}
-                                    </span>
+                                    </div>
                                 </div>
+                            )}
 
-                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <Label htmlFor="nota-resolver">
-                                        Nota de resolución <span className="font-normal text-slate-400 text-xs sm:text-sm">(opcional)</span>
-                                    </Label>
-                                    <textarea
-                                        id="nota-resolver"
-                                        rows={3}
-                                        value={notaResolver}
-                                        onChange={(e) => setNotaResolver(e.target.value)}
-                                        placeholder="Describe las acciones realizadas para resolver el ticket..."
-                                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-base sm:text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
+                            {timePhase !== 'preguntando' && (
+                                <>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
+                                        <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                            <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
+                                            <span>Tiempo total a registrar</span>
+                                            {(timePhase === 'manual' || timePhase === 'atrasada_fecha') && (
+                                                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                    Manual
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="text-base sm:text-lg font-extrabold font-mono text-estado-resuelto self-start sm:self-auto ml-5 sm:ml-0">
+                                            {tiempoDisplay}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <Label htmlFor="nota-resolver">
+                                            Nota de resolución <span className="font-normal text-slate-400 text-xs sm:text-sm">(opcional)</span>
+                                        </Label>
+                                        <textarea
+                                            id="nota-resolver"
+                                            rows={3}
+                                            value={notaResolver}
+                                            onChange={(e) => setNotaResolver(e.target.value)}
+                                            placeholder="Describe las acciones realizadas para resolver el ticket..."
+                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-base sm:text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
+                                        />
+                                    </div>
+
+                                    <EvidenceSection
+                                        archivos={archivos}
+                                        onAgregar={handleAgregar}
+                                        onEliminar={handleEliminar}
                                     />
-                                </div>
+                                </>
+                            )}
+                        </div>
+                    )}
 
-                                <EvidenceSection
-                                    archivos={archivos}
-                                    onAgregar={handleAgregar}
-                                    onEliminar={handleEliminar}
-                                />
-                            </>
-                        )}
-                    </div>
-                )}
-
+                </div>
             </ModalBody>
 
             <ModalFooter>

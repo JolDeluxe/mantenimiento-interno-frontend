@@ -1,3 +1,4 @@
+// src/features/tickets/views/tickets-hoy-mobile.jsx
 import { useState } from 'react';
 import { GlassFab, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
@@ -9,6 +10,7 @@ import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { MobileHoyFilterBar } from '../components/hoy/mobile-hoy-filter-bar';
+import { HoySummaryBar } from '../components/hoy/hoy-summary-bar';
 import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
@@ -101,6 +103,7 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtras
 
 export const TicketsHoyMobile = ({
     tickets,
+    highlightId, // <-- Prop recibida del padre
     loading,
     submitting,
     currentUser,
@@ -109,6 +112,8 @@ export const TicketsHoyMobile = ({
     onDateOffsetChange,
     totalHoy,
     totalManana,
+    totalParaSummary,
+    conteos,
     totalAtrasadas,
     query,
     onSearchChange,
@@ -120,6 +125,12 @@ export const TicketsHoyMobile = ({
     onPrioridadChange,
     filtroResponsable,
     onResponsableChange,
+    mostrarAtrasadas,
+    onToggleAtrasadas,
+    mostrarRechazadas,
+    onToggleRechazadas,
+    existenciaGlobal,
+    totalAtrasadasGlobal,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -138,7 +149,6 @@ export const TicketsHoyMobile = ({
 
     return (
         <>
-            {/* Toggle de fecha */}
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
                     <GlassDateToggle
@@ -150,7 +160,14 @@ export const TicketsHoyMobile = ({
                     />
                 </div>
 
-                {/* Barra de filtros */}
+                <HoySummaryBar
+                    totalParaSummary={totalParaSummary}
+                    conteos={conteos}
+                    filtroActual={filtroEstado}
+                    onFilterChange={onEstadoChange}
+                    loading={loading}
+                />
+
                 <MobileHoyFilterBar
                     query={query}
                     onSearchChange={onSearchChange}
@@ -163,11 +180,17 @@ export const TicketsHoyMobile = ({
                     filtroResponsable={filtroResponsable}
                     onResponsableChange={onResponsableChange}
                     opcionesResponsables={tecnicos}
+                    mostrarAtrasadas={mostrarAtrasadas}
+                    onToggleAtrasadas={onToggleAtrasadas}
+                    mostrarRechazadas={mostrarRechazadas}
+                    onToggleRechazadas={onToggleRechazadas}
+                    existenciaGlobal={existenciaGlobal}
+                    totalAtrasadasGlobal={totalAtrasadasGlobal}
                     currentUser={currentUser}
+                    hideStatusFilter
                 />
             </div>
 
-            {/* Lista de tarjetas */}
             <div className={cn('flex flex-col gap-3 px-1 pt-1', 'pb-44')}>
                 {loading
                     ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
@@ -198,6 +221,7 @@ export const TicketsHoyMobile = ({
                                 <HoyTicketCard
                                     key={ticket.id}
                                     ticket={ticket}
+                                    isHighlighted={highlightId === String(ticket.id)} // <-- Inyectado
                                     currentUser={currentUser}
                                     onViewDetail={setDetailTarget}
                                     onEdit={setEditTarget}
@@ -210,7 +234,6 @@ export const TicketsHoyMobile = ({
                 }
             </div>
 
-            {/* FABs */}
             <div className="md:hidden">
                 <GlassFab
                     icon="refresh"
@@ -237,7 +260,6 @@ export const TicketsHoyMobile = ({
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
-            {/* Modales */}
             <HoyDetailModal
                 isOpen={Boolean(detailTarget)}
                 onClose={() => setDetailTarget(null)}

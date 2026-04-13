@@ -1,3 +1,4 @@
+// src/features/tickets/views/tickets-hoy-desktop.jsx
 import { useState } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
@@ -9,6 +10,7 @@ import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { HoyAddButton } from '../components/hoy/hoy-add-button';
 import { HoyFilterBar } from '../components/hoy/hoy-filter-bar';
+import { HoySummaryBar } from '../components/hoy/hoy-summary-bar';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -75,6 +77,7 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas 
 
 export const TicketsHoyDesktop = ({
     tickets,
+    highlightId, // <-- Prop recibida del padre
     loading,
     submitting,
     currentUser,
@@ -83,6 +86,8 @@ export const TicketsHoyDesktop = ({
     onDateOffsetChange,
     totalHoy,
     totalManana,
+    totalParaSummary,
+    conteos,
     totalAtrasadas,
     query,
     onSearchChange,
@@ -94,6 +99,12 @@ export const TicketsHoyDesktop = ({
     onPrioridadChange,
     filtroResponsable,
     onResponsableChange,
+    mostrarAtrasadas,
+    onToggleAtrasadas,
+    mostrarRechazadas,
+    onToggleRechazadas,
+    existenciaGlobal,
+    totalAtrasadasGlobal,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -111,7 +122,6 @@ export const TicketsHoyDesktop = ({
         <div className="flex flex-col gap-5">
             <RefreshFab bottom="32px" right="32px" size={48} />
 
-            {/* Encabezado */}
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
                     Tareas del Día
@@ -131,7 +141,14 @@ export const TicketsHoyDesktop = ({
                 </p>
             </div>
 
-            {/* Toggle de fecha + botón crear */}
+            <HoySummaryBar
+                totalParaSummary={totalParaSummary}
+                conteos={conteos}
+                filtroActual={filtroEstado}
+                onFilterChange={onEstadoChange}
+                loading={loading}
+            />
+
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle
                     selected={dateOffset}
@@ -147,7 +164,6 @@ export const TicketsHoyDesktop = ({
                 )}
             </div>
 
-            {/* Barra de filtros */}
             <HoyFilterBar
                 query={query}
                 onSearchChange={onSearchChange}
@@ -160,10 +176,16 @@ export const TicketsHoyDesktop = ({
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
+                mostrarAtrasadas={mostrarAtrasadas}
+                onToggleAtrasadas={onToggleAtrasadas}
+                mostrarRechazadas={mostrarRechazadas}
+                onToggleRechazadas={onToggleRechazadas}
+                existenciaGlobal={existenciaGlobal}
+                totalAtrasadasGlobal={totalAtrasadasGlobal}
                 currentUser={currentUser}
+                hideStatusFilter
             />
 
-            {/* Grid de tarjetas */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
@@ -177,7 +199,7 @@ export const TicketsHoyDesktop = ({
                                     Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}
                                 </p>
                                 <p className="text-sm text-slate-400">
-                                    Las tareas con fecha de vencimiento aparecerán aquí.
+                                    Las tareas correspondientes a este filtro aparecerán aquí.
                                 </p>
                             </div>
                         )
@@ -193,6 +215,7 @@ export const TicketsHoyDesktop = ({
                                 <HoyTicketCard
                                     key={ticket.id}
                                     ticket={ticket}
+                                    isHighlighted={highlightId === String(ticket.id)} // <-- Inyectado
                                     currentUser={currentUser}
                                     onViewDetail={setDetailTarget}
                                     onEdit={setEditTarget}
@@ -205,7 +228,6 @@ export const TicketsHoyDesktop = ({
                 }
             </div>
 
-            {/* Modales */}
             <HoyDetailModal
                 isOpen={Boolean(detailTarget)}
                 onClose={() => setDetailTarget(null)}

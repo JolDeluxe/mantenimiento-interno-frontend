@@ -18,6 +18,7 @@ import TicketsPage from '@/features/tickets/pages/tickets-page';
 import TicketsBandejaPage from '@/features/tickets/pages/tickets-bandeja';
 import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
+import NotifyPage from '@/features/notificaciones/pages/notify-page';
 
 // Mapeo seguro de la fuente de verdad para inyectar en el router
 const ROLES = {
@@ -26,6 +27,7 @@ const ROLES = {
   ticketsBandeja: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-bandeja')?.allowedRoles || [],
   ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
   usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
+  notificaciones: MODULES_CONFIG.find(m => m.id === 'notificaciones')?.allowedRoles || [],
 };
 
 export const AppRoutes = () => {
@@ -66,6 +68,11 @@ export const AppRoutes = () => {
           {/* Módulo: Usuarios */}
           <Route element={<RoleGuard allowedRoles={ROLES.usuarios} />}>
             <Route path="/usuarios" element={<UsersPage />} />
+          </Route>
+
+          {/* Módulo: Notificaciones */}
+          <Route element={<RoleGuard allowedRoles={ROLES.notificaciones} />}>
+            <Route path="/notificaciones" element={<NotifyPage />} />
           </Route>
 
         </Route>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '../historico/ticket-status-badge';
 import { isPastDate, formatFechaHora } from '@/lib/date';
@@ -10,47 +10,37 @@ const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
 
 const isVencida = (ticket) => {
     if (!ticket.fechaVencimiento) return false;
-    // Resuelto no se marca como vencida de forma alarmante, está esperando aprobación.
     if (['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
     return isPastDate(ticket.fechaVencimiento);
 };
 
-// Generador de etiquetas descriptivas unificadas para estados que requieren atención especial
 const getStatusLabelData = (ticket) => {
     if (ticket.estado === 'RECHAZADO') {
         return {
             label: 'Atención requerida: Tarea rechazada',
             icon: 'warning',
             colorClasses: 'text-white bg-estado-rechazado border-estado-rechazado shadow-sm',
-            pulse: true
+            pulse: true,
         };
     }
-
     if (ticket.estado === 'RESUELTO') {
         return {
             label: 'Tarea en espera de aprobación',
             icon: 'hourglass_top',
             colorClasses: 'text-estado-resuelto bg-estado-resuelto/10 border-estado-resuelto/20',
-            pulse: false
+            pulse: false,
         };
     }
-
     if (ticket.estado === 'EN_PAUSA') {
-        // Buscar cuándo se pausó (por defecto updatedAt, pero se afina con el último intervalo si existe)
         let pauseDate = ticket.updatedAt ? new Date(ticket.updatedAt) : new Date();
         if (ticket.intervalos?.length > 0) {
             const lastInterval = ticket.intervalos[ticket.intervalos.length - 1];
-            if (lastInterval.fin) {
-                pauseDate = new Date(lastInterval.fin);
-            }
+            if (lastInterval.fin) pauseDate = new Date(lastInterval.fin);
         }
-
-        // Cálculo de medianoche a medianoche para cruces de día exactos
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         const fechaPausa = new Date(pauseDate);
         fechaPausa.setHours(0, 0, 0, 0);
-
         const diffDays = Math.round((hoy.getTime() - fechaPausa.getTime()) / (1000 * 60 * 60 * 24));
 
         let label = 'Tarea pausada';
@@ -61,10 +51,9 @@ const getStatusLabelData = (ticket) => {
             label,
             icon: 'pause_circle',
             colorClasses: 'text-slate-500 bg-slate-100 border-slate-200',
-            pulse: false
+            pulse: false,
         };
     }
-
     if (ticket.estado === 'EN_PROGRESO') {
         let extraMins = 0;
         const abierto = ticket.intervalos?.find((i) => !i.fin);
@@ -74,7 +63,6 @@ const getStatusLabelData = (ticket) => {
                 extraMins = Math.max(0, Math.floor((Date.now() - inicioMs) / 60000));
             }
         }
-
         const acum = (ticket.duracionReal || 0) + extraMins;
         let timeString = '';
         if (acum < 60) timeString = `${acum} min`;
@@ -83,15 +71,13 @@ const getStatusLabelData = (ticket) => {
             const m = acum % 60;
             timeString = m > 0 ? `${h} h ${m} min` : `${h} h`;
         }
-
         return {
             label: `${timeString} en progreso`,
             icon: 'timer',
             colorClasses: 'text-estado-en-progreso bg-estado-en-progreso/10 border-estado-en-progreso/20',
-            pulse: true
+            pulse: true,
         };
     }
-
     return null;
 };
 
@@ -114,10 +100,26 @@ export const HoyTicketCard = ({
     onChangeStatus,
     onReview,
     onCancel,
+    isHighlighted = false,
     className,
 }) => {
     const { rol, id: userId } = currentUser ?? {};
     const [responsablesExpanded, setResponsablesExpanded] = useState(false);
+    const [showHighlight, setShowHighlight] = useState(false);
+    const cardRef = useRef(null);
+
+    useEffect(() => {
+        if (!isHighlighted) return;
+        setShowHighlight(true);
+        const raf = requestAnimationFrame(() => {
+            cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        const timer = setTimeout(() => setShowHighlight(false), 3000);
+        return () => {
+            clearTimeout(timer);
+            cancelAnimationFrame(raf);
+        };
+    }, [isHighlighted]);
 
     const esAdmin = ROLES_ADMIN.includes(rol);
     const esSupervisor = ROLES_SUPERVISOR.includes(rol);
@@ -162,13 +164,23 @@ export const HoyTicketCard = ({
         ? ticket.responsables
         : ticket.responsables?.slice(0, 2);
 
+    const baseClasses = esRechazada
+        ? 'border-estado-rechazado/40 bg-red-50/40'
+        : vencida
+            ? 'border-orange-300/50 bg-orange-50/30'
+            : 'border-slate-200';
+
     return (
-        <div className={cn(
-            'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full transition-colors',
-            esRechazada ? 'border-estado-rechazado/40 bg-red-50/40' :
-                vencida ? 'border-orange-300/50 bg-orange-50/30' : 'border-slate-200',
-            className
-        )}>
+        <div
+            ref={cardRef}
+            className={cn(
+                'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full transition-all duration-700',
+                showHighlight
+                    ? 'border-yellow-400 bg-yellow-50/50 shadow-[0_0_0_4px_rgba(250,204,21,0.45),0_8px_24px_rgba(250,204,21,0.2)] -translate-y-0.5'
+                    : baseClasses,
+                className
+            )}
+        >
             <div
                 className="flex items-start justify-between gap-2 cursor-pointer active:opacity-70 transition-opacity"
                 onClick={() => onViewDetail?.(ticket)}
@@ -199,13 +211,12 @@ export const HoyTicketCard = ({
                 </div>
             </div>
 
-            {/* Renderizado dinámico de la etiqueta de estado extendida */}
             {statusLabelData && (
-                <div className={cn("flex items-center gap-2 px-3 py-2 border rounded-lg", statusLabelData.colorClasses)}>
+                <div className={cn('flex items-center gap-2 px-3 py-2 border rounded-lg', statusLabelData.colorClasses)}>
                     <Icon
                         name={statusLabelData.icon}
                         size="xs"
-                        className={cn("shrink-0", statusLabelData.pulse && "animate-pulse")}
+                        className={cn('shrink-0', statusLabelData.pulse && 'animate-pulse')}
                     />
                     <span className="text-xs font-bold font-mono">
                         {statusLabelData.label}
@@ -346,6 +357,6 @@ export const HoyTicketCard = ({
                     </button>
                 )}
             </div>
-        </div >
+        </div>
     );
 };

@@ -3,6 +3,17 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
+import { isPastDate, formatFechaHora } from '@/lib/date';
+import { cn } from '@/utils/cn';
+
+// Helper local para formatear los minutos del sistema
+const formatMins = (mins) => {
+    if (!mins) return '0 min';
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h} h ${m} min` : `${h} h`;
+};
 
 /**
  * Modal de revisión/validación de un ticket RESUELTO.
@@ -23,6 +34,8 @@ export const TicketReviewModal = ({
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
     const notaTecnico = resolucion?.nota || '';
+    const actorResolucion = resolucion?.actor || null;
+    const fechaResolucion = resolucion?.createdAt || null;
 
     const imagenesEvidenciaBrutas = resolucion?.imagenes?.length > 0
         ? resolucion.imagenes
@@ -31,6 +44,20 @@ export const TicketReviewModal = ({
     const imagenesEvidenciaUrls = imagenesEvidenciaBrutas
         .map(img => typeof img === 'string' ? img : img?.url)
         .filter(Boolean);
+
+    // Lógica de parsing para el tiempo manual vs sistema
+    const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
+    const isManual = !!matchManual;
+    const tiempoManualStr = matchManual ? matchManual[1] : null;
+    const tiempoSistemaStr = formatMins(ticket?.duracionReal || 0);
+    const tiempoAMostrar = isManual ? tiempoManualStr : tiempoSistemaStr;
+
+    // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
+    const notaLimpia = notaTecnico
+        .replace(/\[TIEMPO_MANUAL:(.+?)\]/g, '')
+        .replace(/\[ENTREGA_ATRASADA_MANUAL\]/g, '')
+        .replace(/\[RUTINA\]/g, '')
+        .trim();
 
     useEffect(() => {
         if (isOpen) {
@@ -80,6 +107,12 @@ export const TicketReviewModal = ({
                 />
                 <ModalBody>
                     <div className="flex flex-col gap-5">
+                        {isPastDate(ticket?.fechaVencimiento) && (
+                            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm">
+                                <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
+                                <p><strong>¡Aviso de Retraso!</strong> Esta tarea fue entregada por el técnico <strong>fuera de tiempo</strong> según su fecha de vencimiento.</p>
+                            </div>
+                        )}
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                             <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Ticket resuelto</p>
@@ -92,20 +125,47 @@ export const TicketReviewModal = ({
                             )}
                         </div>
 
-                        {(notaTecnico || imagenesEvidenciaUrls?.length > 0) && (
-                            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-4">
-                                <p className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                    <Icon name="info" size="xs" /> Evidencia de resolución
-                                </p>
+                        {(notaTecnico || imagenesEvidenciaUrls?.length > 0 || actorResolucion) && (
+                            <div className="flex flex-col gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50/40 animate-in fade-in slide-in-from-top-2 duration-300">
 
-                                {notaTecnico && (
-                                    <p className="text-sm text-slate-700 italic bg-white p-3 rounded border border-blue-100/50 mb-3 shadow-sm">
-                                        "{notaTecnico}"
+                                {/* Cabecera de evidencia */}
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Icon name="fact_check" size="sm" className="text-blue-600" fill />
+                                    <span className="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest">
+                                        Evidencia de resolución
+                                    </span>
+                                </div>
+
+                                {/* Banner Indicador de Tiempo (Manual vs Sistema) */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
+                                            <Icon name={isManual ? "edit_note" : "timer"} size="sm" className={isManual ? "text-amber-600" : "text-blue-600"} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                Tiempo total
+                                            </span>
+                                            <span className="text-sm font-extrabold font-mono text-slate-700">
+                                                {tiempoAMostrar}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className={cn("px-2 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider text-center self-start sm:self-auto", isManual ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-600 border border-blue-100")}>
+                                        {isManual ? 'Registro Manual' : 'Medido por Sistema'}
+                                    </div>
+                                </div>
+
+                                {/* Nota Limpia */}
+                                {notaLimpia && (
+                                    <p className="text-sm text-slate-700 italic bg-white p-3 rounded border border-blue-100/50 shadow-sm leading-relaxed mt-1">
+                                        "{notaLimpia}"
                                     </p>
                                 )}
 
+                                {/* Imágenes */}
                                 {imagenesEvidenciaUrls?.length > 0 && (
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-2 mt-1">
                                         <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
                                             <Icon name="image" size="xs" /> Archivos adjuntos ({imagenesEvidenciaUrls.length})
                                         </p>
@@ -128,6 +188,32 @@ export const TicketReviewModal = ({
                                                 </button>
                                             ))}
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Actor que realizó la acción */}
+                                {actorResolucion && (
+                                    <div className="flex items-center gap-2 pt-3 mt-1 border-t border-blue-200/50">
+                                        {actorResolucion.imagen ? (
+                                            <img
+                                                src={actorResolucion.imagen}
+                                                alt=""
+                                                className="w-6 h-6 rounded-full object-cover border border-white shrink-0 shadow-sm"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-blue-100 text-blue-600">
+                                                <Icon name="person" size="xs" />
+                                            </div>
+                                        )}
+                                        <span className="text-xs font-semibold text-slate-700 opacity-90">
+                                            {actorResolucion.nombre}
+                                        </span>
+                                        {fechaResolucion && (
+                                            <span className="text-[10px] font-bold text-slate-500 opacity-80 ml-auto shrink-0 tracking-wide uppercase">
+                                                {formatFechaHora(fechaResolucion)}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

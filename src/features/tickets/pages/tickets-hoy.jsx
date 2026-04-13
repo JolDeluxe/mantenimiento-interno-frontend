@@ -1,4 +1,6 @@
+// src/features/tickets/pages/tickets-hoy.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { notify } from '@/components/notification/adaptive-notify';
@@ -9,16 +11,11 @@ import { TicketsHoyMobile } from '../views/tickets-hoy-mobile';
 import { HoyFormModal } from '../components/hoy/hoy-form-modal';
 import { MobileHoyFormModal } from '../components/hoy/mobile-hoy-form-modal';
 
-// ── Constantes ────────────────────────────────────────────────────────────────
 const PRIORIDAD_ORDER = { CRITICA: 4, ALTA: 3, MEDIA: 2, BAJA: 1 };
-
-// Estados explícitamente vetados de la vista "Hoy"
 const ESTADOS_EXCLUIDOS = ['PENDIENTE', 'CANCELADA', 'CERRADO'];
+const ESTADOS_VALIDOS_ATRASADAS = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA'];
+const ESTADOS_SUMMARY = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA', 'RESUELTO'];
 
-// Para definir si una tarea sigue activa pero está atrasada
-const ESTADOS_VALIDOS_ATRASADAS = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA', 'RECHAZADO', 'RESUELTO'];
-
-// ── Utilidades de fecha ───────────────────────────────────────────────────────
 const getDateBounds = (offset = 0) => {
     const d = new Date();
     d.setDate(d.getDate() + offset);
@@ -34,16 +31,13 @@ const isOnDate = (isoStr, offset = 0) => {
     return d >= start && d <= end;
 };
 
-// Tarea atrasada = vence antes de hoy Y sigue activa
 const esAtrasadaActiva = (ticket) =>
     Boolean(ticket.fechaVencimiento) &&
     isPastDate(ticket.fechaVencimiento) &&
     ESTADOS_VALIDOS_ATRASADAS.includes(ticket.estado);
 
-// BYPASS ESTRICTO: Las tareas rechazadas SIEMPRE se consideran de "Hoy" para obligar su atención.
 const perteneceAHoy = (ticket) => {
     if (ticket.estado === 'RECHAZADO') return true;
-
     if (!ticket.fechaVencimiento) return false;
     return isOnDate(ticket.fechaVencimiento, 0) || esAtrasadaActiva(ticket);
 };
@@ -60,6 +54,10 @@ export default function TicketsHoyPage() {
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
 
+    // Extracción del parámetro de la URL para el resaltado
+    const [searchParams, setSearchParams] = useSearchParams();
+    const highlightId = searchParams.get('highlight');
+
     const {
         tickets: allTickets,
         tecnicos,
@@ -74,22 +72,27 @@ export default function TicketsHoyPage() {
 
     const [dateOffset, setDateOffset] = useState(0);
     const [showCreate, setShowCreate] = useState(false);
-
-    // ── Estados de filtros ────────────────────────────────────────────────────
     const [query, setQuery] = useState('');
-    const [filtroEstado, setFiltroEstado] = useState('');
+    const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
+    const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
+    const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
 
     const handleDateOffsetChange = useCallback((offset) => {
         setDateOffset(offset);
         setQuery('');
-        setFiltroEstado('');
+        setFiltroEstado('TODOS');
         setFiltroTipo('');
         setFiltroPrioridad('');
         setFiltroResponsable('');
-    }, []);
+        setMostrarAtrasadas(false);
+        setMostrarRechazadas(false);
+
+        // Limpiar el highlight de la URL al cambiar de pestaña para evitar comportamientos fantasma
+        if (highlightId) setSearchParams({});
+    }, [highlightId, setSearchParams]);
 
     const loadTickets = useCallback(() => {
         fetchTickets({ limit: 500 }).catch(() => notify.error('Error al cargar las tareas.'));
@@ -98,68 +101,101 @@ export default function TicketsHoyPage() {
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    // ── Ordenamiento Dinámico Basado en Rol ───────────────────────────────────
     const customSortHoy = useCallback((tickets) => {
         const rol = currentUser?.rol;
         const esAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(rol);
 
-        // Mapas de pesos para ordenación de estados
         const STATUS_ORDER = esAdmin
             ? { RESUELTO: 5, EN_PAUSA: 4, EN_PROGRESO: 3, ASIGNADA: 2, RECHAZADO: 2 }
             : { EN_PAUSA: 5, EN_PROGRESO: 4, ASIGNADA: 3, RECHAZADO: 3, RESUELTO: 2 };
 
         return [...tickets].sort((a, b) => {
-            // 1. Rezagadas que estén estrictamente ASIGNADAS van al tope global
+            // Prioridad absoluta al ticket que viene en la URL
+            if (highlightId) {
+                if (String(a.id) === highlightId) return -1;
+                if (String(b.id) === highlightId) return 1;
+            }
+
             const aAtrasadaAsig = esAtrasadaActiva(a) && a.estado === 'ASIGNADA';
             const bAtrasadaAsig = esAtrasadaActiva(b) && b.estado === 'ASIGNADA';
             if (aAtrasadaAsig !== bAtrasadaAsig) return aAtrasadaAsig ? -1 : 1;
 
-            // 2. Orden jerárquico por Estado según el rol
             const aStatusW = STATUS_ORDER[a.estado] || 0;
             const bStatusW = STATUS_ORDER[b.estado] || 0;
             if (aStatusW !== bStatusW) return bStatusW - aStatusW;
 
-            // 3. Prioridad (Crítica > Alta > Media > Baja)
             const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;
             const bPrio = PRIORIDAD_ORDER[b.prioridad] || 0;
             if (aPrio !== bPrio) return bPrio - aPrio;
 
-            // 4. Fecha de vencimiento (más antigua primero)
             return new Date(a.fechaVencimiento || 0).getTime() - new Date(b.fechaVencimiento || 0).getTime();
         });
-    }, [currentUser]);
+    }, [currentUser, highlightId]);
 
-    // ── Pre-procesamiento y filtrado maestro ──────────────────────────────────
     const getBaseTickets = useCallback(() => {
         let base = allTickets.filter(t => !ESTADOS_EXCLUIDOS.includes(t.estado));
-
-        // Para técnicos: Aislamiento absoluto de sus propias tareas
         if (currentUser?.rol === 'TECNICO') {
             base = base.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser.id)));
         }
         return base;
     }, [allTickets, currentUser]);
 
+    // Cálculo exclusivo para el Summary Bar (aislado de los filtros del usuario)
+    const ticketsTabActual = useMemo(() => {
+        const base = getBaseTickets();
+        return dateOffset === 0 ? base.filter(perteneceAHoy) : base.filter(t => isOnDate(t.fechaVencimiento, dateOffset));
+    }, [getBaseTickets, dateOffset]);
+
+    const conteos = useMemo(() => {
+        return ticketsTabActual.reduce((acc, t) => {
+            acc[t.estado] = (acc[t.estado] || 0) + 1;
+            return acc;
+        }, {});
+    }, [ticketsTabActual]);
+
+    const totalParaSummary = useMemo(() => {
+        return Object.entries(conteos).reduce((acc, [estado, count]) => {
+            return ESTADOS_SUMMARY.includes(estado) ? acc + count : acc;
+        }, 0);
+    }, [conteos]);
+
     const ticketsFiltrados = useMemo(() => {
-        let filtered = getBaseTickets();
+        let filtered = ticketsTabActual;
 
-        // Filtro de Pestaña (Hoy vs Mañana)
-        filtered = filtered.filter(
-            dateOffset === 0 ? perteneceAHoy : (t) => isOnDate(t.fechaVencimiento, dateOffset)
-        );
-
-        // Filtros de barra (Usuario)
-        if (filtroEstado) filtered = filtered.filter(t => t.estado === filtroEstado);
-        if (filtroTipo) filtered = filtered.filter(t => t.tipo === filtroTipo);
-        if (filtroPrioridad) filtered = filtered.filter(t => t.prioridad === filtroPrioridad);
-        if (filtroResponsable) {
-            filtered = filtered.filter(t =>
-                t.responsables?.some(r => String(r.id) === String(filtroResponsable))
-            );
+        // Si venimos de una notificación, aseguramos que el ticket se inyecte en la vista 
+        // aunque de manera normal no cumpliera con las fechas.
+        if (highlightId && !filtered.some(t => String(t.id) === highlightId)) {
+            const ticketResaltado = allTickets.find(t => String(t.id) === highlightId);
+            if (ticketResaltado) {
+                filtered = [ticketResaltado, ...filtered];
+            }
         }
+
+        if (mostrarAtrasadas || mostrarRechazadas) {
+            filtered = getBaseTickets().filter(t => {
+                // El ticket resaltado ignora las exclusiones
+                if (highlightId && String(t.id) === highlightId) return true;
+
+                let match = true;
+                if (mostrarAtrasadas) match = match && esAtrasadaActiva(t);
+                if (mostrarRechazadas) match = match && t.estado === 'RECHAZADO';
+                return match;
+            });
+        }
+
+        // El ticket resaltado SIEMPRE sobrevive a los selectbox de filtrado
+        if (filtroEstado !== 'TODOS') filtered = filtered.filter(t => t.estado === filtroEstado || (highlightId && String(t.id) === highlightId));
+        if (filtroTipo) filtered = filtered.filter(t => t.tipo === filtroTipo || (highlightId && String(t.id) === highlightId));
+        if (filtroPrioridad) filtered = filtered.filter(t => t.prioridad === filtroPrioridad || (highlightId && String(t.id) === highlightId));
+
+        if (filtroResponsable) {
+            filtered = filtered.filter(t => t.responsables?.some(r => String(r.id) === String(filtroResponsable)) || (highlightId && String(t.id) === highlightId));
+        }
+
         if (query) {
             const q = query.toLowerCase();
             filtered = filtered.filter(t =>
+                (highlightId && String(t.id) === highlightId) ||
                 t.titulo?.toLowerCase().includes(q) ||
                 t.area?.toLowerCase().includes(q) ||
                 t.planta?.toLowerCase().includes(q) ||
@@ -168,33 +204,18 @@ export default function TicketsHoyPage() {
         }
 
         return dateOffset === 0 ? customSortHoy(filtered) : sortManana(filtered);
-    }, [getBaseTickets, dateOffset, filtroEstado, filtroTipo, filtroPrioridad, filtroResponsable, query, customSortHoy]);
+    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroResponsable, query, customSortHoy, highlightId, allTickets]);
 
-    // Conteos para badges del toggle (basados en tickets base permitidos para el rol)
     const totalHoy = useMemo(() => getBaseTickets().filter(perteneceAHoy).length, [getBaseTickets]);
     const totalManana = useMemo(() => getBaseTickets().filter(t => isOnDate(t.fechaVencimiento, 1)).length, [getBaseTickets]);
     const totalAtrasadas = useMemo(() => getBaseTickets().filter(esAtrasadaActiva).length, [getBaseTickets]);
+    const totalRechazadas = useMemo(() => getBaseTickets().filter(t => t.estado === 'RECHAZADO').length, [getBaseTickets]);
 
-    // ── Auditoría visual (Console Logs) ───────────────────────────────────────
-    useEffect(() => {
-        if (!loading) {
-            console.groupCollapsed('🔍 AUDITORÍA DE TICKETS: HOY');
-            console.log('1. Tickets crudos (Desde Backend):', allTickets);
-            console.log('2. Tickets Base (Filtrados por Rol/Excluidos):', getBaseTickets());
-            console.log('3. Tickets Finales (Renderizados):', ticketsFiltrados);
-            console.groupEnd();
-        }
-    }, [allTickets, getBaseTickets, ticketsFiltrados, loading]);
-
-    // ── Handlers de mutaciones ────────────────────────────────────────────────
     const handleCreate = async (payloads) => {
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
             for (const payload of items) await createTicket(payload);
-            notify.success(items.length > 1
-                ? `${items.length} tareas creadas correctamente.`
-                : 'Tarea creada correctamente.'
-            );
+            notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
             setShowCreate(false);
             loadTickets();
         } catch (err) {
@@ -225,9 +246,9 @@ export default function TicketsHoyPage() {
         }
     };
 
-    // ── Props compartidos ─────────────────────────────────────────────────────
     const sharedProps = {
         tickets: ticketsFiltrados,
+        highlightId, // Inyectado para que las vistas puedan iluminar la tarjeta
         loading,
         submitting,
         currentUser,
@@ -236,6 +257,8 @@ export default function TicketsHoyPage() {
         onDateOffsetChange: handleDateOffsetChange,
         totalHoy,
         totalManana,
+        totalParaSummary,
+        conteos,
         totalAtrasadas,
         query,
         onSearchChange: setQuery,
@@ -247,6 +270,12 @@ export default function TicketsHoyPage() {
         onPrioridadChange: setFiltroPrioridad,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
+        mostrarAtrasadas,
+        onToggleAtrasadas: () => setMostrarAtrasadas(p => !p),
+        mostrarRechazadas,
+        onToggleRechazadas: () => setMostrarRechazadas(p => !p),
+        existenciaGlobal: { 'RECHAZADO': totalRechazadas },
+        totalAtrasadasGlobal: totalAtrasadas,
         onSave: handleUpdate,
         onChangeStatus: handleChangeStatus,
         onOpenCreate: () => setShowCreate(true),
@@ -255,10 +284,7 @@ export default function TicketsHoyPage() {
 
     return (
         <div className="max-w-full mx-auto">
-            {isDesktop
-                ? <TicketsHoyDesktop {...sharedProps} />
-                : <TicketsHoyMobile {...sharedProps} />
-            }
+            {isDesktop ? <TicketsHoyDesktop {...sharedProps} /> : <TicketsHoyMobile {...sharedProps} />}
             {isDesktop ? (
                 <HoyFormModal
                     isOpen={showCreate}
