@@ -12,26 +12,40 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       VitePWA({
-        // 'autoUpdate' detecta nuevo SW e instala sin prompt
         registerType: 'autoUpdate',
-        // Genera el SW en dist/sw.js (override al manual en public/)
         filename: 'sw.js',
-        // Inyecta manifest dentro del SW generado por Workbox
         injectManifest: false,
-        // Workbox genera el SW completamente
-        workbox: {
-          
-          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MB
-          
-          // Precachea TODO el build de Vite automáticamente
-          globPatterns: ['**/*.{js,css,html,ico,png,webp,woff2,svg}'],
-          // No incluir el SW mismo ni el sw.js del public
-          globIgnores: ['**/node_modules/**/*', 'sw.js'],
 
-          // ── Estrategias de Runtime ───────────────────────────────────
+        workbox: {
+          // 🔥 Permite archivos grandes (como fonts)
+          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+
+          // 🔥 Qué archivos se cachean en precache
+          globPatterns: ['**/*.{js,css,html,ico,png,webp,woff2,svg}'],
+
+          // 🔥 Ignorar basura o archivos pesados innecesarios
+          globIgnores: [
+            '**/node_modules/**/*',
+            'sw.js',
+            '**/MaterialSymbolsRounded*.woff2',
+          ],
+
+          // 🔥 Limpia caches viejos automáticamente
+          cleanupOutdatedCaches: true,
+
+          // 🔥 Activación inmediata del SW
+          skipWaiting: true,
+          clientsClaim: true,
+
+          // 🔥 Manejo de rutas SPA offline (CRÍTICO)
+          navigateFallback: '/index.html',
+          navigateFallbackAllowlist: [/./],
+          navigateFallbackDenylist: [/^\/api\//],
+
+          // 🔥 Estrategias de cache dinámico
           runtimeCaching: [
-            // API → Network First con fallback a caché
             {
+              // API → intenta red, si falla usa cache
               urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
               handler: 'NetworkFirst',
               options: {
@@ -42,25 +56,24 @@ export default defineConfig(({ mode }) => {
                 },
                 expiration: {
                   maxEntries: 100,
-                  // Datos de API válidos por 24h offline
-                  maxAgeSeconds: 60 * 60 * 24,
+                  maxAgeSeconds: 60 * 60 * 24, // 24 horas
                 },
               },
             },
-            // Imágenes Cloudinary → Cache First (no cambian)
             {
+              // Cloudinary → cache fuerte
               urlPattern: ({ url }) => url.hostname.includes('cloudinary.com'),
               handler: 'CacheFirst',
               options: {
                 cacheName: 'cuadra-cloudinary-v1',
                 expiration: {
                   maxEntries: 200,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 días
                 },
               },
             },
-            // Assets estáticos (fuentes, íconos) → Cache First
             {
+              // Imágenes y fuentes → cache fuerte
               urlPattern: ({ request }) =>
                 request.destination === 'font' ||
                 request.destination === 'image',
@@ -74,26 +87,22 @@ export default defineConfig(({ mode }) => {
               },
             },
           ],
-
-          // Navegación SPA: siempre sirve index.html para rutas desconocidas
-          navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//],
-
-          // Skip waiting para activar el SW nuevo inmediatamente
-          skipWaiting: true,
-          clientsClaim: true,
         },
 
-        // Sobreescribe el manifest inline (ya tienes public/manifest.json)
+        // 🔥 Usas manifest externo
         manifest: false,
+
+        // 🔥 Assets adicionales a incluir
         includeAssets: ['img/**/*.webp', 'img/**/*.png'],
       }),
     ],
+
     server: {
       host: true,
       port: parseInt(env.PORT) || 5173,
       strictPort: true,
     },
+
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
