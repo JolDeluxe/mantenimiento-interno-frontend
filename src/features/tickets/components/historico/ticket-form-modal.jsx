@@ -403,76 +403,150 @@ const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
     );
 };
 
-const CarritoItem = ({ item, index, onRemove }) => {
+const TecnicoAdicionalChip = ({ nombre, onRemove }) => (
+    <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+        {nombre}
+        <button
+            type="button"
+            onClick={onRemove}
+            className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
+        >
+            <Icon name="close" size="xs" />
+        </button>
+    </span>
+);
+
+const PRIORIDAD_DOT = {
+    BAJA: 'bg-prioridad-baja',
+    MEDIA: 'bg-prioridad-media',
+    ALTA: 'bg-prioridad-alta',
+    CRITICA: 'bg-prioridad-critica',
+};
+
+const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
+    const dotColor = PRIORIDAD_DOT[item.prioridad] || 'bg-slate-300';
+
+    const tecnicosIds = item.responsables || [];
+    const opcionesAdicionales = tecnicos.filter(t => !tecnicosIds.includes(String(t.id)));
 
     return (
         <div className={cn(
-            "rounded-xl border overflow-hidden transition-all duration-200",
-            expanded ? 'border-marca-primario/30 shadow-sm' : 'border-slate-200'
+            "rounded-xl border transition-all duration-200 overflow-hidden",
+            expanded ? 'border-marca-primario/25 bg-white shadow-sm' : 'border-slate-200 bg-white'
         )}>
-            <div className="flex items-center gap-2.5 px-3 py-2.5 bg-white">
-                <span className="w-6 h-6 rounded-full bg-marca-primario/10 text-marca-primario text-[11px] font-extrabold flex items-center justify-center shrink-0">
+            <div className="flex items-start gap-2.5 px-3 py-2.5">
+                <span className="w-6 h-6 rounded-full bg-marca-primario/10 text-marca-primario text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
                     {index + 1}
                 </span>
+
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.titulo}</p>
-                    <div className="flex items-center gap-1 flex-wrap mt-0.5">
-                        <span className="text-[10px] text-slate-400">{clasificLabel}</span>
-                        <span className="text-[10px] text-slate-300">·</span>
-                        <span className="text-[10px] text-slate-400">{item.planta}</span>
-                        {item.area && (
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className={cn('w-2 h-2 rounded-full shrink-0', dotColor)} title={item.prioridad} />
+                        <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.titulo}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{clasificLabel}</span>
+                        <span className="text-slate-300 text-[10px]">·</span>
+                        <span className="text-[10px] text-slate-400">{item.planta}{item.area ? ` / ${item.area}` : ''}</span>
+                        {tipoLabel && (
                             <>
-                                <span className="text-[10px] text-slate-300">·</span>
-                                <span className="text-[10px] text-slate-400">{item.area}</span>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-slate-400">{tipoLabel}</span>
+                            </>
+                        )}
+                        {item.fechaVencimiento && (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-estado-asignada font-bold">{item.fechaVencimiento}</span>
                             </>
                         )}
                     </div>
+
+                    {!expanded && tecnicosIds.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            <Icon name="engineering" size="xs" className="text-slate-300 shrink-0" />
+                            {tecnicosIds.slice(0, 3).map(id => {
+                                const t = tecnicoMap?.[id];
+                                return (
+                                    <span key={id} className="text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded font-medium truncate max-w-[80px]">
+                                        {t?.nombre ?? `#${id}`}
+                                    </span>
+                                );
+                            })}
+                            {tecnicosIds.length > 3 && (
+                                <span className="text-[10px] text-slate-400">+{tecnicosIds.length - 3}</span>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <button type="button" onClick={() => setExpanded(!expanded)} title={expanded ? 'Ocultar' : 'Ver detalles'}
-                    className={cn(
-                        "p-1.5 rounded-md transition-colors shrink-0",
-                        expanded ? 'bg-marca-primario/10 text-marca-primario' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                    )}>
-                    <Icon name={expanded ? 'visibility_off' : 'visibility'} size="xs" />
-                </button>
-                <button type="button" onClick={() => onRemove(item._id)} title="Quitar tarea"
-                    className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0">
-                    <Icon name="close" size="xs" />
-                </button>
+
+                <div className="flex items-center gap-1 shrink-0">
+                    <button type="button" onClick={() => setExpanded(!expanded)}
+                        title={expanded ? 'Ocultar detalles' : 'Administrar tarea'}
+                        className={cn(
+                            "p-1.5 rounded-md transition-colors",
+                            expanded ? 'bg-marca-primario/10 text-marca-primario' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                        )}>
+                        <Icon name={expanded ? 'expand_less' : 'expand_more'} size="xs" />
+                    </button>
+                    <button type="button" onClick={() => onRemove(item._id)} title="Quitar tarea"
+                        className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                        <Icon name="close" size="xs" />
+                    </button>
+                </div>
             </div>
 
             {expanded && (
-                <div className="px-4 pb-3 pt-2 bg-slate-50 border-t border-slate-100 space-y-2.5">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                        <div>
-                            <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Prioridad</span>
-                            <span className="text-slate-700 font-medium">{item.prioridad}</span>
+                <div className="px-3 pb-3 pt-2 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
+                    {item.descripcion && item.descripcion !== 'Sin descripción.' && (
+                        <p className="text-xs text-slate-600 leading-relaxed px-1">{item.descripcion}</p>
+                    )}
+
+                    <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-200/60">
+                        <div className="flex items-center gap-1.5 px-1">
+                            <Icon name="group_add" size="xs" className="text-slate-500" />
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Técnicos de esta tarea</span>
                         </div>
-                        {item.tipo && (
-                            <div>
-                                <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Tipo</span>
-                                <span className="text-slate-700 font-medium">{tipoLabel}</span>
+
+                        {tecnicosIds.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 px-1">
+                                {tecnicosIds.map(id => {
+                                    const t = tecnicoMap[id];
+                                    return (
+                                        <TecnicoAdicionalChip
+                                            key={id}
+                                            nombre={t?.nombre ?? `#${id}`}
+                                            onRemove={() => onRemoveTecnico(item._id, id)}
+                                        />
+                                    );
+                                })}
                             </div>
                         )}
-                        {item.fechaVencimiento && (
-                            <div>
-                                <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Vencimiento</span>
-                                <span className="text-slate-700 font-medium">{item.fechaVencimiento}</span>
+
+                        {opcionesAdicionales.length > 0 ? (
+                            <div className="relative mt-1">
+                                <select
+                                    value=""
+                                    onChange={(e) => { if (e.target.value) onAddTecnico(item._id, e.target.value); }}
+                                    className="w-full border border-slate-200 rounded text-xs px-2 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-marca-secundario cursor-pointer appearance-none"
+                                >
+                                    <option value="">+ Asignar técnico a esta tarea...</option>
+                                    {opcionesAdicionales.map(t => (
+                                        <option key={t.id} value={String(t.id)}>
+                                            {t.nombre} {t.cargo ? `- ${t.cargo}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
+                                    <Icon name="expand_more" size="xs" />
+                                </div>
                             </div>
+                        ) : (
+                            <p className="text-[10px] text-slate-400 italic px-1">No hay más técnicos disponibles para asignar.</p>
                         )}
-                        {item.tiempoEstimadoMins > 0 && (
-                            <div>
-                                <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Tiempo est.</span>
-                                <span className="text-slate-700 font-medium">{item.tiempoEstimadoMins} min</span>
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider block mb-1">Descripción</span>
-                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-4">{item.descripcion}</p>
                     </div>
                 </div>
             )}
@@ -528,7 +602,11 @@ export const TicketFormModal = ({
         opcionesTecnicos.filter(opt => !responsables.includes(opt.value)),
         [opcionesTecnicos, responsables]);
 
-    // Motor Date.js Centralizado (Previene el uso de new Date() para mutaciones lógicas)
+    const tecnicoMapCompleto = useMemo(() =>
+        Object.fromEntries(tecnicos.map(t => [String(t.id), t])),
+        [tecnicos]
+    );
+
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
 
@@ -549,10 +627,7 @@ export const TicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-
-            // Uso de isoToDateInput de la librería en vez de manipulaciones crudas de String/UTC
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
-
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
         } else {
@@ -608,6 +683,22 @@ export const TicketFormModal = ({
 
     const handleQuitarDelCarrito = (_id) => {
         setCarrito(prev => prev.filter(item => item._id !== _id));
+    };
+
+    const handleAgregarTecnicoItem = (itemId, techId) => {
+        setCarrito(prev => prev.map(item =>
+            item._id === itemId
+                ? { ...item, responsables: [...new Set([...item.responsables, techId])] }
+                : item
+        ));
+    };
+
+    const handleQuitarTecnicoItem = (itemId, techId) => {
+        setCarrito(prev => prev.map(item =>
+            item._id === itemId
+                ? { ...item, responsables: item.responsables.filter(id => id !== techId) }
+                : item
+        ));
     };
 
     const buildFormData = (item) => {
@@ -705,8 +796,8 @@ export const TicketFormModal = ({
             <ModalBody>
                 <div className={cn("flex gap-6", modoCarrito ? "flex-col lg:flex-row" : "flex-col")}>
 
-                    <div className="flex-1 min-w-0 flex flex-col gap-5">
-
+                    {/* ── PANEL IZQUIERDO: Formulario ── */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-4">
                         {backendError && (
                             <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700">
                                 <Icon name="error" size="sm" /> {backendError}
@@ -719,12 +810,12 @@ export const TicketFormModal = ({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Icon name="engineering" size="sm" className="text-slate-500" />
-                                            <span className="text-sm font-bold text-slate-700">Técnico asignado</span>
+                                            <span className="text-sm font-bold text-slate-700">Técnico principal</span>
                                             <span className="text-xs text-slate-400 font-normal">(opcional)</span>
                                         </div>
                                         {carritoLocked && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                                <Icon name="lock" size="xs" /> Bloqueado para este lote
+                                                <Icon name="lock" size="xs" /> Bloqueado para este tecnico
                                             </span>
                                         )}
                                     </div>
@@ -797,7 +888,7 @@ export const TicketFormModal = ({
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-clas" error={!!fe.clasificacion}>Clasificación *</Label>
                                 <Select id="tf-clas" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
@@ -848,7 +939,7 @@ export const TicketFormModal = ({
                         )}
 
                         {esAdmin && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div className="flex flex-col gap-1.5">
                                     <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
                                     <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
@@ -862,27 +953,15 @@ export const TicketFormModal = ({
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
                                     <div className="flex justify-between items-center">
                                         <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={setToday}
-                                                disabled={isSubmitting}
-                                                className={cn(
-                                                    "text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
-                                                    isHoy ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20"
-                                                )}
-                                            >
+                                        <div className="flex items-center gap-1.5">
+                                            <button type="button" onClick={setToday} disabled={isSubmitting}
+                                                className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                    isHoy ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20")}>
                                                 Hoy
                                             </button>
-                                            <button
-                                                type="button"
-                                                onClick={setTomorrow}
-                                                disabled={isSubmitting}
-                                                className={cn(
-                                                    "text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
-                                                    isManana ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20"
-                                                )}
-                                            >
+                                            <button type="button" onClick={setTomorrow} disabled={isSubmitting}
+                                                className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                    isManana ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20")}>
                                                 Mañana
                                             </button>
                                         </div>
@@ -908,11 +987,23 @@ export const TicketFormModal = ({
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
-                                <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                    {descripcion.length}/{MAX_DESCRIPCION}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    {!descripcion && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setDescripcion('Sin descripción.')}
+                                            disabled={isSubmitting || lockBaseFields}
+                                            className="text-[10px] font-bold text-slate-400 hover:text-marca-primario bg-slate-100 hover:bg-marca-primario/10 px-2 py-0.5 rounded-full transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            Sin descripción
+                                        </button>
+                                    )}
+                                    <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
+                                        {descripcion.length}/{MAX_DESCRIPCION}
+                                    </span>
+                                </div>
                             </div>
-                            <Input id="tf-desc" multiline rows={4} value={descripcion}
+                            <Input id="tf-desc" multiline rows={modoCarrito ? 3 : 4} value={descripcion}
                                 onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
                                 error={!!fe.descripcion} helperText={fe.descripcion}
                                 placeholder="Describe el problema o tarea con el mayor detalle posible…"
@@ -933,6 +1024,7 @@ export const TicketFormModal = ({
                         )}
                     </div>
 
+                    {/* ── PANEL DERECHO: Carrito ── */}
                     {modoCarrito && (
                         <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col gap-3">
                             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
@@ -948,7 +1040,7 @@ export const TicketFormModal = ({
                                     )}
                                     {carrito.length > 0 && (
                                         <button type="button" onClick={() => setCarrito([])}
-                                            className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors">
+                                            className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors cursor-pointer">
                                             Limpiar
                                         </button>
                                     )}
@@ -956,7 +1048,7 @@ export const TicketFormModal = ({
                             </div>
 
                             {carrito.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-3 py-14 text-center">
+                                <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                                     <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
                                         <Icon name="inbox" size="xl" className="text-slate-300" />
                                     </div>
@@ -969,25 +1061,34 @@ export const TicketFormModal = ({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[390px] pr-0.5 custom-scrollbar">
+                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px] pr-0.5 custom-scrollbar">
                                     {carrito.map((item, i) => (
-                                        <CarritoItem key={item._id} item={item} index={i} onRemove={handleQuitarDelCarrito} />
+                                        <CarritoItem
+                                            key={item._id}
+                                            item={item}
+                                            index={i}
+                                            onRemove={handleQuitarDelCarrito}
+                                            tecnicoMap={tecnicoMapCompleto}
+                                            tecnicos={tecnicos}
+                                            onAddTecnico={handleAgregarTecnicoItem}
+                                            onRemoveTecnico={handleQuitarTecnicoItem}
+                                        />
                                     ))}
                                 </div>
                             )}
 
                             {carrito.length > 0 && (
                                 <div className={cn(
-                                    'flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-colors',
+                                    'flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-colors mt-auto',
                                     tecnicoCart
                                         ? 'bg-marca-primario/5 border-marca-primario/15 text-marca-primario'
                                         : 'bg-slate-50 border-slate-200 text-slate-500'
                                 )}>
                                     <Icon name={tecnicoCart ? 'engineering' : 'person_off'} size="xs" className="shrink-0" />
                                     {tecnicoCart ? (
-                                        <span>Asignadas a <strong>{tecnicoCart.nombre}</strong></span>
+                                        <span>Técnico predeterminado: <strong>{tecnicoCart.nombre}</strong></span>
                                     ) : (
-                                        <span className="italic">Sin técnico — quedarán PENDIENTES</span>
+                                        <span className="italic">Sin técnico predeterminado</span>
                                     )}
                                 </div>
                             )}

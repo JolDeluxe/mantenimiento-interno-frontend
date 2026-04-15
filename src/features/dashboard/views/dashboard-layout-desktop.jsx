@@ -16,7 +16,8 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
         const baseMenu = [
             { id: 'reportes-general', label: 'Visión General', path: '/reportes/general', icon: 'dashboard' },
             { id: 'reportes-equipo', label: 'Rendimiento de Equipo', path: '/reportes/equipo', icon: 'groups' },
-            { id: 'reportes-area', label: 'Métricas por Área', path: '/reportes/area', icon: 'domain' }
+            { id: 'reportes-area', label: 'Métricas por Área', path: '/reportes/area', icon: 'domain' },
+            { id: 'reportes-cliente', label: 'Métricas de Reportes', path: '/reportes/cliente', icon: 'domain' }
         ];
 
         return baseMenu.filter(item => {
@@ -27,7 +28,6 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* CORRECCIÓN: flex-col y xl:flex-row para que el encabezado no se aplaste */}
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
                     <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
@@ -36,15 +36,16 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
                     <p className="text-sm text-slate-500 mt-0.5">
                         Analiza el rendimiento operacional del departamento
                     </p>
+                    <div className="w-full m-5  xl:w-auto shrink-0">
+                        <DashboardFechas
+                            year={contextData.filtro.year}
+                            month={contextData.filtro.month}
+                            aniosDisponibles={contextData.data?.aniosDisponibles ?? []}
+                            onChange={contextData.onFiltroChange}
+                        />
+                    </div>
                 </div>
-                <div className="w-full xl:w-auto shrink-0">
-                    <DashboardFechas
-                        year={contextData.filtro.year}
-                        month={contextData.filtro.month}
-                        aniosDisponibles={contextData.data?.aniosDisponibles ?? []}
-                        onChange={contextData.onFiltroChange}
-                    />
-                </div>
+
             </div>
 
             {menu.length > 0 && (

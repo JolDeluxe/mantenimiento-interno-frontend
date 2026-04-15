@@ -1,5 +1,5 @@
 // src/features/usuarios/hooks/use-users.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   getUsers,
   createUser,
@@ -8,32 +8,12 @@ import {
   getDepartamentos,
 } from '../api/users-api';
 
-/**
- * Contrato de respuesta del backend /api/usuarios:
- * {
- *   status: "success",
- *   pagination: { total, page, limit, totalPages },  ← total = filas filtradas por rol/q/depto
- *   totalAbsoluto: number,                            ← total sin filtro de rol (para SummaryBar)
- *   resumenRoles: { JEFE_MTTO: n, ... },
- *   data: Usuario[]
- * }
- *
- * El interceptor de axios ya hace response.data, así que getUsers() devuelve
- * directamente el objeto anterior.
- */
 export const useUsers = () => {
   const [users, setUsers]       = useState([]);
   const [departamentos, setDepartamentos] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  /**
-   * meta expone:
-   *  - totalFiltrado  → para el paginador (cuántas filas coinciden con rol/q/depto)
-   *  - totalAbsoluto  → para la SummaryBar (total del universo visible al usuario)
-   *  - totalPages     → calculado por el backend
-   *  - resumenRoles   → conteos por rol para las pastillas de filtro
-   */
   const [meta, setMeta] = useState({
     totalFiltrado:  0,
     totalAbsoluto:  0,
@@ -41,12 +21,16 @@ export const useUsers = () => {
     resumenRoles:   {},
   });
 
+  // Motor Offline: Referencia de memoria para el contexto
+  const lastFetchParams = useRef({});
+
   const fetchUsers = useCallback(async (params = {}) => {
     setLoading(true);
+    lastFetchParams.current = params; // Guardamos filtro activo
+
     try {
       const response = await getUsers(params);
 
-      // Caso defensivo: si el interceptor devolviera un array directamente
       if (Array.isArray(response)) {
         setUsers(response);
         setMeta({
@@ -63,7 +47,6 @@ export const useUsers = () => {
 
       setUsers(data);
       setMeta({
-        // pagination.total es el conteo de la tabla filtrada (lo que mueve el paginador)
         totalFiltrado:  pagination.total     ?? 0,
         totalAbsoluto:  response.totalAbsoluto ?? pagination.total ?? 0,
         totalPages:     pagination.totalPages ?? 1,
@@ -77,14 +60,10 @@ export const useUsers = () => {
   const fetchDepartamentos = useCallback(async () => {
     try {
       const response = await getDepartamentos();
-      const list = Array.isArray(response)
-        ? response
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
+      const list = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
       setDepartamentos(list);
     } catch {
-      // silencioso — no rompe el flujo principal
+      // silencioso
     }
   }, []);
 
@@ -105,6 +84,22 @@ export const useUsers = () => {
     try { return await updateUserStatus(id, estado); }
     finally { setSubmitting(false); }
   }, []);
+
+  // ── Motor Reactivo Offline ─────────────────────────────────────────────
+  useEffect(() => {
+    const handleSyncComplete = () => {
+      console.log('📡 [Hook Users] Sincronización finalizada. Refrescando datos...');
+      if (Object.keys(lastFetchParams.current).length > 0 || users.length > 0) {
+        fetchUsers(lastFetchParams.current);
+      }
+      if (departamentos.length > 0) {
+         fetchDepartamentos();
+      }
+    };
+
+    window.addEventListener('cuadra-sync-complete', handleSyncComplete);
+    return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
+  }, [fetchUsers, fetchDepartamentos, users.length, departamentos.length]);
 
   return {
     users,

@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
-import { getMinDateHoy, fechaInputToISOLocal } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import {
     PLANTAS,
     CLASIFICACIONES_CLIENTE,
@@ -128,7 +128,7 @@ export const MobileTicketFormModal = ({
         [tecnicos]
     );
 
-    // Opciones para el <select> nativo — formato: "id|nombre|cargo"
+    // Opciones para el <select> nativo — excluye ya seleccionados
     const opcionesDisponibles = useMemo(() =>
         tecnicos.filter((t) => !responsables.includes(String(t.id))),
         [tecnicos, responsables]
@@ -148,8 +148,8 @@ export const MobileTicketFormModal = ({
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-            const fv = ticketAEditar.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
-            setFechaVencimiento(fv);
+            // Corrección: usar isoToDateInput para evitar crash en Safari/iOS con split('T')[0]
+            setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
@@ -173,7 +173,7 @@ export const MobileTicketFormModal = ({
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
             if (fechaVencimiento < hoy) {
-                const fechaOriginal = ticketAEditar?.fechaVencimiento ? ticketAEditar.fechaVencimiento.split('T')[0] : '';
+                const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
                 if (!esEdicion || fechaVencimiento !== fechaOriginal) {
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
                 }
@@ -241,6 +241,9 @@ export const MobileTicketFormModal = ({
 
     const fe = submitted ? getErrors() : {};
     const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
+
+    // Fecha mínima calculada una sola vez con la función centralizada
+    const hoyLocal = getMinDateHoy();
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
@@ -336,9 +339,8 @@ export const MobileTicketFormModal = ({
                                     id="tf-fecha"
                                     type="date"
                                     value={fechaVencimiento}
-                                    min={new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                                    min={hoyLocal}
                                     onChange={(e) => {
-                                        const hoyLocal = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                                         const v = e.target.value;
                                         setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
                                     }}

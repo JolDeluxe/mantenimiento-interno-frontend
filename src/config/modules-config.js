@@ -62,6 +62,12 @@ export const MODULES_CONFIG = [
         name: 'Área',
         route: '/reportes/area',
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'reportes-cliente',
+        name: 'Cliente',
+        route: '/reportes/cliente',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       }
     ]
   },

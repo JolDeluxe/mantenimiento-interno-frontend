@@ -16,7 +16,8 @@ export default function DashboardLayoutMobile({ children, contextData }) {
         const baseMenuOptions = [
             { configId: 'reportes-general', id: '/reportes/general', label: 'General', icon: 'dashboard' },
             { configId: 'reportes-equipo', id: '/reportes/equipo', label: 'Equipo', icon: 'groups' },
-            { configId: 'reportes-area', id: '/reportes/area', label: 'Área', icon: 'domain' }
+            { configId: 'reportes-area', id: '/reportes/area', label: 'Área', icon: 'domain' },
+            { configId: 'reportes-cliente', id: '/reportes/cliente', label: 'Cliente', icon: 'domain' }
         ];
 
         const filteredOptions = baseMenuOptions.filter(opt => {

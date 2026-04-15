@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+// src/features/notificaciones/hooks/use-notify.js
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   getNotificaciones,
   markAsRead,
@@ -17,8 +18,12 @@ export const useNotify = () => {
     page:       1,
   });
 
+  const lastFetchParams = useRef({});
+
   const fetchNotificaciones = useCallback(async (params = {}) => {
     setLoading(true);
+    lastFetchParams.current = params;
+
     try {
       const res = await getNotificaciones(params);
       setNotificaciones(Array.isArray(res.data) ? res.data : []);
@@ -38,13 +43,9 @@ export const useNotify = () => {
   const handleMarkRead = useCallback(async (id) => {
     try {
       await markAsRead(id);
-      setNotificaciones((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
-      );
+      setNotificaciones((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
       setMeta((prev) => ({ ...prev, noLeidas: Math.max(0, prev.noLeidas - 1) }));
-    } catch {
-      // silencioso
-    }
+    } catch {}
   }, []);
 
   const handleMarkAllRead = useCallback(async () => {
@@ -61,14 +62,23 @@ export const useNotify = () => {
   const handleMarkActioned = useCallback(async (id) => {
     try {
       await markActioned(id);
-      setNotificaciones((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, leida: true, accionada: true } : n))
-      );
+      setNotificaciones((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true, accionada: true } : n)));
       setMeta((prev) => ({ ...prev, noLeidas: Math.max(0, prev.noLeidas - 1) }));
-    } catch {
-      // silencioso
-    }
+    } catch {}
   }, []);
+
+  // ── Motor Reactivo Offline ─────────────────────────────────────────────
+  useEffect(() => {
+    const handleSyncComplete = () => {
+      console.log('📡 [Hook Notify] Sincronización finalizada. Refrescando notificaciones...');
+      if (Object.keys(lastFetchParams.current).length > 0 || notificaciones.length > 0) {
+        fetchNotificaciones(lastFetchParams.current);
+      }
+    };
+
+    window.addEventListener('cuadra-sync-complete', handleSyncComplete);
+    return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
+  }, [fetchNotificaciones, notificaciones.length]);
 
   return {
     notificaciones,

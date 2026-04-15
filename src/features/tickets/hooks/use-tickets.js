@@ -1,5 +1,5 @@
 // src/features/tickets/hooks/use-tickets.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import {
     getTickets,
@@ -12,7 +12,7 @@ import {
 
 export const useTickets = () => {
     const [tickets,    setTickets]    = useState([]);
-    const [tecnicos,   setTecnicos]   = useState([]);   // técnicos + coordinadores asignables
+    const [tecnicos,   setTecnicos]   = useState([]);   
     const [loading,    setLoading]    = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [metricas,   setMetricas]   = useState({});
@@ -24,9 +24,15 @@ export const useTickets = () => {
         totalAbsoluto:  0,
     });
 
+    // Referencias de memoria para contexto offline
+    const lastFetchParams = useRef({});
+    const lastMetricsParams = useRef({});
+
     // ── Lista principal ────────────────────────────────────────────────────
     const fetchTickets = useCallback(async (params = {}) => {
         setLoading(true);
+        lastFetchParams.current = params; // Memorizamos el filtro activo
+        
         try {
             const res = await getTickets(params);
 
@@ -51,16 +57,23 @@ export const useTickets = () => {
         }
     }, []);
 
-    // ── Personal asignable (técnicos + coordinadores) ─────────────────────
+    // ── Métricas ───────────────────────────────────────────────────────────
+    const fetchMetricas = useCallback(async (params = {}) => {
+        lastMetricsParams.current = params;
+        try {
+            const res = await getTicketMetrics(params);
+            if (res?.data) setMetricas(res.data);
+        } catch {
+            // Silencioso
+        }
+    }, []);
+
+    // ── Personal asignable ─────────────────────────────────────────────────
     const fetchTecnicos = useCallback(async () => {
-        // Obtenemos el snapshot de la sesión sin suscribir el hook a re-renders
         const user = useAuthStore.getState().user;
         const rolesGestion = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 
-        // Guardrail: Abortamos la llamada silenciosamente si el rol no tiene privilegios
-        if (!user || !rolesGestion.includes(user.rol)) {
-            return; 
-        }
+        if (!user || !rolesGestion.includes(user.rol)) return; 
 
         try {
             const lista = await getAsignables();
@@ -89,14 +102,25 @@ export const useTickets = () => {
         finally { setSubmitting(false); }
     }, []);
 
-    const fetchMetricas = useCallback(async (params = {}) => {
-        try {
-            const res = await getTicketMetrics(params);
-            if (res?.data) setMetricas(res.data);
-        } catch {
-            // Silencioso, manejado por UI global si es necesario
-        }
-    }, []);
+    // ── Motor Reactivo Offline ─────────────────────────────────────────────
+    useEffect(() => {
+        const handleSyncComplete = () => {
+            console.log('📡 [Hook Tickets] Sincronización finalizada. Refrescando datos con filtros activos...');
+            
+            // Refresca la tabla principal si fue inicializada
+            if (Object.keys(lastFetchParams.current).length > 0 || tickets.length > 0) {
+                fetchTickets(lastFetchParams.current);
+            }
+            
+            // Refresca las métricas si fueron inicializadas
+            if (Object.keys(metricas).length > 0) {
+                fetchMetricas(lastMetricsParams.current);
+            }
+        };
+
+        window.addEventListener('cuadra-sync-complete', handleSyncComplete);
+        return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
+    }, [fetchTickets, fetchMetricas, tickets.length, metricas]);
 
     return {
         tickets,
