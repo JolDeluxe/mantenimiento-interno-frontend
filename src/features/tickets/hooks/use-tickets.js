@@ -10,6 +10,7 @@ import {
     getTicketMetrics,
 } from '../api/tickets-api';
 import { readSnapshot, writeSnapshot } from '@/lib/idb';
+import { enqueue } from '@/lib/offline-queue';
 
 const paramsToKey = (params = {}) => {
     const sorted = Object.keys(params)
@@ -185,11 +186,23 @@ export const useTickets = () => {
         } catch { }
     }, []);
 
-    // 🔥 MUTATIONS (sin cambios fuertes)
     const handleCreate = useCallback(async (data) => {
         setSubmitting(true);
+
         try {
+            if (!navigator.onLine) {
+                await enqueue({
+                    type: 'CREATE_TICKET',
+                    payload: data,
+                });
+
+                console.warn('📦 Ticket guardado offline');
+
+                return { offline: true };
+            }
+
             return await createTicket(data);
+
         } finally {
             setSubmitting(false);
         }
@@ -197,8 +210,21 @@ export const useTickets = () => {
 
     const handleUpdate = useCallback(async (id, data) => {
         setSubmitting(true);
+
         try {
+            if (!navigator.onLine) {
+                await enqueue({
+                    type: 'UPDATE_TICKET',
+                    payload: { id, ...data },
+                });
+
+                console.warn('📦 Update guardado offline');
+
+                return { offline: true };
+            }
+
             return await updateTicket(id, data);
+
         } finally {
             setSubmitting(false);
         }
@@ -206,14 +232,27 @@ export const useTickets = () => {
 
     const handleChangeStatus = useCallback(async (id, data) => {
         setSubmitting(true);
+
         try {
+            if (!navigator.onLine) {
+                await enqueue({
+                    type: 'CHANGE_STATUS',
+                    payload: { id, ...data },
+                });
+
+                console.warn('📦 Status guardado offline');
+
+                return { offline: true };
+            }
+
             return await changeTicketStatus(id, data);
+
         } finally {
             setSubmitting(false);
         }
     }, []);
 
-    // 🔥 SYNC AUTOMÁTICO
+    // SYNC AUTOMÁTICO
     useEffect(() => {
         const handleSyncComplete = () => {
             fetchTickets(lastFetchParams.current);
