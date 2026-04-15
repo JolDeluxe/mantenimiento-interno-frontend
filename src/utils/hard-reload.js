@@ -1,5 +1,11 @@
-// src/utils/hard-reload.js
 export const hardReload = async () => {
+  const isOffline = !navigator.onLine;
+
+  if (isOffline) {
+    console.warn('⚠️ Hard reload cancelado: estás offline');
+    return;
+  }
+
   if ('serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -10,14 +16,14 @@ export const hardReload = async () => {
           setTimeout(resolve, 800);
         });
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   if ('caches' in window) {
     try {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
-    } catch (_) {}
+    } catch (_) { }
   }
 
   window.location.reload();
