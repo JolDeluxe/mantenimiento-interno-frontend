@@ -7,6 +7,8 @@ import { MobileLayout } from './mobile-layout.jsx';
 import { RefreshFab } from '@/components/ui/z_index';
 import { useNotifyStore } from '@/stores/notify-store';
 import { getUnreadCount } from '@/features/notificaciones/api/notificaciones-api';
+import { OfflineBanner } from '@/components/ui/offline-banner';
+
 
 export const DashboardLayout = () => {
   const isDesktop = useIsDesktop();
@@ -36,8 +38,8 @@ export const DashboardLayout = () => {
 
   return (
     <>
+      <OfflineBanner />
       {isDesktop ? <DesktopLayout /> : <MobileLayout />}
-
       {isDesktop && (
         <div className="print:hidden">
           <RefreshFab zIndex={60} size={48} bottom="32px" />

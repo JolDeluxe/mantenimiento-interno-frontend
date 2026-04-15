@@ -8,6 +8,7 @@ import {
   deleteProfileImage, 
   changePassword 
 } from '../api/profile-api';
+import { readSnapshot, writeSnapshot } from '@/lib/idb';
 
 export const useProfile = () => {
   const { user, setUser } = useAuthStore();
@@ -21,20 +22,34 @@ export const useProfile = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const fetchProfile = useCallback(async () => {
+const fetchProfile = useCallback(async () => {
     if (!userId) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getProfile(userId);
-      setProfile(response?.data ?? response); 
-    } catch (err) {
-      setError({ message: err.message || 'Error al cargar perfil', status: err.status });
-      setProfile(null);
-    } finally {
-      setLoading(false);
+    setError(null);
+
+    // 1. Leer caché
+    const snapshot = await readSnapshot('perfil', `user_${userId}`);
+    if (snapshot?.data) {
+        setProfile(snapshot.data);
+        if (!snapshot.isStale && !navigator.onLine) return;
     }
-  }, [userId]);
+
+    if (!navigator.onLine && snapshot?.data) return;
+
+    try {
+        setLoading(true);
+        const response = await getProfile(userId);
+        const data = response?.data ?? response;
+        setProfile(data);
+        await writeSnapshot('perfil', data, `user_${userId}`);
+    } catch (err) {
+        if (!snapshot?.data) {
+            setError({ message: err.message || 'Error al cargar perfil', status: err.status });
+            setProfile(null);
+        }
+    } finally {
+        setLoading(false);
+    }
+}, [userId]);
 
   const handleUpdateProfile = useCallback(async (updatedData) => {
     if (!userId) return false;

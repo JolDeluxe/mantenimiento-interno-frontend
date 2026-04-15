@@ -6,6 +6,7 @@ import {
   markAllAsRead,
   markActioned,
 } from '../api/notificaciones-api';
+import { readSnapshot, writeSnapshot } from '@/lib/idb';
 
 export const useNotify = () => {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -20,25 +21,50 @@ export const useNotify = () => {
 
   const lastFetchParams = useRef({});
 
-  const fetchNotificaciones = useCallback(async (params = {}) => {
+const fetchNotificaciones = useCallback(async (params = {}) => {
     setLoading(true);
     lastFetchParams.current = params;
 
-    try {
-      const res = await getNotificaciones(params);
-      setNotificaciones(Array.isArray(res.data) ? res.data : []);
-      setMeta({
-        total:      res.pagination?.total      ?? 0,
-        noLeidas:   res.noLeidas               ?? 0,
-        totalPages: res.pagination?.totalPages ?? 1,
-        page:       res.pagination?.page       ?? 1,
-      });
-    } catch {
-      // silencioso
-    } finally {
-      setLoading(false);
+    const cacheKey = `notif_${JSON.stringify(params)}`;
+
+    // Cache primero
+    const snapshot = await readSnapshot('notificaciones', cacheKey);
+    if (snapshot?.data) {
+        const cached = snapshot.data;
+        setNotificaciones(Array.isArray(cached.data) ? cached.data : []);
+        setMeta({
+            total:      cached.pagination?.total      ?? 0,
+            noLeidas:   cached.noLeidas               ?? 0,
+            totalPages: cached.pagination?.totalPages ?? 1,
+            page:       cached.pagination?.page       ?? 1,
+        });
+        if (!snapshot.isStale && !navigator.onLine) {
+            setLoading(false);
+            return;
+        }
     }
-  }, []);
+
+    if (!navigator.onLine) {
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const res = await getNotificaciones(params);
+        setNotificaciones(Array.isArray(res.data) ? res.data : []);
+        setMeta({
+            total:      res.pagination?.total      ?? 0,
+            noLeidas:   res.noLeidas               ?? 0,
+            totalPages: res.pagination?.totalPages ?? 1,
+            page:       res.pagination?.page       ?? 1,
+        });
+        await writeSnapshot('notificaciones', res, cacheKey);
+    } catch {
+        if (!snapshot?.data) setNotificaciones([]);
+    } finally {
+        setLoading(false);
+    }
+}, []);
 
   const handleMarkRead = useCallback(async (id) => {
     try {

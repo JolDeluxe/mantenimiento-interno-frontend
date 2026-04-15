@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { clearAllSnapshots } from '@/lib/idb';
 
 export const useAuthStore = create(
   persist(
@@ -29,17 +30,20 @@ export const useAuthStore = create(
       },
 
       logout: () => {
-        set({
+      // Limpiar snapshots offline al salir
+      clearAllSnapshots().catch(() => {});
+
+      set({
           user: null,
           token: null,
           refreshToken: null,
           isAuthenticated: false,
-        });
-        
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-      },
+      });
+      
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+  },
 
       getUser: () => get().user,
       getToken: () => get().token,
