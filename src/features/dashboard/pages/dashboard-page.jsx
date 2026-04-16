@@ -1,11 +1,12 @@
+// src/features/dashboard/pages/dashboard-page.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import DashboardLayoutDesktop from '../views/dashboard-layout-desktop';
-import DashboardLayoutMobile from '../views/dashboard-layout-mobile';
 import { useMetricas } from '../hooks/use-metricas';
 import { getMinDateHoy } from '@/lib/date';
 import { DashboardContext } from '../context/dashboard-context';
+import DashboardLayoutDesktop from '../views/dashboard-layout-desktop';
+import DashboardLayoutMobile from '../views/dashboard-layout-mobile';
 
 const getCurrentYear = () => Number(getMinDateHoy().split('-')[0]);
 const getCurrentMonth = () => Number(getMinDateHoy().split('-')[1]);
@@ -23,7 +24,6 @@ export default function DashboardPage() {
 
     const load = useCallback(() => {
         const params = {};
-        // Rango arbitrario tiene precedencia sobre year/month
         if (filtro.fechaInicio && filtro.fechaFin) {
             params.fechaInicio = filtro.fechaInicio;
             params.fechaFin = filtro.fechaFin;

@@ -20,11 +20,12 @@ import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import NotifyPage from '@/features/notificaciones/pages/notify-page';
 
-// Nuevas importaciones del módulo de Dashboard/Reportes
+// Importaciones del módulo de Dashboard/Reportes corregidas
 import DashboardPage from '@/features/dashboard/pages/dashboard-page';
-import TabGeneral from '@/features/dashboard/pages/tab-general';
-import TabEquipo from '@/features/dashboard/pages/tab-equipo';
-import TabArea from '@/features/dashboard/pages/tab-area';
+import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
+import DashboardEquipo from '@/features/dashboard/pages/dashboard-equipo';
+import DashboardArea from '@/features/dashboard/pages/dashboard-area';
+import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
 
 // Mapeo seguro de la fuente de verdad para inyectar en el router
 const ROLES = {
@@ -41,6 +42,7 @@ const ROLES = {
   reportesGeneral: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-general')?.allowedRoles || [],
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
+  reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
 };
 
 export const AppRoutes = () => {
@@ -95,16 +97,22 @@ export const AppRoutes = () => {
               <Route index element={<Navigate to="general" replace />} />
 
               <Route element={<RoleGuard allowedRoles={ROLES.reportesGeneral} />}>
-                <Route path="general" element={<TabGeneral />} />
+                <Route path="general" element={<DashboardGeneral />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.reportesEquipo} />}>
-                <Route path="equipo" element={<TabEquipo />} />
+                <Route path="equipo" element={<DashboardEquipo />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.reportesArea} />}>
-                <Route path="area" element={<TabArea />} />
+                <Route path="area" element={<DashboardArea />} />
               </Route>
+
+              {/* NUEVA RUTA CLIENTE */}
+              <Route element={<RoleGuard allowedRoles={ROLES.reportesCliente} />}>
+                <Route path="cliente" element={<DashboardReportes />} />
+              </Route>
+
             </Route>
           </Route>
 

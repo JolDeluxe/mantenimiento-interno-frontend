@@ -1,3 +1,4 @@
+// src/features/dashboard/views/dashboard-layout-mobile.jsx
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
@@ -37,7 +38,7 @@ export default function DashboardLayoutMobile({ children, contextData }) {
                     Reportes y KPIs
                 </h1>
                 <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
-                    Rendimiento operacional y métricas del equipo.
+                    Rendimiento operacional y métricas.
                 </p>
             </div>
 

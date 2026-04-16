@@ -646,7 +646,7 @@ export const TicketFormModal = ({
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
         if (!planta) e.planta = 'Selecciona la planta.';
         if (!area) e.area = 'Selecciona el área.';
-        if (!esAdmin && !categoria.trim()) e.categoria = 'La categoría es obligatoria.';
+        if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (esAdmin && !tipo) e.tipo = 'El tipo de tarea es obligatorio.';
         if (esAdmin && fechaVencimiento) {
             if (fechaVencimiento < hoyLocal) {
@@ -874,6 +874,7 @@ export const TicketFormModal = ({
                             )
                         )}
 
+                        {/* ── TÍTULO ── */}
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
@@ -888,7 +889,8 @@ export const TicketFormModal = ({
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
+                        <div className={cn("grid gap-3", esAdmin ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-3")}>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-clas" error={!!fe.clasificacion}>Clasificación *</Label>
                                 <Select id="tf-clas" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
@@ -905,6 +907,35 @@ export const TicketFormModal = ({
                                     {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                 </Select>
                             </div>
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
+                                <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
+                                    <option value="" disabled hidden>Selecciona…</option>
+                                    <option value="MAQUINARIA">Maquinaria</option>
+                                    <option value="INFRAESTRUCTURA">Infraestructura</option>
+                                    <option value="MOBILIARIO">Mobiliario</option>
+                                    <option value="SISTEMAS">Sistemas / IT</option>
+                                    <option value="VEHICULOS">Vehículos</option>
+                                    <option value="GENERAL">General / Otro</option>
+                                </Select>
+                            </div>
+                            {esAdmin && (
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
+                                    <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
+                                        error={!!fe.tipo} helperText={fe.tipo}
+                                        disabled={isSubmitting || lockBaseFields}>
+                                        <option value="" disabled hidden>Selecciona…</option>
+                                        {isTicket && <option value="TICKET">Ticket</option>}
+                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                    </Select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ── FILA 2: Planta | Área ── */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-planta" error={!!fe.planta}>Planta *</Label>
                                 <Select id="tf-planta" value={planta} onChange={(e) => {
@@ -929,27 +960,9 @@ export const TicketFormModal = ({
                             </div>
                         </div>
 
-                        {!esAdmin && (
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
-                                <Input id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                                    error={!!fe.categoria} helperText={fe.categoria}
-                                    placeholder="Ej. Eléctrico, Mecánico, Infraestructura…" disabled={isSubmitting} />
-                            </div>
-                        )}
-
+                        {/* ── FILA 3: Fecha vencimiento | Tiempo estimado ── */}
                         {esAdmin && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
-                                    <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
-                                        error={!!fe.tipo} helperText={fe.tipo}
-                                        disabled={isSubmitting || lockBaseFields}>
-                                        <option value="" disabled hidden>Selecciona…</option>
-                                        {isTicket && <option value="TICKET">Ticket</option>}
-                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                    </Select>
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
                                     <div className="flex justify-between items-center">
                                         <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
@@ -966,8 +979,7 @@ export const TicketFormModal = ({
                                             </button>
                                         </div>
                                     </div>
-                                    <Input id="tf-fecha" type="date" value={fechaVencimiento}
-                                        min={hoyLocal}
+                                    <Input id="tf-fecha" type="date" value={fechaVencimiento} min={hoyLocal}
                                         onChange={(e) => {
                                             const v = e.target.value;
                                             setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
@@ -984,6 +996,7 @@ export const TicketFormModal = ({
                             </div>
                         )}
 
+                        {/* ── DESCRIPCIÓN ── */}
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>

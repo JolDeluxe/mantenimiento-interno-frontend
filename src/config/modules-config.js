@@ -110,7 +110,20 @@ export const MODULES_CONFIG = [
 
 export const getModulesByRole = (userRole) => {
   if (!userRole) return [];
-  return MODULES_CONFIG.filter(module => module.allowedRoles.includes(userRole));
+
+  return MODULES_CONFIG
+    // 1. Filtramos los módulos principales
+    .filter(module => module.allowedRoles.includes(userRole))
+    // 2. Filtramos los hijos de cada módulo principal
+    .map(module => {
+      if (module.children) {
+        return {
+          ...module,
+          children: module.children.filter(child => child.allowedRoles.includes(userRole))
+        };
+      }
+      return module;
+    });
 };
 
 export const canAccessModule = (userRole, moduleId) => {

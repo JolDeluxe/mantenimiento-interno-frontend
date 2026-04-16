@@ -1,3 +1,4 @@
+// src/features/dashboard/views/dashboard-layout-desktop.jsx
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/z_index';
@@ -36,7 +37,7 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
                     <p className="text-sm text-slate-500 mt-0.5">
                         Analiza el rendimiento operacional del departamento
                     </p>
-                    <div className="w-full m-5  xl:w-auto shrink-0">
+                    <div className="w-full m-5 xl:w-auto shrink-0">
                         <DashboardFechas
                             year={contextData.filtro.year}
                             month={contextData.filtro.month}
@@ -45,7 +46,6 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
                         />
                     </div>
                 </div>
-
             </div>
 
             {menu.length > 0 && (

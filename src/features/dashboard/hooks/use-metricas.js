@@ -9,11 +9,19 @@ export const useMetricas = () => {
   const fetchMetricas = useCallback(async (params = {}) => {
     setLoading(true);
     setError(null);
+
     try {
       const res = await getDashboardKpis(params);
-      setData(res?.data ?? null);
+
+      // Dado que el interceptor de Axios ya desempaqueta el objeto HTTP,
+      // 'res' equivale directamente al JSON enviado por Express: 
+      // { status: 'success', data: { metricasPorPlanta: [...] } }
+      // Por ende, accedemos solo a res.data
+      setData(res?.data || null);
+
     } catch (err) {
-      setError(err?.response?.data?.error || 'Error al cargar métricas.');
+      setError(err?.response?.data?.error || 'Error de conexión o endpoint no encontrado.');
+      setData(null);
     } finally {
       setLoading(false);
     }

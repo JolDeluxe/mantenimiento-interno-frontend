@@ -13,6 +13,7 @@ import {
     AREAS_POR_PLANTA,
     AREAS
 } from '../../constants';
+import { cn } from '@/utils/cn';
 
 const MAX_TITULO = 80;
 const MAX_DESCRIPCION = 500;
@@ -165,11 +166,10 @@ export const MobileTicketFormModal = ({
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (!descripcion.trim() || descripcion.length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!clasificacion) e.clasificacion = 'Selecciona la clasificación.';
-        if (!esAdmin) {
-            if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
-            if (!planta.trim()) e.planta = 'Selecciona la planta.';
-            if (!area.trim()) e.area = 'El área es obligatoria.';
-        }
+        if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
+        if (!planta.trim()) e.planta = 'Selecciona la planta.';
+        if (!area.trim()) e.area = 'El área es obligatoria.';
+
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
             if (fechaVencimiento < hoy) {
@@ -241,10 +241,12 @@ export const MobileTicketFormModal = ({
 
     const fe = submitted ? getErrors() : {};
     const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
-
-    // Fecha mínima calculada una sola vez con la función centralizada
     const hoyLocal = getMinDateHoy();
-
+    const mananaLocal = isoToDateInput(Date.now() + 86400000);
+    const setToday = () => setFechaVencimiento(hoyLocal);
+    const setTomorrow = () => setFechaVencimiento(mananaLocal);
+    const isHoy = fechaVencimiento === hoyLocal;
+    const isManana = fechaVencimiento === mananaLocal;
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
@@ -279,8 +281,8 @@ export const MobileTicketFormModal = ({
                         />
                     </div>
 
-                    {/* ── CLASIFICACIÓN / PRIORIDAD / PLANTA / ÁREA ── */}
-                    <div className="flex flex-col gap-4">
+                    {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
+                    <div className={cn("grid gap-4", esAdmin ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
                             <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)} error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
@@ -288,24 +290,46 @@ export const MobileTicketFormModal = ({
                                 {clasificacionesOpts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
-
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-prioridad">Prioridad</Label>
+                            <Label htmlFor="tf-prioridad">Prioridad *</Label>
                             <Select id="tf-prioridad" value={prioridad} onChange={(e) => setPrioridad(e.target.value)} disabled={isSubmitting}>
                                 {PRIORIDADES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </Select>
                         </div>
-
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-planta" error={!!fe.planta}>Planta {!esAdmin && '*'}</Label>
+                            <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
+                            <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                                error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting}>
+                                <option value="" disabled hidden>Selecciona…</option>
+                                <option value="MAQUINARIA">Maquinaria</option>
+                                <option value="INFRAESTRUCTURA">Infraestructura</option>
+                                <option value="MOBILIARIO">Mobiliario</option>
+                                <option value="SISTEMAS">Sistemas / IT</option>
+                                <option value="VEHICULOS">Vehículos</option>
+                                <option value="GENERAL">General / Otro</option>
+                            </Select>
+                        </div>
+                        {esAdmin && (
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="tf-tipo">Tipo de tarea *</Label>
+                                <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} disabled={isSubmitting || esEdicion}>
+                                    {TIPOS_ADMIN.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                </Select>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── FILA 2: Planta | Área ── */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="tf-planta" error={!!fe.planta}>Planta *</Label>
                             <Select id="tf-planta" value={planta} onChange={(e) => { setPlanta(e.target.value); setArea(''); }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
                         </div>
-
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea {!esAdmin && '*'}</Label>
+                            <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea *</Label>
                             <Select id="tf-area" value={area} onChange={(e) => setArea(e.target.value)} error={!!fe.area} helperText={fe.area} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {(planta && AREAS_POR_PLANTA[planta] ? AREAS_POR_PLANTA[planta] : AREAS).map((a) => (
@@ -315,26 +339,25 @@ export const MobileTicketFormModal = ({
                         </div>
                     </div>
 
-                    {/* ── CATEGORÍA (solo clientes) ── */}
-                    {!esAdmin && (
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-categoria" error={!!fe.categoria}>Categoría del equipo *</Label>
-                            <Input id="tf-categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} error={!!fe.categoria} helperText={fe.categoria} placeholder="Ej. Eléctrico, Mecánico..." disabled={isSubmitting} />
-                        </div>
-                    )}
-
-                    {/* ── CAMPOS ADMINISTRATIVOS ── */}
+                    {/* ── FILA 3: Fecha | Tiempo Estimado (Solo Admin) ── */}
                     {esAdmin && (
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-tipo">Tipo de tarea</Label>
-                                <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} disabled={isSubmitting || esEdicion}>
-                                    {TIPOS_ADMIN.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                </Select>
-                            </div>
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5 overflow-hidden">
-                                <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha de vencimiento</Label>
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
+                                    <div className="flex items-center gap-1.5">
+                                        <button type="button" onClick={setToday} disabled={isSubmitting}
+                                            className={cn("text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                isHoy ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10")}>
+                                            Hoy
+                                        </button>
+                                        <button type="button" onClick={setTomorrow} disabled={isSubmitting}
+                                            className={cn("text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
+                                                isManana ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10")}>
+                                            Mañana
+                                        </button>
+                                    </div>
+                                </div>
                                 <Input
                                     id="tf-fecha"
                                     type="date"
@@ -351,7 +374,6 @@ export const MobileTicketFormModal = ({
                                 />
                             </div>
 
-                            {/* ── DURACIÓN ESTIMADA ── */}
                             <div className="flex flex-col gap-1.5">
                                 <Label>Tiempo estimado</Label>
                                 <DurationPicker
@@ -363,7 +385,7 @@ export const MobileTicketFormModal = ({
                         </div>
                     )}
 
-                    {/* ── ASIGNACIÓN DE TÉCNICOS (select nativo con workload en label) ── */}
+                    {/* ── ASIGNACIÓN DE TÉCNICOS (Admin) ── */}
                     {esAdmin && tecnicos.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="tf-tecnicos-add">Técnicos asignados (opcional)</Label>
