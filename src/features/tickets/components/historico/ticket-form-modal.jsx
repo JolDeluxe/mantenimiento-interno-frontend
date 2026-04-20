@@ -14,7 +14,7 @@ const MAX_DESCRIPCION = 500;
 const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
-const DurationPicker = ({ valueMins, onChange, disabled }) => {
+const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
     const horas = Math.floor((valueMins || 0) / 60);
     const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
     const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
@@ -23,26 +23,56 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
         <div className="flex flex-col gap-1.5">
             <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
-                    <select value={horas} onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)} disabled={disabled}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8">
+
+                    <select
+                        value={horas}
+                        onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                        disabled={disabled}
+                        className={cn(
+                            "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
+                            error
+                                ? "border-rose-500 focus:ring-rose-200"
+                                : "border-slate-300 focus:ring-marca-secundario/30"
+                        )}
+                    >
                         {HORAS_OPTIONS.map(h => <option key={h} value={h}>{h} h</option>)}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <div className={cn(
+                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
+                        error ? "text-rose-400" : "text-slate-400"
+                    )}>
                         <Icon name="expand_more" size="sm" />
                     </div>
                 </div>
+
                 <div className="relative">
-                    <select value={minutos} onChange={(e) => onChange(horas * 60 + Number(e.target.value))} disabled={disabled}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8">
+                    <select
+                        value={minutos}
+                        onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                        disabled={disabled}
+                        className={cn(
+                            "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
+                            error
+                                ? "border-rose-500 focus:ring-rose-200"
+                                : "border-slate-300 focus:ring-marca-secundario/30"
+                        )}
+                    >
                         {MINUTOS_OPTIONS.map(m => <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>)}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <div className={cn(
+                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
+                        error ? "text-rose-400" : "text-slate-400"
+                    )}>
                         <Icon name="expand_more" size="sm" />
                     </div>
                 </div>
             </div>
+
             {totalLabel && (
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                <p className={cn(
+                    "text-[11px] flex items-center gap-1 transition-colors",
+                    error ? "text-rose-600 font-bold" : "text-slate-400"
+                )}>
                     <Icon name="timer" size="xs" /> {totalLabel}
                 </p>
             )}
@@ -647,12 +677,30 @@ export const TicketFormModal = ({
         if (!planta) e.planta = 'Selecciona la planta.';
         if (!area) e.area = 'Selecciona el área.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
-        if (esAdmin && !tipo) e.tipo = 'El tipo de tarea es obligatorio.';
-        if (esAdmin && fechaVencimiento) {
-            if (fechaVencimiento < hoyLocal) {
+
+        if (esAdmin) {
+            if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
+
+            // Validación: Fecha de vencimiento obligatoria
+            if (!fechaVencimiento) {
+                e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
+            } else if (fechaVencimiento < hoyLocal) {
                 const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
                 if (!esEdicion || fechaVencimiento !== fechaOriginal)
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+            }
+
+            // Validación: Tiempo estimado obligatorio (si no es rutina)
+            if (!esRutina && tiempoEstimadoMins <= 0) {
+                e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+            }
+
+            // Validación: Responsables obligatorios
+            if (esEdicion) {
+                if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
+            } else {
+                // En modo creación/carrito, verificamos el técnico principal seleccionado
+                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico principal.';
             }
         }
         return e;
@@ -806,12 +854,16 @@ export const TicketFormModal = ({
 
                         {esAdmin && tecnicos.length > 0 && (
                             modoCarrito ? (
-                                <div className="p-3.5 rounded-xl border bg-slate-50 border-slate-200 flex flex-col gap-3">
+                                <div className={cn(
+                                    "p-3.5 rounded-xl border flex flex-col gap-3 transition-colors",
+                                    fe.responsables ? "bg-rose-50 border-rose-200" : "bg-slate-50 border-slate-200"
+                                )}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <Icon name="engineering" size="sm" className="text-slate-500" />
-                                            <span className="text-sm font-bold text-slate-700">Técnico principal</span>
-                                            <span className="text-xs text-slate-400 font-normal">(opcional)</span>
+                                            <Icon name="engineering" size="sm" className={fe.responsables ? "text-rose-500" : "text-slate-500"} />
+                                            <span className={cn("text-sm font-bold", fe.responsables ? "text-rose-700" : "text-slate-700")}>
+                                                Técnico principal *
+                                            </span>
                                         </div>
                                         {carritoLocked && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
@@ -827,6 +879,7 @@ export const TicketFormModal = ({
                                         disabled={isSubmitting || carritoLocked}
                                         placeholder="Buscar y seleccionar técnico..."
                                     />
+                                    {fe.responsables && <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1"><Icon name="error" size="xs" /> {fe.responsables}</p>}
 
                                     {tecnicoCart && (() => {
                                         const wl = tecnicoCart.workload;
@@ -852,13 +905,14 @@ export const TicketFormModal = ({
                                 </div>
                             ) : (
                                 <div className={cn("flex flex-col gap-2 transition-[padding] duration-300", isDropdownOpen ? "pb-[260px]" : "pb-0")}>
-                                    <Label>Técnicos asignados (opcional)</Label>
+                                    <Label error={!!fe.responsables}>Técnicos asignados *</Label>
                                     <TecnicoDropdown
                                         opciones={opcionesDisponiblesEdit}
                                         onAdd={handleAddTecnicoEdit}
                                         disabled={isSubmitting || opcionesDisponiblesEdit.length === 0}
                                         onToggle={setIsDropdownOpen}
                                     />
+                                    {fe.responsables && <p className="text-[10px] text-rose-600 font-bold mt-1">{fe.responsables}</p>}
                                     {responsables.length > 0 ? (
                                         <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
                                             {responsables.map(id => (
@@ -867,7 +921,7 @@ export const TicketFormModal = ({
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-dashed border-slate-300 text-slate-400 text-xs italic min-h-12">
-                                            <Icon name="engineering" size="sm" /> Sin técnicos asignados (quedará PENDIENTE)
+                                            <Icon name="engineering" size="sm" /> Sin técnicos asignados
                                         </div>
                                     )}
                                 </div>
@@ -965,7 +1019,7 @@ export const TicketFormModal = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
                                     <div className="flex justify-between items-center">
-                                        <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
+                                        <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento *</Label>
                                         <div className="flex items-center gap-1.5">
                                             <button type="button" onClick={setToday} disabled={isSubmitting}
                                                 className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
@@ -989,8 +1043,9 @@ export const TicketFormModal = ({
                                 </div>
                                 {!esRutina && (
                                     <div className="flex flex-col gap-1.5">
-                                        <Label>Tiempo estimado</Label>
+                                        <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
                                         <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
+                                        {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
                                     </div>
                                 )}
                             </div>

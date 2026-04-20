@@ -37,6 +37,10 @@ export const AreaItem = ({ area, plantaName, onClick }) => {
         tiempos = {},
     } = area;
 
+    // SANITY CHECK: Garantizar que el total de la Card coincida con los tickets
+    const sumaTipos = (tiposTotales?.tickets || 0) + (tiposTotales?.planeadas || 0) + (tiposTotales?.extraordinarias || 0);
+    const totalReal = Math.max(totalTareas, sumaTipos);
+
     const { alertaTiempo } = tiempos;
 
     const borderColor = alertaTiempo
@@ -60,11 +64,11 @@ export const AreaItem = ({ area, plantaName, onClick }) => {
                 <Icon name="open_in_new" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
             </div>
 
-            <MiniDistribucionBar tiposTotales={tiposTotales} total={totalTareas} />
+            <MiniDistribucionBar tiposTotales={tiposTotales} total={totalReal} />
 
             <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-100">
                 <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">
-                    <span className="text-base font-black text-slate-800 leading-none">{totalTareas}</span>
+                    <span className="text-base font-black text-slate-800 leading-none">{totalReal}</span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
                 </div>
                 <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">

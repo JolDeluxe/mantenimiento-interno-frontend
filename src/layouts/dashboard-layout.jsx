@@ -8,7 +8,7 @@ import { RefreshFab } from '@/components/ui/z_index';
 import { useNotifyStore } from '@/stores/notify-store';
 import { getUnreadCount } from '@/features/notificaciones/api/notificaciones-api';
 import { OfflineBanner } from '@/components/ui/offline-banner';
-
+import { subscribeToPush } from '@/lib/push';
 
 export const DashboardLayout = () => {
   const isDesktop = useIsDesktop();
@@ -35,6 +35,15 @@ export const DashboardLayout = () => {
       .then((res) => setNoLeidas(res?.count ?? 0))
       .catch(() => { }); // silencioso
   }, [currentUser?.id, setNoLeidas]);
+
+  // Registro y validación silenciosa de Push Notifications
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      subscribeToPush();
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <>

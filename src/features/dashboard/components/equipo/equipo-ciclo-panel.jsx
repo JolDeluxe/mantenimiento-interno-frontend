@@ -93,12 +93,15 @@ export const EquipoCicloPanel = ({ personas = [], promedioEquipoGlobal, loading 
     if (loading) return <PanelSkeleton />;
     if (personas.length === 0) return null;
 
-    // Reglas de negocio actualizadas: El top requiere >= 60%
-    const top60 = personas.filter(p => p.scoreAjustado >= 60);
+    // Lógica de Ranking: Solo participan quienes tengan 3 tareas o más
+    const calificados = personas.filter(p => p.calificaRanking);
+
+    // Reglas de negocio: El top requiere >= 60% dentro de los calificados
+    const top60 = calificados.filter(p => p.scoreAjustado >= 60);
     const top3 = top60.slice(0, 3);
 
-    // Foco de atención sigue siendo quienes caen debajo del estándar 60%
-    const bottom60 = personas.filter(p => p.scoreAjustado < 60);
+    // Foco de atención: Quiénes caen debajo del estándar 60% dentro de los calificados
+    const bottom60 = calificados.filter(p => p.scoreAjustado < 60);
     const bottom3 = bottom60.length > 0 ? [...bottom60].reverse().slice(0, 3) : [];
 
     return (
@@ -129,8 +132,8 @@ export const EquipoCicloPanel = ({ personas = [], promedioEquipoGlobal, loading 
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                            <Icon name="sentiment_dissatisfied" className="text-slate-300 text-3xl mb-2" />
-                            <p className="text-[10px] md:text-xs font-bold text-slate-500">Ningún colaborador alcanza el 60%.</p>
+                            <Icon name="groups" className="text-slate-300 text-3xl mb-2" />
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500">Sin personal calificado en el Top (Min. 3 tareas).</p>
                         </div>
                     )}
                 </div>
@@ -148,7 +151,7 @@ export const EquipoCicloPanel = ({ personas = [], promedioEquipoGlobal, loading 
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center border-2 border-dashed border-emerald-200 rounded-xl bg-emerald-50/50">
                             <Icon name="task_alt" className="text-emerald-400 text-3xl mb-2" />
-                            <p className="text-[10px] md:text-xs font-bold text-emerald-700">¡Excelente!<br />Todos arriba del 60%.</p>
+                            <p className="text-[10px] md:text-xs font-bold text-emerald-700">No hay personal rezagado con carga suficiente.</p>
                         </div>
                     )}
                 </div>

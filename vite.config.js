@@ -12,88 +12,31 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        // Pasamos a injectManifest para poder manejar push nativamente
+        strategies: 'injectManifest',
+        srcDir: 'src',
         filename: 'sw.js',
-        injectManifest: false,
 
-        workbox: {
-          // 🔥 Permite archivos grandes (como fonts)
+        injectManifest: {
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-
-          // 🔥 Qué archivos se cachean en precache
           globPatterns: ['**/*.{js,css,html,ico,png,webp,woff2,svg}'],
-
-          // 🔥 Ignorar basura o archivos pesados innecesarios
           globIgnores: [
             '**/node_modules/**/*',
             'sw.js',
             '**/MaterialSymbolsRounded*.woff2',
           ],
-
-          // 🔥 Limpia caches viejos automáticamente
-          cleanupOutdatedCaches: true,
-
-          // 🔥 Activación inmediata del SW
-          skipWaiting: true,
-          clientsClaim: true,
-
-          // 🔥 Manejo de rutas SPA offline (CRÍTICO)
-          navigateFallback: '/index.html',
-          navigateFallbackAllowlist: [/./],
-          navigateFallbackDenylist: [/^\/api\//],
-
-          // 🔥 Estrategias de cache dinámico
-          runtimeCaching: [
-            {
-              // API → intenta red, si falla usa cache
-              urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'cuadra-api-v1',
-                networkTimeoutSeconds: 5,
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24, // 24 horas
-                },
-              },
-            },
-            {
-              // Cloudinary → cache fuerte
-              urlPattern: ({ url }) => url.hostname.includes('cloudinary.com'),
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'cuadra-cloudinary-v1',
-                expiration: {
-                  maxEntries: 200,
-                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 días
-                },
-              },
-            },
-            {
-              // Imágenes y fuentes → cache fuerte
-              urlPattern: ({ request }) =>
-                request.destination === 'font' ||
-                request.destination === 'image',
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'cuadra-static-v1',
-                expiration: {
-                  maxEntries: 60,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
-                },
-              },
-            },
-          ],
         },
 
-        // 🔥 Usas manifest externo
+        // Desactiva generación automática del manifest (usamos el externo)
         manifest: false,
 
-        // 🔥 Assets adicionales a incluir
         includeAssets: ['img/**/*.webp', 'img/**/*.png'],
+
+        devOptions: {
+          // En dev se puede activar para probar el SW localmente si se necesita
+          enabled: false,
+          type: 'module',
+        },
       }),
     ],
 

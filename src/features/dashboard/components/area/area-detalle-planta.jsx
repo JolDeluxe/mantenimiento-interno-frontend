@@ -74,7 +74,7 @@ export const PlantaDetalle = ({ planta, onClose }) => {
                                         <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Área</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center">Total</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center">Activas</th>
-                                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center">Tipos (TK / PL / EX)</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center">Tipos (reportes / planeadas / extra)</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-right">Real vs Est.</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center">Estado Tiempo</th>
                                     </tr>
@@ -99,10 +99,10 @@ export const PlantaDetalle = ({ planta, onClose }) => {
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex flex-col text-[11px] font-medium">
                                                     <span className={area.tiempos?.alertaTiempo ? 'text-red-600 font-bold' : 'text-slate-800'}>
-                                                        R: {formatMins(area.tiempos?.tiempoRealTotal)}
+                                                        Real: {formatMins(area.tiempos?.tiempoRealTotal)}
                                                     </span>
                                                     <span className="text-slate-400">
-                                                        E: {formatMins(area.tiempos?.tiempoEstimadoTotal)}
+                                                        Estimado: {formatMins(area.tiempos?.tiempoEstimadoTotal)}
                                                     </span>
                                                 </div>
                                             </td>

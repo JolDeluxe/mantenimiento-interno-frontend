@@ -501,6 +501,7 @@ export const TicketProgressModal = ({
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {/* Botón 1: Confirmar lo que dice el sistema */}
                                         <button
                                             type="button"
                                             onClick={() => setTimePhase('confirmado')}
@@ -510,43 +511,25 @@ export const TicketProgressModal = ({
                                             {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
                                         </button>
 
-                                        {isAtrasada ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (elapsedMins === 0) {
-                                                        setTiempoManualMins(60);
-                                                        if (isAtrasada) {
-                                                            setFechaFinManual(isoToDateInput(new Date().toISOString()));
-                                                            setTimePhase('atrasada_fecha');
-                                                        } else {
-                                                            setTimePhase('manual');
-                                                        }
-                                                    } else {
-                                                        setTimePhase('confirmado');
-                                                    }
-                                                }}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
-                                            >
-                                                <Icon name="check" size="sm" />
-                                                {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
+                                        {/* Botón 2: Corregir tiempo (Ya no se duplica el 'Sí') */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (isAtrasada) {
+                                                    setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                    setTimePhase('atrasada_fecha');
+                                                } else {
                                                     const base = elapsedMins > 0 ? elapsedMins : 60;
                                                     const redondeado = Math.round(base / 5) * 5;
-                                                    const capped = Math.min(redondeado, 1435);
-                                                    setTiempoManualMins(capped || 60);
+                                                    setTiempoManualMins(Math.min(redondeado, 1435) || 60);
                                                     setTimePhase('manual');
-                                                }}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
-                                            >
-                                                <Icon name="edit" size="sm" />
-                                                No, corregir tiempo
-                                            </button>
-                                        )}
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="edit" size="sm" />
+                                            {isAtrasada ? 'No, corregir fecha/tiempo' : 'No, corregir tiempo'}
+                                        </button>
                                     </div>
                                 </div>
                             )}

@@ -83,9 +83,12 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
         frecuenciaTickets = [],
     } = area;
 
+    // SANITY CHECK: Si el total de tareas es 0 pero hay tickets, usamos la suma de los tipos
+    const sumaTipos = (tiposTotales?.tickets || 0) + (tiposTotales?.planeadas || 0) + (tiposTotales?.extraordinarias || 0);
+    const totalReal = Math.max(totalTareas, sumaTipos);
+
     const { tiempoRealTotal = 0, tiempoEstimadoTotal = 0, alertaTiempo } = tiempos;
 
-    // Cálculo visual de la desviación
     const desviacionPct = tiempoEstimadoTotal > 0
         ? Math.round(((tiempoRealTotal - tiempoEstimadoTotal) / tiempoEstimadoTotal) * 100)
         : 0;
@@ -106,20 +109,22 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                     <div className="grid grid-cols-3 gap-3">
                         <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Tareas</p>
-                            <p className="text-2xl font-black text-slate-800">{totalTareas}</p>
+                            {/* Usamos totalReal para corregir el 0 */}
+                            <p className="text-2xl font-black text-slate-800">{totalReal}</p>
                         </div>
                         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-amber-600/70 uppercase tracking-wider mb-1">Activas</p>
                             <p className="text-2xl font-black text-amber-600">{tareasActivas}</p>
                         </div>
                         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
-                            <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Tickets (TK)</p>
+                            <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Reportes</p>
                             <p className="text-2xl font-black text-blue-600">{tiposTotales?.tickets || 0}</p>
                         </div>
                     </div>
 
                     <Section title="Distribución de estados" icon="category">
-                        {totalTareas > 0 ? (
+                        {/* Usamos totalReal para la validación de la sección */}
+                        {totalReal > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(estados).filter(([, count]) => count > 0).map(([estado, count]) => {
                                     const style = ESTADOS_CONFIG[estado] || 'bg-slate-100 text-slate-600 border-slate-200';
@@ -231,7 +236,7 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                         {Object.keys(clasificaciones).filter(k => clasificaciones[k] > 0).length > 0 ? (
                             <div className="flex flex-col gap-2">
                                 {topN(clasificaciones).map(([clas, count]) => (
-                                    <BarRow key={clas} label={clas} count={count} total={totalTareas} colorClass={CLASI_COLORS[clas] || 'bg-slate-400'} />
+                                    <BarRow key={clas} label={clas} count={count} total={totalReal} colorClass={CLASI_COLORS[clas] || 'bg-slate-400'} />
                                 ))}
                             </div>
                         ) : (

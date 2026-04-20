@@ -425,27 +425,30 @@ export const TicketPausaModal = ({
                                         <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">Sistema</p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button variant="accion" className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100" onClick={() => setTimePhase('confirmado')}>
-                                            <Icon name="check" size="xs" /> Sí
-                                        </Button>
                                         <Button
                                             variant="accion"
                                             className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                                            onClick={() => setTimePhase('confirmado')}
+                                        >
+                                            <Icon name="check" size="xs" />
+                                            {isAtrasada ? 'Sí, con atraso' : 'Sí, es correcto'}
+                                        </Button>
+                                        <Button
+                                            variant="accion"
+                                            className="bg-amber-600 text-white hover:bg-amber-700"
                                             onClick={() => {
-                                                if (elapsedMins === 0) {
-                                                    setTiempoManualMins(60);
-                                                    if (isAtrasada) {
-                                                        setFechaFinManual(isoToDateInput(new Date().toISOString()));
-                                                        setTimePhase('atrasada_fecha');
-                                                    } else {
-                                                        setTimePhase('manual');
-                                                    }
+                                                if (isAtrasada) {
+                                                    setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                    setTimePhase('atrasada_fecha');
                                                 } else {
-                                                    setTimePhase('confirmado');
+                                                    const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                    setTiempoManualMins(Math.min(Math.round(base / 5) * 5, 1435) || 60);
+                                                    setTimePhase('manual');
                                                 }
                                             }}
                                         >
-                                            <Icon name="check" size="xs" /> Sí
+                                            <Icon name="edit" size="xs" />
+                                            No, corregir
                                         </Button>
                                     </div>
                                 </div>
