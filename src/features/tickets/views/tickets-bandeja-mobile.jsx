@@ -3,7 +3,6 @@ import { Icon, GlassFab, GlassPaginationPill, ScrollToTopButton } from '@/compon
 import { cn } from '@/utils/cn';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
-import { hardReload } from '@/utils/hard-reload';
 
 export const TicketsBandejaMobile = ({
     tickets,
@@ -14,14 +13,12 @@ export const TicketsBandejaMobile = ({
     onSortChange,
     pagination,
     onPageChange,
-    onOpenCreate
+    onOpenCreate,
+    onRefresh
 }) => {
-    // ── Evaluaciones de Estado ───────────────────────────────────────────────
     const hasContent = !isLoading && tickets && tickets.length > 0;
     const hasPaginator = hasContent && pagination && pagination.totalPages > 1;
 
-    // ── Matemática Liquid Glass ──────────────────────────────────────────────
-    // Evita superposición de FABs apilándolos dinámicamente
     const baseBottom = hasPaginator ? 104 : 84;
     const fabAddBottom = `${baseBottom}px`;
     const fabRefreshBottom = onOpenCreate ? `${baseBottom + 60}px` : `${baseBottom}px`;
@@ -62,8 +59,6 @@ export const TicketsBandejaMobile = ({
                 )}
             </div>
 
-            {/* ── Capa Flotante Liquid Glass ─────────────────────────────────── */}
-
             {hasPaginator && (
                 <div className="md:hidden">
                     <GlassPaginationPill
@@ -80,7 +75,7 @@ export const TicketsBandejaMobile = ({
             <div className="md:hidden">
                 <GlassFab
                     icon="refresh"
-                    onClick={hardReload}
+                    onClick={onRefresh}
                     isLoading={isLoading}
                     variant="neutral"
                     size={50}

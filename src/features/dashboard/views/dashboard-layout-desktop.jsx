@@ -31,12 +31,6 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
         <div className="flex flex-col gap-6">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
-                        Reportes y KPIs
-                    </h2>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                        Analiza el rendimiento operacional del departamento
-                    </p>
                     <div className="w-full m-5 xl:w-auto shrink-0">
                         <DashboardFechas
                             year={contextData.filtro.year}

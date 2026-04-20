@@ -272,7 +272,19 @@ export const TicketPausaModal = ({
         setElapsedMins(mins);
         const ev = evaluarTiempo(mins, ticket);
         setEvaluacion(ev);
-        setTimePhase(ev.alerta ? 'preguntando' : 'confirmado');
+
+        // Intercepción Liquid UI: Si es 0 min, saltamos la confirmación y forzamos manual
+        if (mins === 0) {
+            setTiempoManualMins(60);
+            if (ev?.tipo === 'alto') {
+                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                setTimePhase('atrasada_fecha');
+            } else {
+                setTimePhase('manual');
+            }
+        } else {
+            setTimePhase(ev.alerta ? 'preguntando' : 'confirmado');
+        }
     };
 
     const handleAgregar = useCallback((items) => {
@@ -325,7 +337,8 @@ export const TicketPausaModal = ({
     const disableConfirm = !accion || (accion === 'resolver' && (
         timePhase === 'preguntando' ||
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && tiempoManualMins === 0) ||
-        (timePhase === 'atrasada_fecha' && !isFechaFinValida)
+        (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
+        (timePhase === 'confirmado' && elapsedMins === 0)
     ));
 
     return (
@@ -415,17 +428,24 @@ export const TicketPausaModal = ({
                                         <Button variant="accion" className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100" onClick={() => setTimePhase('confirmado')}>
                                             <Icon name="check" size="xs" /> Sí
                                         </Button>
-                                        <Button variant="accion" className="bg-amber-600 text-white" onClick={() => {
-                                            if (isAtrasada) {
-                                                setFechaFinManual(isoToDateInput(new Date().toISOString()));
-                                                setTimePhase('atrasada_fecha');
-                                            } else {
-                                                setTimePhase('manual');
-                                            }
-                                            const base = elapsedMins > 0 ? elapsedMins : 60;
-                                            setTiempoManualMins(Math.round(base / 5) * 5 || 60);
-                                        }}>
-                                            <Icon name="edit" size="xs" /> No, corregir
+                                        <Button
+                                            variant="accion"
+                                            className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                                            onClick={() => {
+                                                if (elapsedMins === 0) {
+                                                    setTiempoManualMins(60);
+                                                    if (isAtrasada) {
+                                                        setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                        setTimePhase('atrasada_fecha');
+                                                    } else {
+                                                        setTimePhase('manual');
+                                                    }
+                                                } else {
+                                                    setTimePhase('confirmado');
+                                                }
+                                            }}
+                                        >
+                                            <Icon name="check" size="xs" /> Sí
                                         </Button>
                                     </div>
                                 </div>
@@ -460,6 +480,15 @@ export const TicketPausaModal = ({
                                         </span>
                                         <span className="text-lg font-extrabold font-mono text-estado-resuelto">{tiempoDisplay}</span>
                                     </div>
+
+                                    {/* NUEVA VALIDACIÓN VISUAL AQUÍ */}
+                                    {timePhase === 'confirmado' && elapsedMins === 0 && (
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                            <Icon name="warning" size="xs" />
+                                            El tiempo debe ser mayor a 0 minutos para poder resolver.
+                                        </p>
+                                    )}
+
                                     <Label>Nota de resolución <span className="font-normal text-slate-400">(opcional)</span></Label>
                                     <textarea rows={3} value={notaResolver} onChange={(e) => setNotaResolver(e.target.value)} placeholder="Acciones realizadas..."
                                         className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:ring-2 focus:ring-marca-secundario/30 outline-none" />

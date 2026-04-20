@@ -1,4 +1,3 @@
-// src/features/tickets/pages/tickets-hoy.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
@@ -54,7 +53,6 @@ export default function TicketsHoyPage() {
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
 
-    // Extracción del parámetro de la URL para el resaltado
     const [searchParams, setSearchParams] = useSearchParams();
     const highlightId = searchParams.get('highlight');
 
@@ -89,14 +87,14 @@ export default function TicketsHoyPage() {
         setFiltroResponsable('');
         setMostrarAtrasadas(false);
         setMostrarRechazadas(false);
-
-        // Limpiar el highlight de la URL al cambiar de pestaña para evitar comportamientos fantasma
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
+    const queryPayload = useMemo(() => ({ limit: 500 }), []);
+
     const loadTickets = useCallback(() => {
-        fetchTickets({ limit: 500 }).catch(() => notify.error('Error al cargar las tareas.'));
-    }, [fetchTickets]);
+        fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las tareas.'));
+    }, [fetchTickets, queryPayload]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
@@ -110,7 +108,6 @@ export default function TicketsHoyPage() {
             : { EN_PAUSA: 5, EN_PROGRESO: 4, ASIGNADA: 3, RECHAZADO: 3, RESUELTO: 2 };
 
         return [...tickets].sort((a, b) => {
-            // Prioridad absoluta al ticket que viene en la URL
             if (highlightId) {
                 if (String(a.id) === highlightId) return -1;
                 if (String(b.id) === highlightId) return 1;
@@ -140,7 +137,6 @@ export default function TicketsHoyPage() {
         return base;
     }, [allTickets, currentUser]);
 
-    // Cálculo exclusivo para el Summary Bar (aislado de los filtros del usuario)
     const ticketsTabActual = useMemo(() => {
         const base = getBaseTickets();
         return dateOffset === 0 ? base.filter(perteneceAHoy) : base.filter(t => isOnDate(t.fechaVencimiento, dateOffset));
@@ -162,8 +158,6 @@ export default function TicketsHoyPage() {
     const ticketsFiltrados = useMemo(() => {
         let filtered = ticketsTabActual;
 
-        // Si venimos de una notificación, aseguramos que el ticket se inyecte en la vista 
-        // aunque de manera normal no cumpliera con las fechas.
         if (highlightId && !filtered.some(t => String(t.id) === highlightId)) {
             const ticketResaltado = allTickets.find(t => String(t.id) === highlightId);
             if (ticketResaltado) {
@@ -173,9 +167,7 @@ export default function TicketsHoyPage() {
 
         if (mostrarAtrasadas || mostrarRechazadas) {
             filtered = getBaseTickets().filter(t => {
-                // El ticket resaltado ignora las exclusiones
                 if (highlightId && String(t.id) === highlightId) return true;
-
                 let match = true;
                 if (mostrarAtrasadas) match = match && esAtrasadaActiva(t);
                 if (mostrarRechazadas) match = match && t.estado === 'RECHAZADO';
@@ -183,7 +175,6 @@ export default function TicketsHoyPage() {
             });
         }
 
-        // El ticket resaltado SIEMPRE sobrevive a los selectbox de filtrado
         if (filtroEstado !== 'TODOS') filtered = filtered.filter(t => t.estado === filtroEstado || (highlightId && String(t.id) === highlightId));
         if (filtroTipo) filtered = filtered.filter(t => t.tipo === filtroTipo || (highlightId && String(t.id) === highlightId));
         if (filtroPrioridad) filtered = filtered.filter(t => t.prioridad === filtroPrioridad || (highlightId && String(t.id) === highlightId));
@@ -248,7 +239,7 @@ export default function TicketsHoyPage() {
 
     const sharedProps = {
         tickets: ticketsFiltrados,
-        highlightId, // Inyectado para que las vistas puedan iluminar la tarjeta
+        highlightId,
         loading,
         submitting,
         currentUser,
@@ -286,25 +277,9 @@ export default function TicketsHoyPage() {
         <div className="max-w-full mx-auto">
             {isDesktop ? <TicketsHoyDesktop {...sharedProps} /> : <TicketsHoyMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal
-                    isOpen={showCreate}
-                    onClose={() => setShowCreate(false)}
-                    ticketAEditar={null}
-                    currentUser={currentUser}
-                    tecnicos={tecnicos}
-                    isSubmitting={submitting}
-                    onSuccess={handleCreate}
-                />
+                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             ) : (
-                <MobileHoyFormModal
-                    isOpen={showCreate}
-                    onClose={() => setShowCreate(false)}
-                    ticketAEditar={null}
-                    currentUser={currentUser}
-                    tecnicos={tecnicos}
-                    isSubmitting={submitting}
-                    onSuccess={handleCreate}
-                />
+                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
         </div>
     );

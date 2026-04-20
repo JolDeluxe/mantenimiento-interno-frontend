@@ -1,73 +1,121 @@
 import { Icon } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
 
-const COLOR_BAR = { green: 'bg-emerald-500', amber: 'bg-amber-400', red: 'bg-red-500' };
-const ROL_LABEL = { TECNICO: 'Técnico', COORDINADOR_MTTO: 'Coordinador' };
-const ROL_COLOR = { TECNICO: 'bg-blue-100 text-blue-700', COORDINADOR_MTTO: 'bg-amber-100 text-amber-700' };
+const BAR_COLOR = { green: 'bg-emerald-500', amber: 'bg-amber-400', red: 'bg-red-500' };
+const SCORE_COLOR = { green: 'text-emerald-600', amber: 'text-amber-600', red: 'text-red-600' };
 
-export const TecnicoKpiRow = ({ tecnico, onViewDetail }) => {
-    const barColor = COLOR_BAR[tecnico.color] || 'bg-slate-400';
-    const mins = tecnico.minutosReales;
-    const tiempoStr = mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+// Colores para los lugares del Ranking (Oro, Plata, Bronce, y gris por defecto)
+const RANK_STYLES = {
+    1: 'bg-amber-400 text-amber-950',
+    2: 'bg-slate-300 text-slate-800',
+    3: 'bg-orange-300 text-orange-950'
+};
+
+const formatMins = (m) => {
+    if (!m || m === 0) return '0 min';
+    return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60}m`;
+};
+
+export const TecnicoKpiRow = ({ tecnico, rank, onViewDetail }) => {
+    const barColor = BAR_COLOR[tecnico.color] || 'bg-slate-400';
+    const scoreColor = SCORE_COLOR[tecnico.color] || 'text-slate-600';
+    const rankStyle = RANK_STYLES[rank] || 'bg-slate-100 text-slate-500';
+
+    // Regla de color para el tiempo Real vs Planeado
+    let timeColor = 'text-slate-600';
+    if (tecnico.minutosEstimados > 0) {
+        const ratio = tecnico.minutosReales / tecnico.minutosEstimados;
+        if (ratio <= 1) {
+            timeColor = 'text-emerald-600 font-bold'; // A tiempo (Verde)
+        } else if (ratio > 1.2) {
+            timeColor = 'text-red-600 font-bold'; // +20% Excedido (Rojo)
+        } else {
+            timeColor = 'text-amber-600 font-bold'; // Ligeramente excedido (Ámbar)
+        }
+    }
 
     return (
-        <div className="flex items-center gap-3 py-3 border-b border-slate-100 last:border-0">
-            {tecnico.imagen ? (
-                <img
-                    src={tecnico.imagen}
-                    alt={tecnico.nombre}
-                    className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
-                    onError={(e) => { e.target.src = '/img/perfil-no-foto.webp'; }}
-                />
-            ) : (
-                <div className="w-9 h-9 rounded-full bg-marca-primario/10 flex items-center justify-center text-sm font-black text-marca-primario shrink-0">
-                    {tecnico.nombre?.charAt(0).toUpperCase()}
-                </div>
-            )}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all relative flex flex-col gap-4 overflow-hidden group">
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                        <span className="text-sm font-bold text-slate-800 truncate">{tecnico.nombre}</span>
-                        {tecnico.rol && (
-                            <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0', ROL_COLOR[tecnico.rol] || 'bg-slate-100 text-slate-600')}>
-                                {ROL_LABEL[tecnico.rol] || tecnico.rol}
-                            </span>
-                        )}
-                    </div>
-                    <span className={cn('text-xs font-extrabold font-mono shrink-0',
-                        tecnico.color === 'green' ? 'text-emerald-600' :
-                            tecnico.color === 'amber' ? 'text-amber-600' : 'text-red-600'
-                    )}>
-                        {tecnico.kpiPromedio}%
-                    </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1.5">
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                            className={cn('h-full rounded-full transition-all duration-500', barColor)}
-                            style={{ width: `${tecnico.kpiPromedio}%` }}
-                        />
-                    </div>
-                    <span className="text-[10px] text-slate-400 shrink-0">
-                        {tecnico.tareasCompletadas} tareas · {tiempoStr}
-                    </span>
-                </div>
-                {!tecnico.datosSuficientes && (
-                    <span className="text-[9px] text-amber-600 font-bold flex items-center gap-0.5 mt-0.5">
-                        <Icon name="warning" size="xs" /> Datos insuficientes
-                    </span>
-                )}
+            {/* Etiqueta de Posición en la esquina superior izquierda */}
+            <div className={cn(
+                "absolute top-0 left-0 px-3 py-1 rounded-br-xl text-xs font-black font-mono shadow-sm z-10",
+                rankStyle
+            )}>
+                #{rank}
             </div>
 
+            {/* Cabecera: Avatar, Nombre y Score */}
+            <div className="flex items-start justify-between gap-3 mt-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    {tecnico.imagen ? (
+                        <img
+                            src={tecnico.imagen}
+                            alt={tecnico.nombre}
+                            className="w-11 h-11 rounded-full object-cover border-2 border-slate-50 shrink-0 shadow-sm"
+                            onError={(e) => { e.target.src = '/img/perfil-no-foto.webp'; }}
+                        />
+                    ) : (
+                        <div className="w-11 h-11 rounded-full bg-marca-primario/10 flex items-center justify-center text-lg font-black text-marca-primario shrink-0 shadow-sm">
+                            {tecnico.nombre?.charAt(0).toUpperCase()}
+                        </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                        <p className="text-sm font-extrabold text-slate-800 truncate" title={tecnico.nombre}>
+                            {tecnico.nombre}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide truncate mt-0.5">
+                            {tecnico.tareasCompletadas} tarea{tecnico.tareasCompletadas !== 1 ? 's' : ''} finalizada{tecnico.tareasCompletadas !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                    <span className={cn('text-2xl font-black font-mono leading-none', scoreColor)}>
+                        {tecnico.scoreAjustado}%
+                    </span>
+                    {/* ETIQUETA DE VOLUMEN INSUFICIENTE */}
+                    {tecnico.tareasCompletadas < 3 && (
+                        <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-100/50 border border-amber-200 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                            <Icon name="warning" size="xs" className="scale-75" /> Orientativo
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Barra de Progreso Central */}
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                    className={cn('h-full rounded-full transition-all duration-700', barColor)}
+                    style={{ width: `${Math.min(tecnico.scoreAjustado, 100)}%` }}
+                />
+            </div>
+
+            {/* Panel de Tiempos */}
+            <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100 p-2.5">
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tiempo Real</span>
+                    <span className={cn("text-xs", timeColor)}>
+                        {formatMins(tecnico.minutosReales)}
+                    </span>
+                </div>
+                <div className="w-px h-8 bg-slate-200 mx-2"></div>
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Planeado</span>
+                    <span className="text-xs font-bold text-slate-600">
+                        {tecnico.minutosEstimados > 0 ? formatMins(tecnico.minutosEstimados) : '—'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Botón de Detalle */}
             {onViewDetail && (
                 <button
                     type="button"
                     onClick={() => onViewDetail(tecnico)}
-                    className="shrink-0 p-1.5 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
-                    title="Ver detalle"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-marca-primario hover:text-white transition-colors cursor-pointer mt-auto"
                 >
-                    <Icon name="visibility" size="sm" />
+                    <Icon name="analytics" size="xs" />
+                    Ver Análisis
                 </button>
             )}
         </div>

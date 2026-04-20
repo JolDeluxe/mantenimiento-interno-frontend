@@ -262,7 +262,19 @@ export const TicketProgressModal = ({
         const ev = evaluarTiempo(mins, ticket);
         setEvaluacion(ev);
 
-        setTimePhase('preguntando');
+        // Intercepción Liquid UI: Si es 0 min, saltamos la pregunta y forzamos manual
+        if (mins === 0) {
+            setTiempoManualMins(60);
+            if (ev?.tipo === 'alto') {
+                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                setTimePhase('atrasada_fecha');
+            } else {
+                setTimePhase('manual');
+            }
+        } else {
+            setTimePhase('preguntando');
+        }
+
         setVista('resolver');
     };
 
@@ -339,7 +351,8 @@ export const TicketProgressModal = ({
     const resolverDisabled =
         timePhase === 'preguntando' ||
         (timePhase === 'manual' && tiempoManualMins === 0) ||
-        (timePhase === 'atrasada_fecha' && (!isFechaFinValida || tiempoManualMins === 0));
+        (timePhase === 'atrasada_fecha' && (!isFechaFinValida || tiempoManualMins === 0)) ||
+        (timePhase === 'confirmado' && elapsedMins === 0);
 
     const isAtrasada = evaluacion?.tipo === 'alto';
 
@@ -501,16 +514,22 @@ export const TicketProgressModal = ({
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    setFechaFinManual(isoToDateInput(new Date().toISOString()));
-                                                    const base = elapsedMins > 0 ? elapsedMins : 60;
-                                                    const redondeado = Math.round(base / 5) * 5;
-                                                    setTiempoManualMins(Math.min(redondeado, 1435) || 60);
-                                                    setTimePhase('atrasada_fecha');
+                                                    if (elapsedMins === 0) {
+                                                        setTiempoManualMins(60);
+                                                        if (isAtrasada) {
+                                                            setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                            setTimePhase('atrasada_fecha');
+                                                        } else {
+                                                            setTimePhase('manual');
+                                                        }
+                                                    } else {
+                                                        setTimePhase('confirmado');
+                                                    }
                                                 }}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
                                             >
-                                                <Icon name="event" size="sm" />
-                                                No, especificar cierre
+                                                <Icon name="check" size="sm" />
+                                                {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
                                             </button>
                                         ) : (
                                             <button
@@ -607,6 +626,14 @@ export const TicketProgressModal = ({
                                             {tiempoDisplay}
                                         </span>
                                     </div>
+
+                                    {/* NUEVA VALIDACIÓN VISUAL AQUÍ */}
+                                    {timePhase === 'confirmado' && elapsedMins === 0 && (
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                            <Icon name="warning" size="xs" />
+                                            No se puede resolver una tarea con 0 minutos. Selecciona "No, corregir tiempo".
+                                        </p>
+                                    )}
 
                                     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <Label htmlFor="nota-resolver">

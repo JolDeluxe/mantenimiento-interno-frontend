@@ -1,94 +1,82 @@
-import React from 'react';
-import { Icon, Tooltip } from '@/components/ui/z_index';
+// src/features/dashboard/components/area/area-item.jsx
+import { Icon } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
 
-export const formatMins = (m) => {
-    if (!m || m === 0) return '0 min';
-    return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60}m`;
-};
+const MiniDistribucionBar = ({ tiposTotales, total }) => {
+    if (total === 0) return null;
 
-export const formatKey = (str) => {
-    if (!str) return 'No Definido';
-    return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-};
+    const tk = tiposTotales?.tickets || 0;
+    const pl = tiposTotales?.planeadas || 0;
+    const ex = tiposTotales?.extraordinarias || 0;
 
-export const getDesviacionColor = (real, planeado) => {
-    if (real === 0 && planeado === 0) return 'text-slate-400';
-    if (planeado === 0 && real > 0) return 'text-red-600';
-
-    const pct = ((real - planeado) / planeado) * 100;
-
-    if (pct >= 30) return 'text-red-600';
-    if (pct > 5) return 'text-amber-500';
-    return 'text-emerald-600';
-};
-
-export const AreaItem = ({ area, onOpenArea, plantaName, isMobile = false }) => {
-    const real = Number(area?.tiemposCerradas?.tiempoRealTotal) || 0;
-    const planeado = Number(area?.tiemposCerradas?.tiempoEstimadoTotal) || 0;
-    const cerradas = Number(area?.tiemposCerradas?.cantidad) || 0;
-    const totalTareas = Number(area?.totalTareas) || 0;
-
-    const hasData = cerradas > 0;
-    const colorReal = getDesviacionColor(real, planeado);
-
-    if (isMobile) {
-        return (
-            <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100 active:scale-95 transition-transform">
-                <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-slate-700">{area.area}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{totalTareas} tareas totales</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">Tiempo Planeado</span>
-                        <span className="text-[9px] font-bold font-mono text-slate-500">{hasData ? formatMins(planeado) : 'S/D'}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                        <span className="text-[8px] font-black text-slate-400 uppercase">Tiempo Total Área</span>
-                        <span className={cn('text-[11px] font-black font-mono', hasData ? colorReal : 'text-slate-400')}>
-                            {hasData ? formatMins(real) : 'S/D'}
-                        </span>
-                    </div>
-                    <button onClick={() => onOpenArea(area, plantaName)} className="p-1 cursor-pointer">
-                        <Icon name="open_in_new" size="xs" className="text-marca-primario" />
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    const pTk = Math.round((tk / total) * 100);
+    const pPl = Math.round((pl / total) * 100);
+    const pEx = Math.round((ex / total) * 100);
 
     return (
-        <div className="group flex flex-row items-center justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm gap-4 hover:border-slate-300 hover:shadow-md transition-all cursor-default">
-            <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-slate-700 truncate">{area.area}</span>
-                <span className="text-[10px] text-slate-400 font-semibold">{totalTareas} tareas totales</span>
+        <div className="flex flex-col gap-1.5 mb-3">
+            <div className="flex h-2 rounded-full overflow-hidden w-full gap-px bg-slate-100">
+                {tk > 0 && <div className="bg-blue-500 transition-all" style={{ width: `${pTk}%` }} title={`Tickets: ${tk}`} />}
+                {pl > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${pPl}%` }} title={`Planeadas: ${pl}`} />}
+                {ex > 0 && <div className="bg-amber-500 transition-all" style={{ width: `${pEx}%` }} title={`Extraordinarias: ${ex}`} />}
             </div>
-
-            <div className="flex items-center gap-4 shrink-0">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-end border-r border-slate-100 pr-4">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Tiempo Planeado</span>
-                        <span className="text-[10px] font-bold font-mono text-slate-500">{hasData ? formatMins(planeado) : 'S/D'}</span>
-                    </div>
-                    <div className="flex flex-col items-end w-24">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Tiempo Total Área</span>
-                        <span className={cn('text-[13px] font-black font-mono leading-none mt-0.5', hasData ? colorReal : 'text-slate-400')}>
-                            {hasData ? formatMins(real) : 'S/D'}
-                        </span>
-                    </div>
-                </div>
-
-                <Tooltip text="Ver reporte del área" variant="dark">
-                    <button
-                        type="button"
-                        onClick={() => onOpenArea(area, plantaName)}
-                        className="p-1.5 hover:bg-slate-100 rounded-full transition-colors flex shrink-0 border border-slate-100 cursor-pointer"
-                    >
-                        <Icon name="analytics" size="xs" className="text-slate-400 group-hover:text-marca-primario" />
-                    </button>
-                </Tooltip>
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                <span className={cn(tk > 0 ? 'text-blue-600' : 'text-slate-300')}>Reportes: {tk}</span>
+                <span className={cn(pl > 0 ? 'text-emerald-600' : 'text-slate-300')}>Planeadas: {pl}</span>
+                <span className={cn(ex > 0 ? 'text-amber-600' : 'text-slate-300')}>Extraordinarias: {ex}</span>
             </div>
         </div>
+    );
+};
+
+export const AreaItem = ({ area, plantaName, onClick }) => {
+    const {
+        totalTareas = 0,
+        tareasActivas = 0,
+        tiposTotales = {},
+        tiempos = {},
+    } = area;
+
+    const { alertaTiempo } = tiempos;
+
+    const borderColor = alertaTiempo
+        ? 'border-red-300 hover:border-red-400 shadow-red-500/10'
+        : 'border-slate-200 hover:border-marca-primario/30';
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                'w-full text-left bg-white border rounded-xl p-3.5 shadow-sm transition-all duration-150',
+                'hover:shadow-md active:scale-[0.98] cursor-pointer',
+                borderColor
+            )}
+        >
+            <div className="flex items-start justify-between gap-2 mb-2.5">
+                <p className="text-[11px] font-black text-slate-800 uppercase tracking-wide leading-tight line-clamp-2">
+                    {area.area}
+                </p>
+                <Icon name="open_in_new" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
+            </div>
+
+            <MiniDistribucionBar tiposTotales={tiposTotales} total={totalTareas} />
+
+            <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-100">
+                <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">
+                    <span className="text-base font-black text-slate-800 leading-none">{totalTareas}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
+                </div>
+                <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">
+                    <span className={cn(
+                        'text-base font-black leading-none',
+                        tareasActivas > 0 ? 'text-amber-600' : 'text-slate-800'
+                    )}>
+                        {tareasActivas}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Activas</span>
+                </div>
+            </div>
+        </button>
     );
 };

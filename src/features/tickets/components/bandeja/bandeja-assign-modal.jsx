@@ -7,6 +7,45 @@ import { PRIORIDADES } from '../../constants';
 import { getMinDateHoy } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
+const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
+const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+const DurationPicker = ({ valueMins, onChange, disabled }) => {
+    const horas = Math.floor((valueMins || 0) / 60);
+    const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
+    const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                    <select value={horas} onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)} disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8">
+                        {HORAS_OPTIONS.map(h => <option key={h} value={h}>{h} h</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+                <div className="relative">
+                    <select value={minutos} onChange={(e) => onChange(horas * 60 + Number(e.target.value))} disabled={disabled}
+                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8">
+                        {MINUTOS_OPTIONS.map(m => <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <Icon name="expand_more" size="sm" />
+                    </div>
+                </div>
+            </div>
+            {totalLabel && (
+                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                    <Icon name="timer" size="xs" /> {totalLabel}
+                </p>
+            )}
+        </div>
+    );
+};
+
 // ─── Workload Badge ───────────────────────────────────────────────────────────
 const WorkloadBadge = ({ label, count, colorClass }) => (
     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
@@ -303,6 +342,7 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
     const [seleccionados, setSeleccionados] = useState([]);
     const [fechaProgramada, setFechaProgramada] = useState('');
     const [prioridad, setPrioridad] = useState('MEDIA');
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
@@ -325,6 +365,7 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         setSeleccionados([]);
         setFechaProgramada('');
         setPrioridad(ticket.prioridad || 'MEDIA');
+        setTiempoEstimadoMins(ticket.tiempoEstimado || 0);
         setBackendError('');
         setSubmitted(false);
     }, [isOpen, ticket]);
@@ -340,6 +381,7 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         if (!fechaProgramada) e.fechaProgramada = 'La fecha es obligatoria.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
         if (seleccionados.length === 0) e.seleccionados = 'Debes seleccionar al menos un responsable.';
+        if (!tiempoEstimadoMins || tiempoEstimadoMins <= 0) e.tiempoEstimadoMins = 'El tiempo planeado es obligatorio.';
         return e;
     };
 
@@ -350,17 +392,15 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         if (Object.keys(errors).length > 0) return;
 
         try {
-            // Conversión segura de la fecha a formato ISO 8601 exigido por Zod en el backend
             const dateISO = new Date(`${fechaProgramada}T23:59:59`).toISOString();
 
             await onConfirm({
                 ticketId: ticket.id,
                 responsables: seleccionados.map(Number),
-                // REGLA APLICADA: Se cambia la clave 'fechaProgramada' por 'fechaVencimiento' 
-                // para hacer match exacto con el esquema de Zod en updateTicketSchema.
                 fechaVencimiento: dateISO,
                 prioridad,
                 estado: 'ASIGNADO',
+                ...(tiempoEstimadoMins > 0 ? { tiempoEstimado: tiempoEstimadoMins } : {}),
             });
         } catch (err) {
             const data = err?.response?.data;
@@ -427,8 +467,8 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                         </div>
                     </div>
 
-                    {/* Fecha y prioridad */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Fecha, prioridad y tiempo */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="ba-fecha" error={!!fe.fechaProgramada}>
@@ -490,6 +530,20 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                                     <option key={p.value} value={p.value}>{p.label}</option>
                                 ))}
                             </Select>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <Label error={!!fe.tiempoEstimadoMins}>Tiempo planeado *</Label>
+                            <DurationPicker
+                                valueMins={tiempoEstimadoMins}
+                                onChange={setTiempoEstimadoMins}
+                                disabled={isSubmitting}
+                            />
+                            {fe.tiempoEstimadoMins && (
+                                <span className="text-xs font-medium text-estado-rechazado mt-0.5">
+                                    {fe.tiempoEstimadoMins}
+                                </span>
+                            )}
                         </div>
                     </div>
 

@@ -1,4 +1,3 @@
-// src/features/tickets/views/tickets-hoy-desktop.jsx
 import { useState } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
@@ -77,7 +76,7 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas 
 
 export const TicketsHoyDesktop = ({
     tickets,
-    highlightId, // <-- Prop recibida del padre
+    highlightId,
     loading,
     submitting,
     currentUser,
@@ -108,6 +107,7 @@ export const TicketsHoyDesktop = ({
     onSave,
     onChangeStatus,
     onOpenCreate,
+    onRefresh
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -119,72 +119,32 @@ export const TicketsHoyDesktop = ({
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
     return (
-        <div className="flex flex-col gap-5">
-            <RefreshFab bottom="32px" right="32px" size={48} />
+        <div className="flex flex-col gap-5 relative">
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
 
             <div>
-                <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
-                    Tareas del Día
-                </h2>
+                <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">Tareas del Día</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
                     {loading ? 'Cargando…' : (
                         <>
                             {tickets.length} tarea{tickets.length !== 1 ? 's' : ''}
                             {dateOffset === 0 ? ' para hoy' : ' para mañana'}
                             {dateOffset === 0 && totalAtrasadas > 0 && (
-                                <span className="ml-2 font-semibold text-estado-rechazado">
-                                    · {totalAtrasadas} atrasada{totalAtrasadas !== 1 ? 's' : ''}
-                                </span>
+                                <span className="ml-2 font-semibold text-estado-rechazado">· {totalAtrasadas} atrasada{totalAtrasadas !== 1 ? 's' : ''}</span>
                             )}
                         </>
                     )}
                 </p>
             </div>
 
-            <HoySummaryBar
-                totalParaSummary={totalParaSummary}
-                conteos={conteos}
-                filtroActual={filtroEstado}
-                onFilterChange={onEstadoChange}
-                loading={loading}
-            />
+            <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
-                <DateToggle
-                    selected={dateOffset}
-                    onChange={onDateOffsetChange}
-                    totalHoy={totalHoy}
-                    totalManana={totalManana}
-                    totalAtrasadas={totalAtrasadas}
-                />
-                {puedeCrear && (
-                    <div className="shrink-0">
-                        <HoyAddButton onClick={onOpenCreate} isMobile={false} />
-                    </div>
-                )}
+                <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
+                {puedeCrear && <div className="shrink-0"><HoyAddButton onClick={onOpenCreate} isMobile={false} /></div>}
             </div>
 
-            <HoyFilterBar
-                query={query}
-                onSearchChange={onSearchChange}
-                filtroEstado={filtroEstado}
-                onEstadoChange={onEstadoChange}
-                filtroTipo={filtroTipo}
-                onTipoChange={onTipoChange}
-                filtroPrioridad={filtroPrioridad}
-                onPrioridadChange={onPrioridadChange}
-                filtroResponsable={filtroResponsable}
-                onResponsableChange={onResponsableChange}
-                opcionesResponsables={tecnicos}
-                mostrarAtrasadas={mostrarAtrasadas}
-                onToggleAtrasadas={onToggleAtrasadas}
-                mostrarRechazadas={mostrarRechazadas}
-                onToggleRechazadas={onToggleRechazadas}
-                existenciaGlobal={existenciaGlobal}
-                totalAtrasadasGlobal={totalAtrasadasGlobal}
-                currentUser={currentUser}
-                hideStatusFilter
-            />
+            <HoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {loading
@@ -192,88 +152,28 @@ export const TicketsHoyDesktop = ({
                     : tickets.length === 0
                         ? (
                             <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center">
-                                    <Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" />
-                                </div>
-                                <p className="text-lg font-bold text-slate-400">
-                                    Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}
-                                </p>
-                                <p className="text-sm text-slate-400">
-                                    Las tareas correspondientes a este filtro aparecerán aquí.
-                                </p>
+                                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center"><Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" /></div>
+                                <p className="text-lg font-bold text-slate-400">Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}</p>
                             </div>
                         )
-                        : [...tickets]
-                            .sort((a, b) => {
-                                const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
-                                if (!priorizaRechazos) return 0;
-                                if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
-                                if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
-                                return 0;
-                            })
-                            .map((ticket) => (
-                                <HoyTicketCard
-                                    key={ticket.id}
-                                    ticket={ticket}
-                                    isHighlighted={highlightId === String(ticket.id)} // <-- Inyectado
-                                    currentUser={currentUser}
-                                    onViewDetail={setDetailTarget}
-                                    onEdit={setEditTarget}
-                                    onAssign={setAssignTarget}
-                                    onChangeStatus={setStatusTarget}
-                                    onReview={setReviewTarget}
-                                    onCancel={setCancelTarget}
-                                />
-                            ))
+                        : [...tickets].sort((a, b) => {
+                            const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
+                            if (!priorizaRechazos) return 0;
+                            if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
+                            if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
+                            return 0;
+                        }).map((ticket) => (
+                            <HoyTicketCard key={ticket.id} ticket={ticket} isHighlighted={highlightId === String(ticket.id)} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
+                        ))
                 }
             </div>
 
-            <HoyDetailModal
-                isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
-                ticket={detailTarget}
-            />
-            <HoyFormModal
-                isOpen={Boolean(editTarget)}
-                onClose={() => setEditTarget(null)}
-                ticketAEditar={editTarget}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }}
-            />
-            <TicketAssignModal
-                isOpen={Boolean(assignTarget)}
-                onClose={() => setAssignTarget(null)}
-                ticket={assignTarget}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }}
-            />
-            <HoyStatusModal
-                isOpen={Boolean(statusTarget)}
-                onClose={() => setStatusTarget(null)}
-                ticket={statusTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }}
-            />
-            <TicketReviewModal
-                isOpen={Boolean(reviewTarget)}
-                onClose={() => setReviewTarget(null)}
-                ticket={reviewTarget}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }}
-            />
-            <HoyStatusModal
-                isOpen={Boolean(cancelTarget)}
-                onClose={() => setCancelTarget(null)}
-                ticket={cancelTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }}
-            />
+            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
+            <HoyFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+            <TicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
         </div>
     );
 };

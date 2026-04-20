@@ -1,4 +1,3 @@
-// src/features/tickets/hooks/use-tickets.js
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import {
@@ -41,7 +40,6 @@ export const useTickets = () => {
     const lastMetricsParams = useRef({});
     const hasHydratedFromCache = useRef(false);
 
-    // 🔥 CONNECTIVITY LISTENER
     useEffect(() => {
         const goOffline = () => setIsOffline(true);
         const goOnline = () => setIsOffline(false);
@@ -55,22 +53,17 @@ export const useTickets = () => {
         };
     }, []);
 
-    // 🔥 FETCH TICKETS (OFFLINE-FIRST REAL)
     const fetchTickets = useCallback(async (params = {}) => {
         setLoading(true);
         lastFetchParams.current = params;
 
         const cacheKey = paramsToKey(params);
-
         let snapshot = null;
 
-        // 1️⃣ SIEMPRE intentar cache primero (UX inmediata)
         try {
             snapshot = await readSnapshot('tickets', cacheKey);
-
             if (snapshot?.data) {
                 const cached = snapshot.data;
-
                 setTickets(Array.isArray(cached.data) ? cached.data : cached);
 
                 if (cached.pagination) {
@@ -82,23 +75,19 @@ export const useTickets = () => {
                         totalAbsoluto: cached.totalAbsoluto ?? prev.totalAbsoluto,
                     }));
                 }
-
                 hasHydratedFromCache.current = true;
             }
         } catch (err) {
             console.warn('Cache read failed:', err);
         }
 
-        // 2️⃣ Si está offline → STOP (pero ya renderizaste algo)
         if (!navigator.onLine) {
             setLoading(false);
             return;
         }
 
-        // 3️⃣ FETCH REAL (revalidación)
         try {
             const res = await getTickets(params);
-
             if (Array.isArray(res)) {
                 setTickets(res);
                 setMeta((prev) => ({
@@ -106,14 +95,12 @@ export const useTickets = () => {
                     totalFiltrado: res.length,
                     totalPages: 1,
                 }));
-
                 await writeSnapshot('tickets', res, cacheKey);
             } else {
                 const pagination = res.pagination ?? {};
                 const data = Array.isArray(res.data) ? res.data : [];
 
                 setTickets(data);
-
                 setMeta((prev) => ({
                     ...prev,
                     totalFiltrado: pagination.total ?? 0,
@@ -121,13 +108,10 @@ export const useTickets = () => {
                     resumenEstados: res.resumenEstados ?? prev.resumenEstados,
                     totalAbsoluto: res.totalAbsoluto ?? prev.totalAbsoluto,
                 }));
-
                 await writeSnapshot('tickets', res, cacheKey);
             }
         } catch (error) {
             console.warn('[useTickets] network error');
-
-            // 🔥 SI FALLA RED Y NO HAY CACHE → NO BORRAR UI
             if (!hasHydratedFromCache.current) {
                 console.warn('No cache available → keeping UI empty safely');
             }
@@ -136,14 +120,12 @@ export const useTickets = () => {
         }
     }, []);
 
-    // 🔥 METRICAS (MISMA ESTRATEGIA)
     const fetchMetricas = useCallback(async (params = {}) => {
         lastMetricsParams.current = params;
         const cacheKey = `metricas_${paramsToKey(params)}`;
 
         try {
             const snapshot = await readSnapshot('metricas', cacheKey);
-
             if (snapshot?.data) {
                 setMetricas(snapshot.data);
             }
@@ -153,7 +135,6 @@ export const useTickets = () => {
 
         try {
             const res = await getTicketMetrics(params);
-
             if (res?.data) {
                 setMetricas(res.data);
                 await writeSnapshot('metricas', res.data, cacheKey);
@@ -161,7 +142,6 @@ export const useTickets = () => {
         } catch { }
     }, []);
 
-    // 🔥 TECNICOS
     const fetchTecnicos = useCallback(async () => {
         const user = useAuthStore.getState().user;
         const rolesGestion = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
@@ -169,7 +149,6 @@ export const useTickets = () => {
 
         try {
             const snapshot = await readSnapshot('tecnicos', 'default');
-
             if (snapshot?.data) {
                 setTecnicos(snapshot.data);
             }
@@ -180,7 +159,6 @@ export const useTickets = () => {
         try {
             const lista = await getAsignables();
             const data = Array.isArray(lista) ? lista : [];
-
             setTecnicos(data);
             await writeSnapshot('tecnicos', data);
         } catch { }
@@ -188,21 +166,12 @@ export const useTickets = () => {
 
     const handleCreate = useCallback(async (data) => {
         setSubmitting(true);
-
         try {
             if (!navigator.onLine) {
-                await enqueue({
-                    type: 'CREATE_TICKET',
-                    payload: data,
-                });
-
-                console.warn('📦 Ticket guardado offline');
-
+                await enqueue({ type: 'CREATE_TICKET', payload: data });
                 return { offline: true };
             }
-
             return await createTicket(data);
-
         } finally {
             setSubmitting(false);
         }
@@ -210,21 +179,12 @@ export const useTickets = () => {
 
     const handleUpdate = useCallback(async (id, data) => {
         setSubmitting(true);
-
         try {
             if (!navigator.onLine) {
-                await enqueue({
-                    type: 'UPDATE_TICKET',
-                    payload: { id, ...data },
-                });
-
-                console.warn('📦 Update guardado offline');
-
+                await enqueue({ type: 'UPDATE_TICKET', payload: { id, ...data } });
                 return { offline: true };
             }
-
             return await updateTicket(id, data);
-
         } finally {
             setSubmitting(false);
         }
@@ -232,36 +192,24 @@ export const useTickets = () => {
 
     const handleChangeStatus = useCallback(async (id, data) => {
         setSubmitting(true);
-
         try {
             if (!navigator.onLine) {
-                await enqueue({
-                    type: 'CHANGE_STATUS',
-                    payload: { id, ...data },
-                });
-
-                console.warn('📦 Status guardado offline');
-
+                await enqueue({ type: 'CHANGE_STATUS', payload: { id, ...data } });
                 return { offline: true };
             }
-
             return await changeTicketStatus(id, data);
-
         } finally {
             setSubmitting(false);
         }
     }, []);
 
-    // SYNC AUTOMÁTICO
     useEffect(() => {
         const handleSyncComplete = () => {
             fetchTickets(lastFetchParams.current);
             fetchMetricas(lastMetricsParams.current);
         };
-
         window.addEventListener('cuadra-sync-complete', handleSyncComplete);
-        return () =>
-            window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
+        return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
     }, [fetchTickets, fetchMetricas]);
 
     return {

@@ -13,10 +13,12 @@ export const useMetricas = () => {
     try {
       const res = await getDashboardKpis(params);
 
-      // Dado que el interceptor de Axios ya desempaqueta el objeto HTTP,
-      // 'res' equivale directamente al JSON enviado por Express: 
-      // { status: 'success', data: { metricasPorPlanta: [...] } }
-      // Por ende, accedemos solo a res.data
+      // TRAZADOR FRONTEND 1: Respuesta cruda de la API
+      console.log('--- [DEBUG FRONTEND: AXIOS] ---');
+      console.log('Objeto completo recibido:', res);
+      console.log('Metricas por planta extraídas:', res?.data?.metricasPorPlanta);
+      console.log('-------------------------------');
+
       setData(res?.data || null);
 
     } catch (err) {

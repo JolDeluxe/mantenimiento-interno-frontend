@@ -1,36 +1,28 @@
-// src/features/tickets/pages/tickets-bandeja.jsx
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTickets } from '@/features/tickets/hooks/use-tickets';
 import { notify } from '@/components/notification/adaptive-notify';
 
-// Views & Modals
 import { TicketsBandejaDesktop } from '../views/tickets-bandeja-desktop';
 import { TicketsBandejaMobile } from '../views/tickets-bandeja-mobile';
 import { BandejaAssignModal } from '../components/bandeja/bandeja-assign-modal';
 import { BandejaDetailModal } from '../components/bandeja/bandeja-detail-modal';
 
-// Traductor de ordenamiento para el Backend
 const getSortPayload = (order) => {
     switch (order) {
-        case 'prioridad-desc':
-            return JSON.stringify([{ prioridad: 'desc' }]);
-        case 'prioridad-asc':
-            return JSON.stringify([{ prioridad: 'asc' }]);
-        case 'vencimiento-asc':
-            return JSON.stringify([{ fechaVencimiento: 'asc' }]);
-        case 'asc':
-            return JSON.stringify([{ createdAt: 'asc' }]);
+        case 'prioridad-desc': return JSON.stringify([{ prioridad: 'desc' }]);
+        case 'prioridad-asc': return JSON.stringify([{ prioridad: 'asc' }]);
+        case 'vencimiento-asc': return JSON.stringify([{ fechaVencimiento: 'asc' }]);
+        case 'asc': return JSON.stringify([{ createdAt: 'asc' }]);
         case 'desc':
-        default:
-            return JSON.stringify([{ createdAt: 'desc' }]);
+        default: return JSON.stringify([{ createdAt: 'desc' }]);
     }
 };
 
 export default function TicketsBandejaPage() {
     const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-    const [sortOrder, setSortOrder] = useState('desc'); // Mejor empezar con los más recientes
+    const [sortOrder, setSortOrder] = useState('desc');
     const [page, setPage] = useState(1);
 
     const {
@@ -41,15 +33,21 @@ export default function TicketsBandejaPage() {
         updateTicket
     } = useTickets();
 
+    const queryPayload = useMemo(() => ({
+        tipo: 'TICKET',
+        estado: 'PENDIENTE',
+        sort: getSortPayload(sortOrder),
+        page: page,
+        limit: 12
+    }), [sortOrder, page]);
+
+    const loadTickets = useCallback(() => {
+        fetchTickets(queryPayload);
+    }, [fetchTickets, queryPayload]);
+
     useEffect(() => {
-        fetchTickets({
-            tipo: 'TICKET',
-            estado: 'PENDIENTE',
-            sort: getSortPayload(sortOrder),
-            page: page,
-            limit: 12
-        });
-    }, [fetchTickets, sortOrder, page]);
+        loadTickets();
+    }, [loadTickets]);
 
     const unassignedTickets = useMemo(() => {
         if (!tickets || tickets.length === 0) return [];
@@ -74,24 +72,15 @@ export default function TicketsBandejaPage() {
     const handleConfirmAssign = async (payload) => {
         try {
             setIsSubmitting(true);
-
-            // REGLA APLICADA: El backend de Cuadra con Zod exige explícitamente 
-            // la propiedad 'fechaVencimiento', no 'fechaProgramada'.
             await updateTicket(payload.ticketId, {
                 responsables: payload.responsables,
-                fechaVencimiento: payload.fechaVencimiento || payload.fechaProgramada, // Soporta ambos si el modal manda cualquiera de los dos
+                fechaVencimiento: payload.fechaVencimiento || payload.fechaProgramada,
                 prioridad: payload.prioridad,
                 estado: payload.estado
             });
 
             notify.success('Ticket asignado correctamente');
-            fetchTickets({
-                tipo: 'TICKET',
-                estado: 'PENDIENTE',
-                sort: getSortPayload(sortOrder),
-                page: page,
-                limit: 12
-            });
+            loadTickets();
             setIsAssignModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
         } catch (error) {
@@ -103,7 +92,7 @@ export default function TicketsBandejaPage() {
 
     const handleSortChange = (val) => {
         setSortOrder(val);
-        setPage(1); // Reiniciamos a página 1 al cambiar orden
+        setPage(1);
     };
 
     return (
@@ -118,6 +107,7 @@ export default function TicketsBandejaPage() {
                     onSortChange={handleSortChange}
                     pagination={pagination}
                     onPageChange={setPage}
+                    onRefresh={loadTickets}
                 />
             ) : (
                 <TicketsBandejaMobile
@@ -129,6 +119,7 @@ export default function TicketsBandejaPage() {
                     onSortChange={handleSortChange}
                     pagination={pagination}
                     onPageChange={setPage}
+                    onRefresh={loadTickets}
                 />
             )}
 

@@ -11,7 +11,6 @@ import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { TicketFechas } from '../components/historico/ticket-fechas';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
-import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -101,9 +100,7 @@ export const TicketsHistoricoMobile = ({
 
     const hasContent = !loading && tickets.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
-
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
-
     const baseBottom = hasPaginator ? 104 : 84;
     const fabAddBottom = `${baseBottom}px`;
     const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
@@ -111,70 +108,17 @@ export const TicketsHistoricoMobile = ({
     return (
         <>
             <div className="mb-3">
-                <TicketFechas
-                    year={filtroYear}
-                    month={filtroMonth}
-                    onYearChange={onYearChange}
-                    onMonthChange={onMonthChange}
-                />
+                <TicketFechas year={filtroYear} month={filtroMonth} onYearChange={onYearChange} onMonthChange={onMonthChange} />
             </div>
-
             <div className="mb-3">
-                <TicketSummaryBar
-                    totalParaSummary={totalParaSummary}
-                    conteos={conteos}
-                    filtroActual={filtroEstado}
-                    onFilterChange={onFilterChange}
-                    loading={loading}
-                    mostrarPapelera={mostrarPapelera}
-                    mostrarRechazadas={mostrarRechazadas}
-                />
+                <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
             </div>
-
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
-
-                <MobileTicketFilterBar
-                    query={query}
-                    onSearchChange={onSearchChange}
-
-                    filtroTipo={filtroTipo}
-                    onTipoChange={onTipoChange}
-
-                    filtroPrioridad={filtroPrioridad}
-                    onPrioridadChange={onPrioridadChange}
-
-                    filtroClasificacion={filtroClasificacion}
-                    onClasificacionChange={onClasificacionChange}
-
-                    filtroResponsable={filtroResponsable}
-                    onResponsableChange={onResponsableChange}
-                    opcionesResponsables={tecnicos}
-
-                    filtroPlanta={filtroPlanta}
-                    onPlantaChange={onPlantaChange}
-
-                    filtroArea={filtroArea}
-                    onAreaChange={onAreaChange}
-
-                    mostrarPapelera={mostrarPapelera}
-                    onTogglePapelera={onTogglePapelera}
-
-                    mostrarRechazadas={mostrarRechazadas}
-                    onToggleRechazadas={onToggleRechazadas}
-
-                    mostrarAtrasadas={mostrarAtrasadas}
-                    onToggleAtrasadas={onToggleAtrasadas}
-
-                    conteos={conteos}
-                    existenciaGlobal={existenciaGlobal}
-                    totalAtrasadasGlobal={totalAtrasadasGlobal}
-                    mobileFiltersOnly
-                />
+                <MobileTicketFilterBar query={query} onSearchChange={onSearchChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroClasificacion={filtroClasificacion} onClasificacionChange={onClasificacionChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} filtroPlanta={filtroPlanta} onPlantaChange={onPlantaChange} filtroArea={filtroArea} onAreaChange={onAreaChange} mostrarPapelera={mostrarPapelera} onTogglePapelera={onTogglePapelera} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} conteos={conteos} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} mobileFiltersOnly />
             </div>
-
             {viewMode === 'cards' ? (
                 <div className={cn('flex flex-col gap-3 px-1 pt-1', hasPaginator ? 'pb-56' : 'pb-44')}>
                     {loading
@@ -187,149 +131,34 @@ export const TicketsHistoricoMobile = ({
                                 </div>
                             )
                             : tickets.map((ticket) => (
-                                <TicketCard
-                                    key={ticket.id}
-                                    ticket={ticket}
-                                    currentUser={currentUser}
-                                    onViewDetail={setDetailTarget}
-                                    onEdit={setEditTarget}
-                                    onAssign={setAssignTarget}
-                                    onChangeStatus={setStatusTarget}
-                                    onReview={setReviewTarget}
-                                    onCancel={setCancelTarget}
-                                />
+                                <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
                             ))
                     }
                 </div>
             ) : (
                 <div className={cn('mb-40', hasPaginator && 'mb-52')}>
-                    <TicketsTable
-                        tickets={tickets}
-                        loading={loading}
-                        submitting={submitting}
-                        currentUser={currentUser}
-                        tecnicos={tecnicos}
-                        page={page}
-                        limit={limit}
-                        totalPages={totalPages}
-                        totalItems={totalParaPaginador}
-                        sortConfig={sortConfig}
-                        onPageChange={onPageChange}
-                        onSortChange={onSortChange}
-                        onSave={onSave}
-                        onChangeStatus={onChangeStatus}
-                        onRefresh={onRefresh}
-                        hidePagination
-                    />
+                    <TicketsTable tickets={tickets} loading={loading} submitting={submitting} currentUser={currentUser} tecnicos={tecnicos} page={page} limit={limit} totalPages={totalPages} totalItems={totalParaPaginador} sortConfig={sortConfig} onPageChange={onPageChange} onSortChange={onSortChange} onSave={onSave} onChangeStatus={onChangeStatus} onRefresh={onRefresh} hidePagination />
                 </div>
             )}
-
             {hasPaginator && (
                 <div className="md:hidden">
-                    <GlassPaginationPill
-                        page={page}
-                        totalPages={totalPages}
-                        totalItems={totalParaPaginador}
-                        onPageChange={onPageChange}
-                        loading={loading}
-                        bottom="24px"
-                    />
+                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="24px" />
                 </div>
             )}
-
             <div className="md:hidden">
-                <GlassFab
-                    icon="refresh"
-                    onClick={hardReload}
-                    isLoading={loading}
-                    variant="neutral"
-                    size={50}
-                    bottom={fabRefreshBottom}
-                    right="20px"
-                />
-
-                {puedeCrear && (
-                    <GlassFab
-                        icon="add"
-                        onClick={onOpenCreate}
-                        variant="primary"
-                        size={56}
-                        bottom={fabAddBottom}
-                        right="20px"
-                    />
-                )}
+                <GlassFab icon="refresh" onClick={onRefresh} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
+                {puedeCrear && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
             </div>
-
             <div className="md:hidden">
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
-            <MobileTicketFormModal
-                isOpen={Boolean(editTarget)}
-                onClose={() => setEditTarget(null)}
-                ticketAEditar={editTarget}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={async (payload) => {
-                    await onSave(editTarget.id, payload);
-                    setEditTarget(null);
-                }}
-            />
-
-            <TicketStatusModal
-                isOpen={Boolean(statusTarget)}
-                onClose={() => setStatusTarget(null)}
-                ticket={statusTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setStatusTarget(null);
-                }}
-            />
-
-            <TicketAssignModal
-                isOpen={Boolean(assignTarget)}
-                onClose={() => setAssignTarget(null)}
-                ticket={assignTarget}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onSave(id, payload);
-                    setAssignTarget(null);
-                }}
-            />
-
-            <MobileTicketReviewModal
-                isOpen={Boolean(reviewTarget)}
-                onClose={() => setReviewTarget(null)}
-                ticket={reviewTarget}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setReviewTarget(null);
-                }}
-            />
-
-            <TicketStatusModal
-                isOpen={Boolean(cancelTarget)}
-                onClose={() => setCancelTarget(null)}
-                ticket={cancelTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setCancelTarget(null);
-                }}
-            />
-
-            <TicketDetailModal
-                isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
-                ticket={detailTarget}
-            />
+            <MobileTicketFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+            <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <TicketStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+            <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
         </>
     );
 };

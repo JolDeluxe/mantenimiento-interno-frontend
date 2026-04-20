@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useMetricas } from '../hooks/use-metricas';
+import { useMetricas } from '../hooks/use-area';
 import { getMinDateHoy } from '@/lib/date';
 
 const getCurrentYear = () => Number(getMinDateHoy().split('-')[0]);
@@ -16,20 +16,23 @@ const DEFAULT_FILTRO = {
 export const DashboardContext = createContext(null);
 
 export const DashboardProvider = ({ children }) => {
-    const { data, loading, errors, fetchAll } = useMetricas();
+    // FIX: Se extraen los nombres exactos que exporta tu hook useMetricas
+    const { data, loading, error, fetchMetricas } = useMetricas();
     const [filtro, setFiltro] = useState(DEFAULT_FILTRO);
 
     // Re-fetch cada vez que cambia el filtro
-    useEffect(() => { fetchAll(filtro); }, [filtro, fetchAll]);
+    useEffect(() => {
+        fetchMetricas(filtro);
+    }, [filtro, fetchMetricas]);
 
     const onFiltroChange = useCallback((changes) => {
         setFiltro((prev) => ({ ...prev, ...changes }));
     }, []);
 
-    const refresh = useCallback(() => fetchAll(filtro), [filtro, fetchAll]);
+    const refresh = useCallback(() => fetchMetricas(filtro), [filtro, fetchMetricas]);
 
     return (
-        <DashboardContext.Provider value={{ data, loading, errors, filtro, onFiltroChange, refresh }}>
+        <DashboardContext.Provider value={{ data, loading, error, filtro, onFiltroChange, refresh }}>
             {children}
         </DashboardContext.Provider>
     );

@@ -1,4 +1,3 @@
-// src/features/tickets/views/tickets-hoy-mobile.jsx
 import { useState } from 'react';
 import { GlassFab, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
@@ -11,7 +10,6 @@ import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { MobileHoyFilterBar } from '../components/hoy/mobile-hoy-filter-bar';
 import { HoySummaryBar } from '../components/hoy/hoy-summary-bar';
-import { hardReload } from '@/utils/hard-reload';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -47,16 +45,7 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtras
         { id: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
         { id: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
     ];
-
-    const containerStyle = {
-        display: 'inline-flex',
-        padding: 4,
-        borderRadius: 14,
-        gap: 3,
-        position: 'relative',
-        overflow: 'hidden',
-        ...glassBase('light'),
-    };
+    const containerStyle = { display: 'inline-flex', padding: 4, borderRadius: 14, gap: 3, position: 'relative', overflow: 'hidden', ...glassBase('light') };
 
     return (
         <div style={containerStyle}>
@@ -67,32 +56,12 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtras
                 const inactiveStyle = { borderRadius: 10, background: 'transparent', border: '1px solid transparent', position: 'relative' };
 
                 return (
-                    <button
-                        key={opt.id}
-                        onClick={() => onChange(opt.id)}
-                        style={isActive ? activeStyle : inactiveStyle}
-                        className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10"
-                    >
+                    <button key={opt.id} onClick={() => onChange(opt.id)} style={isActive ? activeStyle : inactiveStyle} className="flex items-center gap-1.5 px-3 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10">
                         {isActive && <GlassSheen />}
-                        <Icon
-                            name={opt.icon}
-                            size="xs"
-                            className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}
-                        />
-                        <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>
-                            {opt.label}
-                        </span>
+                        <Icon name={opt.icon} size="xs" className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')} />
+                        <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>{opt.label}</span>
                         {opt.count > 0 && (
-                            <span className={cn(
-                                'text-[9px] font-extrabold px-1 py-0.5 rounded-full relative z-10 leading-none',
-                                isActive
-                                    ? 'bg-white/25 text-white'
-                                    : opt.alert
-                                        ? 'bg-red-100 text-red-600 animate-pulse'
-                                        : 'bg-slate-200 text-slate-600'
-                            )}>
-                                {opt.count}
-                            </span>
+                            <span className={cn('text-[9px] font-extrabold px-1 py-0.5 rounded-full relative z-10 leading-none', isActive ? 'bg-white/25 text-white' : opt.alert ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-200 text-slate-600')}>{opt.count}</span>
                         )}
                     </button>
                 );
@@ -103,7 +72,7 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtras
 
 export const TicketsHoyMobile = ({
     tickets,
-    highlightId, // <-- Prop recibida del padre
+    highlightId,
     loading,
     submitting,
     currentUser,
@@ -134,6 +103,7 @@ export const TicketsHoyMobile = ({
     onSave,
     onChangeStatus,
     onOpenCreate,
+    onRefresh
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -151,44 +121,10 @@ export const TicketsHoyMobile = ({
         <>
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
-                    <GlassDateToggle
-                        selected={dateOffset}
-                        onChange={onDateOffsetChange}
-                        totalHoy={totalHoy}
-                        totalManana={totalManana}
-                        totalAtrasadas={totalAtrasadas}
-                    />
+                    <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 </div>
-
-                <HoySummaryBar
-                    totalParaSummary={totalParaSummary}
-                    conteos={conteos}
-                    filtroActual={filtroEstado}
-                    onFilterChange={onEstadoChange}
-                    loading={loading}
-                />
-
-                <MobileHoyFilterBar
-                    query={query}
-                    onSearchChange={onSearchChange}
-                    filtroEstado={filtroEstado}
-                    onEstadoChange={onEstadoChange}
-                    filtroTipo={filtroTipo}
-                    onTipoChange={onTipoChange}
-                    filtroPrioridad={filtroPrioridad}
-                    onPrioridadChange={onPrioridadChange}
-                    filtroResponsable={filtroResponsable}
-                    onResponsableChange={onResponsableChange}
-                    opcionesResponsables={tecnicos}
-                    mostrarAtrasadas={mostrarAtrasadas}
-                    onToggleAtrasadas={onToggleAtrasadas}
-                    mostrarRechazadas={mostrarRechazadas}
-                    onToggleRechazadas={onToggleRechazadas}
-                    existenciaGlobal={existenciaGlobal}
-                    totalAtrasadasGlobal={totalAtrasadasGlobal}
-                    currentUser={currentUser}
-                    hideStatusFilter
-                />
+                <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
+                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
             </div>
 
             <div className={cn('flex flex-col gap-3 px-1 pt-1', 'pb-44')}>
@@ -197,115 +133,37 @@ export const TicketsHoyMobile = ({
                     : tickets.length === 0
                         ? (
                             <div className="flex flex-col items-center justify-center h-52 gap-4 text-center">
-                                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                                    <Icon
-                                        name={dateOffset === 0 ? 'today' : 'event'}
-                                        size="xl"
-                                        className="text-slate-300"
-                                    />
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">
-                                    Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}
-                                </p>
+                                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center"><Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" /></div>
+                                <p className="text-sm font-bold text-slate-400">Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}</p>
                             </div>
                         )
-                        : [...tickets]
-                            .sort((a, b) => {
-                                const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
-                                if (!priorizaRechazos) return 0;
-                                if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
-                                if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
-                                return 0;
-                            })
-                            .map((ticket) => (
-                                <HoyTicketCard
-                                    key={ticket.id}
-                                    ticket={ticket}
-                                    isHighlighted={highlightId === String(ticket.id)} // <-- Inyectado
-                                    currentUser={currentUser}
-                                    onViewDetail={setDetailTarget}
-                                    onEdit={setEditTarget}
-                                    onAssign={setAssignTarget}
-                                    onChangeStatus={setStatusTarget}
-                                    onReview={setReviewTarget}
-                                    onCancel={setCancelTarget}
-                                />
-                            ))
+                        : [...tickets].sort((a, b) => {
+                            const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
+                            if (!priorizaRechazos) return 0;
+                            if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
+                            if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
+                            return 0;
+                        }).map((ticket) => (
+                            <HoyTicketCard key={ticket.id} ticket={ticket} isHighlighted={highlightId === String(ticket.id)} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
+                        ))
                 }
             </div>
 
             <div className="md:hidden">
-                <GlassFab
-                    icon="refresh"
-                    onClick={hardReload}
-                    isLoading={loading}
-                    variant="neutral"
-                    size={50}
-                    bottom={fabRefreshBottom}
-                    right="20px"
-                />
-                {puedeCrear && (
-                    <GlassFab
-                        icon="add"
-                        onClick={onOpenCreate}
-                        variant="primary"
-                        size={56}
-                        bottom={fabAddBottom}
-                        right="20px"
-                    />
-                )}
+                <GlassFab icon="refresh" onClick={onRefresh} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
+                {puedeCrear && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
             </div>
 
             <div className="md:hidden">
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
-            <HoyDetailModal
-                isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
-                ticket={detailTarget}
-            />
-            <MobileHoyFormModal
-                isOpen={Boolean(editTarget)}
-                onClose={() => setEditTarget(null)}
-                ticketAEditar={editTarget}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }}
-            />
-            <TicketAssignModal
-                isOpen={Boolean(assignTarget)}
-                onClose={() => setAssignTarget(null)}
-                ticket={assignTarget}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }}
-            />
-            <HoyStatusModal
-                isOpen={Boolean(statusTarget)}
-                onClose={() => setStatusTarget(null)}
-                ticket={statusTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }}
-            />
-            <MobileTicketReviewModal
-                isOpen={Boolean(reviewTarget)}
-                onClose={() => setReviewTarget(null)}
-                ticket={reviewTarget}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }}
-            />
-            <HoyStatusModal
-                isOpen={Boolean(cancelTarget)}
-                onClose={() => setCancelTarget(null)}
-                ticket={cancelTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }}
-            />
+            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
+            <MobileHoyFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+            <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
         </>
     );
 };

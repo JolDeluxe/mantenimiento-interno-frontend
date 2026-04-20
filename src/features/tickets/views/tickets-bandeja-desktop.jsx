@@ -1,8 +1,8 @@
-// src/features/tickets/views/tickets-bandeja-desktop.jsx
 import React from 'react';
 import { Spinner, Icon, Pagination } from '@/components/ui/z_index';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
+import { RefreshFab } from '@/components/ui/z_index';
 
 export const TicketsBandejaDesktop = ({
     tickets,
@@ -12,7 +12,8 @@ export const TicketsBandejaDesktop = ({
     sortOrder,
     onSortChange,
     pagination,
-    onPageChange
+    onPageChange,
+    onRefresh
 }) => {
     if (isLoading) {
         return (
@@ -22,13 +23,12 @@ export const TicketsBandejaDesktop = ({
         );
     }
 
-    // Calculamos el total real desde la paginación del backend, o hacemos fallback a la longitud del array
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
     return (
-        <div className="flex flex-col gap-5 animate-fade-in">
+        <div className="flex flex-col gap-5 animate-fade-in relative">
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
 
-            {/* ── Encabezado ── */}
             <div className="w-full">
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
                     Bandeja de Entrada
@@ -44,7 +44,6 @@ export const TicketsBandejaDesktop = ({
                 </p>
             </div>
 
-            {/* ── Barra de Filtros ── */}
             {total > 0 && (
                 <div className="flex items-center gap-2 w-full">
                     <Icon name="filter_arrow_right" className="text-slate-400" />
@@ -56,7 +55,6 @@ export const TicketsBandejaDesktop = ({
                 </div>
             )}
 
-            {/* ── Contenido Principal ── */}
             {!tickets || tickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-xl border border-dashed border-slate-200 mt-2">
                     <div className="bg-emerald-50 p-4 rounded-full mb-4">
@@ -78,7 +76,6 @@ export const TicketsBandejaDesktop = ({
                         ))}
                     </div>
 
-                    {/* ── Paginación ── */}
                     {pagination && pagination.totalPages > 1 && (
                         <div className="mt-4 flex justify-center sm:justify-end">
                             <Pagination

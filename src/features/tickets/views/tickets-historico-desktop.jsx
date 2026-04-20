@@ -57,8 +57,8 @@ export const TicketsHistoricoDesktop = ({
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
     return (
-        <div className="flex flex-col gap-4">
-            <RefreshFab bottom="32px" right="32px" size={48} />
+        <div className="flex flex-col gap-4 relative">
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
 
             <TicketFechas
                 year={filtroYear}
@@ -82,39 +82,28 @@ export const TicketsHistoricoDesktop = ({
             <TicketFilterBar
                 query={query}
                 onSearchChange={onSearchChange}
-
                 filtroTipo={filtroTipo}
                 onTipoChange={onTipoChange}
-
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
-
                 filtroClasificacion={filtroClasificacion}
                 onClasificacionChange={onClasificacionChange}
-
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
-
                 filtroPlanta={filtroPlanta}
                 onPlantaChange={onPlantaChange}
-
                 filtroArea={filtroArea}
                 onAreaChange={onAreaChange}
                 opcionesAreas={[]}
-
                 mostrarRechazadas={mostrarRechazadas}
                 onToggleRechazadas={onToggleRechazadas}
-
                 mostrarPapelera={mostrarPapelera}
                 onTogglePapelera={onTogglePapelera}
-
                 mostrarAtrasadas={mostrarAtrasadas}
                 onToggleAtrasadas={onToggleAtrasadas}
-
                 existenciaGlobal={existenciaGlobal}
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
-
                 conteos={conteos}
             />
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import { useMetricas } from '../hooks/use-metricas';
+import { useMetricas } from '../hooks/use-area';
 import { getMinDateHoy } from '@/lib/date';
 import { DashboardContext } from '../context/dashboard-context';
 import DashboardLayoutDesktop from '../views/dashboard-layout-desktop';
