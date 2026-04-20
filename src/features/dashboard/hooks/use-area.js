@@ -13,11 +13,11 @@ export const useMetricas = () => {
     try {
       const res = await getDashboardKpis(params);
 
-      // TRAZADOR FRONTEND 1: Respuesta cruda de la API
-      console.log('--- [DEBUG FRONTEND: AXIOS] ---');
-      console.log('Objeto completo recibido:', res);
-      console.log('Metricas por planta extraídas:', res?.data?.metricasPorPlanta);
-      console.log('-------------------------------');
+      // // TRAZADOR FRONTEND 1: Respuesta cruda de la API
+      // console.log('--- [DEBUG FRONTEND: AXIOS] ---');
+      // console.log('Objeto completo recibido:', res);
+      // console.log('Metricas por planta extraídas:', res?.data?.metricasPorPlanta);
+      // console.log('-------------------------------');
 
       setData(res?.data || null);
 

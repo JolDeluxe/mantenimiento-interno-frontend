@@ -4,27 +4,23 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/z_index';
 import { useAuthStore } from '@/stores/auth-store';
 import { MODULES_CONFIG } from '@/config/modules-config';
-import { useTickets } from '../hooks/use-tickets';
+import { useTicketsUiStore } from '@/stores/tickets-ui-store';
+// useTickets eliminado — esta vista es un Dumb Component que lee del store global.
 
 export default function TicketsLayoutDesktop() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuthStore();
     const currentUser = user?.data || user;
-
-    // CONSUMO PASIVO: Usamos el hook pero SIN disparar fetch automático aquí.
-    // El conteo se hidratará cuando la página de Bandeja o el Sync global actúen.
-    const { meta } = useTickets();
-    const unassignedCount = meta?.totalAbsoluto || 0;
+    const unassignedCount = useTicketsUiStore((s) => s.unassignedCount);
 
     const menu = useMemo(() => {
         const ticketsModule = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenu = [
             { id: 'tickets-hoy', label: 'Tareas de Hoy', path: '/tickets/hoy', icon: 'today' },
             { id: 'tickets-bandeja', label: 'Bandeja de Entrada', path: '/tickets/bandeja', icon: 'inbox' },
-            { id: 'tickets-historico', label: 'Historial', path: '/tickets/historico', icon: 'assignment_globe' }
+            { id: 'tickets-historico', label: 'Historial', path: '/tickets/historico', icon: 'assignment_globe' },
         ];
-
         return baseMenu.filter(item => {
             const childConfig = ticketsModule?.children?.find(c => c.id === item.id);
             return childConfig ? childConfig.allowedRoles.includes(currentUser?.rol) : false;

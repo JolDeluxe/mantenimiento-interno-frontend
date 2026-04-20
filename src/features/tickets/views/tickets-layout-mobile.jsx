@@ -4,56 +4,57 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
 import { MODULES_CONFIG } from '@/config/modules-config';
 import { useAuthStore } from '@/stores/auth-store';
-import { useTickets } from '../hooks/use-tickets';
+import { useTicketsUiStore } from '@/stores/tickets-ui-store';
+// useTickets eliminado — esta vista es un Dumb Component que lee del store global.
 
 export default function TicketsLayoutMobile() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuthStore();
     const currentUser = user?.data || user;
-
-    // CONSUMO PASIVO: No llamamos a fetchTickets(), solo leemos el meta global.
-    const { meta } = useTickets();
-    const unassignedCount = meta?.totalAbsoluto || 0;
+    const unassignedCount = useTicketsUiStore((s) => s.unassignedCount);
 
     const { moduleInfo, menuOptions } = useMemo(() => {
         const config = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenuOptions = [
             { configId: 'tickets-hoy', id: '/tickets/hoy', label: 'Mi Día', icon: 'today' },
             { configId: 'tickets-bandeja', id: '/tickets/bandeja', label: 'Bandeja', icon: 'inbox' },
-            { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' }
+            { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' },
         ];
 
-        const filteredOptions = baseMenuOptions.filter(opt => {
-            const childConfig = config?.children?.find(c => c.id === opt.configId);
-            return childConfig ? childConfig.allowedRoles.includes(currentUser?.rol) : false;
-        }).map(({ configId, label, ...rest }) => {
-            const isBandeja = configId === 'tickets-bandeja';
-            const hasBadge = isBandeja && unassignedCount > 0;
-
-            return {
-                ...rest,
-                label: hasBadge ? (
-                    <div className="flex items-center gap-1.5">
-                        <span>{label}</span>
-                        <span className="relative z-10 text-[11px] font-black px-1.5 py-0.5 rounded-md flex items-center leading-none bg-amber-100 !text-amber-600">
-                            {unassignedCount > 99 ? '99+' : unassignedCount}
-                        </span>
-                    </div>
-                ) : label
-            };
-        });
+        const filteredOptions = baseMenuOptions
+            .filter(opt => {
+                const childConfig = config?.children?.find(c => c.id === opt.configId);
+                return childConfig ? childConfig.allowedRoles.includes(currentUser?.rol) : false;
+            })
+            .map(({ configId, label, ...rest }) => {
+                const isBandeja = configId === 'tickets-bandeja';
+                const hasBadge = isBandeja && unassignedCount > 0;
+                return {
+                    ...rest,
+                    label: hasBadge ? (
+                        <div className="flex items-center gap-1.5">
+                            <span>{label}</span>
+                            <span className="relative z-10 text-[11px] font-black px-1.5 py-0.5 rounded-md flex items-center leading-none bg-amber-100 !text-amber-600">
+                                {unassignedCount > 99 ? '99+' : unassignedCount}
+                            </span>
+                        </div>
+                    ) : label,
+                };
+            });
 
         return {
             moduleInfo: {
                 title: config?.name || 'Gestión de Tareas',
-                description: 'Administra y resuelve las actividades de mantenimiento.'
+                description: 'Administra y resuelve las actividades de mantenimiento.',
             },
-            menuOptions: filteredOptions
+            menuOptions: filteredOptions,
         };
     }, [currentUser?.rol, unassignedCount]);
 
-    const activePath = menuOptions.find(opt => location.pathname === opt.id)?.id || (menuOptions[0]?.id || '/tickets/hoy');
+    const activePath = menuOptions.find(opt => location.pathname === opt.id)?.id
+        || menuOptions[0]?.id
+        || '/tickets/hoy';
 
     return (
         <div className="flex flex-col w-full">
