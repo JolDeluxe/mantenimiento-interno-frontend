@@ -1,8 +1,27 @@
 import React from 'react';
-import { Spinner, Icon, Pagination } from '@/components/ui/z_index';
+import { Skeleton, Icon, Pagination, RefreshFab } from '@/components/ui/z_index';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
-import { RefreshFab } from '@/components/ui/z_index';
+
+const BandejaCardSkeleton = () => (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+            <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-24 rounded-md" />
+                <Skeleton className="h-6 w-3/4 rounded-md" />
+            </div>
+            <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+        <div className="space-y-2">
+            <Skeleton className="h-3 w-full rounded-md" />
+            <Skeleton className="h-3 w-5/6 rounded-md" />
+        </div>
+        <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+            <Skeleton className="h-4 w-20 rounded-md" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+    </div>
+);
 
 export const TicketsBandejaDesktop = ({
     tickets,
@@ -15,14 +34,6 @@ export const TicketsBandejaDesktop = ({
     onPageChange,
     onRefresh
 }) => {
-    if (isLoading) {
-        return (
-            <div className="h-full w-full flex items-center justify-center min-h-[400px]">
-                <Spinner size="lg" />
-            </div>
-        );
-    }
-
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
     return (
@@ -33,29 +44,37 @@ export const TicketsBandejaDesktop = ({
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
                     Bandeja de Entrada
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">
-                    {total === 0 ? (
-                        'No hay tareas pendientes en este momento'
+                <div className="text-sm text-slate-500 mt-0.5">
+                    {isLoading ? (
+                        <Skeleton className="h-4 w-48 mt-1" />
+                    ) : total === 0 ? (
+                        <span>No hay tareas pendientes en este momento</span>
                     ) : (
                         <>
                             Hay <span className="font-extrabold text-marca-primario text-base">{total}</span> tarea{total !== 1 ? 's' : ''} sin asignar
                         </>
                     )}
-                </p>
+                </div>
             </div>
 
-            {total > 0 && (
+            {(total > 0 || isLoading) && (
                 <div className="flex items-center gap-2 w-full">
                     <Icon name="filter_arrow_right" className="text-slate-400" />
                     <BandejaFiltro
-                        totalTickets={tickets.length}
+                        totalTickets={total}
                         sortOrder={sortOrder}
                         onSortChange={onSortChange}
                     />
                 </div>
             )}
 
-            {!tickets || tickets.length === 0 ? (
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <BandejaCardSkeleton key={i} />
+                    ))}
+                </div>
+            ) : !tickets || tickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-xl border border-dashed border-slate-200 mt-2">
                     <div className="bg-emerald-50 p-4 rounded-full mb-4">
                         <Icon name="done_all" size="48px" className="text-emerald-500" />
