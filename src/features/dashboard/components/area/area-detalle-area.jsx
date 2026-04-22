@@ -33,6 +33,19 @@ const BarRow = ({ label, count, total, colorClass }) => {
     );
 };
 
+const renderTextoFrecuencia = (estadoFrecuencia, frecuenciaDias) => {
+    switch (estadoFrecuencia) {
+        case 'NORMAL':
+            return <span className="text-slate-800">1 ticket cada <span className="font-black">{frecuenciaDias}</span> días</span>;
+        case 'UNICO':
+            return <span className="text-amber-600 font-bold">Único evento histórico</span>;
+        case 'MISMO_DIA':
+            return <span className="text-red-600 font-bold">Múltiples en el mismo día</span>;
+        default:
+            return <span className="text-slate-400">Sin datos históricos suficientes</span>;
+    }
+};
+
 const ESTADOS_CONFIG = {
     PENDIENTE: 'bg-slate-100 text-slate-600 border-slate-200',
     ASIGNADA: 'bg-blue-50 text-blue-600 border-blue-200',
@@ -79,11 +92,10 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
         estados = {},
         clasificaciones = {},
         tiempos = {},
-        frecuenciaDiasPorTicket = null,
+        frecuenciaGeneral = {},
         frecuenciaTickets = [],
     } = area;
 
-    // SANITY CHECK: Si el total de tareas es 0 pero hay tickets, usamos la suma de los tipos
     const sumaTipos = (tiposTotales?.tickets || 0) + (tiposTotales?.planeadas || 0) + (tiposTotales?.extraordinarias || 0);
     const totalReal = Math.max(totalTareas, sumaTipos);
 
@@ -109,21 +121,25 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                     <div className="grid grid-cols-3 gap-3">
                         <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Tareas</p>
-                            {/* Usamos totalReal para corregir el 0 */}
-                            <p className="text-2xl font-black text-slate-800">{totalReal}</p>
+                            <p className={cn("text-2xl font-black", totalReal > 0 ? "text-slate-800" : "text-slate-300")}>
+                                {totalReal > 0 ? totalReal : '—'}
+                            </p>
                         </div>
                         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-amber-600/70 uppercase tracking-wider mb-1">Activas</p>
-                            <p className="text-2xl font-black text-amber-600">{tareasActivas}</p>
+                            <p className={cn("text-2xl font-black", tareasActivas > 0 ? "text-amber-600" : "text-amber-600/40")}>
+                                {tareasActivas > 0 ? tareasActivas : '—'}
+                            </p>
                         </div>
                         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Reportes</p>
-                            <p className="text-2xl font-black text-blue-600">{tiposTotales?.tickets || 0}</p>
+                            <p className={cn("text-2xl font-black", (tiposTotales?.tickets || 0) > 0 ? "text-blue-600" : "text-blue-600/40")}>
+                                {(tiposTotales?.tickets || 0) > 0 ? tiposTotales.tickets : '—'}
+                            </p>
                         </div>
                     </div>
 
                     <Section title="Distribución de estados" icon="category">
-                        {/* Usamos totalReal para la validación de la sección */}
                         {totalReal > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(estados).filter(([, count]) => count > 0).map(([estado, count]) => {
@@ -136,56 +152,55 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-xs text-slate-400 italic text-center py-2">Sin tareas en este periodo</p>
+                            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl m-1">
+                                <Icon name="inbox" size="md" className="text-slate-300 mb-1.5" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin tareas registradas</span>
+                            </div>
                         )}
                     </Section>
 
-                    {tiposTotales?.tickets > 0 && (
-                        <Section title="Frecuencia de generación de tickets" icon="confirmation_number">
+                    {frecuenciaGeneral?.totalHistorico > 0 && (
+                        <Section title="Frecuencia Histórica Real" icon="confirmation_number">
                             <div className="flex flex-col gap-3">
-                                <div className={cn(
-                                    'flex items-center gap-3 px-4 py-3 rounded-xl border',
-                                    frecuenciaDiasPorTicket !== null && frecuenciaDiasPorTicket <= 3
-                                        ? 'bg-red-50 border-red-100'
-                                        : 'bg-blue-50 border-blue-100'
-                                )}>
-                                    <Icon name="repeat" size="md" className={frecuenciaDiasPorTicket !== null && frecuenciaDiasPorTicket <= 3 ? 'text-red-500' : 'text-blue-500'} />
-                                    <div>
-                                        <p className="text-sm font-black text-slate-800">
-                                            {frecuenciaDiasPorTicket !== null
-                                                ? `1 ticket cada ${frecuenciaDiasPorTicket} día${frecuenciaDiasPorTicket !== 1 ? 's' : ''}`
-                                                : `${tiposTotales.tickets} ticket${tiposTotales.tickets !== 1 ? 's' : ''} generado${tiposTotales.tickets !== 1 ? 's' : ''}`}
-                                        </p>
-                                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                            {frecuenciaDiasPorTicket !== null && frecuenciaDiasPorTicket <= 3
-                                                ? 'Alta frecuencia — área con generación constante de reportes.'
-                                                : 'Basado en el histórico del periodo seleccionado.'}
-                                        </p>
+                                {/* Métrica General Histórica */}
+                                <div className="flex items-center justify-between px-4 py-3 rounded-xl border bg-slate-50 border-slate-200">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="history" size="md" className="text-slate-500" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Promedio General del Área</p>
+                                            <p className="text-sm">
+                                                {renderTextoFrecuencia(frecuenciaGeneral.estadoFrecuencia, frecuenciaGeneral.frecuenciaDias)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Histórico</p>
+                                        <p className="text-sm font-black text-slate-700">{frecuenciaGeneral.totalHistorico} reportes</p>
                                     </div>
                                 </div>
 
+                                {/* Patrones Específicos */}
                                 {frecuenciaTickets.length > 0 && (
                                     <div className="flex flex-col gap-1.5 mt-2">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
                                             Patrones más frecuentes
                                         </p>
                                         {frecuenciaTickets.slice(0, 5).map((item, i) => (
-                                            <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-                                                <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0">
+                                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg border border-slate-200">
+                                                <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 shrink-0">
                                                     {i + 1}
                                                 </span>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[11px] font-bold text-slate-700 truncate">
+                                                    <p className="text-[11px] font-black text-slate-700 uppercase tracking-wide truncate">
                                                         {item.clasificacion} · {item.categoria}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400 font-medium">
-                                                        {item.cantidadTotal} ticket{item.cantidadTotal !== 1 ? 's' : ''}
-                                                        {item.frecuenciaDias !== null ? ` · cada ~${item.frecuenciaDias}d` : ''}
+                                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                                        Total: <span className="font-bold">{item.cantidadTotal}</span>
                                                     </p>
                                                 </div>
-                                                <span className="text-[10px] font-black text-blue-600 shrink-0">
-                                                    {item.frecuenciaMensualEstimada}/mes
-                                                </span>
+                                                <div className="text-right text-xs shrink-0 bg-slate-50 px-2.5 py-1.5 rounded-md border border-slate-100">
+                                                    {renderTextoFrecuencia(item.estadoFrecuencia, item.frecuenciaDias)}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -225,9 +240,9 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                                 )}
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 py-3 text-slate-400">
-                                <Icon name="info" size="sm" />
-                                <p className="text-xs font-medium">No hay tiempos registrados en este periodo.</p>
+                            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl m-1">
+                                <Icon name="timer_off" size="md" className="text-slate-300 mb-1.5" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin registro de tiempos</span>
                             </div>
                         )}
                     </Section>
@@ -240,7 +255,10 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-slate-400 italic text-center py-3">Sin datos</p>
+                            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl m-1">
+                                <Icon name="label_off" size="md" className="text-slate-300 mb-1.5" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin clasificaciones</span>
+                            </div>
                         )}
                     </Section>
 

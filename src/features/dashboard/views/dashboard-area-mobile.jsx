@@ -4,6 +4,7 @@ import { Icon, Skeleton } from '@/components/ui/z_index';
 import { PlantaRow } from '../components/area/planta-row';
 import { PlantaDetalle } from '../components/area/area-detalle-planta';
 import { AreaDetalle } from '../components/area/area-detalle-area';
+import DashboardEmptyState from '../components/dashboard-empty-state';
 
 const SkeletonPlanta = () => (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -32,10 +33,12 @@ export default function DashboardAreaMobile({
     onClosePlanta,
     onCloseArea,
 }) {
+    // 🚨 REGLA ESTRICTA: El backend siempre devuelve las plantas. La validación real es si hay volumen.
+    const totalTareas = metricasPorPlanta.reduce((acc, p) => acc + (p.totalTareas || 0), 0);
+    const tieneDatos = totalTareas > 0;
+
     return (
         <div className="flex flex-col gap-4 pb-32 animate-in fade-in duration-300">
-
-            {/* Header */}
             <div className="flex flex-col gap-0.5 px-1">
                 <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">
                     Métricas Operativas
@@ -45,11 +48,10 @@ export default function DashboardAreaMobile({
                 </p>
             </div>
 
-            {/* Lista de plantas */}
             <div className="flex flex-col gap-3">
                 {loading ? (
                     Array.from({ length: 3 }).map((_, i) => <SkeletonPlanta key={i} />)
-                ) : metricasPorPlanta.length > 0 ? (
+                ) : tieneDatos ? (
                     metricasPorPlanta.map((planta, idx) => (
                         <PlantaRow
                             key={idx}
@@ -60,14 +62,14 @@ export default function DashboardAreaMobile({
                         />
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center p-10 bg-white border-2 border-dashed border-slate-200 rounded-3xl">
-                        <Icon name="search_off" size="xl" className="text-slate-300 mb-2" />
-                        <p className="text-xs font-bold text-slate-400 uppercase">Sin métricas en este periodo</p>
-                    </div>
+                    <DashboardEmptyState
+                        isMobile
+                        mensaje="Centros Operativos sin datos"
+                        subtexto="No se registraron tareas en este periodo."
+                    />
                 )}
             </div>
 
-            {/* Modales */}
             {plantaDetalle && (
                 <PlantaDetalle planta={plantaDetalle} onClose={onClosePlanta} />
             )}

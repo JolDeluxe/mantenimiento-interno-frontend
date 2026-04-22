@@ -16,67 +16,94 @@ const MiniDistribucionBar = ({ tiposTotales, total }) => {
     return (
         <div className="flex flex-col gap-1.5 mb-3">
             <div className="flex h-2 rounded-full overflow-hidden w-full gap-px bg-slate-100">
-                {tk > 0 && <div className="bg-blue-500 transition-all" style={{ width: `${pTk}%` }} title={`Tickets: ${tk}`} />}
+                {tk > 0 && <div className="bg-blue-500 transition-all" style={{ width: `${pTk}%` }} title={`Reportes: ${tk}`} />}
                 {pl > 0 && <div className="bg-emerald-500 transition-all" style={{ width: `${pPl}%` }} title={`Planeadas: ${pl}`} />}
                 {ex > 0 && <div className="bg-amber-500 transition-all" style={{ width: `${pEx}%` }} title={`Extraordinarias: ${ex}`} />}
             </div>
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                <span className={cn(tk > 0 ? 'text-blue-600' : 'text-slate-300')}>Reportes: {tk}</span>
-                <span className={cn(pl > 0 ? 'text-emerald-600' : 'text-slate-300')}>Planeadas: {pl}</span>
-                <span className={cn(ex > 0 ? 'text-amber-600' : 'text-slate-300')}>Extraordinarias: {ex}</span>
+
+            <div className="flex flex-wrap items-center justify-start gap-3 mt-0.5">
+                {tk > 0 && (
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                        Reportes <span className="text-slate-800 ml-0.5">{tk}</span>
+                    </div>
+                )}
+                {pl > 0 && (
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        Planeada <span className="text-slate-800 ml-0.5">{pl}</span>
+                    </div>
+                )}
+                {ex > 0 && (
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                        Extra <span className="text-slate-800 ml-0.5">{ex}</span>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export const AreaItem = ({ area, plantaName, onClick }) => {
-    const {
-        totalTareas = 0,
-        tareasActivas = 0,
-        tiposTotales = {},
-        tiempos = {},
-    } = area;
-
-    // SANITY CHECK: Garantizar que el total de la Card coincida con los tickets
+export const AreaItem = ({ area, onClick }) => {
+    const { totalTareas = 0, tareasActivas = 0, tiposTotales = {}, tiempos = {} } = area;
     const sumaTipos = (tiposTotales?.tickets || 0) + (tiposTotales?.planeadas || 0) + (tiposTotales?.extraordinarias || 0);
     const totalReal = Math.max(totalTareas, sumaTipos);
 
+    const tieneDatos = totalReal > 0;
     const { alertaTiempo } = tiempos;
-
-    const borderColor = alertaTiempo
-        ? 'border-red-300 hover:border-red-400 shadow-red-500/10'
-        : 'border-slate-200 hover:border-marca-primario/30';
 
     return (
         <button
             type="button"
-            onClick={onClick}
+            disabled={!tieneDatos}
+            onClick={tieneDatos ? onClick : undefined}
             className={cn(
-                'w-full text-left bg-white border rounded-xl p-3.5 shadow-sm transition-all duration-150',
-                'hover:shadow-md active:scale-[0.98] cursor-pointer',
-                borderColor
+                'w-full text-left bg-white border rounded-xl p-3.5 shadow-sm transition-all duration-150 flex flex-col h-full',
+                !tieneDatos
+                    ? 'border-slate-100 opacity-60 grayscale cursor-not-allowed'
+                    : cn(
+                        'hover:shadow-md active:scale-[0.98] cursor-pointer',
+                        alertaTiempo ? 'border-red-300 shadow-red-500/10' : 'border-slate-200 hover:border-marca-primario/30'
+                    )
             )}
         >
-            <div className="flex items-start justify-between gap-2 mb-2.5">
-                <p className="text-[11px] font-black text-slate-800 uppercase tracking-wide leading-tight line-clamp-2">
+            <div className="flex items-start justify-between gap-2 mb-2.5 w-full">
+                <p className={cn(
+                    "text-[11px] font-black uppercase tracking-wide leading-tight line-clamp-2",
+                    !tieneDatos ? "text-slate-400" : "text-slate-800"
+                )}>
                     {area.area}
                 </p>
-                <Icon name="open_in_new" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
+                {tieneDatos && <Icon name="open_in_new" size="xs" className="text-slate-300 shrink-0 mt-0.5" />}
             </div>
 
-            <MiniDistribucionBar tiposTotales={tiposTotales} total={totalReal} />
+            <div className="flex-1 w-full flex flex-col justify-center">
+                {tieneDatos ? (
+                    <MiniDistribucionBar tiposTotales={tiposTotales} total={totalReal} />
+                ) : (
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-300 uppercase tracking-wider mb-3">
+                        <Icon name="lock" size="xs" className="scale-75 opacity-50" />
+                        Sin métricas
+                    </div>
+                )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-100">
-                <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">
-                    <span className="text-base font-black text-slate-800 leading-none">{totalReal}</span>
+            <div className="grid grid-cols-2 gap-2 text-center pt-2 border-t border-slate-100 w-full mt-auto">
+                <div className="flex flex-col py-1">
+                    <span className={cn("text-base font-black leading-none", tieneDatos ? "text-slate-800" : "text-slate-200")}>
+                        {tieneDatos ? totalReal : '—'}
+                    </span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
                 </div>
-                <div className="flex flex-col bg-slate-50 rounded-lg py-1.5">
+                <div className="flex flex-col py-1">
                     <span className={cn(
                         'text-base font-black leading-none',
-                        tareasActivas > 0 ? 'text-amber-600' : 'text-slate-800'
+                        !tieneDatos
+                            ? 'text-slate-200'
+                            : (tareasActivas > 0 ? 'text-amber-600' : 'text-slate-800')
                     )}>
-                        {tareasActivas}
+                        {tieneDatos ? tareasActivas : '—'}
                     </span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Activas</span>
                 </div>

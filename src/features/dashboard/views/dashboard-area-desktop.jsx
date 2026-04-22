@@ -4,6 +4,7 @@ import { Icon, Skeleton } from '@/components/ui/z_index';
 import { PlantaRow } from '../components/area/planta-row';
 import { PlantaDetalle } from '../components/area/area-detalle-planta';
 import { AreaDetalle } from '../components/area/area-detalle-area';
+import DashboardEmptyState from '../components/dashboard-empty-state';
 
 const SkeletonPlanta = () => (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -33,15 +34,16 @@ export default function DashboardAreaDesktop({
     onClosePlanta,
     onCloseArea,
 }) {
-    // 🚨 Cálculo corregido apuntando a la nueva estructura del backend
+    // Calculamos los totales primero
     const totalTareas = metricasPorPlanta.reduce((acc, p) => acc + (p.totalTareas || 0), 0);
     const totalActivas = metricasPorPlanta.reduce((acc, p) => acc + (p.tareasActivas || 0), 0);
     const totalTickets = metricasPorPlanta.reduce((acc, p) => acc + (p.tiposTotales?.tickets || 0), 0);
 
+    // 🚨 REGLA ESTRICTA: El backend siempre devuelve las plantas. La validación real es si hay volumen.
+    const tieneDatos = totalTareas > 0;
+
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-
-            {/* Header descriptivo */}
             <div className="flex items-start justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -57,8 +59,7 @@ export default function DashboardAreaDesktop({
                     </p>
                 </div>
 
-                {/* Resumen global */}
-                {!loading && totalTareas > 0 && (
+                {!loading && tieneDatos && (
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
                         <span className="bg-slate-100 px-2.5 py-1 rounded-full">{totalTareas} TAREAS</span>
                         <span className="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full">{totalActivas} ACTIVAS</span>
@@ -67,11 +68,10 @@ export default function DashboardAreaDesktop({
                 )}
             </div>
 
-            {/* Lista de plantas */}
             <div className="flex flex-col gap-3">
                 {loading ? (
                     Array.from({ length: 4 }).map((_, i) => <SkeletonPlanta key={i} />)
-                ) : metricasPorPlanta.length > 0 ? (
+                ) : tieneDatos ? (
                     metricasPorPlanta.map((planta, idx) => (
                         <PlantaRow
                             key={idx}
@@ -81,19 +81,13 @@ export default function DashboardAreaDesktop({
                         />
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center p-16 bg-white border border-dashed border-slate-200 rounded-3xl">
-                        <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                            <Icon name="search_off" size="xl" className="text-slate-300" />
-                        </div>
-                        <p className="text-sm font-bold text-slate-500">Sin datos en este periodo</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1 text-center max-w-xs">
-                            Ajusta el filtro de fecha o verifica la conexión con el servidor.
-                        </p>
-                    </div>
+                    <DashboardEmptyState
+                        mensaje="Centros Operativos sin datos"
+                        subtexto="No se registraron tareas en ninguna planta durante este periodo. Ajusta los filtros de fecha."
+                    />
                 )}
             </div>
 
-            {/* Modales */}
             {plantaDetalle && (
                 <PlantaDetalle planta={plantaDetalle} onClose={onClosePlanta} />
             )}

@@ -13,7 +13,6 @@ const formatMins = (m) => {
     return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
 };
 
-// Tarjeta responsiva: Vertical en móvil, Horizontal y compacta en desktop
 const PersonCard = ({ persona, rank, variant = 'top' }) => {
     const c = COLOR_SCORE[persona.color] || COLOR_SCORE.neutral;
     const isFirst = rank === 0;
@@ -24,7 +23,6 @@ const PersonCard = ({ persona, rank, variant = 'top' }) => {
             isFirst ? cn(c.bg, c.border, 'shadow-sm') : 'bg-white border-slate-200 opacity-95',
             variant === 'bottom' && isFirst && 'border-red-300 bg-red-50/50'
         )}>
-            {/* Etiqueta de Posición */}
             <div className={cn(
                 "absolute -top-2.5 -left-1.5 md:-top-2 md:-left-2 w-6 h-6 md:w-5 md:h-5 rounded-full flex items-center justify-center text-[10px] md:text-[9px] font-black border-2 border-white shadow-sm z-10",
                 variant === 'top' ? 'bg-amber-400 text-amber-900' : 'bg-red-500 text-white'
@@ -93,14 +91,9 @@ export const EquipoCicloPanel = ({ personas = [], promedioEquipoGlobal, loading 
     if (loading) return <PanelSkeleton />;
     if (personas.length === 0) return null;
 
-    // Lógica de Ranking: Solo participan quienes tengan 3 tareas o más
     const calificados = personas.filter(p => p.calificaRanking);
-
-    // Reglas de negocio: El top requiere >= 60% dentro de los calificados
     const top60 = calificados.filter(p => p.scoreAjustado >= 60);
     const top3 = top60.slice(0, 3);
-
-    // Foco de atención: Quiénes caen debajo del estándar 60% dentro de los calificados
     const bottom60 = calificados.filter(p => p.scoreAjustado < 60);
     const bottom3 = bottom60.length > 0 ? [...bottom60].reverse().slice(0, 3) : [];
 
@@ -119,43 +112,39 @@ export const EquipoCicloPanel = ({ personas = [], promedioEquipoGlobal, loading 
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-4">
-
-                {/* Panel TOP */}
                 <div className="bg-white border border-emerald-200 rounded-2xl p-3 shadow-sm flex flex-col h-full">
                     <p className="text-[9px] md:text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3 flex items-center justify-center gap-1.5 text-center">
                         <Icon name="emoji_events" size="xs" /> Top Rendimiento
                     </p>
-
                     {top3.length > 0 ? (
                         <div className="flex flex-col gap-2">
                             {top3.map((p, i) => <PersonCard key={p.id} persona={p} rank={i} variant="top" />)}
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                            <Icon name="groups" className="text-slate-300 text-3xl mb-2" />
-                            <p className="text-[10px] md:text-xs font-bold text-slate-500">Sin personal calificado en el Top (Min. 3 tareas).</p>
+                            <Icon name="emoji_events" size="md" className="text-slate-300 mb-2" />
+                            <span className="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest">Sin Top</span>
+                            <p className="text-[9px] md:text-[10px] text-slate-400 font-medium mt-1">Nadie cumple los criterios en este periodo.</p>
                         </div>
                     )}
                 </div>
 
-                {/* Panel BOTTOM */}
                 <div className="bg-white border border-red-200 rounded-2xl p-3 shadow-sm flex flex-col h-full">
                     <p className="text-[9px] md:text-[10px] font-black text-red-700 uppercase tracking-widest mb-3 flex items-center justify-center gap-1.5 text-center">
                         <Icon name="lightbulb" size="xs" /> Foco de Atención
                     </p>
-
                     {bottom3.length > 0 ? (
                         <div className="flex flex-col gap-2">
                             {bottom3.map((p, i) => <PersonCard key={p.id} persona={p} rank={i} variant="bottom" />)}
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-4 text-center border-2 border-dashed border-emerald-200 rounded-xl bg-emerald-50/50">
-                            <Icon name="task_alt" className="text-emerald-400 text-3xl mb-2" />
-                            <p className="text-[10px] md:text-xs font-bold text-emerald-700">No hay personal rezagado con carga suficiente.</p>
+                            <Icon name="task_alt" size="md" className="text-emerald-400 mb-2" />
+                            <span className="text-[10px] md:text-[11px] font-black text-emerald-600 uppercase tracking-widest">Sin Rezagos</span>
+                            <p className="text-[9px] md:text-[10px] text-emerald-600/80 font-medium mt-1">Todo el personal está por encima del mínimo.</p>
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );

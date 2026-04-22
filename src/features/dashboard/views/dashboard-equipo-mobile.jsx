@@ -1,9 +1,11 @@
+// src/features/dashboard/views/dashboard-equipo-mobile.jsx
 import { useState } from 'react';
 import { Icon, Skeleton, GlassFab } from '@/components/ui/z_index';
 import { EquipoCicloPanel } from '../components/equipo/equipo-ciclo-panel';
 import { TecnicoKpiRow } from '../components/equipo/equipo-tecnico-kpi-row';
 import { TecnicoDetalleModal } from '../components/equipo/equipo-detalle-modal';
 import { EquipoCambioRol } from '../components/equipo/equipo-cambio-rol';
+import DashboardEmptyState from '../components/dashboard-empty-state';
 import { hardReload } from '@/utils/hard-reload';
 
 const GrupoMobile = ({ titulo, icon, personas, onViewDetail }) => {
@@ -32,7 +34,20 @@ export default function DashboardEquipoMobile({
 }) {
     const [rolActivo, setRolActivo] = useState('TECNICO');
 
-    const sinDatos = !loading && tecnicos.length === 0 && coordinadores.length === 0;
+    // 🚨 REGLA ESTRICTA INFALIBLE: Validar tareas, tickets y el promedio global
+    const totalActividad = [...tecnicos, ...coordinadores].reduce((acc, p) => {
+        const volumen =
+            (p.totalTareas || 0) +
+            (p.tareasActivas || 0) +
+            (p.tareasTerminadas || 0) +
+            (p.tickets || p.tiposTotales?.tickets || 0) +
+            (p.total || 0);
+        return acc + volumen;
+    }, 0);
+
+    const tieneDatos = totalActividad > 0 || (typeof promedioGlobal === 'number' && promedioGlobal > 0);
+    const sinDatos = !loading && !tieneDatos;
+
     const personasActivas = rolActivo === 'TECNICO' ? tecnicos : coordinadores;
     const tituloTabla = rolActivo === 'TECNICO' ? 'Técnicos' : 'Coordinadores';
     const iconTabla = rolActivo === 'TECNICO' ? 'engineering' : 'manage_accounts';
@@ -40,7 +55,6 @@ export default function DashboardEquipoMobile({
     return (
         <>
             <div className="flex flex-col gap-4 animate-in fade-in duration-300 pb-28">
-
                 {loading ? (
                     <div className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 gap-3">
@@ -65,10 +79,11 @@ export default function DashboardEquipoMobile({
                         <Icon name="error" size="sm" /> {error}
                     </div>
                 ) : sinDatos ? (
-                    <div className="flex flex-col items-center py-14 gap-3 text-slate-400">
-                        <Icon name="engineering" size="xl" />
-                        <p className="text-xs font-medium">Sin datos de equipo.</p>
-                    </div>
+                    <DashboardEmptyState
+                        isMobile
+                        mensaje="Rendimiento no disponible"
+                        subtexto="No existen registros de tareas ni tickets procesados en este periodo."
+                    />
                 ) : (
                     <>
                         <EquipoCambioRol rolActivo={rolActivo} setRolActivo={setRolActivo} />

@@ -108,8 +108,8 @@ export const TecnicoKpiRow = ({ tecnico, rank, onViewDetail }) => {
             <div className="flex items-center bg-slate-50/50 rounded-xl border border-slate-100 p-2.5">
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tiempo Real</span>
-                    <span className={cn("text-xs", tieneTareas ? timeColor : 'text-slate-300')}>
-                        {formatMins(tecnico.minutosReales)}
+                    <span className={cn("text-xs font-bold", !tieneTareas ? 'text-slate-300' : timeColor)}>
+                        {tieneTareas ? formatMins(tecnico.minutosReales) : '—'}
                     </span>
                 </div>
                 <div className="w-px h-8 bg-slate-200 mx-2"></div>

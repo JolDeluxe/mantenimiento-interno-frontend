@@ -1,3 +1,5 @@
+// src/features/tickets/components/historico/ticket-form-modal.jsx
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
@@ -5,7 +7,7 @@ import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
-    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS,
+    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
 } from '../../constants';
 
 const MAX_TITULO = 80;
@@ -945,10 +947,37 @@ export const TicketFormModal = ({
 
                         {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
                         <div className={cn("grid gap-3", esAdmin ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-3")}>
+
+                            {esAdmin && (
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
+                                    <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
+                                        error={!!fe.tipo} helperText={fe.tipo}
+                                        disabled={isSubmitting || lockBaseFields}>
+                                        <option value="" disabled hidden>Selecciona…</option>
+                                        {isTicket && <option value="TICKET">Ticket</option>}
+                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                    </Select>
+                                </div>
+                            )}
+
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-clas" error={!!fe.clasificacion}>Clasificación *</Label>
-                                <Select id="tf-clas" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
-                                    error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
+                                <Select
+                                    id="tf-clas"
+                                    value={clasificacion}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setClasificacion(val);
+                                        // Lógica de automatización: Si es Inspección, forzar Categoría a Rutina
+                                        if (val === 'INSPECCION') {
+                                            setCategoria('SERVICIOS_RUTINAS');
+                                        }
+                                    }}
+                                    error={!!fe.clasificacion}
+                                    helperText={fe.clasificacion}
+                                    disabled={isSubmitting}
+                                >
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {clasificacionesOpts.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </Select>
@@ -966,15 +995,10 @@ export const TicketFormModal = ({
                                 <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
                                     error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
                                     <option value="" disabled hidden>Selecciona…</option>
-                                    <option value="MAQUINARIA">Maquinaria</option>
-                                    <option value="INFRAESTRUCTURA">Infraestructura</option>
-                                    <option value="MOBILIARIO">Mobiliario</option>
-                                    <option value="SISTEMAS">Sistemas / IT</option>
-                                    <option value="VEHICULOS">Vehículos</option>
-                                    <option value="GENERAL">General / Otro</option>
+                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </Select>
                             </div>
-                            {esAdmin && (
+                            {/* {esAdmin && (
                                 <div className="flex flex-col gap-1.5">
                                     <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
                                     <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
@@ -985,7 +1009,7 @@ export const TicketFormModal = ({
                                         {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
                                 </div>
-                            )}
+                            )} */}
                         </div>
 
                         {/* ── FILA 2: Planta | Área ── */}

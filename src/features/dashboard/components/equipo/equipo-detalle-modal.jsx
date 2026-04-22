@@ -15,7 +15,6 @@ const formatMins = (m) => {
     return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60}m`;
 };
 
-// ── Componente de comparación de score con periodo anterior ───────────────────
 const EvolucionBadge = ({ scoreActual, scorePrevio, filtro }) => {
     if (scorePrevio === null || scorePrevio === undefined) {
         return (
@@ -23,7 +22,6 @@ const EvolucionBadge = ({ scoreActual, scorePrevio, filtro }) => {
         );
     }
 
-    // EL SECRETO ESTÁ AQUÍ: .toFixed(1) evita el error de decimales infinitos de JavaScript
     const diff = Number((scoreActual - scorePrevio).toFixed(1));
     const sube = diff > 0;
     const igual = diff === 0;
@@ -47,7 +45,6 @@ const EvolucionBadge = ({ scoreActual, scorePrevio, filtro }) => {
     );
 };
 
-// ── Subcomponente de Barras Versus ────────────────────────────────────────────
 const VersusBar = ({ labelA, labelB, valA = 0, valB = 0 }) => {
     const total = valA + valB;
     const pctA = total > 0 ? Math.round((valA / total) * 100) : 0;
@@ -55,8 +52,9 @@ const VersusBar = ({ labelA, labelB, valA = 0, valB = 0 }) => {
 
     if (total === 0) {
         return (
-            <div className="flex items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-xs text-slate-400 italic">Sin datos registrados</span>
+            <div className="flex flex-col items-center justify-center py-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                <Icon name="analytics" size="sm" className="text-slate-300 mb-1" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin métricas</span>
             </div>
         );
     }
@@ -75,12 +73,16 @@ const VersusBar = ({ labelA, labelB, valA = 0, valB = 0 }) => {
     );
 };
 
-// ── Consumo de Tiempo Real vs Estimado ────────────────────────────────────────
 const AnalisisTiempos = ({ estimadoMins, realMins }) => {
     const tieneData = estimadoMins > 0 || realMins > 0;
 
     if (!tieneData) {
-        return <p className="text-xs text-slate-400 italic">Sin registros de tiempo en este período.</p>;
+        return (
+            <div className="flex flex-col items-center justify-center py-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl m-1">
+                <Icon name="timer_off" size="md" className="text-slate-300 mb-1.5" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin registro de tiempos</span>
+            </div>
+        );
     }
 
     const diff = realMins - estimadoMins;
@@ -88,7 +90,7 @@ const AnalisisTiempos = ({ estimadoMins, realMins }) => {
     const pctDiff = estimadoMins > 0 ? Math.round((Math.abs(diff) / estimadoMins) * 100) : 0;
 
     return (
-        <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 m-1">
             <div className="flex justify-between items-center">
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiempo Estimado</span>
@@ -118,13 +120,12 @@ const AnalisisTiempos = ({ estimadoMins, realMins }) => {
     );
 };
 
-// ── Gráfica Dinámica de Rendimiento ───────────────────────────────────────────
 const GraficaRendimiento = ({ grafico = [] }) => {
     if (!grafico || grafico.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
-                <Icon name="bar_chart" size="lg" className="mb-2 opacity-50" />
-                <span className="text-xs font-medium italic">Gráfica no disponible para este periodo</span>
+            <div className="flex flex-col items-center justify-center py-10 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-48">
+                <Icon name="insights" size="lg" className="text-slate-300 mb-2" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gráfica no disponible</span>
             </div>
         );
     }
@@ -132,7 +133,6 @@ const GraficaRendimiento = ({ grafico = [] }) => {
     return (
         <div className="flex items-end justify-between gap-1.5 h-48 pt-8 pb-1">
             {grafico.map((punto, idx) => {
-                // Regla: Si es 0 por falta de datos (noData), es gris. Si es 0 por mal score, es rojo.
                 const colorBarra = punto.noData
                     ? 'bg-slate-200'
                     : (punto.score >= 80 ? 'bg-emerald-400' : punto.score >= 60 ? 'bg-amber-400' : 'bg-red-400');
@@ -140,16 +140,11 @@ const GraficaRendimiento = ({ grafico = [] }) => {
                 const altura = punto.noData ? '10%' : `${Math.max(punto.score, 5)}%`;
 
                 return (
-                    /* El secreto está aquí: h-full y justify-end evitan que las barras colapsen a 0px */
                     <div key={idx} className="flex-1 flex flex-col items-center justify-end gap-2 group h-full">
                         <div className="relative w-full flex justify-center items-end h-full bg-slate-50/50 rounded-t-md border border-b-0 border-slate-100/60">
-
-                            {/* Tooltip */}
                             <div className="absolute -top-7 bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap shadow-md">
                                 {punto.noData ? 'Sin datos' : `${punto.score}%`}
                             </div>
-
-                            {/* Barra de color */}
                             <div
                                 className={cn("w-full max-w-[28px] rounded-t-sm transition-all duration-700", colorBarra)}
                                 style={{ height: altura }}
@@ -165,7 +160,6 @@ const GraficaRendimiento = ({ grafico = [] }) => {
     );
 };
 
-// ── Modal principal ───────────────────────────────────────────────────────────
 export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
     const [detalle, setDetalle] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -191,16 +185,15 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
             .finally(() => setLoading(false));
     }, [tecnico, filtro]);
 
-    // Mapeo contra los campos reales. NOTA: Para las gráficas y entregas, el backend debe proveerlos.
     const r = detalle?.rendimiento;
     const t = detalle?.tiempos || {};
     const c = detalle?.cargaActual;
     const grafico = detalle?.grafico || [];
 
-    const colorKpi = r?.scoreColor || 'neutral';
+    const sinTareasTerminadas = !r?.totalTerminadas || r.totalTerminadas === 0;
+    const colorKpi = sinTareasTerminadas ? 'neutral' : (r?.scoreColor || 'neutral');
     const cx = COLOR_MAP[colorKpi] || COLOR_MAP.neutral;
 
-    // Formateo estricto de la Carga Actual para el SummaryBar nativo
     const itemsCarga = [];
     if (c?.estados) {
         if (c.estados.ASIGNADA) itemsCarga.push({ id: 'ASIGNADA', label: 'Asignadas', value: c.estados.ASIGNADA, color: 'info' });
@@ -241,7 +234,6 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                 ) : detalle ? (
                     <div className="flex flex-col gap-6">
 
-                        {/* Cabecera del técnico */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
                             <div className="flex items-center gap-4">
                                 {detalle.tecnico.imagen ? (
@@ -269,13 +261,12 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                                 </div>
                             </div>
 
-                            {/* BLOQUE DE TAREAS Y ALERTA DE VOLUMEN */}
                             <div className="flex flex-col items-end shrink-0 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Volumen Evaluado</span>
                                 <span className="text-lg font-black font-mono text-slate-800 leading-none">
                                     {r.totalTerminadas} <span className="text-xs text-slate-500 font-bold">tareas</span>
                                 </span>
-                                {r.totalTerminadas < 3 && (
+                                {r.totalTerminadas < 3 && r.totalTerminadas > 0 && (
                                     <div className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-100/50 border border-amber-200 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">
                                         <Icon name="warning" size="xs" className="scale-75" />
                                         Muestra insuficiente
@@ -284,24 +275,27 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Tarjetas de KPIs Principales (Expandidas a 2 columnas) */}
+                        {/* Tarjetas de KPIs Principales */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className={cn('rounded-xl p-4 border flex flex-col gap-1 shadow-sm', cx.bg, cx.border)}>
+                            <div className={cn('rounded-xl p-4 border flex flex-col gap-1 shadow-sm transition-all', cx.bg, cx.border, sinTareasTerminadas && 'opacity-80 border-dashed border-2')}>
                                 <span className={cn('text-[10px] font-black uppercase tracking-widest', cx.text)}>Score Ajustado</span>
-                                <span className={cn('text-4xl font-black font-mono mt-1', cx.text)}>{r.scoreAjustado}%</span>
+                                <span className={cn('text-4xl font-black font-mono mt-1', sinTareasTerminadas ? 'text-slate-300' : cx.text)}>
+                                    {sinTareasTerminadas ? '—' : `${r.scoreAjustado}%`}
+                                </span>
                                 <span className={cn('text-xs font-bold mt-1 opacity-80', cx.text)}>
                                     Promedio del Equipo: {r.promedioEquipo}%
                                 </span>
                             </div>
 
-                            <div className="rounded-xl p-4 border border-slate-200 bg-white flex flex-col gap-1 shadow-sm">
+                            <div className={cn('rounded-xl p-4 border flex flex-col gap-1 shadow-sm transition-all', sinTareasTerminadas ? 'bg-slate-50 border-dashed border-2 border-slate-200' : 'bg-white border-slate-200')}>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tasa Aceptación (Calidad)</span>
                                 <span className={cn(
                                     'text-4xl font-black font-mono mt-1',
-                                    r.tasaAceptacion >= 80 ? 'text-emerald-600' :
-                                        r.tasaAceptacion >= 60 ? 'text-amber-600' : 'text-red-600'
+                                    sinTareasTerminadas ? 'text-slate-300' :
+                                        r.tasaAceptacion >= 80 ? 'text-emerald-600' :
+                                            r.tasaAceptacion >= 60 ? 'text-amber-600' : 'text-red-600'
                                 )}>
-                                    {r.tasaAceptacion}%
+                                    {sinTareasTerminadas ? '—' : `${r.tasaAceptacion}%`}
                                 </span>
                                 <span className="text-xs font-bold mt-1 text-slate-400">
                                     Trabajos aprobados sin rechazo
@@ -309,13 +303,12 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Tiempos y Cumplimiento */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-3">
                                 <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                     <Icon name="schedule" size="xs" /> Auditoría de Tiempo
                                 </h4>
-                                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-1">
+                                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-0.5 h-full">
                                     <AnalisisTiempos
                                         estimadoMins={t.totalEstimadoMins}
                                         realMins={t.totalRealMins}
@@ -328,7 +321,6 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                                     <Icon name="verified" size="xs" /> Cumplimiento de Entregas
                                 </h4>
                                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col justify-center h-full gap-4">
-                                    {/* Requiere actualización del backend para enviar estos campos */}
                                     <VersusBar
                                         labelA="A Tiempo"
                                         labelB="Fuera de Tiempo"
@@ -346,7 +338,6 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Carga actual (SummaryBar Nativo) */}
                         <div className="flex flex-col gap-3">
                             <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                 <Icon name="assignment" size="xs" /> Estado Operativo Actual (Carga)
@@ -355,27 +346,24 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                                 {itemsCarga.length > 0 ? (
                                     <SummaryBar items={itemsCarga} />
                                 ) : (
-                                    <div className="flex items-center gap-2 text-slate-400 text-xs italic py-2">
-                                        <Icon name="check_circle" size="sm" className="text-emerald-400" />
-                                        El colaborador no tiene tareas en este momento.
+                                    <div className="flex flex-col items-center justify-center text-slate-400 py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                                        <Icon name="check_circle" size="md" className="text-emerald-400 mb-1.5" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">Bandeja Limpia</span>
+                                        <span className="text-xs font-medium mt-0.5">El colaborador no tiene tareas pendientes.</span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* Gráfica de Rendimiento Histórico */}
-                        {grafico?.length > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                    <Icon name="insights" size="xs" /> Histórico del Período
-                                </h4>
-                                <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                    <GraficaRendimiento grafico={grafico} />
-                                </div>
+                        <div className="flex flex-col gap-3">
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                <Icon name="insights" size="xs" /> Histórico del Período
+                            </h4>
+                            <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                <GraficaRendimiento grafico={grafico} />
                             </div>
-                        )}
+                        </div>
 
-                        {/* Top tareas */}
                         {detalle.topTareas?.length > 0 && (
                             <div className="flex flex-col gap-3">
                                 <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">

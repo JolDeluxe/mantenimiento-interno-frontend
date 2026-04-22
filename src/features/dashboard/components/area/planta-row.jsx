@@ -1,3 +1,4 @@
+// src/features/dashboard/components/area/planta-row.jsx
 import { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { AreaItem } from './area-item';
@@ -85,9 +86,10 @@ export const PlantaRow = ({ planta, onOpenPlanta, onOpenArea, isMobile = false }
             {expanded && (
                 <div className="border-t border-slate-100 bg-slate-50/40 p-4">
                     {areas.length === 0 ? (
-                        <div className="flex items-center justify-center gap-2 py-6 text-slate-400">
-                            <Icon name="search_off" size="sm" />
-                            <span className="text-xs font-medium">Sin áreas registradas en este periodo</span>
+                        <div className="flex flex-col items-center justify-center py-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl my-2">
+                            <Icon name="domain_disabled" size="md" className="text-slate-300 mb-2" />
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sin áreas registradas</span>
+                            <p className="text-[10px] text-slate-400 font-medium mt-1">No hay actividad en ninguna área de esta planta.</p>
                         </div>
                     ) : (
                         <div className={cn('grid gap-3', isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4')}>

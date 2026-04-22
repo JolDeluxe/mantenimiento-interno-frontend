@@ -1,31 +1,26 @@
-// src/features/dashboard/pages/dashboard-general.jsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { useGeneral } from '../hooks/use-general';
 import { useDashboardContext } from '../context/dashboard-context';
 import DashboardGeneralDesktop from '../views/dashboard-general-desktop';
 import DashboardGeneralMobile from '../views/dashboard-general-mobile';
 
 export default function DashboardGeneral() {
     const isDesktop = useIsDesktop();
-    const { data, loading } = useDashboardContext();
 
-    const generalData = data?.general;
-    const resumen = generalData?.resumen;
-    const distribuciones = generalData?.distribuciones ?? {};
-    const backlog = generalData?.backlog ?? { totalActivo: 0, desglose: {} };
+    // 1. Extraemos el filtro del contexto (Fechas, año, mes)
+    const { filtro } = useDashboardContext();
 
-    const topCategorias = useMemo(() => {
-        if (!distribuciones.categorias) return [];
-        return Object.entries(distribuciones.categorias)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
-    }, [distribuciones.categorias]);
+    // 2. El Hook obtiene el JSON exacto de nuestro Fat Backend
+    const { data, loading, error } = useGeneral(filtro);
 
-    const colorEficiencia = resumen?.eficienciaEstimacionGlobal
-        ? (resumen.eficienciaEstimacionGlobal <= 100 ? 'green' : resumen.eficienciaEstimacionGlobal <= 120 ? 'amber' : 'red')
-        : 'neutral';
+    if (error) {
+        return <div className="p-4 text-red-500 font-bold bg-red-50 rounded-xl m-4">Error: {error}</div>;
+    }
 
-    const viewProps = { loading, resumen, distribuciones, backlog, topCategorias, colorEficiencia };
-
-    return isDesktop ? <DashboardGeneralDesktop {...viewProps} /> : <DashboardGeneralMobile {...viewProps} />;
+    // 3. Pasamos ÚNICAMENTE `data` y `loading`. 
+    // Las vistas Desktop y Mobile ya están programadas para extraer `resumen`, `tipos`, etc., desde `data`.
+    return isDesktop
+        ? <DashboardGeneralDesktop data={data} loading={loading} />
+        : <DashboardGeneralMobile data={data} loading={loading} />;
 }

@@ -1,9 +1,11 @@
+// src/features/dashboard/views/dashboard-equipo-desktop.jsx
 import { useState } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { EquipoCicloPanel } from '../components/equipo/equipo-ciclo-panel';
 import { TecnicoKpiRow } from '../components/equipo/equipo-tecnico-kpi-row';
 import { TecnicoDetalleModal } from '../components/equipo/equipo-detalle-modal';
 import { EquipoCambioRol } from '../components/equipo/equipo-cambio-rol';
+import DashboardEmptyState from '../components/dashboard-empty-state';
 
 const GrupoTabla = ({ titulo, icon, personas, onViewDetail, loading }) => {
     if (!loading && personas.length === 0) return null;
@@ -18,7 +20,6 @@ const GrupoTabla = ({ titulo, icon, personas, onViewDetail, loading }) => {
                 </span>
             </div>
 
-            {/* Grid dinámico: 1 col móvil, 2 en tablets, 3 en escritorio grande */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => (
@@ -38,7 +39,7 @@ const GrupoTabla = ({ titulo, icon, personas, onViewDetail, loading }) => {
                         <TecnicoKpiRow
                             key={p.id}
                             tecnico={p}
-                            rank={index + 1} // Obligatorio para el nuevo diseño de tarjeta
+                            rank={index + 1}
                             onViewDetail={onViewDetail}
                         />
                     ))
@@ -54,7 +55,20 @@ export default function DashboardEquipoDesktop({
 }) {
     const [rolActivo, setRolActivo] = useState('TECNICO');
 
-    const sinDatos = !loading && tecnicos.length === 0 && coordinadores.length === 0;
+    // 🚨 REGLA ESTRICTA INFALIBLE: Validar tareas, tickets y el promedio global
+    const totalActividad = [...tecnicos, ...coordinadores].reduce((acc, p) => {
+        const volumen =
+            (p.totalTareas || 0) +
+            (p.tareasActivas || 0) +
+            (p.tareasTerminadas || 0) +
+            (p.tickets || p.tiposTotales?.tickets || 0) +
+            (p.total || 0);
+        return acc + volumen;
+    }, 0);
+
+    const tieneDatos = totalActividad > 0 || (typeof promedioGlobal === 'number' && promedioGlobal > 0);
+    const sinDatos = !loading && !tieneDatos;
+
     const personasActivas = rolActivo === 'TECNICO' ? tecnicos : coordinadores;
     const tituloTabla = rolActivo === 'TECNICO' ? 'Ranking de Técnicos' : 'Ranking de Coordinadores';
     const iconTabla = rolActivo === 'TECNICO' ? 'engineering' : 'manage_accounts';
@@ -62,10 +76,9 @@ export default function DashboardEquipoDesktop({
     return (
         <>
             <div className="flex flex-col gap-8 animate-in fade-in duration-300 pb-10">
-
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <EquipoCambioRol rolActivo={rolActivo} setRolActivo={setRolActivo} />
-                    {promedioGlobal !== undefined && (
+                    {promedioGlobal !== undefined && !sinDatos && (
                         <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm flex items-center gap-3">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right leading-tight">
                                 Desempeño<br />Global
@@ -77,12 +90,6 @@ export default function DashboardEquipoDesktop({
                     )}
                 </div>
 
-                <EquipoCicloPanel
-                    personas={personasActivas}
-                    promedioEquipoGlobal={promedioGlobal}
-                    loading={loading}
-                />
-
                 {error && (
                     <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-semibold text-red-700">
                         <Icon name="error" size="sm" /> {error}
@@ -90,18 +97,25 @@ export default function DashboardEquipoDesktop({
                 )}
 
                 {sinDatos && !error ? (
-                    <div className="flex flex-col items-center py-16 gap-3 text-slate-400">
-                        <Icon name="engineering" size="xl" />
-                        <p className="text-sm font-medium">Sin datos de equipo para este período.</p>
-                    </div>
-                ) : (
-                    <GrupoTabla
-                        titulo={tituloTabla}
-                        icon={iconTabla}
-                        personas={personasActivas}
-                        onViewDetail={onViewDetail}
-                        loading={loading}
+                    <DashboardEmptyState
+                        mensaje="Rendimiento no disponible"
+                        subtexto="No existen registros de tareas ni tickets procesados por el equipo en este periodo."
                     />
+                ) : (
+                    <>
+                        <EquipoCicloPanel
+                            personas={personasActivas}
+                            promedioEquipoGlobal={promedioGlobal}
+                            loading={loading}
+                        />
+                        <GrupoTabla
+                            titulo={tituloTabla}
+                            icon={iconTabla}
+                            personas={personasActivas}
+                            onViewDetail={onViewDetail}
+                            loading={loading}
+                        />
+                    </>
                 )}
             </div>
 

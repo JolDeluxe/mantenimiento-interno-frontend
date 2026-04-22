@@ -1,4 +1,6 @@
-export const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA', 'GENERAL'];
+// src/features/tickets/constants.js
+
+export const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA'];
 
 export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
@@ -24,9 +26,6 @@ export const CLASIFICACIONES = [
     { value: 'PREVENTIVO', label: 'Preventivo' },
     { value: 'CORRECTIVO', label: 'Correctivo' },
     { value: 'INSPECCION', label: 'Inspección' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
 ];
 
 export const CLASIFICACIONES_CLIENTE = [
@@ -39,19 +38,25 @@ export const CLASIFICACIONES_ADMIN = [
     { value: 'PREVENTIVO', label: 'Preventivo' },
     { value: 'CORRECTIVO', label: 'Correctivo' },
     { value: 'INSPECCION', label: 'Inspección' },
-    { value: 'MEJORA', label: 'Mejora' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura' },
-    { value: 'RUTINA', label: 'Rutina' },
+];
+
+export const CATEGORIAS_EQUIPO = [
+    { value: 'MAQUINARIA', label: 'Maquinaria de Producción' },
+    { value: 'INFRAESTRUCTURA', label: 'Infraestructura e Instalaciones' },
+    { value: 'CARRITOS_RIELES', label: 'Equipos de Apoyo' },
+    { value: 'MOBILIARIO', label: 'Mobiliario' },
+    { value: 'SERVICIOS_RUTINAS', label: 'Rutina' },
+    { value: 'ADMINISTRATIVO', label: 'Gestión Operativa' },
 ];
 
 // Nuevo mapa jerárquico de Plantas a Áreas
 export const AREAS_POR_PLANTA = {
     OMEGA: [
-        'PT'
+        'PT',
     ],
     SIGMA: [
         'PRELIMINARES',
-        'LASER Y BORDADO'
+        'LASER Y BORDADO',
     ],
     LAMBDA: [
         'BOLSAS Y BILLETERAS'
@@ -68,7 +73,8 @@ export const AREAS_POR_PLANTA = {
         'LASER',
         'PESPUNTE',
         'MONTADO',
-        'PRELIMINARES'
+        'PRELIMINARES',
+
     ],
     GENERAL: []
 };
