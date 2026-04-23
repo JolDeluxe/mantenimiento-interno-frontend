@@ -85,9 +85,42 @@ const AnalisisTiempos = ({ estimadoMins, realMins }) => {
         );
     }
 
+    const sinEstimacion = estimadoMins === 0 && realMins > 0;
     const diff = realMins - estimadoMins;
     const sePaso = diff > 0;
     const pctDiff = estimadoMins > 0 ? Math.round((Math.abs(diff) / estimadoMins) * 100) : 0;
+
+    // Motor de Severidad para Tiempos Excedidos
+    let clasesEstado = "";
+    let iconoEstado = "";
+
+    if (sinEstimacion) {
+        clasesEstado = "bg-slate-100 text-slate-600 border-slate-200";
+        iconoEstado = "info";
+    } else if (diff === 0) {
+        clasesEstado = "bg-slate-100 text-slate-600 border-slate-200";
+        iconoEstado = "check";
+    } else if (sePaso) {
+        // Reglas de tolerancia (Gradient Scale)
+        if (pctDiff <= 15) {
+            clasesEstado = "bg-amber-50 text-amber-700 border-amber-200";
+            iconoEstado = "schedule";
+        } else if (pctDiff <= 30) {
+            clasesEstado = "bg-orange-50 text-orange-700 border-orange-200";
+            iconoEstado = "warning";
+        } else if (pctDiff <= 50) {
+            clasesEstado = "bg-red-50 text-red-700 border-red-200";
+            iconoEstado = "error";
+        } else {
+            // Alerta Crítica > 50%
+            clasesEstado = "bg-rose-100 text-rose-800 border-rose-300 font-extrabold";
+            iconoEstado = "dangerous";
+        }
+    } else {
+        // Ahorro de tiempo
+        clasesEstado = "bg-emerald-50 text-emerald-700 border-emerald-200";
+        iconoEstado = "task_alt";
+    }
 
     return (
         <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 m-1">
@@ -103,12 +136,13 @@ const AnalisisTiempos = ({ estimadoMins, realMins }) => {
             </div>
 
             <div className={cn(
-                "flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-bold border",
-                diff === 0 ? "bg-slate-100 text-slate-600 border-slate-200" :
-                    sePaso ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                "flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-bold border transition-colors",
+                clasesEstado
             )}>
-                <Icon name={diff === 0 ? "check" : sePaso ? "warning" : "task_alt"} size="xs" />
-                {diff === 0 ? (
+                <Icon name={iconoEstado} size="xs" />
+                {sinEstimacion ? (
+                    `Inversión de ${formatMins(realMins)} (Sin estimación)`
+                ) : diff === 0 ? (
                     "Tiempo exacto al estimado"
                 ) : sePaso ? (
                     `Se excedió por ${formatMins(diff)} (${pctDiff}% arriba)`
@@ -189,6 +223,8 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
     const t = detalle?.tiempos || {};
     const c = detalle?.cargaActual;
     const grafico = detalle?.grafico || [];
+
+    const esVistaMensual = filtro?.month > 0 && !filtro?.fechaInicio;
 
     const sinTareasTerminadas = !r?.totalTerminadas || r.totalTerminadas === 0;
     const colorKpi = sinTareasTerminadas ? 'neutral' : (r?.scoreColor || 'neutral');
@@ -288,7 +324,7 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                             </div>
 
                             <div className={cn('rounded-xl p-4 border flex flex-col gap-1 shadow-sm transition-all', sinTareasTerminadas ? 'bg-slate-50 border-dashed border-2 border-slate-200' : 'bg-white border-slate-200')}>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tasa Aceptación (Calidad)</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tasa Aceptación</span>
                                 <span className={cn(
                                     'text-4xl font-black font-mono mt-1',
                                     sinTareasTerminadas ? 'text-slate-300' :
@@ -355,14 +391,16 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                <Icon name="insights" size="xs" /> Histórico del Período
-                            </h4>
-                            <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                <GraficaRendimiento grafico={grafico} />
+                        {!esVistaMensual && (
+                            <div className="flex flex-col gap-3">
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Icon name="insights" size="xs" /> Histórico del Período
+                                </h4>
+                                <div className="p-5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                    <GraficaRendimiento grafico={grafico} />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {detalle.topTareas?.length > 0 && (
                             <div className="flex flex-col gap-3">

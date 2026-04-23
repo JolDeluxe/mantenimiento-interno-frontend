@@ -62,6 +62,8 @@ const MicrosoftExcel = (props) => (
     </svg>
 );
 
+const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+
 const normalizeOpts = (opts = []) => opts.map(o => {
     if (typeof o === 'string') return { value: o, label: o };
     return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
@@ -93,6 +95,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 export const TicketFilterBar = ({
+    currentUser,
     query, onSearchChange,
     filtroTipo, onTipoChange,
     filtroPrioridad, onPrioridadChange,
@@ -123,6 +126,8 @@ export const TicketFilterBar = ({
     const totalRechazadas = existenciaGlobal['RECHAZADO'] ?? 0;
     const totalCanceladas = existenciaGlobal['CANCELADA'] ?? 0;
     const totalAtrasadas = totalAtrasadasGlobal;
+    const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+    const puedeExportar = currentUser && rolesAdmin.includes(currentUser.rol);
 
     const searchProps = {
         localValue,
@@ -276,24 +281,25 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                {/* BOTÓN EXPORTAR */}
-                <div className="ml-auto flex-none self-end">
-                    <button
-                        type="button"
-                        onClick={onExport}
-                        className={cn(
-                            "h-9.5 px-3.5 flex items-center justify-center gap-2",
-                            "bg-white border border-slate-200 rounded-xl shadow-sm",
-                            "text-slate-500 hover:text-emerald-700 hover:bg-emerald-50/80 hover:border-emerald-300",
-                            "transition-all duration-200 group active:scale-95 cursor-pointer outline-none"
-                        )}
-                    >
-                        <MicrosoftExcel className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                        <span className="font-bold text-[11px] uppercase tracking-wider mt-[1px]">
-                            Exportar
-                        </span>
-                    </button>
-                </div>
+                {puedeExportar && (
+                    <div className="ml-auto flex-none self-end">
+                        <button
+                            type="button"
+                            onClick={onExport}
+                            className={cn(
+                                "h-9.5 px-3.5 flex items-center justify-center gap-2",
+                                "bg-white border border-slate-200 rounded-xl shadow-sm",
+                                "text-slate-500 hover:text-emerald-700 hover:bg-emerald-50/80 hover:border-emerald-300",
+                                "transition-all duration-200 group active:scale-95 cursor-pointer outline-none"
+                            )}
+                        >
+                            <MicrosoftExcel className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                            <span className="font-bold text-[11px] uppercase tracking-wider mt-[1px]">
+                                Exportar
+                            </span>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

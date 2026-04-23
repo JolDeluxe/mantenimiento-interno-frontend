@@ -49,7 +49,6 @@ export const TarjetaKpi = ({
     const colorTraducido = NORMALIZAR_COLOR[color] || 'neutral';
     const estilo = MAPA_COLORES[colorTraducido] || MAPA_COLORES.neutral;
 
-    // 🚨 REGLA: Detectar ausencia real de métricas
     const isEmpty = valor === null || valor === undefined || valor === 'N/A' || valor === '';
 
     if (cargando) {

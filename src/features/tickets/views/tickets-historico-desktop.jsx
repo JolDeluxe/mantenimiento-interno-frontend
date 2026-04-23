@@ -7,10 +7,10 @@ import { RefreshFab } from '@/components/ui/z_index';
 import { ROLES_ADMIN } from '../constants';
 
 export const TicketsHistoricoDesktop = ({
+    currentUser,
     tickets,
     loading,
     submitting,
-    currentUser,
     tecnicos,
     page,
     limit,
@@ -80,6 +80,7 @@ export const TicketsHistoricoDesktop = ({
             {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 
             <TicketFilterBar
+                currentUser={currentUser}
                 query={query}
                 onSearchChange={onSearchChange}
                 filtroTipo={filtroTipo}
@@ -108,6 +109,7 @@ export const TicketsHistoricoDesktop = ({
             />
 
             <TicketsTable
+
                 tickets={tickets}
                 loading={loading}
                 submitting={submitting}

@@ -7,33 +7,33 @@ import { TicketDetailModal } from './ticket-detail-modal';
 import { TicketAssignModal } from './ticket-assign-modal';
 import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
-import { formatFecha, formatFechaRelativa, isPastDate } from '@/lib/date';
+import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
-const isVencida = (ticket) => {
-    if (!ticket.fechaVencimiento) return false;
-    if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-    return isPastDate(ticket.fechaVencimiento);
-};
+// const isVencida = (ticket) => {
+//     if (!ticket.fechaVencimiento) return false;
+//     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
+//     return isPastDate(ticket.fechaVencimiento);
+// };
 
-const isEntregadaTarde = (ticket) => {
-    if (!ticket.fechaVencimiento) return false;
-    // Solo se evalúa si el ticket ya fue terminado
-    if (ticket.estado !== 'RESUELTO' && ticket.estado !== 'CERRADO') return false;
+// const isEntregadaTarde = (ticket) => {
+//     if (!ticket.fechaVencimiento) return false;
+//     // Solo se evalúa si el ticket ya fue terminado
+//     if (ticket.estado !== 'RESUELTO' && ticket.estado !== 'CERRADO') return false;
 
-    // Extraemos la fecha en la que realmente se resolvió (o el updatedAt si el historial no viene populado)
-    const entryResuelto = ticket.historial?.find(h => h.estadoNuevo === 'RESUELTO');
-    const fechaFin = entryResuelto?.createdAt || ticket.updatedAt;
+//     // Extraemos la fecha en la que realmente se resolvió (o el updatedAt si el historial no viene populado)
+//     const entryResuelto = ticket.historial?.find(h => h.estadoNuevo === 'RESUELTO');
+//     const fechaFin = entryResuelto?.createdAt || ticket.updatedAt;
 
-    if (!fechaFin) return false;
+//     if (!fechaFin) return false;
 
-    const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
-    const fFin = new Date(fechaFin).setHours(0, 0, 0, 0);
+//     const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
+//     const fFin = new Date(fechaFin).setHours(0, 0, 0, 0);
 
-    return fFin > fVenc;
-};
+//     return fFin > fVenc;
+// };
 
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
@@ -138,21 +138,18 @@ export const TicketsTable = ({
                     </div>
                 );
 
-                const vencida = isVencida(row);
-                const entregadaTarde = isEntregadaTarde(row);
-
                 return (
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
                                 {row.titulo}
                             </span>
-                            {vencida && (
+                            {row.isOverdue && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="warning" size="xs" /> ATRASADA
                                 </span>
                             )}
-                            {entregadaTarde && (
+                            {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" /> CON RETRASO
                                 </span>
@@ -222,12 +219,10 @@ export const TicketsTable = ({
                 if (row.isSkeleton) return <Skeleton className="h-8 w-24 rounded-md" />;
 
                 const isResolvedOrClosed = row.estado === 'RESUELTO' || row.estado === 'CERRADO';
-                const vencida = isVencida(row);
 
                 if (isResolvedOrClosed) {
-                    const entryResuelto = row.historial?.find(h => h.estadoNuevo === 'RESUELTO');
-                    const fechaFin = entryResuelto?.createdAt || row.updatedAt;
-                    const entregadaTarde = isEntregadaTarde(row);
+                    // finalizadoAt es el campo canónico — seteado por el backend al resolver/cerrar.
+                    const fechaFin = row.finalizadoAt || row.updatedAt;
 
                     return (
                         <div className="flex flex-col gap-0.5 text-[10px] w-full">
@@ -239,11 +234,10 @@ export const TicketsTable = ({
                             ) : (
                                 <div className="text-slate-400 italic">Sin fecha límite</div>
                             )}
-
                             {fechaFin && (
                                 <div className="flex items-center justify-items-end-safe gap-1">
                                     <span className="text-slate-400 font-bold uppercase tracking-wider">F. Concl:</span>
-                                    <span className={cn("font-bold text-right", entregadaTarde ? "text-red-600" : "text-emerald-600")}>
+                                    <span className={cn("font-bold text-right", row.isLate ? "text-red-600" : "text-emerald-600")}>
                                         {formatFecha(fechaFin)}
                                     </span>
                                 </div>
@@ -252,14 +246,21 @@ export const TicketsTable = ({
                     );
                 }
 
+                // --- NUEVA LÓGICA DE PREVENCIÓN DE DUPLICADOS PARA TICKETS ACTIVOS ---
+                const textoRelativo = row.fechaVencimiento ? formatFechaRelativa(row.fechaVencimiento) : 'Sin fecha límite';
+                const textoAbsoluto = row.fechaVencimiento ? formatFecha(row.fechaVencimiento) : '';
+
+                // Evitamos duplicidad ignorando mayúsculas/minúsculas
+                const mostrarAbsoluto = row.fechaVencimiento && (textoRelativo.toLowerCase() !== textoAbsoluto.toLowerCase());
+
                 return (
                     <div className="flex flex-col gap-0.5 text-xs">
-                        <span className={cn('font-medium', vencida ? 'text-estado-rechazado' : 'text-slate-600')}>
-                            {row.fechaVencimiento ? formatFechaRelativa(row.fechaVencimiento) : 'Sin fecha límite'}
+                        <span className={cn('font-medium', row.isOverdue ? 'text-estado-rechazado' : 'text-slate-600')}>
+                            {textoRelativo}
                         </span>
-                        {row.fechaVencimiento && (
+                        {mostrarAbsoluto && (
                             <span className="text-[10px] text-slate-400">
-                                {formatFecha(row.fechaVencimiento)}
+                                {textoAbsoluto}
                             </span>
                         )}
                     </div>
@@ -323,7 +324,7 @@ export const TicketsTable = ({
                 rowClassName={(row) =>
                     row.isSkeleton
                         ? 'bg-white'
-                        : isVencida(row)
+                        : row.isOverdue
                             ? 'bg-red-50/40 hover:bg-red-50/70'
                             : 'bg-white hover:bg-slate-50'
                 }

@@ -101,9 +101,43 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
 
     const { tiempoRealTotal = 0, tiempoEstimadoTotal = 0, alertaTiempo } = tiempos;
 
-    const desviacionPct = tiempoEstimadoTotal > 0
-        ? Math.round(((tiempoRealTotal - tiempoEstimadoTotal) / tiempoEstimadoTotal) * 100)
-        : 0;
+    const sinEstimacion = tiempoEstimadoTotal === 0 && tiempoRealTotal > 0;
+    const diff = tiempoRealTotal - tiempoEstimadoTotal;
+    const sePaso = diff > 0;
+    const pctDiff = tiempoEstimadoTotal > 0 ? Math.round((Math.abs(diff) / tiempoEstimadoTotal) * 100) : 0;
+
+    let clasesEstado = "";
+    let iconoEstado = "";
+    let textoEstado = "";
+
+    if (sinEstimacion) {
+        clasesEstado = "bg-slate-100 text-slate-600 border-slate-200";
+        iconoEstado = "info";
+        textoEstado = "Tiempo invertido sin estimación global previa";
+    } else if (diff === 0) {
+        clasesEstado = "bg-slate-100 text-slate-600 border-slate-200";
+        iconoEstado = "check";
+        textoEstado = "Operación global exacta al tiempo estimado";
+    } else if (sePaso) {
+        textoEstado = `Tiempo global excedido en un ${pctDiff}%`;
+        if (pctDiff <= 15) {
+            clasesEstado = "bg-amber-50 text-amber-700 border-amber-200";
+            iconoEstado = "schedule";
+        } else if (pctDiff <= 30) {
+            clasesEstado = "bg-orange-50 text-orange-700 border-orange-200";
+            iconoEstado = "warning";
+        } else if (pctDiff <= 50) {
+            clasesEstado = "bg-red-50 text-red-700 border-red-200";
+            iconoEstado = "error";
+        } else {
+            clasesEstado = "bg-rose-100 text-rose-800 border-rose-300 font-extrabold";
+            iconoEstado = "dangerous";
+        }
+    } else {
+        clasesEstado = "bg-emerald-50 text-emerald-700 border-emerald-200";
+        iconoEstado = "task_alt";
+        textoEstado = `Ahorro del ${pctDiff}% sobre el tiempo estimado global`;
+    }
 
     return (
         <Modal isOpen={Boolean(area)} onClose={onClose} className="max-w-2xl w-full">
@@ -128,13 +162,13 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-amber-600/70 uppercase tracking-wider mb-1">Activas</p>
                             <p className={cn("text-2xl font-black", tareasActivas > 0 ? "text-amber-600" : "text-amber-600/40")}>
-                                {tareasActivas > 0 ? tareasActivas : '—'}
+                                {tareasActivas}
                             </p>
                         </div>
                         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Reportes</p>
                             <p className={cn("text-2xl font-black", (tiposTotales?.tickets || 0) > 0 ? "text-blue-600" : "text-blue-600/40")}>
-                                {(tiposTotales?.tickets || 0) > 0 ? tiposTotales.tickets : '—'}
+                                {tiposTotales?.tickets || 0}
                             </p>
                         </div>
                     </div>
@@ -225,15 +259,12 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
                                     </div>
                                 </div>
 
-                                {tiempoEstimadoTotal > 0 && (
-                                    <div className={cn(
-                                        'flex items-center gap-3 px-4 py-3 rounded-xl border',
-                                        alertaTiempo ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'
-                                    )}>
-                                        <Icon name={alertaTiempo ? 'warning' : 'check_circle'} size="md" className={alertaTiempo ? 'text-red-500' : 'text-emerald-500'} />
+                                {(tiempoEstimadoTotal > 0 || tiempoRealTotal > 0) && (
+                                    <div className={cn('flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors', clasesEstado)}>
+                                        <Icon name={iconoEstado} size="md" />
                                         <div className="flex-1">
-                                            <p className={cn('text-sm font-black', alertaTiempo ? 'text-red-600' : 'text-emerald-600')}>
-                                                {alertaTiempo ? `Tiempo excedido en un ${desviacionPct}%` : 'Operación dentro del margen de tiempo estimado'}
+                                            <p className="text-sm font-black">
+                                                {textoEstado}
                                             </p>
                                         </div>
                                     </div>
