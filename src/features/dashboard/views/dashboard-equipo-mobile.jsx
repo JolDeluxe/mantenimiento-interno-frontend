@@ -1,4 +1,3 @@
-// src/features/dashboard/views/dashboard-equipo-mobile.jsx
 import { useState } from 'react';
 import { Icon, Skeleton, GlassFab } from '@/components/ui/z_index';
 import { EquipoCicloPanel } from '../components/equipo/equipo-ciclo-panel';
@@ -6,7 +5,6 @@ import { TecnicoKpiRow } from '../components/equipo/equipo-tecnico-kpi-row';
 import { TecnicoDetalleModal } from '../components/equipo/equipo-detalle-modal';
 import { EquipoCambioRol } from '../components/equipo/equipo-cambio-rol';
 import DashboardEmptyState from '../components/dashboard-empty-state';
-import { hardReload } from '@/utils/hard-reload';
 
 const GrupoMobile = ({ titulo, icon, personas, onViewDetail }) => {
     if (personas.length === 0) return null;
@@ -30,11 +28,10 @@ const GrupoMobile = ({ titulo, icon, personas, onViewDetail }) => {
 
 export default function DashboardEquipoMobile({
     loading, error, tecnicos, coordinadores, promedioGlobal,
-    filtro, detalleTarget, onViewDetail, onCloseDetail,
+    filtro, detalleTarget, onViewDetail, onCloseDetail, onRefresh
 }) {
     const [rolActivo, setRolActivo] = useState('TECNICO');
 
-    // 🚨 REGLA ESTRICTA INFALIBLE: Validar tareas, tickets y el promedio global
     const totalActividad = [...tecnicos, ...coordinadores].reduce((acc, p) => {
         const volumen =
             (p.totalTareas || 0) +
@@ -106,7 +103,7 @@ export default function DashboardEquipoMobile({
 
             <GlassFab
                 icon="refresh"
-                onClick={hardReload}
+                onClick={onRefresh}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

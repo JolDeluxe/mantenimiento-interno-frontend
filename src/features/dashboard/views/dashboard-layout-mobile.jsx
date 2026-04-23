@@ -1,4 +1,3 @@
-// src/features/dashboard/views/dashboard-layout-mobile.jsx
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GlassViewToggle } from '@/components/ui/liquid-glass-mobile';

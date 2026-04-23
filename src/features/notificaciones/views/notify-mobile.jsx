@@ -1,4 +1,4 @@
-import { GlassFab, GlassPaginationPill, Icon, Skeleton, ScrollToTopButton } from '@/components/ui/z_index';
+import { GlassFab, Icon, Skeleton, ScrollToTopButton, Spinner } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { NotifyItem } from '../components/notify-item';
 import { NotifyEmptyState } from '../components/notify-empty-state';
@@ -71,19 +71,20 @@ const GlassToggle = ({ soloNoLeidas, onToggle, noLeidas }) => {
 export const NotifyMobile = ({
     notificaciones,
     loading,
+    loadingMore,
     submitting,
     currentUser,
     meta,
     soloNoLeidas,
-    page,
+    hasMore,
     onToggleNoLeidas,
-    onPageChange,
+    onLoadMore,
     onAction,
     onMarkRead,
     onMarkAll,
 }) => {
-    const hasPaginator = meta.totalPages > 1;
-    const baseBottom = hasPaginator ? 104 : 84;
+    // Al eliminar la paginación inferior, los botones flotantes bajan.
+    const baseBottom = 84;
     const fabMarkBottom = `${baseBottom}px`;
     const fabRefreshBottom = meta.noLeidas > 0 ? `${baseBottom + 60}px` : fabMarkBottom;
 
@@ -104,8 +105,8 @@ export const NotifyMobile = ({
 
             <NotifyOverdueBanner currentUser={currentUser} />
 
-            <div className={cn('flex flex-col gap-3 px-1 pt-1', hasPaginator ? 'pb-56' : 'pb-44')}>
-                {loading
+            <div className="flex flex-col gap-3 px-1 pt-1 pb-32">
+                {loading && notificaciones.length === 0
                     ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
                     : notificaciones.length === 0
                         ? <NotifyEmptyState soloNoLeidas={soloNoLeidas} />
@@ -120,23 +121,26 @@ export const NotifyMobile = ({
                             />
                         ))
                 }
-            </div>
 
-            {hasPaginator && (
-                <GlassPaginationPill
-                    page={page}
-                    totalPages={meta.totalPages}
-                    totalItems={meta.total}
-                    onPageChange={onPageChange}
-                    loading={loading}
-                    bottom="24px"
-                />
-            )}
+                {hasMore && (
+                    <div className="mt-2 flex justify-center pb-4">
+                        <button
+                            onClick={onLoadMore}
+                            disabled={loadingMore}
+                            style={glassBase('light')}
+                            className="flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-extrabold text-slate-700 active:scale-95 transition-all shadow-sm min-w-[200px]"
+                        >
+                            {loadingMore ? <Spinner size="sm" /> : <Icon name="expand_more" size="sm" />}
+                            Cargar más
+                        </button>
+                    </div>
+                )}
+            </div>
 
             <GlassFab
                 icon="refresh"
                 onClick={hardReload}
-                isLoading={loading}
+                isLoading={loading && !loadingMore}
                 variant="neutral"
                 size={50}
                 bottom={fabRefreshBottom}

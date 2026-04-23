@@ -39,7 +39,7 @@ export const UsersDesktop = ({
         <div className="flex flex-col gap-4">
 
 
-            <RefreshFab bottom="32px" right="32px" size={48} />
+            {/* <RefreshFab bottom="32px" right="32px" size={48} /> */}
 
             <UserSummaryBar
                 currentUser={currentUser}

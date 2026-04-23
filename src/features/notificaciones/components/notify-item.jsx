@@ -1,26 +1,14 @@
 import { Icon, Button } from '@/components/ui/z_index';
 import { formatRelativo } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { TIPO_CONFIG } from './notify-config';
 
 const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
-export const TIPO_CONFIG = {
-    NUEVO_REPORTE: { icon: 'report', color: 'text-estado-pendiente', bg: 'bg-estado-pendiente/10', label: 'Nuevo reporte' },
-    TAREA_ASIGNADA: { icon: 'engineering', color: 'text-estado-asignada', bg: 'bg-estado-asignada/10', label: 'Tarea asignada' },
-    TAREA_INICIADA: { icon: 'play_circle', color: 'text-estado-en-progreso', bg: 'bg-estado-en-progreso/10', label: 'Tarea iniciada' },
-    TAREA_PAUSADA: { icon: 'pause_circle', color: 'text-estado-en-pausa', bg: 'bg-estado-en-pausa/10', label: 'Tarea pausada' },
-    TAREA_RESUELTA: { icon: 'check_circle', color: 'text-estado-resuelto', bg: 'bg-estado-resuelto/10', label: 'Tarea resuelta' },
-    TAREA_CERRADA: { icon: 'done_outline', color: 'text-estado-resuelto', bg: 'bg-estado-resuelto/10', label: 'Tarea cerrada' },
-    TAREA_RECHAZADA: { icon: 'cancel', color: 'text-estado-rechazado', bg: 'bg-estado-rechazado/10', label: 'Tarea rechazada' },
-    TAREA_CANCELADA: { icon: 'block', color: 'text-estado-cancelada', bg: 'bg-estado-cancelada/10', label: 'Tarea cancelada' },
-    TAREA_MODIFICADA: { icon: 'edit', color: 'text-prioridad-media', bg: 'bg-prioridad-media/10', label: 'Tarea modificada' },
-    TAREA_REASIGNADA: { icon: 'swap_horiz', color: 'text-estado-asignada', bg: 'bg-estado-asignada/10', label: 'Reasignación' },
-    REVISION_PENDIENTE: { icon: 'fact_check', color: 'text-estado-resuelto', bg: 'bg-estado-resuelto/10', label: 'Revisión pendiente' },
-    EQUIPO_RECHAZO: { icon: 'warning', color: 'text-estado-rechazado', bg: 'bg-estado-rechazado/10', label: 'Rechazo del equipo' },
-};
-
 const buildAcciones = (notif, rol) => {
-    const { tipo, tareaId, accionada } = notif;
+    // Extraemos "tarea" asumiendo que el backend envía la relación (ej. include: { tarea: { select: { estado: true } } })
+    const { tipo, tareaId, accionada, tarea } = notif;
+    const estadoActual = tarea?.estado || null;
 
     if (!tareaId) return [];
 
@@ -53,12 +41,20 @@ const buildAcciones = (notif, rol) => {
         chipClass,
     });
 
+    // Validadores de estado vivo
+    const yaIniciada = estadoActual && estadoActual !== 'ASIGNADA' && estadoActual !== 'PENDIENTE';
+    const yaEvaluada = estadoActual && (estadoActual === 'CERRADO' || estadoActual === 'RECHAZADO');
+
     switch (tipo) {
         case 'TAREA_ASIGNADA':
-            if (accionada) {
+            if (accionada || yaIniciada) {
                 return [
                     verDetalle(),
-                    chip('Tarea iniciada', 'play_circle', 'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30'),
+                    chip(
+                        estadoActual === 'EN_PROGRESO' ? 'En progreso' : 'Ya iniciada',
+                        'play_circle',
+                        'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30'
+                    ),
                 ];
             }
             if (esTecnico || esAdmin) {
@@ -69,37 +65,19 @@ const buildAcciones = (notif, rol) => {
             }
             return [verDetalle()];
 
-        case 'TAREA_CANCELADA':
-            return [verDetalle()];
-
-        case 'TAREA_RECHAZADA':
-            if (esTecnico) {
-                return [
-                    verDetalle('Ver motivo'),
-                    irAHoy('Ir a mis tareas'),
-                ];
-            }
-            if (esAdmin) {
-                return [
-                    verDetalle('Ver motivo'),
-                    irAHoy('Ver tarea'),
-                ];
-            }
-            return [verDetalle('Ver motivo')];
-
-        case 'TAREA_CERRADA':
-            return [verDetalle()];
-
-        case 'TAREA_MODIFICADA':
-        case 'TAREA_REASIGNADA':
-            return [verDetalle()];
-
         case 'REVISION_PENDIENTE':
         case 'TAREA_RESUELTA':
-            if (accionada) {
+            if (accionada || yaEvaluada) {
+                // Renderizado dinámico del chip según si se aprobó o rechazó
+                const labelChip = estadoActual === 'CERRADO' ? 'Aprobada' : estadoActual === 'RECHAZADO' ? 'Rechazada' : 'Revisada';
+                const iconChip = estadoActual === 'RECHAZADO' ? 'cancel' : 'check_circle';
+                const colorChip = estadoActual === 'RECHAZADO'
+                    ? 'bg-estado-rechazado/10 text-estado-rechazado border-estado-rechazado/30'
+                    : 'bg-estado-resuelto/10 text-estado-resuelto border-estado-resuelto/30';
+
                 return [
                     verDetalle(),
-                    chip('Revisada', 'check_circle', 'bg-estado-resuelto/10 text-estado-resuelto border-estado-resuelto/30'),
+                    chip(labelChip, iconChip, colorChip),
                 ];
             }
             if (esAdmin || esJefe || esCoord) {
@@ -110,7 +88,14 @@ const buildAcciones = (notif, rol) => {
             }
             return [verDetalle()];
 
+        case 'TAREA_RECHAZADA':
         case 'EQUIPO_RECHAZO':
+            if (esTecnico) {
+                return [
+                    verDetalle('Ver motivo'),
+                    irAHoy('Ir a mis tareas'),
+                ];
+            }
             if (esAdmin) {
                 return [
                     verDetalle('Ver motivo'),
@@ -128,6 +113,10 @@ const buildAcciones = (notif, rol) => {
             }
             return tareaId ? [verDetalle()] : [];
 
+        case 'TAREA_CANCELADA':
+        case 'TAREA_CERRADA':
+        case 'TAREA_MODIFICADA':
+        case 'TAREA_REASIGNADA':
         case 'TAREA_INICIADA':
         case 'TAREA_PAUSADA':
             return [verDetalle()];

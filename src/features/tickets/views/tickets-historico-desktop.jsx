@@ -58,7 +58,7 @@ export const TicketsHistoricoDesktop = ({
 
     return (
         <div className="flex flex-col gap-4 relative">
-            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
+            {/* <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} /> */}
 
             <TicketFechas
                 year={filtroYear}

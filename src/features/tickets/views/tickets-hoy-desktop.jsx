@@ -120,7 +120,7 @@ export const TicketsHoyDesktop = ({
 
     return (
         <div className="flex flex-col gap-5 relative">
-            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
+            {/* <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} /> */}
 
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">Tareas del Día</h2>

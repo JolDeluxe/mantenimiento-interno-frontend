@@ -1,4 +1,3 @@
-// src/features/dashboard/pages/dashboard-page.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
@@ -45,7 +44,8 @@ export default function DashboardPage() {
         });
     }, []);
 
-    const contextData = { data, loading, filtro, onFiltroChange: handleFiltroChange };
+    // 🚨 PASAMOS "load" COMO "onRefresh" PARA TODO EL ECOSISTEMA
+    const contextData = { data, loading, filtro, onFiltroChange: handleFiltroChange, onRefresh: load };
 
     return (
         <DashboardContext.Provider value={contextData}>

@@ -38,8 +38,6 @@ export default function DashboardAreaDesktop({
     const totalTareas = metricasPorPlanta.reduce((acc, p) => acc + (p.totalTareas || 0), 0);
     const totalActivas = metricasPorPlanta.reduce((acc, p) => acc + (p.tareasActivas || 0), 0);
     const totalTickets = metricasPorPlanta.reduce((acc, p) => acc + (p.tiposTotales?.tickets || 0), 0);
-
-    // 🚨 REGLA ESTRICTA: El backend siempre devuelve las plantas. La validación real es si hay volumen.
     const tieneDatos = totalTareas > 0;
 
     return (

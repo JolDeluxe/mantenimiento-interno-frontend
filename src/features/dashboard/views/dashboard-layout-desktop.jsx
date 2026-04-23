@@ -43,7 +43,7 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
             </div>
 
             {menu.length > 0 && (
-                <div className="flex gap-3 sticky top-0 bg-cuadra-arena border-b border-slate-300/60 pb-2 z-30 transition-all">
+                <div className="flex gap-3 sticky top-0 p-2 bg-cuadra-arena border-b border-slate-300/60 pb-2 mb-2 px-1 z-30 w-full">
                     {menu.map(item => {
                         const isActive = location.pathname.includes(item.path);
                         return (

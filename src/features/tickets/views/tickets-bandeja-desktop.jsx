@@ -38,7 +38,6 @@ export const TicketsBandejaDesktop = ({
 
     return (
         <div className="flex flex-col gap-5 animate-fade-in relative">
-            <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} />
 
             <div className="w-full">
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">

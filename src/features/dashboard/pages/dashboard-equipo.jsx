@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useDashboardContext } from '../context/dashboard-context';
 import { useEquipo } from '../hooks/use-equipo';
@@ -11,8 +11,7 @@ export default function DashboardEquipo() {
     const { data, loading, error, fetchEquipo } = useEquipo();
     const [detalleTarget, setDetalleTarget] = useState(null);
 
-    // Re-fetch cuando cambia el filtro del contexto compartido
-    useEffect(() => {
+    const refreshData = useCallback(() => {
         const params = {};
         if (filtro.fechaInicio && filtro.fechaFin) {
             params.fechaInicio = filtro.fechaInicio;
@@ -24,24 +23,18 @@ export default function DashboardEquipo() {
         fetchEquipo(params);
     }, [filtro, fetchEquipo]);
 
-    // data = { promedioEquipoGlobal, tecnicos, coordinadores }
-    const tecnicos = data?.tecnicos ?? [];
-    const coordinadores = data?.coordinadores ?? [];
-    const promedioGlobal = data?.promedioEquipoGlobal;
+    useEffect(() => { refreshData(); }, [refreshData]);
 
     const viewProps = {
-        loading,
-        error,
-        tecnicos,
-        coordinadores,
-        promedioGlobal,
-        filtro,
+        loading, error, filtro,
+        tecnicos: data?.tecnicos ?? [],
+        coordinadores: data?.coordinadores ?? [],
+        promedioGlobal: data?.promedioEquipoGlobal,
         detalleTarget,
         onViewDetail: setDetalleTarget,
         onCloseDetail: () => setDetalleTarget(null),
+        onRefresh: refreshData
     };
 
-    return isDesktop
-        ? <DashboardEquipoDesktop {...viewProps} />
-        : <DashboardEquipoMobile  {...viewProps} />;
+    return isDesktop ? <DashboardEquipoDesktop {...viewProps} /> : <DashboardEquipoMobile {...viewProps} />;
 }
