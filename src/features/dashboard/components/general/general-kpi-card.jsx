@@ -1,3 +1,4 @@
+// src/features/dashboard/components/general/general-kpi-card.jsx
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
 
@@ -110,9 +111,9 @@ export const TarjetaKpi = ({
                     </div>
                 ) : (
                     notaPie && !isEmpty && (
-                        <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 transition-colors uppercase tracking-tight">
+                        <div className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 transition-colors uppercase tracking-tight">
                             {notaPie}
-                        </p>
+                        </div>
                     )
                 )}
             </div>

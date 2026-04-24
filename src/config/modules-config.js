@@ -5,18 +5,11 @@
 
 export const MODULES_CONFIG = [
   {
-    id: 'dashboard',
-    name: 'Dashboard',
-    icon: 'dashboard',
-    route: '/',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
-  },
-  {
     id: 'tickets',
     name: 'Gestión de Actividades',
     icon: 'assignment',
     route: '/tickets',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
     children: [
       {
         id: 'tickets-hoy',
@@ -37,6 +30,13 @@ export const MODULES_CONFIG = [
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
       }
     ]
+  },
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    icon: 'dashboard',
+    route: '/dashboard',
+    allowedRoles: ['SUPER_ADMIN', 'TECNICO'],
   },
   {
     id: 'reportes',
@@ -84,6 +84,7 @@ export const MODULES_CONFIG = [
     icon: 'calendar_clock',
     route: '/dias_laborados',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    hideInMenu: true,
   },
   {
     id: 'departamentos',
@@ -98,6 +99,7 @@ export const MODULES_CONFIG = [
     icon: 'notifications',
     route: '/notificaciones',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+    hideInMenu: true,
   },
   {
     id: 'configuracion',
@@ -105,6 +107,7 @@ export const MODULES_CONFIG = [
     icon: 'settings',
     route: '/configuracion',
     allowedRoles: ['SUPER_ADMIN'],
+
   },
 ];
 
@@ -112,14 +115,15 @@ export const getModulesByRole = (userRole) => {
   if (!userRole) return [];
 
   return MODULES_CONFIG
-    // 1. Filtramos los módulos principales
-    .filter(module => module.allowedRoles.includes(userRole))
-    // 2. Filtramos los hijos de cada módulo principal
+    // 1. Filtramos por rol Y que no esté marcado como oculto
+    .filter(module => module.allowedRoles.includes(userRole) && !module.hideInMenu)
     .map(module => {
       if (module.children) {
         return {
           ...module,
-          children: module.children.filter(child => child.allowedRoles.includes(userRole))
+          children: module.children.filter(child =>
+            child.allowedRoles.includes(userRole) && !child.hideInMenu
+          )
         };
       }
       return module;

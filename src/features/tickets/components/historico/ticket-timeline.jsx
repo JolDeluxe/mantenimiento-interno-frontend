@@ -117,7 +117,7 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
 
     // Limpieza agresiva de metadatos y strings crudos de auditoría del backend
     let cleanNota = h.nota || '';
-    cleanNota = cleanNota.replace(/\[TIEMPO_MANUAL:\d+\]/gi, '');
+    cleanNota = cleanNota.replace(/\[TIEMPO_MANUAL:.*?\]/gi, '');
     cleanNota = cleanNota.replace(/\[RUTINA\]|\(Rutina Completada\)/gi, '');
     cleanNota = cleanNota.replace(/Tiempo declarado manualmente:\s*\d+\s*minutos?/i, '');
     cleanNota = cleanNota.replace(/Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i, '');

@@ -1,3 +1,4 @@
+// src/features/notificaciones/hooks/use-notify.js
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   getNotificaciones,
@@ -6,6 +7,7 @@ import {
   markActioned,
 } from '../api/notificaciones-api';
 import { readSnapshot, writeSnapshot } from '@/lib/idb';
+import { useSyncStore } from '@/stores/sync-store'; // 🟢 1. Importamos el cerebro
 
 export const useNotify = () => {
   const [notificaciones, setNotificaciones] = useState([]);
@@ -21,50 +23,59 @@ export const useNotify = () => {
 
   const lastFetchParams = useRef({});
 
-  const fetchNotificaciones = useCallback(async (params = {}, append = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
+  // 🟢 2. Suscripción atómica al reloj de Sockets
+  const lastUpdate = useSyncStore((state) => state.lastUpdate);
+  const isFirstRender = useRef(true);
+
+  const fetchNotificaciones = useCallback(async (params = {}, append = false, silent = false) => {
+    if (!silent) {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
     }
 
     lastFetchParams.current = params;
     const cacheKey = `notif_${JSON.stringify(params)}`;
 
-    // Cache primero
-    const snapshot = await readSnapshot('notificaciones', cacheKey);
-    if (snapshot?.data) {
-      const cached = snapshot.data;
-      const newItems = Array.isArray(cached.data) ? cached.data : [];
+    if (!silent) {
+      const snapshot = await readSnapshot('notificaciones', cacheKey);
+      if (snapshot?.data) {
+        const cached = snapshot.data;
+        const newItems = Array.isArray(cached.data) ? cached.data : [];
 
-      setNotificaciones(prev => append ? [...prev, ...newItems] : newItems);
-      setMeta({
-        total: cached.pagination?.total ?? 0,
-        noLeidas: cached.noLeidas ?? 0,
-        totalPages: cached.pagination?.totalPages ?? 1,
-        page: cached.pagination?.page ?? 1,
-      });
+        setNotificaciones(prev => append ? [...prev, ...newItems] : newItems);
+        setMeta({
+          total: cached.pagination?.total ?? 0,
+          noLeidas: cached.noLeidas ?? 0,
+          totalPages: cached.pagination?.totalPages ?? 1,
+          page: cached.pagination?.page ?? 1,
+        });
 
-      if (!snapshot.isStale && !navigator.onLine) {
-        setLoading(false);
-        setLoadingMore(false);
-        return;
+        if (!snapshot.isStale && !navigator.onLine) {
+          setLoading(false);
+          setLoadingMore(false);
+          return;
+        }
       }
     }
 
     if (!navigator.onLine) {
-      setLoading(false);
-      setLoadingMore(false);
+      if (!silent) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
       return;
     }
 
     try {
-      const res = await getNotificaciones(params);
+      // 🟢 3. CACHE-BUSTER: Garantiza que la petición no devuelva datos viejos del navegador
+      const finalParams = silent ? { ...params, _t: Date.now() } : params;
+
+      const res = await getNotificaciones(finalParams);
       const newItems = Array.isArray(res.data) ? res.data : [];
 
       setNotificaciones(prev => {
         if (!append) return newItems;
-        // FILTRO DE SEGURIDAD: Evitar duplicados por ID
+
         const existingIds = new Set(prev.map(item => item.id));
         const filteredNew = newItems.filter(item => !existingIds.has(item.id));
         return [...prev, ...filteredNew];
@@ -77,9 +88,12 @@ export const useNotify = () => {
         page: res.pagination?.page ?? 1,
       });
 
-      await writeSnapshot('notificaciones', res, cacheKey);
+      // Solo guardamos en base de datos local (Offline) si no fue una petición silenciosa parcial
+      if (!silent) {
+        await writeSnapshot('notificaciones', res, cacheKey);
+      }
     } catch {
-      if (!snapshot?.data && !append) setNotificaciones([]);
+      if (!append && !silent) setNotificaciones([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -113,20 +127,19 @@ export const useNotify = () => {
     } catch { }
   }, []);
 
-  // ── Motor Reactivo Offline ─────────────────────────────────────────────
+  // 🟢 4. MOTOR REACTIVO: Reacciona a Zustand en lugar de depender de Window Events
   useEffect(() => {
-    const handleSyncComplete = () => {
-      console.log('📡 [Hook Notify] Sincronización finalizada. Refrescando notificaciones...');
-      if (Object.keys(lastFetchParams.current).length > 0 || notificaciones.length > 0) {
-        // Al resincronizar tras offline, forzamos un reemplazo completo (append = false)
-        // para asegurar consistencia con el backend.
-        fetchNotificaciones(lastFetchParams.current, false);
-      }
-    };
+    // Evita ejecutarse en la carga inicial de React
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
 
-    window.addEventListener('cuadra-sync-complete', handleSyncComplete);
-    return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);
-  }, [fetchNotificaciones, notificaciones.length]);
+    if (Object.keys(lastFetchParams.current).length > 0) {
+      console.log('🔄 [Hook Notify] Signal detectado. Recargando bandeja silenciosamente...');
+      fetchNotificaciones(lastFetchParams.current, false, true);
+    }
+  }, [lastUpdate, fetchNotificaciones]);
 
   return {
     notificaciones,

@@ -1,5 +1,7 @@
+// src/routes/AppRoutes.jsx
+
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { RoleGuard } from './RoleGuard';
@@ -7,7 +9,6 @@ import { MODULES_CONFIG } from '@/config/modules-config';
 
 import ProfilePage from '@/features/auth/pages/profile-page';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
-
 import LoginPage from '@/features/auth/pages/login-page';
 import UsersPage from '@/features/usuarios/pages/users-page';
 import HomeDashboard from '@/pages/home-dashboard';
@@ -20,24 +21,20 @@ import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import NotifyPage from '@/features/notificaciones/pages/notify-page';
 
-// Importaciones del módulo de Dashboard/Reportes corregidas
 import DashboardPage from '@/features/dashboard/pages/dashboard-page';
 import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
 import DashboardEquipo from '@/features/dashboard/pages/dashboard-equipo';
 import DashboardArea from '@/features/dashboard/pages/dashboard-area';
 import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
 
-// Mapeo seguro de la fuente de verdad para inyectar en el router
 const ROLES = {
+  dashboard: MODULES_CONFIG.find(m => m.id === 'dashboard')?.allowedRoles || [],
   tickets: MODULES_CONFIG.find(m => m.id === 'tickets')?.allowedRoles || [],
   ticketsHoy: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-hoy')?.allowedRoles || [],
   ticketsBandeja: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-bandeja')?.allowedRoles || [],
   ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
-
   usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
   notificaciones: MODULES_CONFIG.find(m => m.id === 'notificaciones')?.allowedRoles || [],
-
-  // Mapeo de roles para el nuevo módulo de Reportes y sus pestañas
   reportes: MODULES_CONFIG.find(m => m.id === 'reportes')?.allowedRoles || [],
   reportesGeneral: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-general')?.allowedRoles || [],
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
@@ -57,8 +54,14 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
 
-          {/* Rutas Base Accesibles */}
-          <Route path="/" element={<HomeDashboard />} />
+          {/* REDIRECCIÓN RAÍZ: Manda a hoy directamente */}
+          <Route index element={<Navigate to="/tickets/hoy" replace />} />
+
+          {/* Dashboard Técnico: Solo SUPER_ADMIN y TECNICO */}
+          <Route element={<RoleGuard allowedRoles={ROLES.dashboard} />}>
+            <Route path="/dashboard" element={<HomeDashboard />} />
+          </Route>
+
           <Route path="/perfil" element={<ProfilePage />} />
 
           {/* Módulo: Tickets */}
@@ -93,26 +96,19 @@ export const AppRoutes = () => {
           {/* Módulo: Reportes y KPIs */}
           <Route element={<RoleGuard allowedRoles={ROLES.reportes} />}>
             <Route path="/reportes" element={<DashboardPage />}>
-              {/* Redirección automática a la primera pestaña */}
               <Route index element={<Navigate to="general" replace />} />
-
               <Route element={<RoleGuard allowedRoles={ROLES.reportesGeneral} />}>
                 <Route path="general" element={<DashboardGeneral />} />
               </Route>
-
               <Route element={<RoleGuard allowedRoles={ROLES.reportesEquipo} />}>
                 <Route path="equipo" element={<DashboardEquipo />} />
               </Route>
-
               <Route element={<RoleGuard allowedRoles={ROLES.reportesArea} />}>
                 <Route path="area" element={<DashboardArea />} />
               </Route>
-
-              {/* NUEVA RUTA CLIENTE */}
               <Route element={<RoleGuard allowedRoles={ROLES.reportesCliente} />}>
                 <Route path="cliente" element={<DashboardReportes />} />
               </Route>
-
             </Route>
           </Route>
 

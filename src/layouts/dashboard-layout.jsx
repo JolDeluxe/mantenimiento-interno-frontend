@@ -9,12 +9,16 @@ import { useNotifyStore } from '@/stores/notify-store';
 import { getUnreadCount } from '@/features/notificaciones/api/notificaciones-api';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { subscribeToPush } from '@/lib/push';
+import { notify } from '@/components/notification/adaptive-notify';
+import socket from '@/lib/socket';
+import { useSyncStore } from '@/stores/sync-store';
 
 export const DashboardLayout = () => {
   const isDesktop = useIsDesktop();
   const { user } = useAuthStore();
   const currentUser = user?.data || user;
-  const { setNoLeidas } = useNotifyStore();
+  const { setNoLeidas, increment } = useNotifyStore();
+  const triggerSync = useSyncStore((s) => s.triggerSync);
 
   // Hidratación de perfil
   useEffect(() => {
@@ -33,17 +37,47 @@ export const DashboardLayout = () => {
     if (!currentUser?.id) return;
     getUnreadCount()
       .then((res) => setNoLeidas(res?.count ?? 0))
-      .catch(() => { }); // silencioso
+      .catch(() => { });
   }, [currentUser?.id, setNoLeidas]);
 
-  // Registro y validación silenciosa de Push Notifications
+  // Registro de Push Notifications
   useEffect(() => {
     const timeout = setTimeout(() => {
       subscribeToPush();
     }, 2000);
-
     return () => clearTimeout(timeout);
   }, []);
+
+  // WebSocket — conexión y listeners
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    socket.connect();
+
+    const handleNotificacion = (data) => {
+      increment(); // Sube el contador rojo global
+      notify.info(data?.mensaje || "Tienes una nueva notificación.");
+
+      triggerSync();
+
+      // 🔥 Emitimos la señal para actualizar la bandeja en tiempo real
+      window.dispatchEvent(new Event('refrescar-notificaciones'));
+    };
+
+    const handleDatosActualizados = (data) => {
+      if (data?.module === "tickets") {
+        triggerSync();
+      }
+    };
+
+    socket.on("notificacion_recibida", handleNotificacion);
+    socket.on("datos_actualizados", handleDatosActualizados);
+
+    return () => {
+      socket.off("notificacion_recibida", handleNotificacion);
+      socket.off("datos_actualizados", handleDatosActualizados);
+      socket.disconnect();
+    };
+  }, [currentUser?.id, increment, triggerSync]);
 
   return (
     <>

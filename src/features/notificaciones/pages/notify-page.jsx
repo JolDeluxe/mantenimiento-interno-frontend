@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNotifyStore } from '@/stores/notify-store';
+import { useSyncStore } from '@/stores/sync-store'; // 🟢 1. Importamos el cerebro de Sockets
 import { notify } from '@/components/notification/adaptive-notify';
 import { useNotify } from '../hooks/use-notify';
 import { NotifyDesktop } from '../views/notify-desktop';
@@ -25,6 +26,10 @@ export default function NotifyPage() {
     const resetNotifyStore = useNotifyStore((state) => state.reset);
     const decrementNotifyStore = useNotifyStore((state) => state.decrement);
 
+    // 🟢 2. Escuchamos el reloj global de Sockets
+    const lastUpdate = useSyncStore((state) => state.lastUpdate);
+    const prevUpdate = useRef(lastUpdate);
+
     const {
         notificaciones, loading, loadingMore, submitting, meta,
         fetchNotificaciones, markRead, markAllRead, markActioned,
@@ -42,15 +47,29 @@ export default function NotifyPage() {
     const [fetchingTicket, setFetchingTicket] = useState(false);
     const [changeSubmit, setChangeSubmit] = useState(false);
 
-    // Carga inicial y reacción a filtros
+    // 🟢 3A. Carga inicial y filtros (CON Skeletons, silent = false)
     useEffect(() => {
         const params = { page: 1, limit: LIMIT };
         if (soloNoLeidas) params.soloNoLeidas = true;
         if (filtroTipo) params.tipo = filtroTipo;
 
-        fetchNotificaciones(params, false);
+        fetchNotificaciones(params, false, false);
         setPage(1);
     }, [soloNoLeidas, filtroTipo, fetchNotificaciones]);
+
+    // 🟢 3B. Refresco Silencioso por Sockets (SIN Skeletons, silent = true)
+    useEffect(() => {
+        if (prevUpdate.current !== lastUpdate) {
+            prevUpdate.current = lastUpdate;
+
+            // Calculamos el LIMIT * page para no colapsar la lista si el usuario había dado "Cargar Más"
+            const params = { page: 1, limit: LIMIT * page };
+            if (soloNoLeidas) params.soloNoLeidas = true;
+            if (filtroTipo) params.tipo = filtroTipo;
+
+            fetchNotificaciones(params, false, true); // silent = true
+        }
+    }, [lastUpdate, page, soloNoLeidas, filtroTipo, fetchNotificaciones]);
 
     // Sincronización segura con el badge global
     useEffect(() => {
@@ -67,7 +86,7 @@ export default function NotifyPage() {
         if (soloNoLeidas) params.soloNoLeidas = true;
         if (filtroTipo) params.tipo = filtroTipo;
 
-        fetchNotificaciones(params, true);
+        fetchNotificaciones(params, true, false); // append = true
         setPage(nextPage);
     }, [page, meta.totalPages, loadingMore, soloNoLeidas, filtroTipo, fetchNotificaciones]);
 
@@ -135,7 +154,6 @@ export default function NotifyPage() {
             setActiveTicket(null);
             setActiveNotif(null);
 
-            fetchNotificaciones({ page: 1, limit: LIMIT * page, soloNoLeidas, tipo: filtroTipo }, false);
         } catch (err) {
             const msg = err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado.';
             notify.error(msg);
@@ -143,7 +161,7 @@ export default function NotifyPage() {
         } finally {
             setChangeSubmit(false);
         }
-    }, [activeNotif, markActioned, fetchNotificaciones, page, soloNoLeidas, filtroTipo]);
+    }, [activeNotif, markActioned]);
 
     const handleCloseModals = useCallback(() => {
         setDetailOpen(false);

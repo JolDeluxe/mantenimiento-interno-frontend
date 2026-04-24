@@ -7,6 +7,7 @@ import { create } from 'zustand';
 export const useNotifyStore = create((set) => ({
   noLeidas: 0,
   setNoLeidas: (n) => set({ noLeidas: n }),
-  decrement:   ()  => set((s) => ({ noLeidas: Math.max(0, s.noLeidas - 1) })),
-  reset:       ()  => set({ noLeidas: 0 }),
+  increment: () => set((s) => ({ noLeidas: s.noLeidas + 1 })),
+  decrement: () => set((s) => ({ noLeidas: Math.max(0, s.noLeidas - 1) })),
+  reset: () => set({ noLeidas: 0 }),
 }));
