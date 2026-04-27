@@ -1,3 +1,4 @@
+// src/features/tickets/views/tickets-hoy-mobile.jsx
 import { useState } from 'react';
 import { GlassFab, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
@@ -10,6 +11,8 @@ import { HoyStatusModal } from '../components/hoy/hoy-status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { MobileHoyFilterBar } from '../components/hoy/mobile-hoy-filter-bar';
 import { HoySummaryBar } from '../components/hoy/hoy-summary-bar';
+import { HoyTeamToggle } from '../components/hoy/hoy-team-toggle';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -98,12 +101,18 @@ export const TicketsHoyMobile = ({
     onToggleAtrasadas,
     mostrarRechazadas,
     onToggleRechazadas,
+    vistaEquipo,
+    onVistaEquipoChange,
+    equipoCount,
+    misTareasCount,
     existenciaGlobal,
     totalAtrasadasGlobal,
     onSave,
     onChangeStatus,
     onOpenCreate,
-    onRefresh
+    onRefresh,
+    isFiltering = false,
+    onClearFilters
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -113,6 +122,7 @@ export const TicketsHoyMobile = ({
     const [cancelTarget, setCancelTarget] = useState(null);
 
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const esCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
     const baseBottom = 84;
     const fabAddBottom = `${baseBottom}px`;
     const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
@@ -123,8 +133,22 @@ export const TicketsHoyMobile = ({
                 <div className="flex items-center">
                     <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 </div>
+                
                 <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
-                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
+                
+                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} vistaEquipo={vistaEquipo} onVistaEquipoChange={onVistaEquipoChange} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
+
+                {esCoordinador && (
+                    <div className="px-0.5 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-300">
+                        <HoyTeamToggle 
+                            vistaEquipo={vistaEquipo} 
+                            onChange={onVistaEquipoChange} 
+                            isMobile 
+                            equipoCount={equipoCount}
+                            misTareasCount={misTareasCount}
+                        />
+                    </div>
+                )}
             </div>
 
             <div className={cn('flex flex-col gap-3 px-1 pt-1', 'pb-44')}>
@@ -132,9 +156,15 @@ export const TicketsHoyMobile = ({
                     ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
                     : tickets.length === 0
                         ? (
-                            <div className="flex flex-col items-center justify-center h-52 gap-4 text-center">
-                                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center"><Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" /></div>
-                                <p className="text-sm font-bold text-slate-400">Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}</p>
+                            <div className="mt-10">
+                                <TicketsEmptyState
+                                    isFiltering={isFiltering}
+                                    onClearFilters={onClearFilters}
+                                    onRefresh={onRefresh}
+                                    mensaje={dateOffset === 0 ? "Sin tareas para hoy" : "Sin tareas para mañana"}
+                                    subtexto="No hay tickets programados para esta fecha."
+                                    icon={dateOffset === 0 ? "today" : "event"}
+                                />
                             </div>
                         )
                         : [...tickets].sort((a, b) => {

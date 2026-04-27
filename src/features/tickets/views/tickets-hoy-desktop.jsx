@@ -1,3 +1,4 @@
+// src/features/tickets/views/tickets-hoy-desktop.jsx
 import { useState } from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
@@ -10,6 +11,7 @@ import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { HoyAddButton } from '../components/hoy/hoy-add-button';
 import { HoyFilterBar } from '../components/hoy/hoy-filter-bar';
 import { HoySummaryBar } from '../components/hoy/hoy-summary-bar';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -102,12 +104,18 @@ export const TicketsHoyDesktop = ({
     onToggleAtrasadas,
     mostrarRechazadas,
     onToggleRechazadas,
+    vistaEquipo,
+    onVistaEquipoChange,
+    equipoCount,
+    misTareasCount,
     existenciaGlobal,
     totalAtrasadasGlobal,
     onSave,
     onChangeStatus,
     onOpenCreate,
-    onRefresh
+    onRefresh,
+    isFiltering = false,
+    onClearFilters
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -120,8 +128,6 @@ export const TicketsHoyDesktop = ({
 
     return (
         <div className="flex flex-col gap-5 relative">
-            {/* <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} /> */}
-
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">Tareas del Día</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
@@ -144,16 +150,46 @@ export const TicketsHoyDesktop = ({
                 {puedeCrear && <div className="shrink-0"><HoyAddButton onClick={onOpenCreate} isMobile={false} /></div>}
             </div>
 
-            <HoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
+            <HoyFilterBar 
+                query={query} 
+                onSearchChange={onSearchChange} 
+                filtroEstado={filtroEstado} 
+                onEstadoChange={onEstadoChange} 
+                filtroTipo={filtroTipo} 
+                onTipoChange={onTipoChange} 
+                filtroPrioridad={filtroPrioridad} 
+                onPrioridadChange={onPrioridadChange} 
+                filtroResponsable={filtroResponsable} 
+                onResponsableChange={onResponsableChange} 
+                opcionesResponsables={tecnicos} 
+                mostrarAtrasadas={mostrarAtrasadas} 
+                onToggleAtrasadas={onToggleAtrasadas} 
+                mostrarRechazadas={mostrarRechazadas} 
+                onToggleRechazadas={onToggleRechazadas} 
+                vistaEquipo={vistaEquipo} 
+                onVistaEquipoChange={onVistaEquipoChange} 
+                equipoCount={equipoCount}
+                misTareasCount={misTareasCount}
+                existenciaGlobal={existenciaGlobal} 
+                totalAtrasadasGlobal={totalAtrasadasGlobal} 
+                currentUser={currentUser} 
+                hideStatusFilter 
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {loading
                     ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
                     : tickets.length === 0
                         ? (
-                            <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center"><Icon name={dateOffset === 0 ? 'today' : 'event'} size="xl" className="text-slate-300" /></div>
-                                <p className="text-lg font-bold text-slate-400">Sin tareas para {dateOffset === 0 ? 'hoy' : 'mañana'}</p>
+                            <div className="col-span-full mt-8">
+                                <TicketsEmptyState
+                                    isFiltering={isFiltering}
+                                    onClearFilters={onClearFilters}
+                                    onRefresh={onRefresh}
+                                    mensaje={dateOffset === 0 ? "Sin tareas para hoy" : "Sin tareas para mañana"}
+                                    subtexto="No hay tickets programados para esta fecha."
+                                    icon={dateOffset === 0 ? "today" : "event"}
+                                />
                             </div>
                         )
                         : [...tickets].sort((a, b) => {

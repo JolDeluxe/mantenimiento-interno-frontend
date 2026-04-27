@@ -348,9 +348,11 @@ export const DashboardFechas = () => {
                     )}
                 </div>
             </div>
-            <div className="mt-2 flex items-center justify-center bg-white/40 py-2 rounded-xl border border-white/60 shadow-sm backdrop-blur-sm">
-                <Icon name="calendar_today" size="xs" className="text-slate-600 mr-2" />
-                <span className="text-[11px] font-black text-slate-800 tracking-widest">{tituloEtiqueta}</span>
+            <div className="mt-2 flex items-center justify-center bg-white/40 py-2 px-3 rounded-xl border border-white/60 shadow-sm backdrop-blur-sm relative z-10">
+                <Icon name="calendar_today" size="xs" className="text-slate-600 mr-2 shrink-0" />
+                <span className="text-[10px] sm:text-[11px] font-black text-slate-800 tracking-wider uppercase text-center leading-tight">
+                    {tituloEtiqueta}
+                </span>
             </div>
         </>
     );

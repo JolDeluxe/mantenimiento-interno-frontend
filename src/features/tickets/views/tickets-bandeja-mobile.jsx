@@ -3,6 +3,7 @@ import { Icon, GlassFab, GlassPaginationPill, ScrollToTopButton, Skeleton } from
 import { cn } from '@/utils/cn';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
 
 const BandejaMobileSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
@@ -29,7 +30,9 @@ export const TicketsBandejaMobile = ({
     pagination,
     onPageChange,
     onOpenCreate,
-    onRefresh
+    onRefresh,
+    isFiltering = false,
+    onClearFilters
 }) => {
     const hasContent = !isLoading && tickets && tickets.length > 0;
     const hasPaginator = hasContent && pagination && pagination.totalPages > 1;
@@ -54,12 +57,16 @@ export const TicketsBandejaMobile = ({
                         ))}
                     </div>
                 ) : !tickets || tickets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 mt-10 text-center animate-fade-in">
-                        <div className="bg-emerald-50 p-4 rounded-full mb-4">
-                            <Icon name="done_all" size="48px" className="text-emerald-500" />
-                        </div>
-                        <h2 className="text-xl font-bold text-slate-700 mb-2">Bandeja Limpia</h2>
-                        <p className="text-sm text-slate-500">No hay tickets pendientes.</p>
+                    <div className="mt-10">
+                        <TicketsEmptyState
+                            isMobile={true}
+                            isFiltering={isFiltering}
+                            onClearFilters={onClearFilters}
+                            onRefresh={onRefresh}
+                            mensaje="Bandeja Limpia"
+                            subtexto="No hay tickets pendientes."
+                            icon="inbox"
+                        />
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">

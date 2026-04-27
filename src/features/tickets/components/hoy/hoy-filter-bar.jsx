@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { TIPOS, PRIORIDADES, ROLES_ADMIN } from '../../constants';
+import { HoyTeamToggle } from './hoy-team-toggle';
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
@@ -52,9 +53,14 @@ export const HoyFilterBar = ({
     existenciaGlobal = {},
     totalAtrasadasGlobal = 0,
     currentUser,
+    vistaEquipo,
+    onVistaEquipoChange,
+    equipoCount = 0,
+    misTareasCount = 0,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
+    const esCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
 
     useEffect(() => { setLocalValue(query || ''); }, [query]);
 
@@ -77,6 +83,17 @@ export const HoyFilterBar = ({
                     onClear={() => setLocalValue('')}
                     className="flex-1 max-w-md min-w-[180px]"
                 />
+
+                {esCoordinador && (
+                    <div className="flex-none">
+                        <HoyTeamToggle 
+                            vistaEquipo={vistaEquipo} 
+                            onChange={onVistaEquipoChange} 
+                            equipoCount={equipoCount}
+                            misTareasCount={misTareasCount}
+                        />
+                    </div>
+                )}
 
                 <div className="flex items-center gap-3 flex-none ml-auto">
                     <div className="relative">

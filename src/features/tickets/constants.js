@@ -43,10 +43,10 @@ export const CLASIFICACIONES_ADMIN = [
 export const CATEGORIAS_EQUIPO = [
     { value: 'MAQUINARIA', label: 'Maquinaria de Producción' },
     { value: 'INFRAESTRUCTURA', label: 'Infraestructura e Instalaciones' },
-    { value: 'CARRITOS_RIELES', label: 'Equipos de Apoyo' },
+    { value: 'EQUIPO/MATERIAL', label: 'Equipos de Apoyo' },
     { value: 'MOBILIARIO', label: 'Mobiliario' },
-    { value: 'SERVICIOS_RUTINAS', label: 'Rutina' },
-    { value: 'ADMINISTRATIVO', label: 'Gestión Operativa' },
+    { value: 'RUTINA', label: 'Rutina' },
+    { value: 'GESTION', label: 'Gestión Operativa' },
 ];
 
 // Nuevo mapa jerárquico de Plantas a Áreas

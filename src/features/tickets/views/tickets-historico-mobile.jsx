@@ -1,3 +1,4 @@
+// src/features/tickets/views/tickets-historico-mobile.jsx
 import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
@@ -11,6 +12,7 @@ import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { TicketFechas } from '../components/historico/ticket-fechas';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 
@@ -89,6 +91,8 @@ export const TicketsHistoricoMobile = ({
     filtroMonth,
     onYearChange,
     onMonthChange,
+    isFiltering = false,
+    onClearFilters
 }) => {
     const [viewMode, setViewMode] = useState('cards');
     const [editTarget, setEditTarget] = useState(null);
@@ -125,9 +129,16 @@ export const TicketsHistoricoMobile = ({
                         ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
                         : tickets.length === 0
                             ? (
-                                <div className="flex flex-col items-center justify-center h-44 gap-3 text-slate-400">
-                                    <Icon name="search_off" size="xl" />
-                                    <p className="text-sm font-medium">Sin resultados</p>
+                                <div className="mt-10">
+                                    <TicketsEmptyState
+                                        isMobile={true}
+                                        isFiltering={isFiltering}
+                                        onClearFilters={onClearFilters}
+                                        onRefresh={onRefresh}
+                                        mensaje="Historial Vacío"
+                                        subtexto="No hay tickets en el historial."
+                                        icon="history"
+                                    />
                                 </div>
                             )
                             : tickets.map((ticket) => (
@@ -137,7 +148,20 @@ export const TicketsHistoricoMobile = ({
                 </div>
             ) : (
                 <div className={cn('mb-40', hasPaginator && 'mb-52')}>
-                    <TicketsTable tickets={tickets} loading={loading} submitting={submitting} currentUser={currentUser} tecnicos={tecnicos} page={page} limit={limit} totalPages={totalPages} totalItems={totalParaPaginador} sortConfig={sortConfig} onPageChange={onPageChange} onSortChange={onSortChange} onSave={onSave} onChangeStatus={onChangeStatus} onRefresh={onRefresh} hidePagination />
+                    {!loading && (!tickets || tickets.length === 0) ? (
+                        <div className="mt-10 px-4">
+                            <TicketsEmptyState
+                                isFiltering={isFiltering}
+                                onClearFilters={onClearFilters}
+                                onRefresh={onRefresh}
+                                mensaje="Historial Vacío"
+                                subtexto="No hay tickets registrados en el historial para este periodo."
+                                icon="history"
+                            />
+                        </div>
+                    ) : (
+                        <TicketsTable tickets={tickets} loading={loading} submitting={submitting} currentUser={currentUser} tecnicos={tecnicos} page={page} limit={limit} totalPages={totalPages} totalItems={totalParaPaginador} sortConfig={sortConfig} onPageChange={onPageChange} onSortChange={onSortChange} onSave={onSave} onChangeStatus={onChangeStatus} onRefresh={onRefresh} hidePagination />
+                    )}
                 </div>
             )}
             {hasPaginator && (

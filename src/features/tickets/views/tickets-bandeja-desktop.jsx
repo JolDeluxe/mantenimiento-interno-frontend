@@ -2,6 +2,7 @@ import React from 'react';
 import { Skeleton, Icon, Pagination, RefreshFab } from '@/components/ui/z_index';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
 
 const BandejaCardSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col gap-4">
@@ -32,7 +33,9 @@ export const TicketsBandejaDesktop = ({
     onSortChange,
     pagination,
     onPageChange,
-    onRefresh
+    onRefresh,
+    isFiltering = false,
+    onClearFilters
 }) => {
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
@@ -74,12 +77,15 @@ export const TicketsBandejaDesktop = ({
                     ))}
                 </div>
             ) : !tickets || tickets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-xl border border-dashed border-slate-200 mt-2">
-                    <div className="bg-emerald-50 p-4 rounded-full mb-4">
-                        <Icon name="done_all" size="48px" className="text-emerald-500" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-slate-700 mb-2">¡Bandeja Limpia!</h2>
-                    <p className="text-slate-500 max-w-md">Todos los tickets han sido asignados exitosamente.</p>
+                <div className="mt-8">
+                    <TicketsEmptyState
+                        isFiltering={isFiltering}
+                        onClearFilters={onClearFilters}
+                        onRefresh={onRefresh}
+                        mensaje="¡Bandeja Limpia!"
+                        subtexto="Todos los tickets han sido asignados exitosamente."
+                        icon="inbox"
+                    />
                 </div>
             ) : (
                 <>

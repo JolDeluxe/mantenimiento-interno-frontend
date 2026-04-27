@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { TIPOS, PRIORIDADES, ROLES_ADMIN } from '../../constants';
+import { HoyTeamToggle } from './hoy-team-toggle';
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>

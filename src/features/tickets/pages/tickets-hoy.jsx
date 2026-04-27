@@ -77,6 +77,7 @@ export default function TicketsHoyPage() {
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
+    const [vistaEquipo, setVistaEquipo] = useState(true);
 
     const handleDateOffsetChange = useCallback((offset) => {
         setDateOffset(offset);
@@ -87,6 +88,7 @@ export default function TicketsHoyPage() {
         setFiltroResponsable('');
         setMostrarAtrasadas(false);
         setMostrarRechazadas(false);
+        setVistaEquipo(true);
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
@@ -131,19 +133,42 @@ export default function TicketsHoyPage() {
 
     const getBaseTickets = useCallback(() => {
         let base = allTickets.filter(t => !ESTADOS_EXCLUIDOS.includes(t.estado));
-        if (currentUser?.rol === 'TECNICO') {
+        
+        const esTecnico = currentUser?.rol === 'TECNICO';
+
+        // Solo el Técnico tiene una base restringida permanentemente
+        if (esTecnico) {
             base = base.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser.id)));
         }
+
         return base;
     }, [allTickets, currentUser]);
 
     const ticketsTabActual = useMemo(() => {
         const base = getBaseTickets();
-        return dateOffset === 0 ? base.filter(perteneceAHoy) : base.filter(t => isOnDate(t.fechaVencimiento, dateOffset));
-    }, [getBaseTickets, dateOffset]);
+        const delDia = dateOffset === 0 ? base.filter(perteneceAHoy) : base.filter(t => isOnDate(t.fechaVencimiento, dateOffset));
+        
+        // CALCULAMOS CONTADORES SIEMPRE SOBRE EL TOTAL DEL DÍA
+        // Independientemente de lo que el usuario esté viendo en ese momento
+        const misTareasDelDia = delDia.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id)));
+        
+        const equipoCount = delDia.length;
+        const misTareasCount = misTareasDelDia.length;
+
+        // Filtramos qué tickets se van a procesar para la lista final
+        const ticketsParaLista = (currentUser?.rol === 'COORDINADOR_MTTO' && !vistaEquipo)
+            ? misTareasDelDia
+            : delDia;
+
+        return {
+            tickets: ticketsParaLista,
+            equipoCount,
+            misTareasCount
+        };
+    }, [getBaseTickets, dateOffset, currentUser, vistaEquipo]);
 
     const conteos = useMemo(() => {
-        return ticketsTabActual.reduce((acc, t) => {
+        return ticketsTabActual.tickets.reduce((acc, t) => {
             acc[t.estado] = (acc[t.estado] || 0) + 1;
             return acc;
         }, {});
@@ -156,7 +181,7 @@ export default function TicketsHoyPage() {
     }, [conteos]);
 
     const ticketsFiltrados = useMemo(() => {
-        let filtered = ticketsTabActual;
+        let filtered = ticketsTabActual.tickets;
 
         if (highlightId && !filtered.some(t => String(t.id) === highlightId)) {
             const ticketResaltado = allTickets.find(t => String(t.id) === highlightId);
@@ -171,6 +196,12 @@ export default function TicketsHoyPage() {
                 let match = true;
                 if (mostrarAtrasadas) match = match && esAtrasadaActiva(t);
                 if (mostrarRechazadas) match = match && t.estado === 'RECHAZADO';
+                
+                // Si el coordinador está en vista "Mis Tareas", solo mostrar atrasadas/rechazadas suyas
+                if (currentUser?.rol === 'COORDINADOR_MTTO' && !vistaEquipo) {
+                    match = match && t.responsables?.some(r => String(r.id) === String(currentUser.id));
+                }
+                
                 return match;
             });
         }
@@ -195,7 +226,7 @@ export default function TicketsHoyPage() {
         }
 
         return dateOffset === 0 ? customSortHoy(filtered) : sortManana(filtered);
-    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroResponsable, query, customSortHoy, highlightId, allTickets]);
+    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroResponsable, query, customSortHoy, highlightId, allTickets, currentUser, vistaEquipo]);
 
     const totalHoy = useMemo(() => getBaseTickets().filter(perteneceAHoy).length, [getBaseTickets]);
     const totalManana = useMemo(() => getBaseTickets().filter(t => isOnDate(t.fechaVencimiento, 1)).length, [getBaseTickets]);
@@ -265,6 +296,10 @@ export default function TicketsHoyPage() {
         onToggleAtrasadas: () => setMostrarAtrasadas(p => !p),
         mostrarRechazadas,
         onToggleRechazadas: () => setMostrarRechazadas(p => !p),
+        vistaEquipo,
+        onVistaEquipoChange: setVistaEquipo,
+        equipoCount: ticketsTabActual.equipoCount,
+        misTareasCount: ticketsTabActual.misTareasCount,
         existenciaGlobal: { 'RECHAZADO': totalRechazadas },
         totalAtrasadasGlobal: totalAtrasadas,
         onSave: handleUpdate,
