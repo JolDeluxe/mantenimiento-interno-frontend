@@ -4,6 +4,7 @@ import { PlantaRow } from '../components/area/planta-row';
 import { PlantaDetalle } from '../components/area/area-detalle-planta';
 import { AreaDetalle } from '../components/area/area-detalle-area';
 import DashboardEmptyState from '../components/dashboard-empty-state';
+import { hardReload } from '@/utils/hard-reload';
 
 const SkeletonPlanta = () => (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -84,7 +85,7 @@ export default function DashboardAreaMobile({
 
             <GlassFab
                 icon="refresh"
-                onClick={onRefresh}
+                onClick={hardReload}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

@@ -15,6 +15,7 @@ import { HoyTeamToggle } from '../components/hoy/hoy-team-toggle';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
+import { hardReload } from '@/utils/hard-reload';
 
 const SKELETON_COUNT = 4;
 
@@ -180,7 +181,7 @@ export const TicketsHoyMobile = ({
             </div>
 
             <div className="md:hidden">
-                <GlassFab icon="refresh" onClick={onRefresh} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
+                <GlassFab icon="refresh" onClick={hardReload} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
                 {puedeCrear && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
             </div>
 

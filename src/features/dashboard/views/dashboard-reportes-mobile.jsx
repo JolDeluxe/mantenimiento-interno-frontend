@@ -1,6 +1,7 @@
 import React from 'react';
 import { GlassFab } from '@/components/ui/z_index';
 import { ReportesConstruccion } from '../components/reportes/reportes-construccion';
+import { hardReload } from '@/utils/hard-reload';
 
 export default function DashboardReportesMobile({ loading, onRefresh }) {
     return (
@@ -11,7 +12,7 @@ export default function DashboardReportesMobile({ loading, onRefresh }) {
 
             <GlassFab
                 icon="refresh"
-                onClick={onRefresh}
+                onClick={hardReload}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

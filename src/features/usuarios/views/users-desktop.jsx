@@ -4,6 +4,7 @@ import { UserFilterBar } from '../components/user-filter-bar';
 import { UserSummaryBar } from '../components/user-summary-bar';
 import { UserAddButton } from '../components/user-add-button';
 import { RefreshFab } from '@/components/ui/z_index';
+import { hardReload } from '@/utils/hard-reload';
 
 export const UsersDesktop = ({
     users,
@@ -36,10 +37,11 @@ export const UsersDesktop = ({
     onOpenCreate,
 }) => {
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 relative">
 
 
-            {/* <RefreshFab bottom="32px" right="32px" size={48} /> */}
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
+
 
             <UserSummaryBar
                 currentUser={currentUser}

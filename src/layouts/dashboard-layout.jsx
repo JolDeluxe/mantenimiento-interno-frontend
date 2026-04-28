@@ -85,7 +85,7 @@ export const DashboardLayout = () => {
       {isDesktop ? <DesktopLayout /> : <MobileLayout />}
       {isDesktop && (
         <div className="print:hidden">
-          <RefreshFab zIndex={60} size={48} bottom="32px" />
+          <RefreshFab zIndex={60} size={60} bottom="32px" />
         </div>
       )}
     </>

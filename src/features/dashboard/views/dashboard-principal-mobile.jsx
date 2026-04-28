@@ -5,6 +5,7 @@ import { PrincipalUrgentes } from '../components/principal/principal-urgentes';
 import { PrincipalTiempos } from '../components/principal/principal-tiempos';
 import { PrincipalTopList } from '../components/principal/principal-top-list';
 import { cn } from '@/utils/cn';
+import { hardReload } from '@/utils/hard-reload';
 
 const ROL_SUBTITULO = {
     TECNICO: 'Tu rendimiento personal',
@@ -169,7 +170,7 @@ export default function DashboardPrincipalMobile({ data, loading, error, current
 
             <GlassFab
                 icon="refresh"
-                onClick={onRefresh}
+                onClick={hardReload}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

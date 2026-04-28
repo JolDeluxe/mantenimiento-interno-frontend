@@ -6,7 +6,7 @@ import { TIPO_CONFIG } from './notify-config';
 const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
 const buildAcciones = (notif, rol) => {
-    // Extraemos "tarea" asumiendo que el backend envía la relación (ej. include: { tarea: { select: { estado: true } } })
+    // Extraemos "tarea" asumiendo que el backend envía la relación
     const { tipo, tareaId, accionada, tarea } = notif;
     const estadoActual = tarea?.estado || null;
 
@@ -42,20 +42,31 @@ const buildAcciones = (notif, rol) => {
     });
 
     // Validadores de estado vivo
-    const yaIniciada = estadoActual && estadoActual !== 'ASIGNADA' && estadoActual !== 'PENDIENTE';
-    const yaEvaluada = estadoActual && (estadoActual === 'CERRADO' || estadoActual === 'RECHAZADO');
+    const yaIniciada = estadoActual && !['ASIGNADA', 'PENDIENTE', 'RECHAZADO'].includes(estadoActual);
+    const yaEvaluada = estadoActual && (estadoActual === 'CERRADO' || estadoActual === 'RECHAZADO' || estadoActual === 'CANCELADA');
+    const yaAsignada = estadoActual && estadoActual !== 'PENDIENTE';
+    const esEstadoFinal = estadoActual && ['CERRADO', 'RESUELTO', 'CANCELADA'].includes(estadoActual);
+
+    // Mapeo de chips de estado final/avanzado
+    const getEstadoChip = () => {
+        if (estadoActual === 'EN_PROGRESO') return chip('En progreso', 'play_circle', 'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30');
+        if (estadoActual === 'RESUELTO') return chip('Entregada', 'check_circle', 'bg-estado-resuelto/10 text-estado-resuelto border-estado-resuelto/30');
+        if (estadoActual === 'CERRADO') return chip('Cerrada', 'done_all', 'bg-slate-100 text-slate-600 border-slate-200');
+        if (estadoActual === 'RECHAZADO') return chip('Rechazada', 'cancel', 'bg-estado-rechazado/10 text-estado-rechazado border-estado-rechazado/30');
+        if (estadoActual === 'CANCELADA') return chip('Cancelada', 'block', 'bg-slate-100 text-slate-400 border-slate-200');
+        return null;
+    };
+
+    // Si la tarea ya llegó a un estado final, forzamos mostrar solo el chip informativo y ver detalle
+    if (esEstadoFinal) {
+        return [verDetalle(), getEstadoChip()].filter(Boolean);
+    }
 
     switch (tipo) {
         case 'TAREA_ASIGNADA':
             if (accionada || yaIniciada) {
-                return [
-                    verDetalle(),
-                    chip(
-                        estadoActual === 'EN_PROGRESO' ? 'En progreso' : 'Ya iniciada',
-                        'play_circle',
-                        'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30'
-                    ),
-                ];
+                const statusChip = getEstadoChip();
+                return [verDetalle(), statusChip || chip('Ya iniciada', 'play_circle', 'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30')];
             }
             if (esTecnico || esAdmin) {
                 return [
@@ -67,18 +78,14 @@ const buildAcciones = (notif, rol) => {
 
         case 'REVISION_PENDIENTE':
         case 'TAREA_RESUELTA':
-            if (accionada || yaEvaluada) {
-                // Renderizado dinámico del chip según si se aprobó o rechazó
+            if (accionada) {
                 const labelChip = estadoActual === 'CERRADO' ? 'Aprobada' : estadoActual === 'RECHAZADO' ? 'Rechazada' : 'Revisada';
                 const iconChip = estadoActual === 'RECHAZADO' ? 'cancel' : 'check_circle';
                 const colorChip = estadoActual === 'RECHAZADO'
                     ? 'bg-estado-rechazado/10 text-estado-rechazado border-estado-rechazado/30'
                     : 'bg-estado-resuelto/10 text-estado-resuelto border-estado-resuelto/30';
 
-                return [
-                    verDetalle(),
-                    chip(labelChip, iconChip, colorChip),
-                ];
+                return [verDetalle(), chip(labelChip, iconChip, colorChip)];
             }
             if (esAdmin || esJefe || esCoord) {
                 return [
@@ -90,22 +97,22 @@ const buildAcciones = (notif, rol) => {
 
         case 'TAREA_RECHAZADA':
         case 'EQUIPO_RECHAZO':
-            if (esTecnico) {
+            // El botón "Ir a mis tareas" solo si sigue en RECHAZADO
+            if (estadoActual === 'RECHAZADO') {
                 return [
                     verDetalle('Ver motivo'),
-                    irAHoy('Ir a mis tareas'),
+                    irAHoy(esAdmin ? 'Ver tarea' : 'Ir a mis tareas'),
                 ];
             }
-            if (esAdmin) {
-                return [
-                    verDetalle('Ver motivo'),
-                    irAHoy('Ver tarea'),
-                ];
-            }
-            return [verDetalle('Ver motivo')];
+            // Si ya no es rechazado (ej: se reinició y ahora está en progreso)
+            return [verDetalle('Ver motivo'), getEstadoChip()].filter(Boolean);
 
         case 'NUEVO_REPORTE':
-            if (esAdmin) {
+            if (esAdmin || esJefe || esCoord) {
+                // Si ya fue asignada, ocultamos "Ver en bandeja"
+                if (yaAsignada) {
+                    return [verDetalle(), getEstadoChip()].filter(Boolean);
+                }
                 return [
                     verDetalle(),
                     { key: 'ir_a_bandeja', label: 'Ver en bandeja', icon: 'inbox', variant: 'accion', isStatus: false },
@@ -119,7 +126,7 @@ const buildAcciones = (notif, rol) => {
         case 'TAREA_REASIGNADA':
         case 'TAREA_INICIADA':
         case 'TAREA_PAUSADA':
-            return [verDetalle()];
+            return [verDetalle(), getEstadoChip()].filter(Boolean);
 
         default:
             return tareaId ? [verDetalle()] : [];

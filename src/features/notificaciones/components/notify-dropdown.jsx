@@ -60,7 +60,7 @@ export const NotifyDropdown = ({ onClose }) => {
 
     const handleGoToAll = () => {
         onClose();
-        navigate('/notificaciones');
+        navigate(`/notificaciones?refresh=${Date.now()}`);
     };
 
     return (
@@ -106,7 +106,7 @@ export const NotifyDropdown = ({ onClose }) => {
                                     type="button"
                                     onClick={() => {
                                         onClose();
-                                        navigate('/notificaciones');
+                                        navigate(`/notificaciones?refresh=${Date.now()}`);
                                     }}
                                     className={cn(
                                         'w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 cursor-pointer',

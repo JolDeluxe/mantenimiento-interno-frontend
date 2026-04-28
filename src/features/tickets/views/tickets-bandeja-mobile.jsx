@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn';
 import { BandejaTicketCard } from '../components/bandeja/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
+import { hardReload } from '@/utils/hard-reload';
 
 const BandejaMobileSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
@@ -98,7 +99,7 @@ export const TicketsBandejaMobile = ({
             <div className="md:hidden">
                 <GlassFab
                     icon="refresh"
-                    onClick={onRefresh}
+                    onClick={hardReload}
                     isLoading={isLoading}
                     variant="neutral"
                     size={50}

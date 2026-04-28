@@ -6,6 +6,7 @@ import { PrincipalUrgentes } from '../components/principal/principal-urgentes';
 import { PrincipalTiempos } from '../components/principal/principal-tiempos';
 import { PrincipalTopList } from '../components/principal/principal-top-list';
 import { cn } from '@/utils/cn';
+import { hardReload } from '@/utils/hard-reload';
 
 const ROL_SUBTITULO = {
     TECNICO: 'Tu rendimiento personal',
@@ -49,7 +50,7 @@ export default function DashboardPrincipalDesktop({ data, loading, error, curren
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-300 pb-10 relative">
-            {/* <RefreshFab bottom="32px" right="32px" size={48} onClick={onRefresh} /> */}
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
 
             {/* ── Encabezado Principal ── */}
             <div className="flex items-start justify-between">

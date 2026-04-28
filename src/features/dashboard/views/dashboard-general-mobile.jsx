@@ -5,6 +5,7 @@ import { TarjetaKpi } from '../components/general/general-kpi-card';
 import { GeneralTiemposCard } from '../components/general/general-tiempos-card';
 import { GeneralListaBarrasCard } from '../components/general/general-lista-barras-card';
 import DashboardEmptyState from '../components/dashboard-empty-state';
+import { hardReload } from '@/utils/hard-reload';
 
 export default function DashboardGeneralMobile({ data, loading, onRefresh }) {
     const {
@@ -63,7 +64,7 @@ export default function DashboardGeneralMobile({ data, loading, onRefresh }) {
 
             <GlassFab
                 icon="refresh"
-                onClick={onRefresh}
+                onClick={hardReload}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

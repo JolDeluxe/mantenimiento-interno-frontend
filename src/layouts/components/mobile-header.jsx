@@ -97,7 +97,7 @@ export const MobileHeader = () => {
         <div className="flex items-center gap-1">
           {/* Campana móvil — navega directo a /notificaciones */}
           <button
-            onClick={() => navigate('/notificaciones')}
+            onClick={() => navigate(`/notificaciones?refresh=${Date.now()}`)}
             className="relative p-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none"
             aria-label="Notificaciones"
           >

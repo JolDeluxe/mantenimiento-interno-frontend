@@ -5,6 +5,7 @@ import { TecnicoKpiRow } from '../components/equipo/equipo-tecnico-kpi-row';
 import { TecnicoDetalleModal } from '../components/equipo/equipo-detalle-modal';
 import { EquipoCambioRol } from '../components/equipo/equipo-cambio-rol';
 import DashboardEmptyState from '../components/dashboard-empty-state';
+import { hardReload } from '@/utils/hard-reload';
 
 const GrupoMobile = ({ titulo, icon, personas, onViewDetail }) => {
     if (personas.length === 0) return null;
@@ -103,7 +104,7 @@ export default function DashboardEquipoMobile({
 
             <GlassFab
                 icon="refresh"
-                onClick={onRefresh}
+                onClick={hardReload}
                 isLoading={loading}
                 variant="neutral"
                 size={50}

@@ -46,7 +46,24 @@ export default function NotifyPage() {
     const [fetchingTicket, setFetchingTicket] = useState(false);
     const [changeSubmit, setChangeSubmit] = useState(false);
 
-    // 🟢 3. INTERCEPTOR DE DEEP LINK (Push Notifications)
+    // 🟢 3. INTERCEPTOR DE REFRESH FORZADO
+    useEffect(() => {
+        if (searchParams.has('refresh')) {
+            const params = { page: 1, limit: LIMIT };
+            if (soloNoLeidas) params.soloNoLeidas = true;
+            if (filtroTipo) params.tipo = filtroTipo;
+
+            fetchNotificaciones(params, false, true); // Silent refresh
+            setPage(1);
+
+            // Limpiamos el parámetro de la URL
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('refresh');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams, soloNoLeidas, filtroTipo, fetchNotificaciones]);
+
+    // 🟢 4. INTERCEPTOR DE DEEP LINK (Push Notifications)
     useEffect(() => {
         const ticketId = searchParams.get('ticketId');
 

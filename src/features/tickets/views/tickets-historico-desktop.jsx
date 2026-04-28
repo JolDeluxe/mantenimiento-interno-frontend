@@ -7,6 +7,7 @@ import { TicketFechas } from '../components/historico/ticket-fechas';
 import { RefreshFab } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
+import { hardReload } from '@/utils/hard-reload';
 
 export const TicketsHistoricoDesktop = ({
     currentUser,
@@ -62,6 +63,7 @@ export const TicketsHistoricoDesktop = ({
 
     return (
         <div className="flex flex-col gap-4 relative">
+            <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
             <TicketFechas
                 year={filtroYear}
                 month={filtroMonth}
