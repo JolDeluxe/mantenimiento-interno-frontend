@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // 🟢 1. Importamos useSearchParams
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNotifyStore } from '@/stores/notify-store';
-import { useSyncStore } from '@/stores/sync-store'; // 🟢 1. Importamos el cerebro de Sockets
+import { useSyncStore } from '@/stores/sync-store';
 import { notify } from '@/components/notification/adaptive-notify';
 import { useNotify } from '../hooks/use-notify';
 import { NotifyDesktop } from '../views/notify-desktop';
@@ -18,15 +18,14 @@ const LIMIT = 20;
 export default function NotifyPage() {
     const isDesktop = useIsDesktop();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams(); // 🟢 2. Inicializamos el hook
 
-    // Selectores atómicos para evitar bucles de renderizado
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
     const setNoLeidas = useNotifyStore((state) => state.setNoLeidas);
     const resetNotifyStore = useNotifyStore((state) => state.reset);
     const decrementNotifyStore = useNotifyStore((state) => state.decrement);
 
-    // 🟢 2. Escuchamos el reloj global de Sockets
     const lastUpdate = useSyncStore((state) => state.lastUpdate);
     const prevUpdate = useRef(lastUpdate);
 
@@ -47,7 +46,33 @@ export default function NotifyPage() {
     const [fetchingTicket, setFetchingTicket] = useState(false);
     const [changeSubmit, setChangeSubmit] = useState(false);
 
-    // 🟢 3A. Carga inicial y filtros (CON Skeletons, silent = false)
+    // 🟢 3. INTERCEPTOR DE DEEP LINK (Push Notifications)
+    useEffect(() => {
+        const ticketId = searchParams.get('ticketId');
+
+        if (ticketId && !isNaN(Number(ticketId))) {
+            const fetchFromUrl = async () => {
+                setFetchingTicket(true);
+                try {
+                    const ticket = await getTicketById(Number(ticketId));
+                    setActiveTicket(ticket);
+                    setDetailOpen(true);
+                } catch (err) {
+                    notify.error('No se pudo cargar el ticket solicitado.');
+                } finally {
+                    setFetchingTicket(false);
+                }
+            };
+
+            fetchFromUrl();
+
+            // Limpiamos la URL silenciosamente para evitar bucles si recarga
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('ticketId');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
+
     useEffect(() => {
         const params = { page: 1, limit: LIMIT };
         if (soloNoLeidas) params.soloNoLeidas = true;
@@ -57,21 +82,18 @@ export default function NotifyPage() {
         setPage(1);
     }, [soloNoLeidas, filtroTipo, fetchNotificaciones]);
 
-    // 🟢 3B. Refresco Silencioso por Sockets (SIN Skeletons, silent = true)
     useEffect(() => {
         if (prevUpdate.current !== lastUpdate) {
             prevUpdate.current = lastUpdate;
 
-            // Calculamos el LIMIT * page para no colapsar la lista si el usuario había dado "Cargar Más"
             const params = { page: 1, limit: LIMIT * page };
             if (soloNoLeidas) params.soloNoLeidas = true;
             if (filtroTipo) params.tipo = filtroTipo;
 
-            fetchNotificaciones(params, false, true); // silent = true
+            fetchNotificaciones(params, false, true);
         }
     }, [lastUpdate, page, soloNoLeidas, filtroTipo, fetchNotificaciones]);
 
-    // Sincronización segura con el badge global
     useEffect(() => {
         if (meta.noLeidas !== undefined) {
             setNoLeidas(meta.noLeidas);
@@ -86,7 +108,7 @@ export default function NotifyPage() {
         if (soloNoLeidas) params.soloNoLeidas = true;
         if (filtroTipo) params.tipo = filtroTipo;
 
-        fetchNotificaciones(params, true, false); // append = true
+        fetchNotificaciones(params, true, false);
         setPage(nextPage);
     }, [page, meta.totalPages, loadingMore, soloNoLeidas, filtroTipo, fetchNotificaciones]);
 
