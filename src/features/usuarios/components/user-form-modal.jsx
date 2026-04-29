@@ -6,10 +6,15 @@ import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Icon } from '@/comp
 
 const ROL_MAP = {
     TECNICO: 'Técnico',
-    COORDINADOR_MTTO: 'Coordinador Mtto',
+    COORDINADOR_MTTO: 'Coordinador',
     JEFE_MTTO: 'Jefe Mtto',
     CLIENTE_INTERNO: 'Cliente Interno',
     SUPER_ADMIN: 'Super Admin',
+};
+
+const ROL_TO_CARGO = {
+    TECNICO: ROL_MAP.TECNICO,
+    COORDINADOR_MTTO: ROL_MAP.COORDINADOR_MTTO,
 };
 
 const sanitizeUsername = (text) =>
@@ -60,7 +65,11 @@ export const UserFormModal = ({
             setEmail(usuarioAEditar.email || '');
             setPassword('');
             setRol(usuarioAEditar.rol || '');
-            setCargo(usuarioAEditar.cargo || '');
+            setCargo(
+                usuarioAEditar.cargo ||
+                ROL_TO_CARGO[usuarioAEditar.rol] ||
+                ''
+            );
             setTelefono(usuarioAEditar.telefono || '');
             setDepartamentoId(usuarioAEditar.departamentoId ? String(usuarioAEditar.departamentoId) : '');
             setImagenPreview(usuarioAEditar.imagen || null);
@@ -84,12 +93,15 @@ export const UserFormModal = ({
     // ── [CAMBIO] Limpiar departamento si el rol cambia a uno no-CLIENTE_INTERNO
     // en modo edición, para no enviar datos obsoletos al backend.
     const handleRolChange = (e) => {
-        const nuevoRol = e.target.value;
-        setRol(nuevoRol);
-        if (esEdicion && nuevoRol !== 'CLIENTE_INTERNO') {
-            setDepartamentoId('');
-        }
-    };
+    const nuevoRol = e.target.value;
+    setRol(nuevoRol);
+
+    setCargo(ROL_TO_CARGO[nuevoRol] || '');
+
+    if (esEdicion && nuevoRol !== 'CLIENTE_INTERNO') {
+        setDepartamentoId('');
+    }
+};
 
     const rolesDisponibles = [
         { value: 'TECNICO', label: ROL_MAP.TECNICO, visible: true },
@@ -376,12 +388,20 @@ export const UserFormModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="u-cargo">Puesto / Cargo (Opcional)</Label>
-                            <Input
+
+                            <Select
                                 id="u-cargo"
                                 value={cargo}
                                 onChange={(e) => setCargo(e.target.value)}
-                                placeholder="Ej. Eléctrico Industrial"
-                            />
+                            >
+                                <option value="">Selecciona un cargo</option>
+
+                                {Object.entries(ROL_TO_CARGO).map(([key, label]) => (
+                                    <option key={key} value={label}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </Select>
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="u-pass" error={!!fe.password}>

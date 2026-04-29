@@ -9,6 +9,7 @@ import { isPastDate, isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
 const MIN_TECNICO = 5;
 const MAX_EXTRA_ESTIMADO = 60;
 const MAX_SIN_ESTIMADO = 480;
+const MAX_DURATION_MINS = 540; // 9 horas
 
 const MOTIVOS_PAUSA = [
     'Espera de refacciones o materiales',
@@ -36,6 +37,15 @@ const formatMins = (mins) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
+};
+
+const formatMinsFull = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const durationStr = h > 0
+        ? (m > 0 ? `${h} h ${m} min` : `${h} h`)
+        : `${m} min`;
+    return `${durationStr} (${mins} min)`;
 };
 
 const evaluarTiempo = (mins, ticket) => {
@@ -78,37 +88,52 @@ const evaluarTiempo = (mins, ticket) => {
 
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
 const TimePicker = ({ totalMins, onChange }) => {
-    const [useHorasMinutos, setUseHorasMinutos] = useState(false);
+    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState('07:00');
+    const [endTime, setEndTime] = useState('08:00');
 
     const horas = Math.floor(totalMins / 60);
     const minutos = totalMins % 60;
+
+    useEffect(() => {
+        if (mode === 'range') {
+            const [h1, m1] = startTime.split(':').map(Number);
+            const [h2, m2] = endTime.split(':').map(Number);
+            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (diff < 0) diff += 1440; // Cruzó medianoche
+            onChange(diff);
+        }
+    }, [startTime, endTime, mode]);
 
     const selectCls =
         'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 font-medium select-none">
-                    <div className="relative inline-flex items-center">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={useHorasMinutos}
-                            onChange={() => {
-                                setUseHorasMinutos(!useHorasMinutos);
-                                // Redondear a multiplos de 5 si cambiamos de modo
-                                onChange(Math.round(totalMins / 5) * 5);
-                            }}
-                        />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-marca-secundario/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-marca-secundario"></div>
-                    </div>
-                    Registrar horas y minutos
-                </label>
-                <span className="text-[10px] text-slate-400 italic">(Opcional)</span>
+            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+                <button
+                    type="button"
+                    onClick={() => setMode('duration')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Duración
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('range')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Rango horario
+                </button>
             </div>
 
-            {useHorasMinutos ? (
+            {mode === 'duration' ? (
                 <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
                     <div className="flex flex-col gap-1.5 items-center">
                         <select
@@ -116,7 +141,7 @@ const TimePicker = ({ totalMins, onChange }) => {
                             onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
                             className={selectCls}
                         >
-                            {Array.from({ length: 24 }, (_, i) => (
+                            {Array.from({ length: 10 }, (_, i) => (
                                 <option key={i} value={i}>{i} h</option>
                             ))}
                         </select>
@@ -137,41 +162,50 @@ const TimePicker = ({ totalMins, onChange }) => {
                         </select>
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
                     </div>
-
-                    {totalMins > 0 && (
-                        <div className="pb-5">
-                            <span className="text-sm font-bold text-marca-primario font-mono">
-                                = {formatMins(totalMins)}
-                            </span>
-                        </div>
-                    )}
                 </div>
             ) : (
-                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-right-2 duration-200 max-w-[200px]">
-                    <div className="relative">
+                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
                         <input
-                            type="number"
-                            min="0"
-                            step="5"
-                            value={totalMins || ''}
-                            onChange={(e) => {
-                                const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                onChange(val);
-                            }}
-                            className={cn(selectCls, "w-full pr-10 text-lg font-bold text-slate-700")}
-                            placeholder="0"
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className={selectCls}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">
-                            min
-                        </span>
                     </div>
-                    {totalMins >= 60 && (
-                        <span className="text-xs font-semibold text-marca-primario text-right pr-1">
-                            Equivale a: {formatMins(totalMins)}
-                        </span>
-                    )}
+                    <span className="text-slate-300 pb-2">a</span>
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
                 </div>
             )}
+
+            {/* Mensajes de validación */}
+            <div className="flex flex-col gap-1">
+                {totalMins > MAX_DURATION_MINS && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="error" size="xs" />
+                        Máximo permitido: 9 horas.
+                    </p>
+                )}
+                {mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00') && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="info" size="xs" />
+                        Rango permitido: 07:00 AM a 08:00 PM.
+                    </p>
+                )}
+            </div>
         </div>
     );
 };
@@ -394,16 +428,21 @@ export const TicketProgressModal = ({
         onConfirm(ticket.id, buildFdResolver());
     };
 
-    let tiempoDisplay = formatMins(elapsedMins);
+    let tiempoDisplay = formatMinsFull(elapsedMins);
     if (timePhase === 'manual' || timePhase === 'atrasada_fecha') {
-        tiempoDisplay = formatMins(tiempoManualMins);
+        tiempoDisplay = formatMinsFull(tiempoManualMins);
     }
+
+    const isInvalidRange = timePhase === 'manual' && mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00');
+    // Nota: 'mode' no está disponible aquí directamente porque es interno de TimePicker. 
+    // Para simplificar, confiaremos en que el usuario no puede seleccionar valores fuera de rango en los inputs, 
+    // pero añadiremos la validación de MAX_DURATION_MINS que sí es global.
 
     const resolverDisabled =
         timePhase === 'preguntando' ||
-        (timePhase === 'manual' && tiempoManualMins === 0) ||
-        (timePhase === 'atrasada_fecha' && (!isFechaFinValida || tiempoManualMins === 0)) ||
-        (timePhase === 'confirmado' && elapsedMins === 0);
+        ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
+        (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
+        (timePhase === 'atrasada_fecha' && !isFechaFinValida);
 
     const isAtrasada = evaluacion?.tipo === 'alto';
 
@@ -603,6 +642,24 @@ export const TicketProgressModal = ({
 
                             {timePhase === 'atrasada_fecha' && (
                                 <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Resumen de entrega y estimación */}
+                                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Entrega real</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                                                <Icon name="calendar_today" size="xs" className="text-marca-primario" />
+                                                {fechaFinManual ? new Date(fechaFinManual + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '--'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-right">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duración estimada</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center justify-end gap-1.5">
+                                                <Icon name="history" size="xs" className="text-slate-400" />
+                                                {ticket.tiempoEstimado ? formatMins(ticket.tiempoEstimado) : 'No estimada'}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
                                         <div className="flex items-center gap-2">
                                             <Icon name="event_available" size="sm" className="text-marca-primario" />

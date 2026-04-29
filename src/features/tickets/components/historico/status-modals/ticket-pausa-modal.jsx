@@ -9,6 +9,7 @@ import { isPastDate, isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
 const MIN_TECNICO = 5;
 const MAX_EXTRA_ESTIMADO = 60;
 const MAX_SIN_ESTIMADO = 480;
+const MAX_DURATION_MINS = 540; // 9 horas
 
 // ── Utilidades de tiempo ───────────────────────────────────────────────────
 const calcElapsedMins = (ticket) => {
@@ -26,6 +27,15 @@ const formatMins = (mins) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
+};
+
+const formatMinsFull = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const durationStr = h > 0
+        ? (m > 0 ? `${h} h ${m} min` : `${h} h`)
+        : `${m} min`;
+    return `${durationStr} (${mins} min)`;
 };
 
 const evaluarTiempo = (mins, ticket) => {
@@ -67,49 +77,124 @@ const evaluarTiempo = (mins, ticket) => {
 
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
 const TimePicker = ({ totalMins, onChange }) => {
+    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState('07:00');
+    const [endTime, setEndTime] = useState('08:00');
+
     const horas = Math.floor(totalMins / 60);
     const minutos = totalMins % 60;
+
+    useEffect(() => {
+        if (mode === 'range') {
+            const [h1, m1] = startTime.split(':').map(Number);
+            const [h2, m2] = endTime.split(':').map(Number);
+            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (diff < 0) diff += 1440; // Cruzó medianoche
+            onChange(diff);
+        }
+    }, [startTime, endTime, mode]);
 
     const selectCls =
         'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
 
     return (
-        <div className="flex items-end gap-4">
-            <div className="flex flex-col gap-1.5 items-center">
-                <select
-                    value={horas}
-                    onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
-                    className={selectCls}
+        <div className="flex flex-col gap-4">
+            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+                <button
+                    type="button"
+                    onClick={() => setMode('duration')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
                 >
-                    {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>{i} h</option>
-                    ))}
-                </select>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+                    Duración
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('range')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Rango horario
+                </button>
             </div>
 
-            <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
+            {mode === 'duration' ? (
+                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={horas}
+                            onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                            className={selectCls}
+                        >
+                            {Array.from({ length: 10 }, (_, i) => (
+                                <option key={i} value={i}>{i} h</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+                    </div>
 
-            <div className="flex flex-col gap-1.5 items-center">
-                <select
-                    value={minutos}
-                    onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
-                    className={selectCls}
-                >
-                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-                        <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
-                    ))}
-                </select>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
-            </div>
+                    <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
 
-            {totalMins > 0 && (
-                <div className="pb-5">
-                    <span className="text-sm font-bold text-marca-primario font-mono">
-                        = {formatMins(totalMins)}
-                    </span>
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={minutos}
+                            onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                            className={selectCls}
+                        >
+                            {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
+                    <span className="text-slate-300 pb-2">a</span>
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
                 </div>
             )}
+
+            {/* Mensajes de validación */}
+            <div className="flex flex-col gap-1">
+                {totalMins > MAX_DURATION_MINS && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="error" size="xs" />
+                        Máximo permitido: 9 horas.
+                    </p>
+                )}
+                {mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00') && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="info" size="xs" />
+                        Rango permitido: 07:00 AM a 08:00 PM.
+                    </p>
+                )}
+            </div>
         </div>
     );
 };
@@ -247,14 +332,10 @@ export const TicketPausaModal = ({
 
         if (!ultimoIntervalo) return null;
 
-        const minsEnPausa = Math.floor(
-            (ahora - new Date(ultimoIntervalo.fin).getTime()) / 60000
-        );
-        if (minsEnPausa < 1) return 'Recién pausado';
-        if (minsEnPausa < 60) return `${minsEnPausa} min en pausa`;
-        const h = Math.floor(minsEnPausa / 60);
-        const m = minsEnPausa % 60;
-        return m > 0 ? `${h} h ${m} min en pausa` : `${h} h en pausa`;
+        const msEnPausa = ahora - new Date(ultimoIntervalo.fin).getTime();
+        const diasEnPausa = Math.floor(msEnPausa / (1000 * 60 * 60 * 24)) + 1;
+
+        return diasEnPausa === 1 ? '1 día en pausa' : `${diasEnPausa} días en pausa`;
     };
 
     const handleSelectReanudar = () => {
@@ -329,9 +410,10 @@ export const TicketPausaModal = ({
         onConfirm(ticket.id, fd);
     };
 
-    const tiempoDisplay = (timePhase === 'manual' || timePhase === 'atrasada_fecha')
-        ? formatMins(tiempoManualMins)
-        : formatMins(elapsedMins);
+    let tiempoDisplay = formatMinsFull(elapsedMins);
+    if (timePhase === 'manual' || timePhase === 'atrasada_fecha') {
+        tiempoDisplay = formatMinsFull(tiempoManualMins);
+    }
 
     const isAtrasada = evaluacion?.tipo === 'alto';
     const disableConfirm = !accion || (accion === 'resolver' && (
@@ -462,11 +544,35 @@ export const TicketPausaModal = ({
                             )}
 
                             {timePhase === 'atrasada_fecha' && (
-                                <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-left">
+                                <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                                    {/* Resumen de entrega y estimación */}
+                                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vencimiento</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                                                <Icon name="event_busy" size="xs" className="text-estado-rechazado" />
+                                                {ticket.fechaVencimiento ? new Date(ticket.fechaVencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : 'Sin fecha'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-right">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duración estimada</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center justify-end gap-1.5">
+                                                <Icon name="history" size="xs" className="text-slate-400" />
+                                                {ticket.tiempoEstimado ? formatMins(ticket.tiempoEstimado) : 'No estimada'}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
                                         <Label>Día que la terminaste *</Label>
                                         <input type="date" min={minDate} max={maxDate} value={fechaFinManual} onChange={(e) => setFechaFinManual(e.target.value)}
-                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white outline-none" />
+                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-marca-secundario/30" />
+                                        {!isFechaFinValida && (
+                                            <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                                <Icon name="warning" size="xs" />
+                                                La fecha debe estar entre la creación del ticket y hoy.
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
@@ -477,11 +583,19 @@ export const TicketPausaModal = ({
 
                             {timePhase !== 'preguntando' && (
                                 <div className="flex flex-col gap-4 text-left">
-                                    <div className="flex items-center justify-between px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
-                                        <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                            <Icon name="timer" size="sm" className="text-estado-resuelto" /> Tiempo final
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
+                                        <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                            <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
+                                            <span>Tiempo total a registrar</span>
+                                            {(timePhase === 'manual' || timePhase === 'atrasada_fecha') && (
+                                                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                    Manual
+                                                </span>
+                                            )}
                                         </span>
-                                        <span className="text-lg font-extrabold font-mono text-estado-resuelto">{tiempoDisplay}</span>
+                                        <span className="text-base sm:text-lg font-extrabold font-mono text-estado-resuelto self-start sm:self-auto ml-5 sm:ml-0">
+                                            {tiempoDisplay}
+                                        </span>
                                     </div>
 
                                     {/* NUEVA VALIDACIÓN VISUAL AQUÍ */}
