@@ -3,6 +3,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/comp
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
 import { formatFecha, formatFechaHora, isPastDate } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
+import { useAuthStore } from '@/stores/auth-store';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
 const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
@@ -194,33 +195,47 @@ const ParsedNote = ({ notaRaw, config }) => {
     let cleanNota = notaRaw;
     let timeBadge = null;
     let isRutina = false;
+    let isInspeccion = false;
 
+    // 1. Limpieza de cambios de estado técnicos
     const stateChangeRegex = /Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i;
     cleanNota = cleanNota.replace(stateChangeRegex, '').trim();
 
+    // 2. Extracción de Tiempo Manual (Formatos variados: [TIEMPO_MANUAL:15] o [TIEMPO_MANUAL:15 min])
+    const manualTimeRegex = /\[TIEMPO_MANUAL:\s*([^\]]+)\]/i;
+    const manualTimeMatch = cleanNota.match(manualTimeRegex);
+    if (manualTimeMatch) {
+        timeBadge = manualTimeMatch[1].trim();
+        if (!timeBadge.toLowerCase().includes('min')) timeBadge += ' min';
+        cleanNota = cleanNota.replace(manualTimeRegex, '').trim();
+    }
+
+    // 3. Fallback para formato antiguo de tiempo
     const oldTimeRegex = /Tiempo declarado manualmente:\s*(\d+\s*minutos?)/i;
     const oldTimeMatch = cleanNota.match(oldTimeRegex);
-    if (oldTimeMatch) {
+    if (oldTimeMatch && !timeBadge) {
         timeBadge = oldTimeMatch[1];
         cleanNota = cleanNota.replace(oldTimeRegex, '').trim();
     }
 
-    const newTimeRegex = /\[TIEMPO_MANUAL:(\d+)\]/i;
-    const newTimeMatch = cleanNota.match(newTimeRegex);
-    if (newTimeMatch) {
-        timeBadge = `${newTimeMatch[1]} minutos`;
-        cleanNota = cleanNota.replace(newTimeRegex, '').trim();
+    // 4. Extracción de Inspección/Rutina
+    const inspeccionRegex = /\(Cierre automático por Inspección\)/i;
+    if (inspeccionRegex.test(cleanNota)) {
+        isInspeccion = true;
+        cleanNota = cleanNota.replace(inspeccionRegex, '').trim();
     }
 
     const rutinaRegex = /\[RUTINA\]|\(Rutina Completada\)/i;
-    isRutina = rutinaRegex.test(cleanNota);
-    cleanNota = cleanNota.replace(rutinaRegex, '').trim();
+    if (rutinaRegex.test(cleanNota)) {
+        isRutina = true;
+        cleanNota = cleanNota.replace(rutinaRegex, '').trim();
+    }
 
+    // Limpieza final de caracteres sobrantes
     cleanNota = cleanNota.replace(/^[-:]\s*/, '').trim();
+    if (!cleanNota) cleanNota = "Sin observaciones adicionales";
 
-    if (!cleanNota) cleanNota = "Sin observaciones";
-
-    const isDefault = cleanNota === "Sin observaciones";
+    const isDefault = cleanNota === "Sin observaciones adicionales";
 
     return (
         <div className="flex flex-col gap-2.5 my-1">
@@ -231,26 +246,32 @@ const ParsedNote = ({ notaRaw, config }) => {
                 </p>
             </div>
 
-            {(timeBadge || isRutina) && (
-                <div className="flex flex-wrap gap-2 items-center mt-1">
-                    {timeBadge && (
-                        <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm">
-                            <Icon name="timer" size="sm" className={config.iconCls} />
-                            <span className={`text-xs font-bold ${config.textCls}`}>
-                                {timeBadge} (Manual)
-                            </span>
-                        </div>
-                    )}
-                    {isRutina && (
-                        <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm">
-                            <Icon name="event_available" size="sm" className={config.iconCls} />
-                            <span className={`text-xs font-bold ${config.textCls}`}>
-                                Rutina completada
-                            </span>
-                        </div>
-                    )}
-                </div>
-            )}
+            <div className="flex flex-wrap gap-2 items-center mt-1">
+                {timeBadge && (
+                    <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="timer" size="sm" className="text-orange-500" fill />
+                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">
+                            {timeBadge} <span className="text-orange-600 ml-0.5">(Manual)</span>
+                        </span>
+                    </div>
+                )}
+                {isInspeccion && (
+                    <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="fact_check" size="sm" className="text-blue-600" fill />
+                        <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">
+                            Inspección
+                        </span>
+                    </div>
+                )}
+                {isRutina && (
+                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="event_available" size="sm" className="text-emerald-600" fill />
+                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">
+                            Rutina
+                        </span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -311,6 +332,7 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
 
 // ── Modal principal ─────────────────────────────────────────────────────────
 export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
+    const { user } = useAuthStore();
     const [mostrarHistorial, setMostrarHistorial] = useState(false);
     const [visor, setVisor] = useState({ images: [], index: null });
 
@@ -329,14 +351,17 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const creador = ticket.creador;
     const responsables = ticket.responsables ?? [];
     const tieneHistorial = ticket.historial && ticket.historial.length > 0;
+    const esTecnico = user?.rol === 'TECNICO';
 
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
     const fechaFinalizada = entryResuelto?.createdAt;
 
-    // AQUI ESTABA EL ERROR: El Thin Client ahora confía ciegamente en el booleano del Backend.
-    // Cero lógica de Regex. Cero evaluación de strings.
+    // Detección mejorada de Tiempo Manual: Revisa el flag y también escanea las notas por tags
     const esTiempoManual = Boolean(
-        ticket.historial?.some(h => h.esTiempoManual === true)
+        ticket.historial?.some(h => 
+            h.esTiempoManual === true || 
+            /\[TIEMPO_MANUAL:/i.test(h.nota || '')
+        )
     );
 
     const handleImageExpand = (images, index) => setVisor({ images, index });
@@ -495,7 +520,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                         </div>
 
                         {/* Panel derecho: línea de tiempo condicional. Fluye naturalmente de arriba hacia abajo sin scrollbars internos forzados. */}
-                        {mostrarHistorial && (
+                        {mostrarHistorial && !esTecnico && (
                             <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-6">
                                 <TicketTimeline historial={ticket.historial} responsables={responsables} />
                             </div>
@@ -505,7 +530,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                 </ModalBody>
 
                 <ModalFooter className="flex justify-end w-full">
-                    {tieneHistorial && (
+                    {tieneHistorial && !esTecnico && (
                         <Button
                             variant="accion"
                             size="sm"

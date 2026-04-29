@@ -78,6 +78,8 @@ const evaluarTiempo = (mins, ticket) => {
 
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
 const TimePicker = ({ totalMins, onChange }) => {
+    const [useHorasMinutos, setUseHorasMinutos] = useState(false);
+
     const horas = Math.floor(totalMins / 60);
     const minutos = totalMins % 60;
 
@@ -85,40 +87,89 @@ const TimePicker = ({ totalMins, onChange }) => {
         'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
 
     return (
-        <div className="flex items-end gap-4">
-            <div className="flex flex-col gap-1.5 items-center">
-                <select
-                    value={horas}
-                    onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
-                    className={selectCls}
-                >
-                    {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>{i} h</option>
-                    ))}
-                </select>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 font-medium select-none">
+                    <div className="relative inline-flex items-center">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={useHorasMinutos}
+                            onChange={() => {
+                                setUseHorasMinutos(!useHorasMinutos);
+                                // Redondear a multiplos de 5 si cambiamos de modo
+                                onChange(Math.round(totalMins / 5) * 5);
+                            }}
+                        />
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-marca-secundario/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-marca-secundario"></div>
+                    </div>
+                    Registrar horas y minutos
+                </label>
+                <span className="text-[10px] text-slate-400 italic">(Opcional)</span>
             </div>
 
-            <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
+            {useHorasMinutos ? (
+                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={horas}
+                            onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                            className={selectCls}
+                        >
+                            {Array.from({ length: 24 }, (_, i) => (
+                                <option key={i} value={i}>{i} h</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+                    </div>
 
-            <div className="flex flex-col gap-1.5 items-center">
-                <select
-                    value={minutos}
-                    onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
-                    className={selectCls}
-                >
-                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
-                        <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
-                    ))}
-                </select>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
-            </div>
+                    <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
 
-            {totalMins > 0 && (
-                <div className="pb-5">
-                    <span className="text-sm font-bold text-marca-primario font-mono">
-                        = {formatMins(totalMins)}
-                    </span>
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={minutos}
+                            onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                            className={selectCls}
+                        >
+                            {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
+                    </div>
+
+                    {totalMins > 0 && (
+                        <div className="pb-5">
+                            <span className="text-sm font-bold text-marca-primario font-mono">
+                                = {formatMins(totalMins)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-right-2 duration-200 max-w-[200px]">
+                    <div className="relative">
+                        <input
+                            type="number"
+                            min="0"
+                            step="5"
+                            value={totalMins || ''}
+                            onChange={(e) => {
+                                const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                onChange(val);
+                            }}
+                            className={cn(selectCls, "w-full pr-10 text-lg font-bold text-slate-700")}
+                            placeholder="0"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">
+                            min
+                        </span>
+                    </div>
+                    {totalMins >= 60 && (
+                        <span className="text-xs font-semibold text-marca-primario text-right pr-1">
+                            Equivale a: {formatMins(totalMins)}
+                        </span>
+                    )}
                 </div>
             )}
         </div>

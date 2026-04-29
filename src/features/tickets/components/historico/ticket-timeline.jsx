@@ -117,8 +117,33 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
 
     // Limpieza agresiva de metadatos y strings crudos de auditoría del backend
     let cleanNota = h.nota || '';
-    cleanNota = cleanNota.replace(/\[TIEMPO_MANUAL:.*?\]/gi, '');
-    cleanNota = cleanNota.replace(/\[RUTINA\]|\(Rutina Completada\)/gi, '');
+    let timeBadge = null;
+    let isRutina = false;
+    let isInspeccion = false;
+
+    // 1. Extracción de Tiempo Manual
+    const manualTimeRegex = /\[TIEMPO_MANUAL:\s*([^\]]+)\]/i;
+    const manualTimeMatch = cleanNota.match(manualTimeRegex);
+    if (manualTimeMatch) {
+        timeBadge = manualTimeMatch[1].trim();
+        if (!timeBadge.toLowerCase().includes('min')) timeBadge += ' min';
+        cleanNota = cleanNota.replace(manualTimeRegex, '').trim();
+    }
+
+    // 2. Extracción de Inspección/Rutina
+    const inspeccionRegex = /\(Cierre automático por Inspección\)/i;
+    if (inspeccionRegex.test(cleanNota)) {
+        isInspeccion = true;
+        cleanNota = cleanNota.replace(inspeccionRegex, '').trim();
+    }
+
+    const rutinaRegex = /\[RUTINA\]|\(Rutina Completada\)/i;
+    if (rutinaRegex.test(cleanNota)) {
+        isRutina = true;
+        cleanNota = cleanNota.replace(rutinaRegex, '').trim();
+    }
+
+    // 3. Limpieza de otros metadatos
     cleanNota = cleanNota.replace(/Tiempo declarado manualmente:\s*\d+\s*minutos?/i, '');
     cleanNota = cleanNota.replace(/Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i, '');
     cleanNota = cleanNota.replace(/Edición \([A-Z_]+\):\s*/i, '');
@@ -209,6 +234,28 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
                         "{cleanNota}"
                     </p>
                 )}
+
+                {/* Badges Visuales para metadatos extraídos */}
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                    {timeBadge && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-200 text-[9px] font-bold uppercase">
+                            <Icon name="timer" size="xs" />
+                            {timeBadge} (Manual)
+                        </span>
+                    )}
+                    {isInspeccion && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-bold uppercase">
+                            <Icon name="fact_check" size="xs" />
+                            Inspección
+                        </span>
+                    )}
+                    {isRutina && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold uppercase">
+                            <Icon name="event_available" size="xs" />
+                            Rutina
+                        </span>
+                    )}
+                </div>
 
                 {/* Imágenes */}
                 {imgUrls.length > 0 && (
