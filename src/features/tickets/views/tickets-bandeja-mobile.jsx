@@ -91,7 +91,7 @@ export const TicketsBandejaMobile = ({
                         totalItems={pagination.total}
                         onPageChange={onPageChange}
                         loading={isLoading}
-                        bottom="24px"
+                        bottom="80px"
                     />
                 </div>
             )}

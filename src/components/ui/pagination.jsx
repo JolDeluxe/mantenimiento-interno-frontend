@@ -1,4 +1,3 @@
-// src/components/ui/pagination.jsx
 import { Icon } from './icon';
 import { cn } from '@/utils/cn';
 
@@ -6,12 +5,12 @@ import { cn } from '@/utils/cn';
  * Paginador genérico server-side.
  *
  * Props:
- *   page          → página activa (number)
- *   totalPages    → total de páginas del backend (number)
- *   totalItems    → total de registros filtrados — para la etiqueta informativa (number, opcional)
- *   onPageChange  → callback (newPage: number) => void
- *   loading       → deshabilita los botones mientras carga (boolean, opcional)
- *   variant       → 'bar' (default, para tablas) | 'floating' (para mobile)
+ *   page         → página activa (number)
+ *   totalPages   → total de páginas del backend (number)
+ *   totalItems   → total de registros filtrados — para la etiqueta informativa (number, opcional)
+ *   onPageChange → callback (newPage: number) => void
+ *   loading      → deshabilita los botones mientras carga (boolean, opcional)
+ *   variant      → 'bar' (default, para tablas) | 'floating' (para mobile)
  *
  * Regla estricta: este componente NUNCA calcula páginas.
  * Solo navega entre las que el backend declaró.
@@ -92,7 +91,8 @@ export const Pagination = ({
     // ── Variante flotante (mobile) ─────────────────────────────────────────
     return (
         <div className={cn(
-            "fixed bottom-6 left-0 right-0 flex justify-center z-40 pb-2",
+            // CAMBIO: De bottom-6 a bottom-24 (96px) para evitar choque con el MobileBottomNav
+            "fixed bottom-24 left-0 right-0 flex justify-center z-40 pb-2 transition-all duration-300",
             className
         )}>
             <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-full px-4 py-2 shadow-lg">

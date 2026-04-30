@@ -2,17 +2,12 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Icon } from '@/components/ui/icon';
 import { useUIStore } from '@/stores/ui-store';
-import { useAuthStore } from '@/stores/auth-store';
-import { getModulesByRole } from '@/config/modules-config';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { cn } from '@/utils/cn';
 
-export const MobileSidebar = () => {
+// Recibe userModules directamente desde el Layout
+export const MobileSidebar = ({ userModules = [] }) => {
   const { mobileMenuOpen, closeMobileMenu } = useUIStore();
-  const { user } = useAuthStore();
-
-  const currentUser = user?.data || user;
-  const userModules = currentUser?.rol ? getModulesByRole(currentUser.rol) : [];
 
   if (!mobileMenuOpen) return null;
 

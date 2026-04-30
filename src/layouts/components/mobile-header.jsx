@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '@/components/ui/z_index';
+import { Icon } from '@/components/ui/icon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useUIStore } from '@/stores/ui-store';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { useNotifyStore } from '@/stores/notify-store';
 import { NotifyBadge } from '@/features/notificaciones/components/notify-badge';
-import { cn } from '@/utils/cn';
 
-export const MobileHeader = () => {
+// Recibe la prop showBurger para decidir si renderiza el botón del menú lateral
+export const MobileHeader = ({ showBurger = false }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { toggleMobileMenu } = useUIStore();
@@ -93,9 +93,9 @@ export const MobileHeader = () => {
           <img src="/img/01_Cuadra_Mantnimento.webp" alt="Cuadra Mantenimiento" className="h-8 w-auto object-contain drop-shadow-sm" />
         </div>
 
-        {/* DERECHA: Campana + Menú */}
+        {/* DERECHA: Campana + Menú Condicional */}
         <div className="flex items-center gap-1">
-          {/* Campana móvil — navega directo a /notificaciones */}
+          {/* Campana móvil */}
           <button
             onClick={() => navigate(`/notificaciones?refresh=${Date.now()}`)}
             className="relative p-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none"
@@ -105,14 +105,16 @@ export const MobileHeader = () => {
             <NotifyBadge count={noLeidas} />
           </button>
 
-          {/* Hamburguesa */}
-          <button
-            onClick={toggleMobileMenu}
-            className="p-2 -mr-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none border border-transparent hover:border-white/30"
-            aria-label="Menú de navegación"
-          >
-            <Icon name="menu" size="28px" />
-          </button>
+          {/* Hamburguesa (Condicional al número de módulos) */}
+          {showBurger && (
+            <button
+              onClick={toggleMobileMenu}
+              className="p-2 -mr-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none border border-transparent hover:border-white/30"
+              aria-label="Menú de navegación"
+            >
+              <Icon name="menu" size="28px" />
+            </button>
+          )}
         </div>
 
       </div>

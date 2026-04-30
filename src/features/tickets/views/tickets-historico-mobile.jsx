@@ -118,36 +118,36 @@ export const TicketsHistoricoMobile = ({
                 <div className="flex items-center">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
-                <MobileTicketFilterBar 
-                    query={query} 
-                    onSearchChange={onSearchChange} 
-                    filtroTipo={filtroTipo} 
-                    onTipoChange={onTipoChange} 
-                    filtroPrioridad={filtroPrioridad} 
-                    onPrioridadChange={onPrioridadChange} 
-                    filtroClasificacion={filtroClasificacion} 
-                    onClasificacionChange={onClasificacionChange} 
-                    filtroResponsable={filtroResponsable} 
-                    onResponsableChange={onResponsableChange} 
-                    opcionesResponsables={tecnicos} 
-                    filtroPlanta={filtroPlanta} 
-                    onPlantaChange={onPlantaChange} 
-                    filtroArea={filtroArea} 
+                <MobileTicketFilterBar
+                    query={query}
+                    onSearchChange={onSearchChange}
+                    filtroTipo={filtroTipo}
+                    onTipoChange={onTipoChange}
+                    filtroPrioridad={filtroPrioridad}
+                    onPrioridadChange={onPrioridadChange}
+                    filtroClasificacion={filtroClasificacion}
+                    onClasificacionChange={onClasificacionChange}
+                    filtroResponsable={filtroResponsable}
+                    onResponsableChange={onResponsableChange}
+                    opcionesResponsables={tecnicos}
+                    filtroPlanta={filtroPlanta}
+                    onPlantaChange={onPlantaChange}
+                    filtroArea={filtroArea}
                     onAreaChange={onAreaChange}
                     filtroProgramacion={filtroProgramacion}
                     onProgramacionChange={onProgramacionChange}
                     filtroConclusion={filtroConclusion}
                     onConclusionChange={onConclusionChange}
-                    mostrarPapelera={mostrarPapelera} 
-                    onTogglePapelera={onTogglePapelera} 
-                    mostrarRechazadas={mostrarRechazadas} 
-                    onToggleRechazadas={onToggleRechazadas} 
-                    mostrarAtrasadas={mostrarAtrasadas} 
-                    onToggleAtrasadas={onToggleAtrasadas} 
-                    conteos={conteos} 
-                    existenciaGlobal={existenciaGlobal} 
-                    totalAtrasadasGlobal={totalAtrasadasGlobal} 
-                    mobileFiltersOnly 
+                    mostrarPapelera={mostrarPapelera}
+                    onTogglePapelera={onTogglePapelera}
+                    mostrarRechazadas={mostrarRechazadas}
+                    onToggleRechazadas={onToggleRechazadas}
+                    mostrarAtrasadas={mostrarAtrasadas}
+                    onToggleAtrasadas={onToggleAtrasadas}
+                    conteos={conteos}
+                    existenciaGlobal={existenciaGlobal}
+                    totalAtrasadasGlobal={totalAtrasadasGlobal}
+                    mobileFiltersOnly
                 />
             </div>
             {viewMode === 'cards' ? (
@@ -193,7 +193,7 @@ export const TicketsHistoricoMobile = ({
             )}
             {hasPaginator && (
                 <div className="md:hidden">
-                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="24px" />
+                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
                 </div>
             )}
             <div className="md:hidden">

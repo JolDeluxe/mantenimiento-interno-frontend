@@ -8,18 +8,29 @@ const GLASS_VARIANTS = {
     action: { bg: 'rgba(59, 130, 246, 0.72)', shadow: '0 10px 30px rgba(59,130,246,0.35), 0 2px 6px rgba(59,130,246,0.18)' },
     success: { bg: 'rgba(16, 185, 129, 0.70)', shadow: '0 10px 30px rgba(16,185,129,0.32), 0 2px 6px rgba(16,185,129,0.16)' },
     danger: { bg: 'rgba(220, 38, 38, 0.72)', shadow: '0 10px 30px rgba(220,38,38,0.30), 0 2px 6px rgba(220,38,38,0.16)' },
-    // NUEVA VARIANTE LIGHT: Para inputs y elementos inactivos sin perder el cristal
     light: { bg: 'rgba(255, 255, 255, 0.45)', shadow: '0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)' },
+    // NUEVA VARIANTE SURFACE: Especial para Headers y Bottom Navs anclados.
+    surface: { bg: 'rgba(235, 227, 218, 0.75)', shadow: '0 -8px 30px rgba(0,0,0,0.06)' },
 };
 
 export const glassBase = (variant = 'primary') => {
     const v = GLASS_VARIANTS[variant] || GLASS_VARIANTS.primary;
+    const isSurface = variant === 'surface';
+
     return {
         background: v.bg,
         backdropFilter: 'blur(20px) saturate(160%)',
         WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-        border: '1px solid rgba(255,255,255,0.32)',
-        boxShadow: `${v.shadow}, 0 1px 0 rgba(255,255,255,0.48) inset, 0 -1px 0 rgba(0,0,0,0.08) inset`,
+
+        // Desglose estricto de bordes para evitar la advertencia de colisión en React
+        borderTop: isSurface ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.32)',
+        borderRight: isSurface ? 'none' : '1px solid rgba(255,255,255,0.32)',
+        borderBottom: isSurface ? 'none' : '1px solid rgba(255,255,255,0.32)',
+        borderLeft: isSurface ? 'none' : '1px solid rgba(255,255,255,0.32)',
+
+        boxShadow: isSurface
+            ? `${v.shadow}, 0 1px 0 rgba(255,255,255,0.48) inset`
+            : `${v.shadow}, 0 1px 0 rgba(255,255,255,0.48) inset, 0 -1px 0 rgba(0,0,0,0.08) inset`,
     };
 };
 
@@ -60,7 +71,7 @@ export const GlassIconChip = ({ icon, isActive, variant = 'primary', onClick }) 
     };
 
     const inactiveStyle = {
-        ...glassBase('light'), // Cambiado a light para mayor consistencia
+        ...glassBase('light'),
         borderRadius: 10,
         position: 'relative',
         overflow: 'hidden',
@@ -145,7 +156,7 @@ export const GlassPaginationPill = ({
     totalItems,
     onPageChange,
     loading = false,
-    bottom = '24px',
+    bottom = '100px', // Ajustado predeterminadamente para esquivar el BottomNav
     zIndex = 40,
 }) => {
     if (!totalPages || totalPages <= 1) return null;
@@ -192,7 +203,7 @@ export const GlassPaginationPill = ({
     });
 
     return (
-        <div style={{ position: 'fixed', bottom, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex, paddingBottom: '8px' }}>
+        <div style={{ position: 'fixed', bottom, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex, paddingBottom: '8px', transition: 'bottom 0.3s ease' }}>
             <div style={innerStyle}>
                 <GlassSheen />
                 <button
@@ -253,7 +264,7 @@ export const GlassViewToggle = ({
         gap: 3,
         position: 'relative',
         overflow: 'hidden',
-        ...glassBase('light'), // Usando la nueva variante light en vez de código quemado
+        ...glassBase('light'),
     };
 
     return (
@@ -296,5 +307,60 @@ export const GlassViewToggle = ({
                 );
             })}
         </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GlassBottomNav & Item (NUEVOS - Estilo iOS)
+// ─────────────────────────────────────────────────────────────────────────────
+export const GlassBottomNav = ({ children }) => {
+    return (
+        <div
+            className="fixed bottom-0 left-0 w-full z-50 pb-[env(safe-area-inset-bottom)] pt-2 px-2"
+            style={glassBase('surface')}
+        >
+            <nav className="flex items-center justify-around pb-2 relative z-10">
+                {children}
+            </nav>
+        </div>
+    );
+};
+
+export const GlassBottomNavItem = ({ icon, label, isActive, onClick }) => {
+    return (
+        <button
+            onClick={onClick}
+            className="relative flex flex-col items-center justify-center w-full py-1 outline-none tap-highlight-transparent group"
+        >
+            {/* Pill activo estilo Material You / iOS Glass */}
+            <div
+                className={cn(
+                    "flex items-center justify-center w-16 h-8 rounded-full transition-all duration-300 relative overflow-hidden",
+                    isActive ? "border border-white/20 shadow-inner" : "bg-transparent group-active:bg-white/30"
+                )}
+                style={isActive ? glassBase('primary') : undefined}
+            >
+                {isActive && <GlassSheen />}
+                <Icon
+                    name={icon}
+                    size="24px"
+                    className={cn(
+                        "relative z-10 transition-colors duration-300",
+                        isActive ? "text-white drop-shadow-sm" : "text-marca-primario/70"
+                    )}
+                    weight={isActive ? 600 : 400}
+                />
+            </div>
+
+            {/* Texto descriptivo */}
+            <span
+                className={cn(
+                    "text-[10px] font-bold mt-1.5 transition-colors duration-300 tracking-wide",
+                    isActive ? "text-marca-primario" : "text-marca-primario/60"
+                )}
+            >
+                {label}
+            </span>
+        </button>
     );
 };
