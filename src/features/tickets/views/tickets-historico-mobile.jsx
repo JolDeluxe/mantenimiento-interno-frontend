@@ -10,7 +10,6 @@ import { MobileTicketFormModal } from '../components/historico/mobile-ticket-for
 import { TicketStatusModal } from '../components/historico/ticket-status-modal';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
-import { TicketFechas } from '../components/historico/ticket-fechas';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
@@ -68,6 +67,8 @@ export const TicketsHistoricoMobile = ({
     filtroResponsable,
     filtroPlanta,
     filtroArea,
+    filtroProgramacion,
+    filtroConclusion,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
@@ -84,14 +85,12 @@ export const TicketsHistoricoMobile = ({
     onResponsableChange,
     onPlantaChange,
     onAreaChange,
+    onProgramacionChange,
+    onConclusionChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    filtroYear,
-    filtroMonth,
-    onYearChange,
-    onMonthChange,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -113,16 +112,43 @@ export const TicketsHistoricoMobile = ({
     return (
         <>
             <div className="mb-3">
-                <TicketFechas year={filtroYear} month={filtroMonth} onYearChange={onYearChange} onMonthChange={onMonthChange} />
-            </div>
-            <div className="mb-3">
                 <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
             </div>
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
                 </div>
-                <MobileTicketFilterBar query={query} onSearchChange={onSearchChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroClasificacion={filtroClasificacion} onClasificacionChange={onClasificacionChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} filtroPlanta={filtroPlanta} onPlantaChange={onPlantaChange} filtroArea={filtroArea} onAreaChange={onAreaChange} mostrarPapelera={mostrarPapelera} onTogglePapelera={onTogglePapelera} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} conteos={conteos} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} mobileFiltersOnly />
+                <MobileTicketFilterBar 
+                    query={query} 
+                    onSearchChange={onSearchChange} 
+                    filtroTipo={filtroTipo} 
+                    onTipoChange={onTipoChange} 
+                    filtroPrioridad={filtroPrioridad} 
+                    onPrioridadChange={onPrioridadChange} 
+                    filtroClasificacion={filtroClasificacion} 
+                    onClasificacionChange={onClasificacionChange} 
+                    filtroResponsable={filtroResponsable} 
+                    onResponsableChange={onResponsableChange} 
+                    opcionesResponsables={tecnicos} 
+                    filtroPlanta={filtroPlanta} 
+                    onPlantaChange={onPlantaChange} 
+                    filtroArea={filtroArea} 
+                    onAreaChange={onAreaChange}
+                    filtroProgramacion={filtroProgramacion}
+                    onProgramacionChange={onProgramacionChange}
+                    filtroConclusion={filtroConclusion}
+                    onConclusionChange={onConclusionChange}
+                    mostrarPapelera={mostrarPapelera} 
+                    onTogglePapelera={onTogglePapelera} 
+                    mostrarRechazadas={mostrarRechazadas} 
+                    onToggleRechazadas={onToggleRechazadas} 
+                    mostrarAtrasadas={mostrarAtrasadas} 
+                    onToggleAtrasadas={onToggleAtrasadas} 
+                    conteos={conteos} 
+                    existenciaGlobal={existenciaGlobal} 
+                    totalAtrasadasGlobal={totalAtrasadasGlobal} 
+                    mobileFiltersOnly 
+                />
             </div>
             {viewMode === 'cards' ? (
                 <div className={cn('flex flex-col gap-3 px-1 pt-1', hasPaginator ? 'pb-56' : 'pb-44')}>

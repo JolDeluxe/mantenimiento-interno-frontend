@@ -3,7 +3,6 @@ import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
-import { TicketFechas } from '../components/historico/ticket-fechas';
 import { RefreshFab } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
@@ -29,6 +28,8 @@ export const TicketsHistoricoDesktop = ({
     filtroResponsable,
     filtroPlanta,
     filtroArea,
+    filtroProgramacion,
+    filtroConclusion,
     conteos,
     existenciaGlobal,
     totalAtrasadasGlobal,
@@ -48,14 +49,13 @@ export const TicketsHistoricoDesktop = ({
     onResponsableChange,
     onPlantaChange,
     onAreaChange,
+    onProgramacionChange,
+    onConclusionChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    filtroYear,
-    filtroMonth,
-    onYearChange,
-    onMonthChange,
+    onExport,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -64,12 +64,6 @@ export const TicketsHistoricoDesktop = ({
     return (
         <div className="flex flex-col gap-4 relative">
             <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
-            <TicketFechas
-                year={filtroYear}
-                month={filtroMonth}
-                onYearChange={onYearChange}
-                onMonthChange={onMonthChange}
-            />
 
             <TicketSummaryBar
                 totalParaSummary={totalParaSummary}
@@ -100,7 +94,10 @@ export const TicketsHistoricoDesktop = ({
                 onPlantaChange={onPlantaChange}
                 filtroArea={filtroArea}
                 onAreaChange={onAreaChange}
-                opcionesAreas={[]}
+                filtroProgramacion={filtroProgramacion}
+                onProgramacionChange={onProgramacionChange}
+                filtroConclusion={filtroConclusion}
+                onConclusionChange={onConclusionChange}
                 mostrarRechazadas={mostrarRechazadas}
                 onToggleRechazadas={onToggleRechazadas}
                 mostrarPapelera={mostrarPapelera}
@@ -110,6 +107,7 @@ export const TicketsHistoricoDesktop = ({
                 existenciaGlobal={existenciaGlobal}
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 conteos={conteos}
+                onExport={onExport}
             />
 
             {!loading && (!tickets || tickets.length === 0) ? (

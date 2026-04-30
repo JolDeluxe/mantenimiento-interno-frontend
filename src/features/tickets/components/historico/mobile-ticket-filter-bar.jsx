@@ -2,11 +2,104 @@ import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
+import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
 const normalizeOpts = (opts = []) => opts.map(o => {
     if (typeof o === 'string') return { value: o, label: o };
     return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
 });
+
+const GlassDateRangeSelect = ({ icon, placeholder, value, onChange, quickOptions }) => {
+    const isActive = Boolean(value.type);
+    const isCustom = value.type === 'CUSTOM';
+
+    const handleQuickChange = (newType) => {
+        if (newType === 'CUSTOM') {
+            onChange({ ...value, type: 'CUSTOM' });
+        } else if (newType === '') {
+            onChange({ type: '', start: '', end: '' });
+        } else {
+            const range = getDateRange(newType);
+            onChange({ type: newType, start: range.startDate, end: range.endDate });
+        }
+    };
+
+    const selectedLabel = quickOptions.find(o => o.value === value.type)?.label || (isCustom ? 'Personalizado' : placeholder);
+
+    return (
+        <div className="flex flex-col gap-2 w-full">
+            <div className="relative w-full h-9.5">
+                <select
+                    value={value.type}
+                    onChange={(e) => handleQuickChange(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 z-20 appearance-none cursor-pointer"
+                >
+                    <option value="">{placeholder}</option>
+                    {quickOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                    <option value="CUSTOM">Personalizado</option>
+                </select>
+
+                <div
+                    style={isActive ? { ...glassBase('primary'), borderRadius: 12 } : { ...glassBase('light'), borderRadius: 12 }}
+                    className={`
+                        absolute inset-0 flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-200 pointer-events-none overflow-hidden
+                        ${isActive ? 'text-white' : 'text-slate-600'}
+                    `}
+                >
+                    <GlassSheen />
+                    <Icon name={icon} size="xs" className="relative shrink-0 z-10" />
+                    <span className="relative flex-1 truncate z-10 uppercase">
+                        {selectedLabel}
+                    </span>
+
+                    {isActive ? (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleQuickChange(''); }}
+                            className="relative z-30 flex items-center justify-center w-5 h-5 -mr-1 rounded-full bg-white/20 hover:bg-white/30 pointer-events-auto shrink-0 active:scale-90 transition-transform"
+                        >
+                            <Icon name="close" size="xs" className="text-white scale-75" />
+                        </button>
+                    ) : (
+                        <Icon name="expand_more" size="xs" className="text-slate-500 shrink-0 relative z-10" />
+                    )}
+                </div>
+            </div>
+
+            {isActive && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-white/40 border border-white/20 rounded-lg animate-in fade-in duration-300 relative overflow-hidden">
+                    <GlassSheen />
+                    <Icon name="calendar_today" size="xs" className="text-slate-500 relative z-10" />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter relative z-10">
+                        {value.start ? formatFechaNumerica(value.start) : '...'} - {value.end ? formatFechaNumerica(value.end) : '...'}
+                    </span>
+                </div>
+            )}
+
+            {isCustom && (
+                <div className="flex items-center gap-2 px-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <input
+                        type="date"
+                        value={value.start}
+                        onChange={(e) => onChange({ ...value, start: e.target.value })}
+                        className="flex-1 bg-white/50 border border-white/30 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-700 outline-none"
+                    />
+                    <span className="text-slate-500 text-[10px] font-bold">AL</span>
+                    <input
+                        type="date"
+                        value={value.end}
+                        onChange={(e) => onChange({ ...value, end: e.target.value })}
+                        className="flex-1 bg-white/50 border border-white/30 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-700 outline-none"
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
 
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div
@@ -115,6 +208,8 @@ export const MobileTicketFilterBar = ({
     filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
+    filtroProgramacion, onProgramacionChange,
+    filtroConclusion, onConclusionChange,
     mostrarAtrasadas, onToggleAtrasadas,
     mostrarPapelera, onTogglePapelera,
     mostrarRechazadas, onToggleRechazadas,
@@ -141,10 +236,10 @@ export const MobileTicketFilterBar = ({
     const isAtrasadasAlert = totalAtrasadas > 0 && !mostrarAtrasadas;
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
-    // Agregamos las exclusiones al detector de filtros activos para que el botón de "filtro" se pinte de azul si se activa alguno de estos
     const hasActiveFilters = Boolean(
         filtroTipo || filtroPrioridad || filtroResponsable ||
         filtroPlanta || filtroArea || filtroClasificacion ||
+        filtroProgramacion.type || filtroConclusion.type ||
         mostrarAtrasadas || mostrarRechazadas || mostrarPapelera
     );
 
@@ -155,6 +250,8 @@ export const MobileTicketFilterBar = ({
         if (filtroPlanta) onPlantaChange('');
         if (filtroArea) onAreaChange('');
         if (filtroClasificacion) onClasificacionChange('');
+        if (filtroProgramacion.type) onProgramacionChange({ type: '', start: '', end: '' });
+        if (filtroConclusion.type) onConclusionChange({ type: '', start: '', end: '' });
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarPapelera) onTogglePapelera();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -169,64 +266,28 @@ export const MobileTicketFilterBar = ({
         ? AREAS_POR_PLANTA[filtroPlanta]
         : AREAS;
 
+    const progOptions = [
+        { label: 'HOY', value: 'HOY' },
+        { label: 'MAÑANA', value: 'MANANA' },
+        { label: 'ESTA SEMANA', value: 'ESTA_SEMANA' },
+    ];
+
+    const concOptions = [
+        { label: 'HOY', value: 'HOY' },
+        { label: 'AYER', value: 'AYER' },
+        { label: 'ESTA SEMANA', value: 'ESTA_SEMANA' },
+    ];
+
     const filterElements = [
-        <GlassNativeSelect
-            key="tipo"
-            icon="category"
-            placeholder="Tipo"
-            options={TIPOS}
-            value={filtroTipo}
-            onChange={onTipoChange}
-        />,
-        <GlassNativeSelect
-            key="prioridad"
-            icon="flag"
-            placeholder="Prioridad"
-            options={PRIORIDADES}
-            value={filtroPrioridad}
-            onChange={onPrioridadChange}
-        />,
-        <GlassNativeSelect
-            key="clasificacion"
-            icon="style"
-            placeholder="Clasificación"
-            options={CLASIFICACIONES}
-            value={filtroClasificacion}
-            onChange={onClasificacionChange}
-        />,
-        <GlassNativeSelect
-            key="responsable"
-            icon="person"
-            placeholder="Responsable"
-            options={normalizeOpts(opcionesResponsables)}
-            value={filtroResponsable}
-            onChange={onResponsableChange}
-        />,
-        <GlassNativeSelect
-            key="planta"
-            icon="domain"
-            placeholder="Planta"
-            options={normalizeOpts(PLANTAS)}
-            value={filtroPlanta}
-            onChange={handlePlantaChange}
-        />,
-        <GlassNativeSelect
-            key="area"
-            icon="place"
-            placeholder="Área"
-            options={normalizeOpts(areasDisponibles)}
-            value={filtroArea}
-            onChange={onAreaChange}
-        />,
-        <GlassFilterToggleBtn
-            key="canceladas"
-            icon="delete"
-            label="Canceladas"
-            isActive={mostrarPapelera}
-            count={0}
-            showBadge={false}
-            onClick={onTogglePapelera}
-        />
+        { key: 'tipo', el: <GlassNativeSelect icon="category" placeholder="Tipo" options={TIPOS} value={filtroTipo} onChange={onTipoChange} />, span2: false },
+        { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
+        { key: 'clasificacion', el: <GlassNativeSelect icon="style" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false },
+        { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(opcionesResponsables)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
+        { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
+        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(areasDisponibles)} value={filtroArea} onChange={onAreaChange} />, span2: false },
+        { key: 'programacion', el: <GlassDateRangeSelect icon="event_note" placeholder="FECHA DE CONCLUCIÓN" value={filtroProgramacion} onChange={onProgramacionChange} quickOptions={progOptions} />, span2: true },
+        { key: 'conclusion', el: <GlassDateRangeSelect icon="task_alt" placeholder="CONCLUIDAS" value={filtroConclusion} onChange={onConclusionChange} quickOptions={concOptions} />, span2: true },
+        { key: 'canceladas', el: <GlassFilterToggleBtn icon="delete" label="Canceladas" isActive={mostrarPapelera} count={0} showBadge={false} onClick={onTogglePapelera} />, span2: true }
     ];
 
     return (
@@ -307,16 +368,11 @@ export const MobileTicketFilterBar = ({
                 >
                     <GlassSheen />
                     <div className="grid grid-cols-2 gap-2 relative z-10">
-                        {filterElements.map((el, index) => {
-                            const isOddLength = filterElements.length % 2 !== 0;
-                            const isFirstAndOdd = isOddLength && index === 0;
-
-                            return (
-                                <div key={el.key} className={isFirstAndOdd ? "col-span-2" : "col-span-1"}>
-                                    {el}
-                                </div>
-                            );
-                        })}
+                        {filterElements.map((item) => (
+                            <div key={item.key} className={item.span2 ? "col-span-2" : "col-span-1"}>
+                                {item.el}
+                            </div>
+                        ))}
                     </div>
 
                     <div className="flex justify-end pt-1 relative z-10">

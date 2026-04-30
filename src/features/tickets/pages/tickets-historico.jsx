@@ -7,18 +7,9 @@ import { TicketsHistoricoDesktop } from '../views/tickets-historico-desktop';
 import { TicketsHistoricoMobile } from '../views/tickets-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
+import { formatFechaNumerica } from '@/lib/date';
 
-const LIMIT = 20;
-
-const buildDateParams = (year, month) => {
-    if (!year) return {};
-    if (month === 0) {
-        return { fechaInicio: `${year}-01-01`, fechaFin: `${year}-12-31` };
-    }
-    const lastDay = new Date(year, month, 0).getDate();
-    const mm = String(month).padStart(2, '0');
-    return { fechaInicio: `${year}-${mm}-01`, fechaFin: `${year}-${mm}-${lastDay}` };
-};
+const LIMIT = 50; // Aumentamos el límite para histórico por defecto
 
 export default function TicketsHistoricoPage() {
     const isDesktop = useIsDesktop();
@@ -42,7 +33,7 @@ export default function TicketsHistoricoPage() {
 
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
-    const [sortConfig, setSortConfig] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
     const [showCreate, setShowCreate] = useState(false);
 
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
@@ -52,8 +43,10 @@ export default function TicketsHistoricoPage() {
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
-    const [filtroYear, setFiltroYear] = useState(null);
-    const [filtroMonth, setFiltroMonth] = useState(0);
+    
+    // Filtros de fecha mejorados
+    const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
+    const [filtroConclusion, setFiltroConclusion] = useState({ type: '', start: '', end: '' });
 
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
@@ -62,6 +55,7 @@ export default function TicketsHistoricoPage() {
     const queryPayload = useMemo(() => {
         const params = { page, limit: LIMIT };
         if (query) params.q = query;
+        
         if (mostrarRechazadas) {
             params.estado = 'RECHAZADO';
         } else if (mostrarPapelera) {
@@ -69,6 +63,7 @@ export default function TicketsHistoricoPage() {
         } else if (filtroEstado !== 'TODOS') {
             params.estado = filtroEstado;
         }
+
         if (filtroTipo) params.tipo = filtroTipo;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroClasificacion) params.clasificacion = filtroClasificacion;
@@ -77,14 +72,19 @@ export default function TicketsHistoricoPage() {
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
 
-        const dateParams = buildDateParams(filtroYear, filtroMonth);
-        Object.assign(params, dateParams);
+        // Filtro Programación (Vencimiento)
+        if (filtroProgramacion.start) params.vencimientoDesde = filtroProgramacion.start;
+        if (filtroProgramacion.end) params.vencimientoHasta = filtroProgramacion.end;
+
+        // Filtro Conclusión (FinalizadoAt)
+        if (filtroConclusion.start) params.finalizadoDesde = filtroConclusion.start;
+        if (filtroConclusion.end) params.finalizadoHasta = filtroConclusion.end;
 
         if (sortConfig?.key) {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroYear, filtroMonth]);
+    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
 
     const loadTickets = useCallback(() => {
         fetchMetricas(queryPayload);
@@ -104,8 +104,8 @@ export default function TicketsHistoricoPage() {
     const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
     const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
 
-    const handleYearChange = useCallback((year) => { setFiltroYear(year); setFiltroMonth(0); setPage(1); }, []);
-    const handleMonthChange = useCallback((month) => { setFiltroMonth(month); setPage(1); }, []);
+    const handleProgramacionChange = useCallback((val) => { setFiltroProgramacion(val); setPage(1); }, []);
+    const handleConclusionChange = useCallback((val) => { setFiltroConclusion(val); setPage(1); }, []);
 
     const handleToggleRechazadas = useCallback(() => {
         setMostrarRechazadas((prev) => !prev);
@@ -121,6 +121,38 @@ export default function TicketsHistoricoPage() {
         setMostrarAtrasadas((prev) => !prev);
         setMostrarRechazadas(false); setMostrarPapelera(false); setFiltroEstado('TODOS'); setPage(1);
     }, []);
+
+    const handleExport = useCallback(() => {
+        if (!tickets || tickets.length === 0) return notify.info('No hay datos para exportar.');
+
+        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creado', 'Vencimiento', 'Finalizado'];
+        const rows = tickets.map(t => [
+            t.id,
+            t.titulo,
+            t.estado,
+            t.prioridad,
+            t.tipo,
+            t.clasificacion,
+            t.planta,
+            t.area,
+            t.responsables?.map(r => r.nombre).join(', ') || 'Sin asignar',
+            formatFechaNumerica(t.createdAt),
+            formatFechaNumerica(t.fechaVencimiento),
+            formatFechaNumerica(t.finalizadoAt) || 'N/A'
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_tickets_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        notify.success('Exportación generada correctamente (CSV).');
+    }, [tickets]);
 
     const handleCreate = async (payloads) => {
         const items = Array.isArray(payloads) ? payloads : [payloads];
@@ -164,16 +196,18 @@ export default function TicketsHistoricoPage() {
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0, sortConfig, query,
         filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable,
-        filtroPlanta, filtroArea, filtroYear, filtroMonth,
+        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange, onTipoChange: handleTipoChange, onPrioridadChange: handlePrioridadChange,
         onClasificacionChange: handleClasificacionChange, onResponsableChange: handleResponsableChange,
-        onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange, onYearChange: handleYearChange,
-        onMonthChange: handleMonthChange, onToggleRechazadas: handleToggleRechazadas,
+        onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange,
+        onProgramacionChange: handleProgramacionChange, onConclusionChange: handleConclusionChange,
+        onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,
         onSave: handleUpdate, onChangeStatus: handleChangeStatus, onOpenCreate: () => setShowCreate(true),
         onRefresh: loadTickets,
+        onExport: handleExport
     };
 
     return (

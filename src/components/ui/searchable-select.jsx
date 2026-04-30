@@ -52,11 +52,11 @@ export const SearchableSelect = ({
                 disabled={disabled}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-all h-[38px]",
-                    disabled ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed" : "cursor-pointer",
+                    "flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-medium rounded-xl border transition-all h-9.5",
+                    disabled ? "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed" : "cursor-pointer",
                     value && !disabled
-                        ? "bg-marca-primario/5 border-marca-primario/30 text-marca-primario shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        ? "bg-marca-primario/[0.03] border-marca-primario/30 text-marca-primario shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-300",
                     className
                 )}
             >

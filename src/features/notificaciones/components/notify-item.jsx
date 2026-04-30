@@ -6,7 +6,6 @@ import { TIPO_CONFIG } from './notify-config';
 const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
 const buildAcciones = (notif, rol) => {
-    // Extraemos "tarea" asumiendo que el backend envía la relación
     const { tipo, tareaId, accionada, tarea } = notif;
     const estadoActual = tarea?.estado || null;
 
@@ -41,13 +40,6 @@ const buildAcciones = (notif, rol) => {
         chipClass,
     });
 
-    // Validadores de estado vivo
-    const yaIniciada = estadoActual && !['ASIGNADA', 'PENDIENTE', 'RECHAZADO'].includes(estadoActual);
-    const yaEvaluada = estadoActual && (estadoActual === 'CERRADO' || estadoActual === 'RECHAZADO' || estadoActual === 'CANCELADA');
-    const yaAsignada = estadoActual && estadoActual !== 'PENDIENTE';
-    const esEstadoFinal = estadoActual && ['CERRADO', 'RESUELTO', 'CANCELADA'].includes(estadoActual);
-
-    // Mapeo de chips de estado final/avanzado
     const getEstadoChip = () => {
         if (estadoActual === 'EN_PROGRESO') return chip('En progreso', 'play_circle', 'bg-estado-en-progreso/10 text-estado-en-progreso border-estado-en-progreso/30');
         if (estadoActual === 'RESUELTO') return chip('Entregada', 'check_circle', 'bg-estado-resuelto/10 text-estado-resuelto border-estado-resuelto/30');
@@ -57,10 +49,23 @@ const buildAcciones = (notif, rol) => {
         return null;
     };
 
-    // Si la tarea ya llegó a un estado final, forzamos mostrar solo el chip informativo y ver detalle
-    if (esEstadoFinal) {
+    // CORRECCIÓN: Definimos estados terminales absolutos.
+    // RESUELTO no es final para el Admin, ya que requiere revisión.
+    const esEstadoTerminalAbsoluto = estadoActual && ['CERRADO', 'CANCELADA'].includes(estadoActual);
+
+    if (esEstadoTerminalAbsoluto) {
         return [verDetalle(), getEstadoChip()].filter(Boolean);
     }
+
+    // Si el estado es RESUELTO y el usuario NO es admin, mostramos el chip informativo (comportamiento técnico).
+    // Si es Admin, NO entramos aquí para permitir que el switch evalúe la acción "Revisar".
+    if (estadoActual === 'RESUELTO' && !esAdmin) {
+        return [verDetalle(), getEstadoChip()].filter(Boolean);
+    }
+
+    // Validadores de apoyo para el switch
+    const yaIniciada = estadoActual && !['ASIGNADA', 'PENDIENTE', 'RECHAZADO'].includes(estadoActual);
+    const yaAsignada = estadoActual && estadoActual !== 'PENDIENTE';
 
     switch (tipo) {
         case 'TAREA_ASIGNADA':
@@ -87,6 +92,7 @@ const buildAcciones = (notif, rol) => {
 
                 return [verDetalle(), chip(labelChip, iconChip, colorChip)];
             }
+            // Aquí ahora entrará el Admin correctamente porque el cortocircuito anterior ya no lo bloquea.
             if (esAdmin || esJefe || esCoord) {
                 return [
                     verDetalle(),
@@ -95,21 +101,19 @@ const buildAcciones = (notif, rol) => {
             }
             return [verDetalle()];
 
+        case 'RECHAZO_TECNICO':
         case 'TAREA_RECHAZADA':
         case 'EQUIPO_RECHAZO':
-            // El botón "Ir a mis tareas" solo si sigue en RECHAZADO
             if (estadoActual === 'RECHAZADO') {
                 return [
                     verDetalle('Ver motivo'),
                     irAHoy(esAdmin ? 'Ver tarea' : 'Ir a mis tareas'),
                 ];
             }
-            // Si ya no es rechazado (ej: se reinició y ahora está en progreso)
             return [verDetalle('Ver motivo'), getEstadoChip()].filter(Boolean);
 
         case 'NUEVO_REPORTE':
             if (esAdmin || esJefe || esCoord) {
-                // Si ya fue asignada, ocultamos "Ver en bandeja"
                 if (yaAsignada) {
                     return [verDetalle(), getEstadoChip()].filter(Boolean);
                 }

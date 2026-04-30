@@ -158,3 +158,48 @@ export const getSemanasInYear = (year) => {
     const info = getISOWeekInfo(dec31);
     return info.week === 1 ? 52 : info.week;
 };
+
+/**
+ * Devuelve un objeto con startDate y endDate en formato YYYY-MM-DD
+ * para rangos comunes.
+ */
+export const getDateRange = (type) => {
+    const now = new Date();
+    const hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const formatDate = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    switch (type) {
+        case 'HOY':
+            return { startDate: formatDate(hoy), endDate: formatDate(hoy) };
+        case 'AYER': {
+            const ayer = new Date(hoy);
+            ayer.setDate(ayer.getDate() - 1);
+            return { startDate: formatDate(ayer), endDate: formatDate(ayer) };
+        }
+        case 'MANANA': {
+            const manana = new Date(hoy);
+            manana.setDate(manana.getDate() + 1);
+            return { startDate: formatDate(manana), endDate: formatDate(manana) };
+        }
+        case 'ESTA_SEMANA': {
+            // Lunes a Domingo de la semana actual
+            const currentDay = hoy.getDay(); // 0 es domingo
+            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+            const lunes = new Date(hoy);
+            lunes.setDate(hoy.getDate() + diffToMonday);
+            
+            const domingo = new Date(lunes);
+            domingo.setDate(lunes.getDate() + 6);
+            
+            return { startDate: formatDate(lunes), endDate: formatDate(domingo) };
+        }
+        default:
+            return { startDate: null, endDate: null };
+    }
+};

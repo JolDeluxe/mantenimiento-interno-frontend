@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
+import { Select, Input } from '@/components/form/z_index';
 import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
 import { cn } from '@/utils/cn';
+import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
 const MicrosoftExcel = (props) => (
     <svg {...props} viewBox="0 0 486 500">
@@ -62,12 +64,75 @@ const MicrosoftExcel = (props) => (
     </svg>
 );
 
-const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
-
 const normalizeOpts = (opts = []) => opts.map(o => {
     if (typeof o === 'string') return { value: o, label: o };
     return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
 });
+
+const DateRangeSelect = ({ label, icon, value, onChange, quickOptions }) => {
+    const [isCustom, setIsCustom] = useState(value.type === 'CUSTOM');
+
+    const handleQuickChange = (newType) => {
+        if (newType === 'CUSTOM') {
+            setIsCustom(true);
+            onChange({ ...value, type: 'CUSTOM' });
+        } else if (newType === '' || !newType) {
+            setIsCustom(false);
+            onChange({ type: '', start: '', end: '' });
+        } else {
+            setIsCustom(false);
+            const range = getDateRange(newType);
+            onChange({ type: newType, start: range.startDate, end: range.endDate });
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-1.5 min-w-48 flex-1">
+            <Select
+                icon={icon}
+                value={value.type}
+                onChange={(e) => handleQuickChange(e.target.value)}
+                onClear={() => handleQuickChange('')}
+                className="font-bold text-[11px] uppercase tracking-wide"
+            >
+                <option value="">{label}...</option>
+                {quickOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+                <option value="CUSTOM">PERSONALIZADO</option>
+            </Select>
+
+            {value.type && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg animate-in fade-in duration-300">
+                    <Icon name="calendar_today" size="[10px]" className="text-slate-400" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">
+                        {value.start ? formatFechaNumerica(value.start) : '...'} - {value.end ? formatFechaNumerica(value.end) : '...'}
+                    </span>
+                </div>
+            )}
+
+            {isCustom && (
+                <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <Input
+                        type="date"
+                        value={value.start}
+                        onChange={(e) => onChange({ ...value, start: e.target.value })}
+                        className="h-8 text-[10px] px-2 py-1 font-bold border-slate-200"
+                    />
+                    <span className="text-slate-400 text-[10px] font-bold">AL</span>
+                    <Input
+                        type="date"
+                        value={value.end}
+                        onChange={(e) => onChange({ ...value, end: e.target.value })}
+                        className="h-8 text-[10px] px-2 py-1 font-bold border-slate-200"
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
+const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div className={`relative ${className}`}>
@@ -103,6 +168,8 @@ export const TicketFilterBar = ({
     filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
+    filtroProgramacion, onProgramacionChange,
+    filtroConclusion, onConclusionChange,
     mostrarAtrasadas, onToggleAtrasadas,
     mostrarPapelera, onTogglePapelera,
     mostrarRechazadas, onToggleRechazadas,
@@ -124,7 +191,6 @@ export const TicketFilterBar = ({
     }, [localValue, query, onSearchChange]);
 
     const totalRechazadas = existenciaGlobal['RECHAZADO'] ?? 0;
-    const totalCanceladas = existenciaGlobal['CANCELADA'] ?? 0;
     const totalAtrasadas = totalAtrasadasGlobal;
     const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
     const puedeExportar = currentUser && rolesAdmin.includes(currentUser.rol);
@@ -135,25 +201,33 @@ export const TicketFilterBar = ({
         onClear: () => setLocalValue(''),
     };
 
-    // 1. Interceptor: Si cambia la planta, reseteamos el filtro de área
     const handlePlantaChange = (nuevaPlanta) => {
         onPlantaChange(nuevaPlanta);
         onAreaChange('');
     };
 
-    // 2. Select Dinámico: Resuelve las áreas filtradas o muestra todas
     const areasDisponibles = (filtroPlanta && AREAS_POR_PLANTA[filtroPlanta])
         ? AREAS_POR_PLANTA[filtroPlanta]
         : AREAS;
 
+    const progOptions = [
+        { label: 'HOY', value: 'HOY' },
+        { label: 'MAÑANA', value: 'MANANA' },
+        { label: 'ESTA SEMANA', value: 'ESTA_SEMANA' },
+    ];
+
+    const concOptions = [
+        { label: 'HOY', value: 'HOY' },
+        { label: 'AYER', value: 'AYER' },
+        { label: 'ESTA SEMANA', value: 'ESTA_SEMANA' },
+    ];
+
     return (
         <div className="flex flex-col gap-3 w-full pt-2">
-            {/* Fila 1: Mantenemos tu código exacto original */}
             <div className="flex items-center gap-3 w-full">
                 <SearchInput {...searchProps} className="flex-1 max-w-md min-w-50" />
 
                 <div className="flex items-center gap-3 flex-none ml-auto">
-                    {/* 1. Botón Atrasadas (CON BADGE) */}
                     <div className="relative">
                         <Button
                             variant="filtro_gris"
@@ -172,7 +246,6 @@ export const TicketFilterBar = ({
                         )}
                     </div>
 
-                    {/* 2. Botón Rechazadas (CON BADGE) */}
                     <div className="relative">
                         <Button
                             variant="filtro_rechazado"
@@ -191,7 +264,6 @@ export const TicketFilterBar = ({
                         )}
                     </div>
 
-                    {/* 3. Botón Canceladas (SIN BADGE) */}
                     <div className="relative">
                         <Button
                             variant="filtro_gris"
@@ -207,94 +279,109 @@ export const TicketFilterBar = ({
                 </div>
             </div>
 
-            {/* Fila 2: Implementación de adaptación elástica (min-w y w-auto) */}
-            <div className="flex items-center gap-3 w-full flex-wrap">
-                <div className="min-w-40 w-auto max-w-full flex-none">
+            <div className="flex items-start gap-2.5 w-full flex-wrap">
+                <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={TIPOS}
                         value={filtroTipo}
                         onChange={onTipoChange}
-                        placeholder="Tipo..."
+                        placeholder="TIPO..."
                         icon="category"
-                        allOptionText="Todos los tipos"
-                        className="w-full"
+                        allOptionText="TODOS LOS TIPOS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                <div className="min-w-40 w-auto max-w-full flex-none">
+                <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={PRIORIDADES}
                         value={filtroPrioridad}
                         onChange={onPrioridadChange}
-                        placeholder="Prioridad..."
+                        placeholder="PRIORIDAD..."
                         icon="flag"
-                        allOptionText="Todas"
-                        className="w-full"
+                        allOptionText="TODAS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                <div className="min-w-44 w-auto max-w-full flex-none">
+                <div className="min-w-44 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={CLASIFICACIONES}
                         value={filtroClasificacion}
                         onChange={onClasificacionChange}
-                        placeholder="Clasificación..."
+                        placeholder="CLASIFICACIÓN..."
                         icon="style"
-                        allOptionText="Todas"
-                        className="w-full"
+                        allOptionText="TODAS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                <div className="min-w-48 w-auto max-w-full flex-none">
+                <div className="min-w-48 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={normalizeOpts(opcionesResponsables)}
                         value={filtroResponsable ? String(filtroResponsable) : ''}
                         onChange={onResponsableChange}
-                        placeholder="Responsable..."
+                        placeholder="RESPONSABLE..."
                         icon="person"
-                        allOptionText="Cualquiera"
-                        className="w-full"
+                        allOptionText="CUALQUIERA"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                <div className="min-w-40 w-auto max-w-full flex-none">
+                <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={normalizeOpts(PLANTAS)}
                         value={filtroPlanta ? String(filtroPlanta) : ''}
                         onChange={handlePlantaChange}
-                        placeholder="Planta..."
+                        placeholder="PLANTA..."
                         icon="domain"
-                        allOptionText="Todas"
-                        className="w-full"
+                        allOptionText="TODAS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                <div className="min-w-40 w-auto max-w-full flex-none">
+                <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={normalizeOpts(areasDisponibles)}
                         value={filtroArea ? String(filtroArea) : ''}
                         onChange={onAreaChange}
-                        placeholder="Área..."
+                        placeholder="ÁREA..."
                         icon="place"
-                        allOptionText="Todas"
-                        className="w-full"
+                        allOptionText="TODAS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
+                <DateRangeSelect
+                    label="FECHA DE CONCLUCIÓN"
+                    icon="event_note"
+                    value={filtroProgramacion}
+                    onChange={onProgramacionChange}
+                    quickOptions={progOptions}
+                />
+
+                <DateRangeSelect
+                    label="CONCLUIDAS"
+                    icon="task_alt"
+                    value={filtroConclusion}
+                    onChange={onConclusionChange}
+                    quickOptions={concOptions}
+                />
+
                 {puedeExportar && (
-                    <div className="ml-auto flex-none self-end">
+                    <div className="flex-none self-start h-9.5">
                         <button
                             type="button"
                             onClick={onExport}
                             className={cn(
-                                "h-9.5 px-3.5 flex items-center justify-center gap-2",
+                                "h-full px-4 flex items-center justify-center gap-2",
                                 "bg-white border border-slate-200 rounded-xl shadow-sm",
                                 "text-slate-500 hover:text-emerald-700 hover:bg-emerald-50/80 hover:border-emerald-300",
                                 "transition-all duration-200 group active:scale-95 cursor-pointer outline-none"
                             )}
                         >
                             <MicrosoftExcel className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                            <span className="font-bold text-[11px] uppercase tracking-wider mt-[1px]">
+                            <span className="font-extrabold text-[11px] uppercase tracking-wider mt-[1px]">
                                 Exportar
                             </span>
                         </button>
