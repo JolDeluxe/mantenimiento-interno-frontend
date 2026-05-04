@@ -9,7 +9,7 @@ import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
 import { formatFechaNumerica } from '@/lib/date';
 
-const LIMIT = 50; // Aumentamos el límite para histórico por defecto
+const LIMIT = 50;
 
 export default function TicketsHistoricoPage() {
     const isDesktop = useIsDesktop();
@@ -43,7 +43,11 @@ export default function TicketsHistoricoPage() {
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
-    
+
+    // Filtros Macro Históricos
+    const [filtroYear, setFiltroYear] = useState(null);
+    const [filtroMonth, setFiltroMonth] = useState(0);
+
     // Filtros de fecha mejorados
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
     const [filtroConclusion, setFiltroConclusion] = useState({ type: '', start: '', end: '' });
@@ -55,7 +59,7 @@ export default function TicketsHistoricoPage() {
     const queryPayload = useMemo(() => {
         const params = { page, limit: LIMIT };
         if (query) params.q = query;
-        
+
         if (mostrarRechazadas) {
             params.estado = 'RECHAZADO';
         } else if (mostrarPapelera) {
@@ -72,6 +76,10 @@ export default function TicketsHistoricoPage() {
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
 
+        // Inyección de parámetros Macro
+        if (filtroYear) params.year = filtroYear;
+        if (filtroMonth > 0) params.month = filtroMonth;
+
         // Filtro Programación (Vencimiento)
         if (filtroProgramacion.start) params.vencimientoDesde = filtroProgramacion.start;
         if (filtroProgramacion.end) params.vencimientoHasta = filtroProgramacion.end;
@@ -84,7 +92,7 @@ export default function TicketsHistoricoPage() {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
+    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
 
     const loadTickets = useCallback(() => {
         fetchMetricas(queryPayload);
@@ -103,6 +111,9 @@ export default function TicketsHistoricoPage() {
     const handleResponsableChange = useCallback((r) => { setFiltroResponsable(r); setPage(1); }, []);
     const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
     const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
+
+    const handleYearChange = useCallback((y) => { setFiltroYear(y); setPage(1); }, []);
+    const handleMonthChange = useCallback((m) => { setFiltroMonth(m); setPage(1); }, []);
 
     const handleProgramacionChange = useCallback((val) => { setFiltroProgramacion(val); setPage(1); }, []);
     const handleConclusionChange = useCallback((val) => { setFiltroConclusion(val); setPage(1); }, []);
@@ -196,12 +207,13 @@ export default function TicketsHistoricoPage() {
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0, sortConfig, query,
         filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable,
-        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion,
+        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange, onTipoChange: handleTipoChange, onPrioridadChange: handlePrioridadChange,
         onClasificacionChange: handleClasificacionChange, onResponsableChange: handleResponsableChange,
         onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange,
+        onYearChange: handleYearChange, onMonthChange: handleMonthChange,
         onProgramacionChange: handleProgramacionChange, onConclusionChange: handleConclusionChange,
         onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,

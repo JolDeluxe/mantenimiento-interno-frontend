@@ -35,7 +35,6 @@ export default function TicketsBandejaPage() {
         updateTicket,
     } = useTickets();
 
-    // ── Congelar el payload para que useCallback/useEffect sean estables ──
     const queryPayload = useMemo(() => ({
         tipo: 'TICKET',
         estado: 'PENDIENTE',
@@ -52,7 +51,6 @@ export default function TicketsBandejaPage() {
         loadTickets();
     }, [loadTickets]);
 
-    // ── Filtrar sin asignados y sincronizar el contador global ─────────────
     const unassignedTickets = useMemo(() => {
         if (!tickets || tickets.length === 0) return [];
         return tickets.filter(t => !t.responsables || t.responsables.length === 0);
@@ -62,8 +60,6 @@ export default function TicketsBandejaPage() {
         setUnassignedCount(unassignedTickets.length);
     }, [unassignedTickets.length, setUnassignedCount]);
 
-    // ── Mapear meta a la forma {total, totalPages, page} que esperan las vistas ──
-    // El hook retorna `meta`, no `pagination`. Esta era la causa del bug.
     const pagination = useMemo(() => ({
         total: meta?.totalFiltrado ?? 0,
         totalPages: meta?.totalPages ?? 1,
@@ -93,6 +89,7 @@ export default function TicketsBandejaPage() {
                 fechaVencimiento: payload.fechaVencimiento || payload.fechaProgramada,
                 prioridad: payload.prioridad,
                 estado: payload.estado,
+                tiempoEstimado: payload.tiempoEstimado,
             });
             notify.success('Ticket asignado correctamente');
             loadTickets();

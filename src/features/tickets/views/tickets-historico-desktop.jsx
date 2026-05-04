@@ -2,6 +2,7 @@
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
+import { TicketFechas } from '../components/historico/ticket-fechas';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
 import { RefreshFab } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
@@ -30,6 +31,8 @@ export const TicketsHistoricoDesktop = ({
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
+    filtroYear,
+    filtroMonth,
     conteos,
     existenciaGlobal,
     totalAtrasadasGlobal,
@@ -51,6 +54,8 @@ export const TicketsHistoricoDesktop = ({
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
+    onYearChange,
+    onMonthChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -63,7 +68,14 @@ export const TicketsHistoricoDesktop = ({
 
     return (
         <div className="flex flex-col gap-4 relative">
-            <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
+
+            <TicketFechas
+                year={filtroYear}
+                month={filtroMonth}
+                onYearChange={onYearChange}
+                onMonthChange={onMonthChange}
+                existenciaGlobal={existenciaGlobal}
+            />
 
             <TicketSummaryBar
                 totalParaSummary={totalParaSummary}
@@ -74,6 +86,8 @@ export const TicketsHistoricoDesktop = ({
                 mostrarPapelera={mostrarPapelera}
                 mostrarRechazadas={mostrarRechazadas}
             />
+
+
 
             {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 

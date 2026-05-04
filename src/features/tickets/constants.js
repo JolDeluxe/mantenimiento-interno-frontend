@@ -6,8 +6,6 @@ export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTT
 
 export const TIPOS = [
     { value: 'TICKET', label: 'Ticket' },
-    { value: 'PLANEADA', label: 'Planeada' },
-    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
 ];
 
 export const TIPOS_ADMIN = [

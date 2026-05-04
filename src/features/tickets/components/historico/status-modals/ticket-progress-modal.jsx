@@ -273,7 +273,6 @@ const EvidenceSection = ({ archivos, onAgregar, onEliminar }) => {
                         type="file"
                         accept="image/jpeg, image/png, image/webp"
                         multiple
-                        // capture="environment"
                         className="hidden"
                         onChange={handleFileChange}
                     />
@@ -394,15 +393,11 @@ export const TicketProgressModal = ({
         }
 
         // Fix: Construcción segura del payload para Zod
-        // Ya no enviamos "inicioManual" ni "finManual" en el frontend si solo queremos sobreescribir la duración real
-        // Zod en backend se actualizará para aceptar solo "finManual" y "duracionManualMinutos" de forma aislada
-
         let timePayload = {};
 
         if (timePhase === 'manual') {
             timePayload = { duracionManualMinutos: tiempoManualMins };
         } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
-            // Forzamos la fecha para que termine en ISO estricto. El backend y Zod le pondrán la hora.
             const finStr = fechaInputToISOLocal(fechaFinManual);
             timePayload = {
                 finManual: new Date(finStr).toISOString(),
@@ -433,10 +428,8 @@ export const TicketProgressModal = ({
         tiempoDisplay = formatMinsFull(tiempoManualMins);
     }
 
-    const isInvalidRange = timePhase === 'manual' && mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00');
-    // Nota: 'mode' no está disponible aquí directamente porque es interno de TimePicker. 
-    // Para simplificar, confiaremos en que el usuario no puede seleccionar valores fuera de rango en los inputs, 
-    // pero añadiremos la validación de MAX_DURATION_MINS que sí es global.
+    // Se eliminó la variable isInvalidRange que causaba el ReferenceError 
+    // y se dejó la lógica robusta con `tiempoManualMins`.
 
     const resolverDisabled =
         timePhase === 'preguntando' ||

@@ -40,7 +40,7 @@ export const UsersDesktop = ({
         <div className="flex flex-col gap-4 relative">
 
 
-            <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} />
+            {/* <RefreshFab bottom="32px" right="32px" size={48} onClick={hardReload} /> */}
 
 
             <UserSummaryBar

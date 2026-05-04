@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
+import { TicketFechas } from '../components/historico/ticket-fechas';
 import { MobileTicketFilterBar } from '../components/historico/mobile-ticket-filter-bar';
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketCard } from '../components/historico/ticket-card';
@@ -69,6 +70,8 @@ export const TicketsHistoricoMobile = ({
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
+    filtroYear,
+    filtroMonth,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
@@ -87,6 +90,8 @@ export const TicketsHistoricoMobile = ({
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
+    onYearChange,
+    onMonthChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
@@ -112,8 +117,20 @@ export const TicketsHistoricoMobile = ({
     return (
         <>
             <div className="mb-3">
+                <TicketFechas
+                    year={filtroYear}
+                    month={filtroMonth}
+                    onYearChange={onYearChange}
+                    onMonthChange={onMonthChange}
+                    existenciaGlobal={existenciaGlobal}
+                />
+            </div>
+            <div className="mb-3">
                 <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
             </div>
+
+
+
             <div className="flex flex-col gap-2.5 mb-3">
                 <div className="flex items-center">
                     <GlassViewToggle value={viewMode} onChange={setViewMode} />
