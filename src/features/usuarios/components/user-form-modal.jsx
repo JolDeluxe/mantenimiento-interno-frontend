@@ -90,18 +90,30 @@ export const UserFormModal = ({
         }
     }, [isOpen, esEdicion, usuarioAEditar]);
 
-    // ── [CAMBIO] Limpiar departamento si el rol cambia a uno no-CLIENTE_INTERNO
-    // en modo edición, para no enviar datos obsoletos al backend.
     const handleRolChange = (e) => {
-    const nuevoRol = e.target.value;
-    setRol(nuevoRol);
+        const nuevoRol = e.target.value;
+        setRol(nuevoRol);
+        setCargo(ROL_TO_CARGO[nuevoRol] || '');
 
-    setCargo(ROL_TO_CARGO[nuevoRol] || '');
-
-    if (esEdicion && nuevoRol !== 'CLIENTE_INTERNO') {
-        setDepartamentoId('');
-    }
-};
+        const esRolMtto = ['TECNICO', 'COORDINADOR_MTTO', 'JEFE_MTTO'].includes(nuevoRol);
+        if (esRolMtto) {
+            // Pre-seleccionar departamento de Mantenimiento si existe
+            const deptoMtto = departamentos.find(d => d.nombre.toLowerCase().includes('mantenimiento'));
+            if (deptoMtto) {
+                setDepartamentoId(String(deptoMtto.id));
+            } else {
+                setDepartamentoId('');
+            }
+        } else if (nuevoRol === 'SUPER_ADMIN') {
+            setDepartamentoId('');
+        } else {
+            // Si cambia a CLIENTE_INTERNO y el depto actual es de Mantenimiento, lo vaciamos
+            const deptoActual = departamentos.find(d => String(d.id) === String(departamentoId));
+            if (deptoActual && deptoActual.nombre.toLowerCase().includes('mantenimiento')) {
+                setDepartamentoId('');
+            }
+        }
+    };
 
     const rolesDisponibles = [
         { value: 'TECNICO', label: ROL_MAP.TECNICO, visible: true },
@@ -113,19 +125,12 @@ export const UserFormModal = ({
 
     const requiereEmail = rol && rol !== 'TECNICO';
 
-    // ── [CAMBIO] Dos conceptos separados:
-    // requiereDepartamento → la validación obliga a seleccionar uno
-    // departamentoEditable → el select está habilitado para interacción
-    //
-    // En creación (SUPER_ADMIN): el campo está habilitado para todos los roles
-    // que no sean SUPER_ADMIN, porque el admin asigna el depto en ese momento.
-    //
-    // En edición: el campo solo es editable si el rol es CLIENTE_INTERNO.
-    // Para roles de Mantenimiento el depto es fijo y el backend lo rechaza.
-    const requiereDepartamento = rol === 'CLIENTE_INTERNO';
-    const departamentoEditable = esEdicion
-        ? rol === 'CLIENTE_INTERNO'
-        : rol !== '' && rol !== 'SUPER_ADMIN';
+    const esRolMtto = (r) => ['TECNICO', 'COORDINADOR_MTTO', 'JEFE_MTTO'].includes(r);
+    const eraMtto = esEdicion && esRolMtto(usuarioAEditar?.rol);
+    const esMttoAhora = esRolMtto(rol);
+
+    const requiereDepartamento = rol !== '' && rol !== 'SUPER_ADMIN';
+    const departamentoEditable = rol !== '' && rol !== 'SUPER_ADMIN' && (!esEdicion || !eraMtto || !esMttoAhora);
 
     const handleNombreChange = (e) => {
         const val = e.target.value;
@@ -168,9 +173,23 @@ export const UserFormModal = ({
             }
         }
 
-        // ── [CAMBIO] Solo se valida departamento si el rol es CLIENTE_INTERNO
-        if (esSuperAdmin && requiereDepartamento && !departamentoId) {
-            e.departamento = 'Selecciona un departamento.';
+        if (rol && rol !== 'SUPER_ADMIN') {
+            if (esSuperAdmin && !departamentoId) {
+                e.departamento = 'El departamento es obligatorio.';
+            } else if (departamentoId) {
+                const deptoSel = departamentos.find(d => String(d.id) === String(departamentoId));
+                if (deptoSel) {
+                    const deptoNombre = deptoSel.nombre.toLowerCase();
+                    const esDeptoMtto = deptoNombre.includes('mantenimiento');
+                    const esRolMtto = ['TECNICO', 'COORDINADOR_MTTO', 'JEFE_MTTO'].includes(rol);
+
+                    if (esRolMtto && !esDeptoMtto) {
+                        e.departamento = 'Este rol solo puede pertenecer al departamento de Mantenimiento.';
+                    } else if (rol === 'CLIENTE_INTERNO' && esDeptoMtto) {
+                        e.departamento = 'Los Clientes Internos no pueden pertenecer al departamento de Mantenimiento.';
+                    }
+                }
+            }
         }
 
         return e;
@@ -193,14 +212,13 @@ export const UserFormModal = ({
         if (cargo) formData.append('cargo', cargo);
         if (telefono) formData.append('telefono', telefono);
 
-        // ── [CAMBIO] departamentoId solo viaja al backend cuando:
-        // - JEFE crea usuario (usa su propio dept)
-        // - El rol es CLIENTE_INTERNO (único rol con dept variable)
-        // Para roles de Mantenimiento en creación por SUPER_ADMIN,
-        // el SUPER_ADMIN puede asignar el depto directamente.
         if (!esEdicion && esJefe && currentUser?.departamentoId) {
             formData.append('departamentoId', currentUser.departamentoId);
-        } else if (departamentoId && (requiereDepartamento || (!esEdicion && departamentoEditable))) {
+        } else if (rol === 'SUPER_ADMIN') {
+            if (esEdicion) {
+                formData.append('departamentoId', 'null');
+            }
+        } else if (departamentoId) {
             formData.append('departamentoId', departamentoId);
         }
 

@@ -13,7 +13,7 @@ import { UserFormModal } from '../components/user-form-modal';
  * Ajustar aquí para cambiar el tamaño de página sin tocar nada más.
  * Con 19 usuarios en la BD, usa un valor ≤ 18 para ver la paginación en acción.
  */
-const LIMIT = 10;
+const LIMIT = 100;
 
 const UsersPage = () => {
     const isDesktop = useIsDesktop();

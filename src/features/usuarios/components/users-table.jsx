@@ -1,13 +1,21 @@
 // src/features/usuarios/components/users-table.jsx
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Table, Skeleton } from "@/components/ui/z_index";
+import { Table, Skeleton, Icon } from "@/components/ui/z_index";
 import { UserStatusBadge } from "./user-status-badge";
 import { UserFormModal } from "./user-form-modal";
 import { UserStatusModal } from "./user-status-modal";
 import { UserDetailModal } from "./user-detail-modal";
 import { UserActions } from "./user-actions";
 import { updateUserStatus } from "../api/users-api";
+
+const ROL_BADGE_STYLE = {
+  SUPER_ADMIN: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  JEFE_MTTO: 'bg-amber-50 text-amber-700 border-amber-200',
+  COORDINADOR_MTTO: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  TECNICO: 'bg-blue-50 text-blue-700 border-blue-200',
+  CLIENTE_INTERNO: 'bg-rose-50 text-rose-700 border-rose-200',
+};
 
 export const UsersTable = ({
   usuarios,
@@ -106,10 +114,31 @@ export const UsersTable = ({
       headerClassName: "w-[20%] min-w-[150px] whitespace-nowrap",
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-4 w-full max-w-30" />;
+        const esMtto = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'].includes(row.rol);
+        
+        if (row.rol === 'SUPER_ADMIN') {
+          return (
+            <div className="flex items-center gap-1.5 text-slate-400 italic text-sm">
+              <Icon name="public" size="xs" />
+              <span>Global</span>
+            </div>
+          );
+        }
+
+        if (esMtto) {
+          return (
+            <div className="flex items-center gap-1.5 text-indigo-700 font-semibold text-sm">
+              <Icon name="build" size="xs" className="text-indigo-400" />
+              <span>{row.departamento?.nombre || 'Mantenimiento'}</span>
+            </div>
+          );
+        }
+
         return (
-          <span className="text-sm font-medium text-slate-700">
-            {row.departamento?.nombre || <span className="text-slate-400 italic">Sin departamento</span>}
-          </span>
+          <div className="flex items-center gap-1.5 text-slate-600 text-sm">
+            <Icon name="business" size="xs" className="text-slate-400" />
+            <span>{row.departamento?.nombre || 'Sin departamento'}</span>
+          </div>
         );
       },
     },
@@ -121,8 +150,9 @@ export const UsersTable = ({
       headerClassName: "w-[15%] min-w-[120px] whitespace-nowrap",
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-6 w-24 mx-auto rounded-md" />;
+        const badgeStyle = ROL_BADGE_STYLE[row.rol] || 'bg-slate-50 text-slate-500 border-slate-200';
         return (
-          <span className="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded-md border border-slate-200 uppercase tracking-wide whitespace-nowrap">
+          <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border uppercase tracking-wider whitespace-nowrap shadow-sm ${badgeStyle}`}>
             {row.rol.replace(/_/g, ' ')}
           </span>
         );
