@@ -2,14 +2,14 @@ import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { ToastContainer } from '@/components/notification/toast-container';
-import { processSyncQueue } from '@/stores/sync-store';
+import { processOfflineQueue } from '@/lib/axios';
 
 export const App = () => {
 
   useEffect(() => {
     const handleOnline = () => {
       console.log('🌐 Volvió internet → sincronizando...');
-      processSyncQueue();
+      processOfflineQueue();
     };
 
     window.addEventListener('online', handleOnline);

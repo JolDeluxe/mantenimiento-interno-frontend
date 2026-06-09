@@ -141,7 +141,7 @@ export const TicketsHoyDesktop = ({
                 <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 <div className="flex items-center gap-2">
                     {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
-                    <RefreshFab onClick={onRefresh} loading={loading} />
+                    {/* <RefreshFab onClick={onRefresh} loading={loading} /> */}
                 </div>
             </div>
 

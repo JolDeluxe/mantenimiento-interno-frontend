@@ -40,7 +40,7 @@ export const TicketsAprobarDesktop = ({
                         <Icon name="info" size="xs" className="text-slate-400" />
                         <span>Revisa el reporte técnico de las tareas terminadas antes de cerrarlas o rechazarlas</span>
                     </div>
-                    <RefreshFab onClick={onRefresh} loading={isLoading} />
+                    {/* <RefreshFab onClick={onRefresh} loading={isLoading} /> */}
                 </div>
             )}
 

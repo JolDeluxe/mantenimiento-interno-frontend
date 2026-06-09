@@ -49,7 +49,7 @@ export const TicketsBandejaDesktop = ({
                             onSortChange={onSortChange}
                         />
                     </div>
-                    <RefreshFab onClick={onRefresh} loading={isLoading} />
+                    {/* <RefreshFab onClick={onRefresh} loading={isLoading} /> */}
                 </div>
             )}
 

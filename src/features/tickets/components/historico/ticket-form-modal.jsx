@@ -16,6 +16,8 @@ const MAX_DESCRIPCION = 500;
 const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
+
+
 const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
     const horas = Math.floor((valueMins || 0) / 60);
     const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
@@ -273,13 +275,19 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                             )}
                         </div>
                         {!disabled && (
-                            <button
-                                type="button"
+                            <span
+                                role="button"
+                                tabIndex={0}
                                 onClick={handleClear}
-                                className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-500 transition-colors"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleClear(e);
+                                    }
+                                }}
+                                className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
                             >
                                 <Icon name="close" size="xs" />
-                            </button>
+                            </span>
                         )}
                     </>
                 ) : (
@@ -455,7 +463,7 @@ const PRIORIDAD_DOT = {
     CRITICA: 'bg-prioridad-critica',
 };
 
-const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico }) => {
+const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
@@ -498,18 +506,35 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                     </div>
 
                     {!expanded && tecnicosIds.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1 flex-wrap">
-                            <Icon name="engineering" size="xs" className="text-slate-300 shrink-0" />
-                            {tecnicosIds.slice(0, 3).map(id => {
-                                const t = tecnicoMap?.[id];
-                                return (
-                                    <span key={id} className="text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded font-medium truncate max-w-[80px]">
-                                        {t?.nombre ?? `#${id}`}
-                                    </span>
-                                );
-                            })}
-                            {tecnicosIds.length > 3 && (
-                                <span className="text-[10px] text-slate-400">+{tecnicosIds.length - 3}</span>
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                                <Icon name="engineering" size="xs" className="text-slate-400 shrink-0" />
+                                <span>Técnico:</span>
+                            </div>
+                            <div className="relative inline-flex items-center">
+                                <select
+                                    value={tecnicosIds[0] || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val) onCambiarTecnico(item._id, val);
+                                    }}
+                                    className="text-[11px] font-bold text-marca-primario bg-marca-primario/5 border border-marca-primario/15 rounded px-2 py-0.5 pr-6 focus:outline-none focus:ring-1 focus:ring-marca-secundario cursor-pointer appearance-none max-w-[150px] truncate"
+                                >
+                                    <option value="" disabled>Selecciona...</option>
+                                    {tecnicos.map(t => (
+                                        <option key={t.id} value={String(t.id)}>
+                                            {t.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute right-1.5 flex items-center text-marca-primario/70">
+                                    <Icon name="expand_more" size="xs" />
+                                </div>
+                            </div>
+                            {tecnicosIds.length > 1 && (
+                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full shrink-0">
+                                    +{tecnicosIds.length - 1} más
+                                </span>
                             )}
                         </div>
                     )}
@@ -621,7 +646,6 @@ export const TicketFormModal = ({
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const esRutina = clasificacion === 'RUTINA';
-    const carritoLocked = carrito.length > 0;
     const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
 
     const opcionesTecnicos = useMemo(() =>
@@ -648,7 +672,6 @@ export const TicketFormModal = ({
         setBackendError('');
         setIsDropdownOpen(false);
         setCarrito([]);
-        setTecnicoCartId('');
 
         if (esEdicion) {
             setTitulo(ticketAEditar.titulo ?? '');
@@ -667,6 +690,7 @@ export const TicketFormModal = ({
             setPlanta(''); setArea(''); setPrioridad('');
             setClasificacion(''); setTipo(''); setFechaVencimiento('');
             setTiempoEstimadoMins(0); setResponsables([]);
+            setTecnicoCartId('');
         }
     }, [isOpen, esEdicion, ticketAEditar]);
 
@@ -751,6 +775,14 @@ export const TicketFormModal = ({
         ));
     };
 
+    const handleCambiarTecnicoItem = (itemId, techId) => {
+        setCarrito(prev => prev.map(item =>
+            item._id === itemId
+                ? { ...item, responsables: [techId, ...(item.responsables || []).filter(id => id !== techId)] }
+                : item
+        ));
+    };
+
     const buildFormData = (item) => {
         const fd = new FormData();
         fd.append('titulo', item.titulo);
@@ -803,6 +835,7 @@ export const TicketFormModal = ({
             }
             try {
                 await onSuccess(fd);
+                setTecnicoCartId('');
             } catch (err) {
                 const data = err?.response?.data;
                 let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
@@ -816,8 +849,16 @@ export const TicketFormModal = ({
             setBackendError('Agrega al menos una tarea antes de guardar.');
             return;
         }
+
+        const tieneTextoPendiente = (titulo && titulo.trim().length > 0) || (descripcion && descripcion.trim().length > 0);
+        if (tieneTextoPendiente) {
+            setBackendError("Tienes una tarea a medio escribir en el formulario. Agrégala a la lista o limpia los campos antes de guardar.");
+            return;
+        }
+
         try {
             await onSuccess(carrito.map(buildFormData));
+            setTecnicoCartId('');
         } catch (err) {
             const data = err?.response?.data;
             let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
@@ -847,12 +888,35 @@ export const TicketFormModal = ({
                 <div className={cn("flex gap-6", modoCarrito ? "flex-col lg:flex-row" : "flex-col")}>
 
                     {/* ── PANEL IZQUIERDO: Formulario ── */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-4">
+                    <div className={cn(
+                        "flex-1 min-w-0 flex flex-col",
+                        modoCarrito && "max-h-[55vh] md:max-h-[62vh] lg:max-h-[68vh]"
+                    )}>
                         {backendError && (
-                            <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700">
-                                <Icon name="error" size="sm" /> {backendError}
+                            <div className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700 shrink-0 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Icon name="error" size="sm" />
+                                    <span>{backendError}</span>
+                                </div>
+                                {backendError.includes("medio escribir") && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            resetFormFields();
+                                            setBackendError('');
+                                        }}
+                                        className="text-xs font-bold underline hover:text-rose-900 cursor-pointer ml-auto shrink-0"
+                                    >
+                                        Limpiar campos
+                                    </button>
+                                )}
                             </div>
                         )}
+
+                        <div className={cn(
+                            "flex flex-col gap-4",
+                            modoCarrito ? "flex-1 overflow-y-auto pr-3 custom-scrollbar pb-3" : ""
+                        )}>
 
                         {esAdmin && tecnicos.length > 0 && (
                             modoCarrito ? (
@@ -867,18 +931,22 @@ export const TicketFormModal = ({
                                                 Técnico principal *
                                             </span>
                                         </div>
-                                        {carritoLocked && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                                <Icon name="lock" size="xs" /> Bloqueado para este tecnico
-                                            </span>
-                                        )}
                                     </div>
 
                                     <TecnicoCartSelector
                                         tecnicos={tecnicos}
                                         value={tecnicoCartId}
-                                        onChange={(val) => { if (!carritoLocked) setTecnicoCartId(val); }}
-                                        disabled={isSubmitting || carritoLocked}
+                                        onChange={(val) => {
+                                            setTecnicoCartId(val);
+                                            if (val) {
+                                                setCarrito(prev => prev.map(item => {
+                                                    const currentResps = item.responsables || [];
+                                                    const newResps = [val, ...currentResps.filter(id => id !== val)];
+                                                    return { ...item, responsables: newResps };
+                                                }));
+                                            }
+                                        }}
+                                        disabled={isSubmitting}
                                         placeholder="Buscar y seleccionar técnico..."
                                     />
                                     {fe.responsables && <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1"><Icon name="error" size="xs" /> {fe.responsables}</p>}
@@ -1000,18 +1068,6 @@ export const TicketFormModal = ({
                                     {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                                 </Select>
                             </div>
-                            {/* {esAdmin && (
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
-                                    <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
-                                        error={!!fe.tipo} helperText={fe.tipo}
-                                        disabled={isSubmitting || lockBaseFields}>
-                                        <option value="" disabled hidden>Selecciona…</option>
-                                        {isTicket && <option value="TICKET">Ticket</option>}
-                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                    </Select>
-                                </div>
-                            )} */}
                         </div>
 
                         {/* ── FILA 2: Planta | Área ── */}
@@ -1101,17 +1157,20 @@ export const TicketFormModal = ({
                                 placeholder="Describe el problema o tarea con el mayor detalle posible…"
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
+                        </div>
 
                         {modoCarrito && (
-                            <div className="flex items-center gap-3 pt-1">
-                                <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
-                                    Agregar a la lista
-                                </Button>
-                                {carrito.length > 0 && (
-                                    <span className="text-xs text-slate-500 font-medium">
-                                        {carrito.length} tarea{carrito.length !== 1 ? 's' : ''} en lista
-                                    </span>
-                                )}
+                            <div className="shrink-0 flex items-center justify-between pt-3 mt-1 border-t border-slate-100 bg-white">
+                                <div className="flex items-center gap-3">
+                                    <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
+                                        Agregar a la lista
+                                    </Button>
+                                    {carrito.length > 0 && (
+                                        <span className="text-xs text-slate-500 font-medium">
+                                            {carrito.length} tarea{carrito.length !== 1 ? 's' : ''} en lista
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -1164,6 +1223,7 @@ export const TicketFormModal = ({
                                             tecnicos={tecnicos}
                                             onAddTecnico={handleAgregarTecnicoItem}
                                             onRemoveTecnico={handleQuitarTecnicoItem}
+                                            onCambiarTecnico={handleCambiarTecnicoItem}
                                         />
                                     ))}
                                 </div>

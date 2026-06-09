@@ -1,0 +1,1 @@
+export { TicketCheckModal as HoyCheckModal } from '../historico/status-modals/ticket-check-modal';

@@ -213,15 +213,15 @@ export const TicketsHistoricoMobile = ({
                 </div>
             )}
             {hasPaginator && (
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
                 </div>
             )}
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <GlassFab icon="refresh" onClick={hardReload} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
                 {puedeCrear && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
             </div>
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 

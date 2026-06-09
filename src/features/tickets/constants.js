@@ -25,7 +25,7 @@ export const PRIORIDADES = [
 export const CLASIFICACIONES = [
     { value: 'PREVENTIVO', label: 'Preventivo' },
     { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'INSPECCION', label: 'Inspección' },
+    { value: 'RUTINA', label: 'Rutina' },
 ];
 
 export const CLASIFICACIONES_CLIENTE = [

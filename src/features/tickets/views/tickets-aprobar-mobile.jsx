@@ -80,7 +80,7 @@ export const TicketsAprobarMobile = ({
             </div>
 
             {hasPaginator && (
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     <GlassPaginationPill
                         page={pagination.page}
                         totalPages={pagination.totalPages}
@@ -92,7 +92,7 @@ export const TicketsAprobarMobile = ({
                 </div>
             )}
 
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <GlassFab
                     icon="refresh"
                     onClick={hardReload}
@@ -104,7 +104,7 @@ export const TicketsAprobarMobile = ({
                 />
             </div>
 
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 <ScrollToTopButton
                     bottom={fabRefreshBottom}
                     left="20px"
