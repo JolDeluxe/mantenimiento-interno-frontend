@@ -3,6 +3,7 @@ import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '../historico/ticket-status-badge';
 import { formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
 export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
     const [responsablesExpanded, setResponsablesExpanded] = useState(false);
@@ -52,12 +53,18 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
                         </span>
                     </p>
                 )}
-                {ticket.clasificacion && (
-                    <p className="flex items-center gap-2">
-                        <Icon name="label" size="xs" className="text-slate-300 shrink-0" />
-                        <span className="text-xs text-slate-500 capitalize">{ticket.clasificacion.toLowerCase()}</span>
-                    </p>
-                )}
+                {(() => {
+                    const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === ticket.categoria);
+                    if (!ticket.categoria) return null;
+                    return (
+                        <p className="flex items-center gap-2">
+                            <Icon name={catInfo?.icon || 'label'} size="xs" className="text-slate-300 shrink-0" />
+                            <span className="text-xs text-slate-500">
+                                {catInfo?.label || ticket.categoria}
+                            </span>
+                        </p>
+                    );
+                })()}
                 {ticket.responsables?.length > 0 && (
                     <div className="flex items-start gap-2">
                         <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />

@@ -969,9 +969,9 @@ export const TicketFormModal = ({
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         setClasificacion(val);
-                                        // Lógica de automatización: Si es Inspección, forzar Categoría a Rutina
-                                        if (val === 'INSPECCION') {
-                                            setCategoria('SERVICIOS_RUTINAS');
+                                        // Lógica de automatización: Si es Rutina, forzar Categoría a Rutina
+                                        if (val === 'RUTINA') {
+                                            setCategoria('RUTINA');
                                         }
                                     }}
                                     error={!!fe.clasificacion}
@@ -982,20 +982,22 @@ export const TicketFormModal = ({
                                     {clasificacionesOpts.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </Select>
                             </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría de la tarea *</Label>
+                                <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields || clasificacion === 'RUTINA'}>
+                                    <option value="" disabled hidden>Selecciona…</option>
+                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                </Select>
+                            </div>
+
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-pri" error={!!fe.prioridad}>Prioridad *</Label>
                                 <Select id="tf-pri" value={prioridad} onChange={(e) => setPrioridad(e.target.value)}
                                     error={!!fe.prioridad} helperText={fe.prioridad} disabled={isSubmitting}>
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                </Select>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
-                                <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
-                                    <option value="" disabled hidden>Selecciona…</option>
-                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </Select>
                             </div>
                             {/* {esAdmin && (

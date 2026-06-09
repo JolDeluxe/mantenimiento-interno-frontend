@@ -3,6 +3,7 @@ import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '../historico/ticket-status-badge';
 import { isPastDate, formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
@@ -233,12 +234,18 @@ export const HoyTicketCard = ({
                         </span>
                     </p>
                 )}
-                {ticket.clasificacion && (
-                    <p className="flex items-center gap-2">
-                        <Icon name="label" size="xs" className="text-slate-300 shrink-0" />
-                        <span className="text-xs text-slate-500 capitalize">{ticket.clasificacion.toLowerCase()}</span>
-                    </p>
-                )}
+                {(() => {
+                    const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === ticket.categoria);
+                    if (!ticket.categoria) return null;
+                    return (
+                        <p className="flex items-center gap-2">
+                            <Icon name={catInfo?.icon || 'label'} size="xs" className="text-slate-300 shrink-0" />
+                            <span className="text-xs text-slate-500">
+                                {catInfo?.label || ticket.categoria}
+                            </span>
+                        </p>
+                    );
+                })()}
                 {ticket.responsables?.length > 0 && (
                     <div className="flex items-start gap-2">
                         <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />

@@ -9,6 +9,7 @@ import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
@@ -155,42 +156,86 @@ export const TicketsTable = ({
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-col gap-1 mt-1">
-                            {row.planta && (
-                                <span className="text-xs text-slate-500 font-semibold truncate">
-                                    {row.planta}{row.area ? ` — ${row.area}` : ''}
-                                </span>
-                            )}
-                            {(row.tipo || row.clasificacion) && (
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    {row.tipo && (
-                                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none ${
-                                            {
-                                                TICKET: 'bg-slate-100 text-slate-600 border-slate-200/60',
-                                                PLANEADA: 'bg-blue-50 text-blue-700 border-blue-200/60',
-                                                EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
-                                            }[row.tipo] || 'bg-slate-100 text-slate-500 border-slate-200'
-                                        }`}>
-                                            {row.tipo}
-                                        </span>
-                                    )}
-                                    {row.clasificacion && (
-                                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none ${
-                                            {
-                                                PREVENTIVO: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
-                                                CORRECTIVO: 'bg-rose-50 text-rose-700 border-rose-200/60',
-                                                INSPECCION: 'bg-amber-50 text-amber-700 border-amber-200/60',
-                                                MEJORA: 'bg-teal-50 text-teal-700 border-teal-200/60',
-                                                INFRAESTRUCTURA: 'bg-violet-50 text-violet-700 border-violet-200/60',
-                                            }[row.clasificacion] || 'bg-slate-100 text-slate-500 border-slate-200'
-                                        }`}>
-                                            {row.clasificacion}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
+                        <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
+                            <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />
+                            <span className="truncate">
+                                {row.planta}{row.area ? ` — ${row.area}` : ''}
+                            </span>
                         </div>
                     </div>
+                );
+            },
+        },
+        {
+            header: 'Tipo / Clasificación',
+            accessorKey: 'tipo_clasificacion',
+            sortable: false,
+            headerClassName: 'w-[15%] min-w-[130px]',
+            cell: (row) => {
+                if (row.isSkeleton) return (
+                    <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-4 w-16 rounded-md" />
+                        <Skeleton className="h-3.5 w-20 rounded-md" />
+                    </div>
+                );
+
+                const tipoBadge = row.tipo ? (
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 ${
+                        {
+                            TICKET: 'bg-slate-100 text-slate-600 border-slate-200/60',
+                            PLANEADA: 'bg-blue-50 text-blue-700 border-blue-200/60',
+                            EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
+                        }[row.tipo] || 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}>
+                        {row.tipo}
+                    </span>
+                ) : null;
+
+                const clasifIcon = {
+                    PREVENTIVO: 'build_circle',
+                    CORRECTIVO: 'report_problem',
+                    INSPECCION: 'search',
+                    RUTINA: 'sync',
+                }[row.clasificacion] || 'label';
+
+                const clasifContent = row.clasificacion ? (
+                    <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
+                        <Icon name={clasifIcon} size="xs" className="text-slate-400 shrink-0" />
+                        <span>{row.clasificacion}</span>
+                    </div>
+                ) : (
+                    <span className="text-xs text-slate-400 italic">-</span>
+                );
+
+                return (
+                    <div className="flex flex-col items-center gap-1">
+                        {clasifContent}
+                        {tipoBadge}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'Categoría',
+            accessorKey: 'categoria',
+            sortable: false,
+            align: 'center',
+            headerClassName: 'w-[12%] min-w-[100px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-5 w-18 mx-auto rounded-md" />;
+                if (!row.categoria) return <span className="text-xs text-slate-400 italic">-</span>;
+                
+                const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === row.categoria) || {
+                    label: row.categoria,
+                    icon: 'category',
+                    colorClass: 'bg-slate-100 text-slate-500 border-slate-200'
+                };
+
+                return (
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide whitespace-nowrap`}>
+                        <Icon name={catInfo.icon} size="xs" className="shrink-0" />
+                        {catInfo.label}
+                    </span>
                 );
             },
         },
@@ -243,7 +288,7 @@ export const TicketsTable = ({
         {
             header: 'Fecha Entrega',
             accessorKey: 'fechaVencimiento',
-            sortable: true,
+            sortable: false,
             headerClassName: 'w-[12%] min-w-[130px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-8 w-24 rounded-md" />;
@@ -251,11 +296,10 @@ export const TicketsTable = ({
                 const isResolvedOrClosed = row.estado === 'RESUELTO' || row.estado === 'CERRADO';
 
                 if (isResolvedOrClosed) {
-                    // finalizadoAt es el campo canónico — seteado por el backend al resolver/cerrar.
                     const fechaFin = row.finalizadoAt || row.updatedAt;
 
                     return (
-                        <div className="flex flex-col gap-0.5 text-[10px] w-full">
+                        <div className="flex flex-col gap-0.5 text-[9px] w-full">
                             {row.fechaVencimiento ? (
                                 <div className="flex items-center justify-items-end-safe gap-1">
                                     <span className="text-slate-400 font-bold uppercase tracking-wider">F. Venc:</span>
@@ -276,11 +320,8 @@ export const TicketsTable = ({
                     );
                 }
 
-                // --- NUEVA LÓGICA DE PREVENCIÓN DE DUPLICADOS PARA TICKETS ACTIVOS ---
                 const textoRelativo = row.fechaVencimiento ? formatFechaRelativa(row.fechaVencimiento) : 'Sin fecha límite';
                 const textoAbsoluto = row.fechaVencimiento ? formatFecha(row.fechaVencimiento) : '';
-
-                // Evitamos duplicidad ignorando mayúsculas/minúsculas
                 const mostrarAbsoluto = row.fechaVencimiento && (textoRelativo.toLowerCase() !== textoAbsoluto.toLowerCase());
 
                 return (

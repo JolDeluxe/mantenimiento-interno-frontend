@@ -74,6 +74,7 @@ export default function TicketsHoyPage() {
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
+    const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
@@ -85,6 +86,7 @@ export default function TicketsHoyPage() {
         setFiltroEstado('TODOS');
         setFiltroTipo('');
         setFiltroPrioridad('');
+        setFiltroCategoria('');
         setFiltroResponsable('');
         setMostrarAtrasadas(false);
         setMostrarRechazadas(false);
@@ -217,6 +219,7 @@ export default function TicketsHoyPage() {
         if (filtroEstado !== 'TODOS') filtered = filtered.filter(t => t.estado === filtroEstado || (highlightId && String(t.id) === highlightId));
         if (filtroTipo) filtered = filtered.filter(t => t.tipo === filtroTipo || (highlightId && String(t.id) === highlightId));
         if (filtroPrioridad) filtered = filtered.filter(t => t.prioridad === filtroPrioridad || (highlightId && String(t.id) === highlightId));
+        if (filtroCategoria) filtered = filtered.filter(t => t.categoria === filtroCategoria || (highlightId && String(t.id) === highlightId));
 
         if (filtroResponsable) {
             filtered = filtered.filter(t => t.responsables?.some(r => String(r.id) === String(filtroResponsable)) || (highlightId && String(t.id) === highlightId));
@@ -234,7 +237,7 @@ export default function TicketsHoyPage() {
         }
 
         return dateOffset === 0 ? customSortHoy(filtered) : sortManana(filtered);
-    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroResponsable, query, customSortHoy, highlightId, allTickets, currentUser, vistaEquipo]);
+    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, query, customSortHoy, highlightId, allTickets, currentUser, vistaEquipo]);
 
     const totalHoy = useMemo(() => getBaseTickets().filter(perteneceAHoy).length, [getBaseTickets]);
     const totalManana = useMemo(() => getBaseTickets().filter(t => isOnDate(t.fechaVencimiento, 1)).length, [getBaseTickets]);
@@ -304,6 +307,8 @@ export default function TicketsHoyPage() {
         onTipoChange: setFiltroTipo,
         filtroPrioridad,
         onPrioridadChange: setFiltroPrioridad,
+        filtroCategoria,
+        onCategoriaChange: setFiltroCategoria,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,

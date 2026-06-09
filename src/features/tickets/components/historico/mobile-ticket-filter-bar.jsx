@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '../../constants';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
 const normalizeOpts = (opts = []) => opts.map(o => {
@@ -204,6 +204,7 @@ export const MobileTicketFilterBar = ({
     query, onSearchChange,
     filtroTipo, onTipoChange,
     filtroPrioridad, onPrioridadChange,
+    filtroCategoria, onCategoriaChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
     filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
@@ -237,7 +238,7 @@ export const MobileTicketFilterBar = ({
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     const hasActiveFilters = Boolean(
-        filtroTipo || filtroPrioridad || filtroResponsable ||
+        filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
         filtroPlanta || filtroArea || filtroClasificacion ||
         filtroProgramacion.type || filtroConclusion.type ||
         mostrarAtrasadas || mostrarRechazadas || mostrarPapelera
@@ -246,6 +247,7 @@ export const MobileTicketFilterBar = ({
     const handleClearFilters = () => {
         if (filtroTipo) onTipoChange('');
         if (filtroPrioridad) onPrioridadChange('');
+        if (filtroCategoria) onCategoriaChange('');
         if (filtroResponsable) onResponsableChange('');
         if (filtroPlanta) onPlantaChange('');
         if (filtroArea) onAreaChange('');
@@ -281,6 +283,7 @@ export const MobileTicketFilterBar = ({
     const filterElements = [
         { key: 'tipo', el: <GlassNativeSelect icon="category" placeholder="Tipo" options={TIPOS} value={filtroTipo} onChange={onTipoChange} />, span2: false },
         { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
+        { key: 'categoria', el: <GlassNativeSelect icon="label" placeholder="Categoría" options={CATEGORIAS_EQUIPO} value={filtroCategoria} onChange={onCategoriaChange} />, span2: false },
         { key: 'clasificacion', el: <GlassNativeSelect icon="style" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false },
         { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(opcionesResponsables)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
         { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },

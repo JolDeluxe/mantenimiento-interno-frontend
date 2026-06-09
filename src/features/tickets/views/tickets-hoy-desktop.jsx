@@ -70,6 +70,8 @@ export const TicketsHoyDesktop = ({
     onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
+    filtroCategoria,
+    onCategoriaChange,
     filtroResponsable,
     onResponsableChange,
     mostrarAtrasadas,
@@ -96,6 +98,7 @@ export const TicketsHoyDesktop = ({
         filtroEstado !== 'TODOS' || 
         filtroTipo || 
         filtroPrioridad || 
+        filtroCategoria || 
         filtroResponsable || 
         mostrarAtrasadas || 
         mostrarRechazadas
@@ -106,6 +109,7 @@ export const TicketsHoyDesktop = ({
         onEstadoChange('TODOS');
         onTipoChange('');
         onPrioridadChange('');
+        onCategoriaChange('');
         onResponsableChange('');
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -150,6 +154,8 @@ export const TicketsHoyDesktop = ({
                 onTipoChange={onTipoChange} 
                 filtroPrioridad={filtroPrioridad} 
                 onPrioridadChange={onPrioridadChange} 
+                filtroCategoria={filtroCategoria}
+                onCategoriaChange={onCategoriaChange}
                 filtroResponsable={filtroResponsable} 
                 onResponsableChange={onResponsableChange} 
                 opcionesResponsables={tecnicos} 

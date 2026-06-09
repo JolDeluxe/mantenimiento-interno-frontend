@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { Select, Input } from '@/components/form/z_index';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA } from '../../constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '../../constants';
 import { cn } from '@/utils/cn';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
@@ -164,6 +164,7 @@ export const TicketFilterBar = ({
     query, onSearchChange,
     filtroTipo, onTipoChange,
     filtroPrioridad, onPrioridadChange,
+    filtroCategoria, onCategoriaChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
     filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
@@ -299,6 +300,18 @@ export const TicketFilterBar = ({
                         onChange={onPrioridadChange}
                         placeholder="PRIORIDAD..."
                         icon="flag"
+                        allOptionText="TODAS"
+                        className="w-full font-bold text-[11px] uppercase tracking-wide"
+                    />
+                </div>
+
+                <div className="min-w-40 flex-1 lg:flex-none">
+                    <SearchableSelect
+                        options={CATEGORIAS_EQUIPO}
+                        value={filtroCategoria}
+                        onChange={onCategoriaChange}
+                        placeholder="CATEGORÍA..."
+                        icon="label"
                         allOptionText="TODAS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />

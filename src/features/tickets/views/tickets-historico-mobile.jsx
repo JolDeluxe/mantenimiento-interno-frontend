@@ -64,6 +64,7 @@ export const TicketsHistoricoMobile = ({
     filtroEstado,
     filtroTipo,
     filtroPrioridad,
+    filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
     filtroPlanta,
@@ -84,6 +85,7 @@ export const TicketsHistoricoMobile = ({
     onFilterChange,
     onTipoChange,
     onPrioridadChange,
+    onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
     onPlantaChange,
@@ -142,6 +144,8 @@ export const TicketsHistoricoMobile = ({
                     onTipoChange={onTipoChange}
                     filtroPrioridad={filtroPrioridad}
                     onPrioridadChange={onPrioridadChange}
+                    filtroCategoria={filtroCategoria}
+                    onCategoriaChange={onCategoriaChange}
                     filtroClasificacion={filtroClasificacion}
                     onClasificacionChange={onClasificacionChange}
                     filtroResponsable={filtroResponsable}

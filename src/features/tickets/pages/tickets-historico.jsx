@@ -39,6 +39,7 @@ export default function TicketsHistoricoPage() {
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
+    const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroClasificacion, setFiltroClasificacion] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [filtroPlanta, setFiltroPlanta] = useState('');
@@ -70,6 +71,7 @@ export default function TicketsHistoricoPage() {
 
         if (filtroTipo) params.tipo = filtroTipo;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
+        if (filtroCategoria) params.categoria = filtroCategoria;
         if (filtroClasificacion) params.clasificacion = filtroClasificacion;
         if (filtroPlanta) params.planta = filtroPlanta;
         if (filtroArea) params.area = filtroArea;
@@ -92,7 +94,7 @@ export default function TicketsHistoricoPage() {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
+    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
 
     const loadTickets = useCallback(() => {
         fetchMetricas(queryPayload);
@@ -106,6 +108,7 @@ export default function TicketsHistoricoPage() {
     const handleFilterChange = useCallback((e) => { setFiltroEstado(e); setPage(1); }, []);
     const handleTipoChange = useCallback((t) => { setFiltroTipo(t); setPage(1); }, []);
     const handlePrioridadChange = useCallback((p) => { setFiltroPrioridad(p); setPage(1); }, []);
+    const handleCategoriaChange = useCallback((c) => { setFiltroCategoria(c); setPage(1); }, []);
     const handleSortChange = useCallback((key, dir) => { setSortConfig({ key, direction: dir }); setPage(1); }, []);
     const handleClasificacionChange = useCallback((c) => { setFiltroClasificacion(c); setPage(1); }, []);
     const handleResponsableChange = useCallback((r) => { setFiltroResponsable(r); setPage(1); }, []);
@@ -248,11 +251,12 @@ export default function TicketsHistoricoPage() {
         totalParaPaginador: meta?.totalFiltrado || 0, conteos: meta?.resumenEstados || [],
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0, sortConfig, query,
-        filtroEstado, filtroTipo, filtroPrioridad, filtroClasificacion, filtroResponsable,
+        filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable,
         filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange, onTipoChange: handleTipoChange, onPrioridadChange: handlePrioridadChange,
+        onCategoriaChange: handleCategoriaChange,
         onClasificacionChange: handleClasificacionChange, onResponsableChange: handleResponsableChange,
         onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange,
         onYearChange: handleYearChange, onMonthChange: handleMonthChange,

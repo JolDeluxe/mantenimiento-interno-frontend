@@ -28,7 +28,7 @@ export const TicketsAprobarDesktop = ({
                         <span>No hay tareas resueltas esperando validación</span>
                     ) : (
                         <>
-                            Hay <span className="font-extrabold text-amber-500 text-base">{total}</span> tarea{total !== 1 ? 's' : ''} resuelta{total !== 1 ? 's' : ''} pendiente{total !== 1 ? 's' : ''} por aprobar
+                            Hay <span className="font-extrabold text-green-800 text-base">{total}</span> tarea{total !== 1 ? 's' : ''} resuelta{total !== 1 ? 's' : ''} pendiente{total !== 1 ? 's' : ''} por aprobar
                         </>
                     )}
                 </div>

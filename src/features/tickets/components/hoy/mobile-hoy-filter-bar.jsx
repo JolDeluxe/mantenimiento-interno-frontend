@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN } from '../../constants';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '../../constants';
 import { HoyTeamToggle } from './hoy-team-toggle';
 
 const normalizeOpts = (opts = []) =>
@@ -77,7 +77,7 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
                     <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onChange(''); }}
-                        className="relative z-30 flex items-center justify-center w-5 h-5 -mr-1 rounded-full bg-white/20 hover:bg-white/30 pointer-events-auto shrink-0 active:scale-90 transition-transform"
+                        className="relative z-30 flex items-center justify-center w-5 h-5 -mr-1 rounded-full bg-white/20 hover:bg-white/30 pointer-events-auto shrink-0 active:scale-95 transition-transform"
                     >
                         <Icon name="close" size="xs" className="text-white scale-75" />
                     </button>
@@ -96,6 +96,8 @@ export const MobileHoyFilterBar = ({
     onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
+    filtroCategoria,
+    onCategoriaChange,
     filtroResponsable,
     onResponsableChange,
     opcionesResponsables = [],
@@ -129,13 +131,14 @@ export const MobileHoyFilterBar = ({
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     const hasActiveFilters = Boolean(
-        filtroTipo || filtroPrioridad || filtroResponsable ||
+        filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
         mostrarAtrasadas || mostrarRechazadas
     );
 
     const handleClearFilters = () => {
         if (filtroTipo) onTipoChange('');
         if (filtroPrioridad) onPrioridadChange('');
+        if (filtroCategoria) onCategoriaChange('');
         if (filtroResponsable) onResponsableChange('');
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -157,6 +160,14 @@ export const MobileHoyFilterBar = ({
             options={PRIORIDADES}
             value={filtroPrioridad}
             onChange={onPrioridadChange}
+        />,
+        <GlassNativeSelect
+            key="categoria"
+            icon="label"
+            placeholder="Categoría"
+            options={CATEGORIAS_EQUIPO}
+            value={filtroCategoria}
+            onChange={onCategoriaChange}
         />
     ];
 
@@ -251,7 +262,7 @@ export const MobileHoyFilterBar = ({
                             const isFirstAndOdd = isOddLength && index === 0;
 
                             return (
-                                <div key={el.key} className={isFirstAndOdd ? "col-span-2" : "col-span-1"}>
+                                <div key={el.key || index} className={isFirstAndOdd ? "col-span-2" : "col-span-1"}>
                                     {el}
                                 </div>
                             );

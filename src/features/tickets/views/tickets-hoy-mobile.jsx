@@ -98,6 +98,8 @@ export const TicketsHoyMobile = ({
     onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
+    filtroCategoria,
+    onCategoriaChange,
     filtroResponsable,
     onResponsableChange,
     mostrarAtrasadas,
@@ -141,7 +143,7 @@ export const TicketsHoyMobile = ({
                 
                 <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
                 
-                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} vistaEquipo={vistaEquipo} onVistaEquipoChange={onVistaEquipoChange} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
+                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroCategoria={filtroCategoria} onCategoriaChange={onCategoriaChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} vistaEquipo={vistaEquipo} onVistaEquipoChange={onVistaEquipoChange} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
 
                 {esCoordinador && (
                     <div className="px-0.5 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-300">

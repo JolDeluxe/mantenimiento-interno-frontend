@@ -1,7 +1,6 @@
-// src/features/tickets/components/hoy/hoy-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN } from '../../constants';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '../../constants';
 import { HoyTeamToggle } from './hoy-team-toggle';
 
 const normalizeOpts = (opts = []) =>
@@ -43,6 +42,8 @@ export const HoyFilterBar = ({
     onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
+    filtroCategoria,
+    onCategoriaChange,
     filtroResponsable,
     onResponsableChange,
     opcionesResponsables = [],
@@ -87,10 +88,10 @@ export const HoyFilterBar = ({
                 {esCoordinador && (
                     <div className="flex-none">
                         <HoyTeamToggle 
-                            vistaEquipo={vistaEquipo} 
-                            onChange={onVistaEquipoChange} 
-                            equipoCount={equipoCount}
-                            misTareasCount={misTareasCount}
+                             vistaEquipo={vistaEquipo} 
+                             onChange={onVistaEquipoChange} 
+                             equipoCount={equipoCount}
+                             misTareasCount={misTareasCount}
                         />
                     </div>
                 )}
@@ -153,6 +154,17 @@ export const HoyFilterBar = ({
                         onChange={onPrioridadChange}
                         placeholder="Prioridad..."
                         icon="flag"
+                        allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+                <div className="min-w-40 w-auto max-w-full flex-none">
+                    <SearchableSelect
+                        options={CATEGORIAS_EQUIPO}
+                        value={filtroCategoria}
+                        onChange={onCategoriaChange}
+                        placeholder="Categoría..."
+                        icon="label"
                         allOptionText="Todas"
                         className="w-full"
                     />

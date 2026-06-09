@@ -41,12 +41,12 @@ export const CLASIFICACIONES_ADMIN = [
 ];
 
 export const CATEGORIAS_EQUIPO = [
-    { value: 'MAQUINARIA', label: 'Maquinaria de Producción' },
-    { value: 'INFRAESTRUCTURA', label: 'Infraestructura e Instalaciones' },
-    { value: 'EQUIPO/MATERIAL', label: 'Equipos de Apoyo' },
-    { value: 'MOBILIARIO', label: 'Mobiliario' },
-    { value: 'RUTINA', label: 'Rutina' },
-    { value: 'GESTION', label: 'Gestión Operativa' },
+    { value: 'MAQUINARIA', label: 'Maquinaria', icon: 'precision_manufacturing'},
+    { value: 'INFRAESTRUCTURA', label: 'Infraestructura', icon: 'domain',},
+    { value: 'EQUIPO/MATERIAL', label: 'Equipo/Material', icon: 'construction'},
+    { value: 'MOBILIARIO', label: 'Mobiliario', icon: 'chair' },
+    { value: 'GESTION', label: 'Gestion Administrativa', icon: 'admin_panel_settings'},
+    { value: 'RUTINA', label: 'Rutina', icon: 'sync' },
 ];
 
 // Nuevo mapa jerárquico de Plantas a Áreas

@@ -25,6 +25,7 @@ export const TicketsHistoricoDesktop = ({
     filtroEstado,
     filtroTipo,
     filtroPrioridad,
+    filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
     filtroPlanta,
@@ -48,6 +49,7 @@ export const TicketsHistoricoDesktop = ({
     onFilterChange,
     onTipoChange,
     onPrioridadChange,
+    onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
     onPlantaChange,
@@ -99,6 +101,8 @@ export const TicketsHistoricoDesktop = ({
                 onTipoChange={onTipoChange}
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
+                filtroCategoria={filtroCategoria}
+                onCategoriaChange={onCategoriaChange}
                 filtroClasificacion={filtroClasificacion}
                 onClasificacionChange={onClasificacionChange}
                 filtroResponsable={filtroResponsable}
