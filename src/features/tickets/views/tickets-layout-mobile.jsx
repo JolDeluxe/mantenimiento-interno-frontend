@@ -65,6 +65,7 @@ export default function TicketsLayoutMobile() {
         const config = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenuOptions = [
             { configId: 'tickets-hoy', id: '/tickets/hoy', label: 'Mi Día', icon: 'today' },
+            { configId: 'tickets-aprobar', id: '/tickets/aprobar', label: 'Por Aprobar', icon: 'check' },
             { configId: 'tickets-bandeja', id: '/tickets/bandeja', label: 'Bandeja', icon: 'inbox' },
             { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' }
         ];
@@ -88,18 +89,20 @@ export default function TicketsLayoutMobile() {
                             {showRedAlert && (
                                 <style>{`button:has(.alert-icon-trigger) .material-symbols-rounded { color: #ef4444 !important; transition: color 0.2s; }`}</style>
                             )}
-                            <span>{label}</span>
+                            {isActive && <span>{label}</span>}
                             <span className={`relative z-10 text-[11px] font-black px-1.5 py-0.5 rounded-md flex items-center leading-none border ${hasCritical ? 'bg-red-100 !text-red-600 border-red-200 animate-pulse' : 'bg-amber-100 !text-amber-700 border-amber-200'}`}>
                                 {unassignedCount > 99 ? '99+' : unassignedCount}
                             </span>
                         </div>
                     ) : (
-                        <span className={showRedAlert ? '!text-red-500 font-bold alert-icon-trigger' : ''}>
-                            {showRedAlert && (
-                                <style>{`button:has(.alert-icon-trigger) .material-symbols-rounded { color: #ef4444 !important; transition: color 0.2s; }`}</style>
-                            )}
-                            {label}
-                        </span>
+                        isActive ? (
+                            <span className={showRedAlert ? '!text-red-500 font-bold alert-icon-trigger' : ''}>
+                                {showRedAlert && (
+                                    <style>{`button:has(.alert-icon-trigger) .material-symbols-rounded { color: #ef4444 !important; transition: color 0.2s; }`}</style>
+                                )}
+                                {label}
+                            </span>
+                        ) : null
                     )
                 };
             });

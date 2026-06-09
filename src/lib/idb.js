@@ -9,7 +9,7 @@
 // Cada store guarda {data, timestamp} para saber qué tan fresco es el dato.
 
 const DB_NAME = 'CuadraPWA';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAMES = ['tickets', 'tecnicos', 'perfil', 'notificaciones', 'metricas', 'sync_queue'];
 
 let _db = null;

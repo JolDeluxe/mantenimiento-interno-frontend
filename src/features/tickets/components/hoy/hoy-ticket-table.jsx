@@ -1,39 +1,14 @@
-import { useState } from 'react';
-import { Table, Skeleton, Icon } from '@/components/ui/z_index';
-import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { TicketFormModal } from './ticket-form-modal';
-import { TicketStatusModal } from './ticket-status-modal';
-import { TicketDetailModal } from './ticket-detail-modal';
-import { TicketAssignModal } from './ticket-assign-modal';
-import { TicketReviewModal } from './ticket-review-modal';
-import { TicketActions } from './ticket-actions';
+import React, { useState } from 'react';
+import { Icon, Skeleton, Table } from '@/components/ui/z_index';
+import { TicketPriorityBadge, TicketStatusBadge } from '@/features/tickets/components/historico/ticket-status-badge';
+import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
+import { HoyDetailModal } from './hoy-detail-modal';
+import { HoyFormModal } from './hoy-form-modal';
+import { TicketAssignModal } from '../historico/ticket-assign-modal';
+import { HoyStatusModal } from './hoy-status-modal';
+import { TicketReviewModal } from '../historico/ticket-review-modal';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-
-const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
-
-// const isVencida = (ticket) => {
-//     if (!ticket.fechaVencimiento) return false;
-//     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-//     return isPastDate(ticket.fechaVencimiento);
-// };
-
-// const isEntregadaTarde = (ticket) => {
-//     if (!ticket.fechaVencimiento) return false;
-//     // Solo se evalúa si el ticket ya fue terminado
-//     if (ticket.estado !== 'RESUELTO' && ticket.estado !== 'CERRADO') return false;
-
-//     // Extraemos la fecha en la que realmente se resolvió (o el updatedAt si el historial no viene populado)
-//     const entryResuelto = ticket.historial?.find(h => h.estadoNuevo === 'RESUELTO');
-//     const fechaFin = entryResuelto?.createdAt || ticket.updatedAt;
-
-//     if (!fechaFin) return false;
-
-//     const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
-//     const fFin = new Date(fechaFin).setHours(0, 0, 0, 0);
-
-//     return fFin > fVenc;
-// };
 
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
@@ -86,22 +61,15 @@ const ResponsablesCell = ({ lista }) => {
     );
 };
 
-export const TicketsTable = ({
-    tickets,
-    loading,
+export const HoyTicketTable = ({
+    tickets = [],
+    loading = false,
+    submitting = false,
     currentUser,
     tecnicos = [],
-    page,
-    totalPages,
-    totalItems,
-    sortConfig,
-    onPageChange,
-    onSortChange,
+    highlightId,
     onSave,
-    onChangeStatus,
-    onRefresh,
-    submitting,
-    hidePagination = false,
+    onChangeStatus
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -110,25 +78,27 @@ export const TicketsTable = ({
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
 
+    const tableData = loading
+        ? Array.from({ length: 6 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
+        : tickets;
+
     const columns = [
         {
             header: 'ID',
             accessorKey: 'id',
-            sortable: true,
+            sortable: false,
             headerClassName: 'w-[5%] min-w-[64px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-12 rounded-md" />;
                 return (
-                    <div className="flex flex-col items-start gap-1">
-                        <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
-                    </div>
+                    <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
                 );
             },
         },
         {
             header: 'Título',
             accessorKey: 'titulo',
-            sortable: true,
+            sortable: false,
             headerClassName: 'w-[26%] min-w-[180px]',
             cell: (row) => {
                 if (row.isSkeleton) return (
@@ -197,7 +167,7 @@ export const TicketsTable = ({
         {
             header: 'Fecha Creación',
             accessorKey: 'createdAt',
-            sortable: true,
+            sortable: false,
             headerClassName: 'w-[12%] min-w-[110px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
@@ -221,7 +191,7 @@ export const TicketsTable = ({
         {
             header: 'Estado',
             accessorKey: 'estado',
-            sortable: true,
+            sortable: false,
             align: 'center',
             headerClassName: 'w-[13%] min-w-[110px]',
             cell: (row) => {
@@ -232,7 +202,7 @@ export const TicketsTable = ({
         {
             header: 'Prioridad',
             accessorKey: 'prioridad',
-            sortable: true,
+            sortable: false,
             align: 'center',
             headerClassName: 'w-[10%] min-w-[90px]',
             cell: (row) => {
@@ -243,7 +213,7 @@ export const TicketsTable = ({
         {
             header: 'Fecha Entrega',
             accessorKey: 'fechaVencimiento',
-            sortable: true,
+            sortable: false,
             headerClassName: 'w-[12%] min-w-[130px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-8 w-24 rounded-md" />;
@@ -251,7 +221,6 @@ export const TicketsTable = ({
                 const isResolvedOrClosed = row.estado === 'RESUELTO' || row.estado === 'CERRADO';
 
                 if (isResolvedOrClosed) {
-                    // finalizadoAt es el campo canónico — seteado por el backend al resolver/cerrar.
                     const fechaFin = row.finalizadoAt || row.updatedAt;
 
                     return (
@@ -276,11 +245,8 @@ export const TicketsTable = ({
                     );
                 }
 
-                // --- NUEVA LÓGICA DE PREVENCIÓN DE DUPLICADOS PARA TICKETS ACTIVOS ---
                 const textoRelativo = row.fechaVencimiento ? formatFechaRelativa(row.fechaVencimiento) : 'Sin fecha límite';
                 const textoAbsoluto = row.fechaVencimiento ? formatFecha(row.fechaVencimiento) : '';
-
-                // Evitamos duplicidad ignorando mayúsculas/minúsculas
                 const mostrarAbsoluto = row.fechaVencimiento && (textoRelativo.toLowerCase() !== textoAbsoluto.toLowerCase());
 
                 return (
@@ -324,19 +290,6 @@ export const TicketsTable = ({
         },
     ];
 
-    const tableData = loading
-        ? Array.from({ length: 10 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
-        : tickets;
-
-    const handleConfirmCancel = async () => {
-        if (!cancelTarget) return;
-        const formData = new FormData();
-        formData.append('estado', 'CANCELADA');
-        formData.append('nota', 'Ticket cancelado por el usuario.');
-        await onChangeStatus(cancelTarget.id, formData);
-        setCancelTarget(null);
-    };
-
     return (
         <div className="w-full">
             <Table
@@ -345,14 +298,9 @@ export const TicketsTable = ({
                 keyField="id"
                 loading={false}
                 emptyMessage="No hay tickets que coincidan con los filtros."
-                page={page}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                onPageChange={onPageChange}
-                sortConfig={sortConfig}
-                hidePagination={hidePagination}
                 rowClassName={(row) => {
                     if (row.isSkeleton) return 'bg-white';
+                    if (highlightId === String(row.id)) return 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-l-yellow-400';
                     
                     const borderCls = {
                         PENDIENTE: 'border-l-estado-pendiente',
@@ -365,87 +313,19 @@ export const TicketsTable = ({
                         CANCELADA: 'border-l-estado-cancelada',
                     }[row.estado] || 'border-l-transparent';
 
-                    if (row.estado === 'RECHAZADO') {
-                        return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
-                    }
-                    if (row.isOverdue) {
-                        return `bg-red-50/40 hover:bg-red-50/70 border-l-4 ${borderCls}`;
-                    }
+                    if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
+                    if (row.isOverdue) return `bg-red-50/40 hover:bg-red-50/70 border-l-4 ${borderCls}`;
                     return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
                 }}
-                onSortChange={(key) => {
-                    const direction =
-                        sortConfig?.key === key && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
-                    onSortChange(key, direction);
-                }}
+                hidePagination={true}
             />
 
-            <TicketDetailModal
-                isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
-                ticket={detailTarget}
-            />
-
-            <TicketFormModal
-                isOpen={Boolean(editTarget)}
-                onClose={() => setEditTarget(null)}
-                ticketAEditar={editTarget}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={async (payload) => {
-                    await onSave(editTarget.id, payload);
-                    setEditTarget(null);
-                }}
-            />
-
-            <TicketAssignModal
-                isOpen={Boolean(assignTarget)}
-                onClose={() => setAssignTarget(null)}
-                ticket={assignTarget}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onSave(id, payload);
-                    setAssignTarget(null);
-                }}
-            />
-
-            <TicketStatusModal
-                isOpen={Boolean(statusTarget)}
-                onClose={() => setStatusTarget(null)}
-                ticket={statusTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setStatusTarget(null);
-                }}
-            />
-
-            <TicketReviewModal
-                isOpen={Boolean(reviewTarget)}
-                onClose={() => setReviewTarget(null)}
-                ticket={reviewTarget}
-                isSubmitting={submitting}
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setReviewTarget(null);
-                }}
-            />
-
-            <TicketStatusModal
-                isOpen={Boolean(cancelTarget)}
-                onClose={() => setCancelTarget(null)}
-                ticket={cancelTarget}
-                currentUser={currentUser}
-                isSubmitting={submitting}
-                forcedEstado="CANCELADA"
-                onConfirm={async (id, payload) => {
-                    await onChangeStatus(id, payload);
-                    setCancelTarget(null);
-                }}
-            />
+            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
+            <HoyFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+            <TicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
         </div>
     );
 };

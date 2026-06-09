@@ -18,6 +18,12 @@ export const MODULES_CONFIG = [
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
       },
       {
+        id: 'tickets-aprobar',
+        name: 'Por Aprobar',
+        route: '/tickets/aprobar',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
         id: 'tickets-bandeja',
         name: 'Bandeja de Entrada',
         route: '/tickets/bandeja',

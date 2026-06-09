@@ -36,7 +36,7 @@ const esAtrasadaActiva = (ticket) =>
     ESTADOS_VALIDOS_ATRASADAS.includes(ticket.estado);
 
 const perteneceAHoy = (ticket) => {
-    if (ticket.estado === 'RECHAZADO') return true;
+    if (ticket.estado === 'RECHAZADO' || ticket.estado === 'RESUELTO') return true;
     if (!ticket.fechaVencimiento) return false;
     return isOnDate(ticket.fechaVencimiento, 0) || esAtrasadaActiva(ticket);
 };
@@ -105,15 +105,23 @@ export default function TicketsHoyPage() {
         const rol = currentUser?.rol;
         const esAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(rol);
 
-        const STATUS_ORDER = esAdmin
-            ? { RESUELTO: 5, EN_PAUSA: 4, EN_PROGRESO: 3, ASIGNADA: 2, RECHAZADO: 2 }
-            : { EN_PAUSA: 5, EN_PROGRESO: 4, ASIGNADA: 3, RECHAZADO: 3, RESUELTO: 2 };
+        const STATUS_ORDER = {
+            EN_PAUSA: 5,
+            EN_PROGRESO: 4,
+            ASIGNADA: 3,
+            RECHAZADO: 3,
+            RESUELTO: 1
+        };
 
         return [...tickets].sort((a, b) => {
             if (highlightId) {
                 if (String(a.id) === highlightId) return -1;
                 if (String(b.id) === highlightId) return 1;
             }
+
+            const aIsRechazado = a.estado === 'RECHAZADO';
+            const bIsRechazado = b.estado === 'RECHAZADO';
+            if (aIsRechazado !== bIsRechazado) return aIsRechazado ? -1 : 1;
 
             const aAtrasadaAsig = esAtrasadaActiva(a) && a.estado === 'ASIGNADA';
             const bAtrasadaAsig = esAtrasadaActiva(b) && b.estado === 'ASIGNADA';
@@ -268,8 +276,14 @@ export default function TicketsHoyPage() {
         }
     };
 
+    const toApproveCount = useMemo(() => {
+        if (!allTickets) return 0;
+        return allTickets.filter(t => t.estado === 'RESUELTO').length;
+    }, [allTickets]);
+
     const sharedProps = {
         tickets: ticketsFiltrados,
+        toApproveCount,
         highlightId,
         loading,
         submitting,

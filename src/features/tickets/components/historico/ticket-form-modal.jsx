@@ -1065,13 +1065,11 @@ export const TicketFormModal = ({
                                         error={!!fe.fechaVencimiento} helperText={fe.fechaVencimiento}
                                         disabled={isSubmitting} style={{ minWidth: 0 }} />
                                 </div>
-                                {!esRutina && (
-                                    <div className="flex flex-col gap-1.5">
-                                        <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
-                                        <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
-                                        {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
-                                    </div>
-                                )}
+                                <div className="flex flex-col gap-1.5">
+                                    <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
+                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
+                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
+                                </div>
                             </div>
                         )}
 

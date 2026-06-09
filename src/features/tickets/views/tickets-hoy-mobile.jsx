@@ -16,6 +16,7 @@ import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
 import { hardReload } from '@/utils/hard-reload';
+import { HoyAprobarPanel } from '../components/hoy/hoy-aprobar-panel';
 
 const SKELETON_COUNT = 4;
 
@@ -76,6 +77,7 @@ const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtras
 
 export const TicketsHoyMobile = ({
     tickets,
+    toApproveCount,
     highlightId,
     loading,
     submitting,
@@ -131,6 +133,8 @@ export const TicketsHoyMobile = ({
     return (
         <>
             <div className="flex flex-col gap-2.5 mb-3">
+                <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile />
+
                 <div className="flex items-center">
                     <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 </div>

@@ -1,0 +1,1 @@
+export { TicketDetailModal as AprobarDetailModal } from '../historico/ticket-detail-modal';

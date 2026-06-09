@@ -6,6 +6,8 @@ export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTT
 
 export const TIPOS = [
     { value: 'TICKET', label: 'Ticket' },
+    { value: 'PLANEADA', label: 'Planeada' },
+    { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
 ];
 
 export const TIPOS_ADMIN = [
@@ -35,7 +37,7 @@ export const CLASIFICACIONES_CLIENTE = [
 export const CLASIFICACIONES_ADMIN = [
     { value: 'PREVENTIVO', label: 'Preventivo' },
     { value: 'CORRECTIVO', label: 'Correctivo' },
-    { value: 'INSPECCION', label: 'Inspección' },
+    { value: 'RUTINA', label: 'Rutina' },
 ];
 
 export const CATEGORIAS_EQUIPO = [

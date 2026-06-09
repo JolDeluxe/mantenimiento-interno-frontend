@@ -200,8 +200,50 @@ export default function TicketsHistoricoPage() {
         }
     };
 
+    const sortedTickets = useMemo(() => {
+        if (!tickets) return [];
+        if (sortConfig?.key && sortConfig.key !== 'createdAt') {
+            return tickets;
+        }
+
+        const PRIORIDAD_ORDER = { CRITICA: 4, ALTA: 3, MEDIA: 2, BAJA: 1 };
+
+        return [...tickets].sort((a, b) => {
+            const aClosed = a.estado === 'CERRADO' || a.estado === 'CERRADA';
+            const bClosed = b.estado === 'CERRADO' || b.estado === 'CERRADA';
+            if (aClosed !== bClosed) return aClosed ? 1 : -1;
+
+            const aIsRechazado = a.estado === 'RECHAZADO';
+            const bIsRechazado = b.estado === 'RECHAZADO';
+            if (aIsRechazado !== bIsRechazado) return aIsRechazado ? -1 : 1;
+
+            const isAtrasada = (t) => {
+                const ESTADOS_VALIDOS_ATRASADAS = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA'];
+                const isPastDate = (dateStr) => {
+                    if (!dateStr) return false;
+                    const d = new Date(dateStr);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    d.setHours(0, 0, 0, 0);
+                    return d < today;
+                };
+                return Boolean(t.fechaVencimiento) && isPastDate(t.fechaVencimiento) && ESTADOS_VALIDOS_ATRASADAS.includes(t.estado);
+            };
+
+            const aAtrasada = isAtrasada(a);
+            const bAtrasada = isAtrasada(b);
+            if (aAtrasada !== bAtrasada) return aAtrasada ? -1 : 1;
+
+            const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;
+            const bPrio = PRIORIDAD_ORDER[b.prioridad] || 0;
+            if (aPrio !== bPrio) return bPrio - aPrio;
+
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+    }, [tickets, sortConfig]);
+
     const sharedViewProps = {
-        tickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,
+        tickets: sortedTickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,
         totalPages: meta?.totalPages || 1, totalParaSummary: meta?.totalAbsoluto || 0,
         totalParaPaginador: meta?.totalFiltrado || 0, conteos: meta?.resumenEstados || [],
         existenciaGlobal: metricas?.existenciaGlobal || {},

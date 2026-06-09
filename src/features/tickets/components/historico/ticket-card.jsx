@@ -93,6 +93,11 @@ export const TicketCard = ({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-mono font-bold text-slate-400">#{ticket.id}</span>
+                        {ticket.tipo && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                {ticket.tipo}
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
@@ -126,6 +131,12 @@ export const TicketCard = ({
                         <span className="text-xs text-slate-500">
                             {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
                         </span>
+                    </p>
+                )}
+                {ticket.clasificacion && (
+                    <p className="flex items-center gap-2">
+                        <Icon name="label" size="xs" className="text-slate-300 shrink-0" />
+                        <span className="text-xs text-slate-500 capitalize">{ticket.clasificacion.toLowerCase()}</span>
                     </p>
                 )}
                 {ticket.creador && (

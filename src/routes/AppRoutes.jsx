@@ -18,6 +18,7 @@ import SsoReceiver from '@/pages/sso-receiver';
 import TicketsPage from '@/features/tickets/pages/tickets-page';
 import TicketsBandejaPage from '@/features/tickets/pages/tickets-bandeja';
 import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
+import TicketsAprobarPage from '@/features/tickets/pages/tickets-aprobar';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import NotifyPage from '@/features/notificaciones/pages/notify-page';
 
@@ -32,6 +33,7 @@ const ROLES = {
   tickets: MODULES_CONFIG.find(m => m.id === 'tickets')?.allowedRoles || [],
   ticketsHoy: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-hoy')?.allowedRoles || [],
   ticketsBandeja: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-bandeja')?.allowedRoles || [],
+  ticketsAprobar: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-aprobar')?.allowedRoles || [],
   ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
   usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
   notificaciones: MODULES_CONFIG.find(m => m.id === 'notificaciones')?.allowedRoles || [],
@@ -71,6 +73,10 @@ export const AppRoutes = () => {
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsHoy} />}>
                 <Route path="hoy" element={<TicketsHoyPage />} />
+              </Route>
+
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsAprobar} />}>
+                <Route path="aprobar" element={<TicketsAprobarPage />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsBandeja} />}>

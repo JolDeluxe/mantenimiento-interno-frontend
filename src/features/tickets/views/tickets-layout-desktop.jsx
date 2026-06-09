@@ -18,6 +18,7 @@ export default function TicketsLayoutDesktop() {
         const ticketsModule = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenu = [
             { id: 'tickets-hoy', label: 'Tareas de Hoy', path: '/tickets/hoy', icon: 'today' },
+            { id: 'tickets-aprobar', label: 'Por Aprobar', path: '/tickets/aprobar', icon: 'check' },
             { id: 'tickets-bandeja', label: 'Bandeja de Entrada', path: '/tickets/bandeja', icon: 'inbox' },
             { id: 'tickets-historico', label: 'Historial', path: '/tickets/historico', icon: 'assignment_globe' },
         ];

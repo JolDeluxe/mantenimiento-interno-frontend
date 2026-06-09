@@ -1,6 +1,6 @@
 // src/features/tickets/pages/tickets-bandeja.jsx
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useTickets } from '@/features/tickets/hooks/use-tickets';
 import { useTicketsUiStore } from '@/stores/tickets-ui-store';
 import { notify } from '@/components/notification/adaptive-notify';
@@ -21,7 +21,7 @@ const getSortPayload = (order) => {
 };
 
 export default function TicketsBandejaPage() {
-    const isDesktop = useMediaQuery('(min-width: 1024px)');
+    const isDesktop = useIsDesktop();
     const setUnassignedCount = useTicketsUiStore((s) => s.setUnassignedCount);
 
     const [sortOrder, setSortOrder] = useState('desc');

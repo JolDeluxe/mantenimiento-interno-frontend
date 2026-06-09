@@ -1,22 +1,17 @@
-// src/features/tickets/views/tickets-bandeja-desktop.jsx
+// src/features/tickets/views/tickets-aprobar-desktop.jsx
 import React from 'react';
 import { Skeleton, Icon, RefreshFab } from '@/components/ui/z_index';
-import { BandejaFiltro } from '../components/bandeja/bandeja-filtro';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
-import { BandejaTicketTable } from '../components/bandeja/bandeja-ticket-table';
+import { AprobarTicketTable } from '../components/aprobar/aprobar-table';
 
-export const TicketsBandejaDesktop = ({
+export const TicketsAprobarDesktop = ({
     tickets,
     isLoading,
-    onAssignTicket,
+    onReviewTicket,
     onViewDetails,
-    sortOrder,
-    onSortChange,
     pagination,
     onPageChange,
-    onRefresh,
-    isFiltering = false,
-    onClearFilters
+    onRefresh
 }) => {
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
@@ -24,16 +19,16 @@ export const TicketsBandejaDesktop = ({
         <div className="flex flex-col gap-5 animate-fade-in relative">
             <div className="w-full">
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
-                    Bandeja de Entrada
+                    Control de Aprobaciones
                 </h2>
                 <div className="text-sm text-slate-500 mt-0.5">
                     {isLoading ? (
                         <Skeleton className="h-4 w-48 mt-1" />
                     ) : total === 0 ? (
-                        <span>No hay tareas pendientes en este momento</span>
+                        <span>No hay tareas resueltas esperando validación</span>
                     ) : (
                         <>
-                            Hay <span className="font-extrabold text-marca-primario text-base">{total}</span> tarea{total !== 1 ? 's' : ''} sin asignar
+                            Hay <span className="font-extrabold text-amber-500 text-base">{total}</span> tarea{total !== 1 ? 's' : ''} resuelta{total !== 1 ? 's' : ''} pendiente{total !== 1 ? 's' : ''} por aprobar
                         </>
                     )}
                 </div>
@@ -41,13 +36,9 @@ export const TicketsBandejaDesktop = ({
 
             {(total > 0 || isLoading) && (
                 <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                        <Icon name="filter_arrow_right" className="text-slate-400" />
-                        <BandejaFiltro
-                            totalTickets={total}
-                            sortOrder={sortOrder}
-                            onSortChange={onSortChange}
-                        />
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                        <Icon name="info" size="xs" className="text-slate-400" />
+                        <span>Revisa el reporte técnico de las tareas terminadas antes de cerrarlas o rechazarlas</span>
                     </div>
                     <RefreshFab onClick={onRefresh} loading={isLoading} />
                 </div>
@@ -56,23 +47,20 @@ export const TicketsBandejaDesktop = ({
             {!isLoading && (!tickets || tickets.length === 0) ? (
                 <div className="mt-8">
                     <TicketsEmptyState
-                        isFiltering={isFiltering}
-                        onClearFilters={onClearFilters}
+                        isFiltering={false}
                         onRefresh={onRefresh}
-                        mensaje="¡Bandeja Limpia!"
-                        subtexto="Todos los tickets han sido asignados exitosamente."
-                        icon="inbox"
+                        mensaje="¡Todo al día!"
+                        subtexto="No hay tickets resueltos esperando tu validación."
+                        icon="check_circle"
                     />
                 </div>
             ) : (
                 <div className="w-full">
-                    <BandejaTicketTable
+                    <AprobarTicketTable
                         tickets={tickets}
                         isLoading={isLoading}
-                        onAssignTicket={onAssignTicket}
+                        onReviewTicket={onReviewTicket}
                         onViewDetails={onViewDetails}
-                        sortOrder={sortOrder}
-                        onSortChange={onSortChange}
                         pagination={pagination}
                         onPageChange={onPageChange}
                     />
