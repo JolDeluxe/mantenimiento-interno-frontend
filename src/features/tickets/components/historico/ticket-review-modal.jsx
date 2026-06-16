@@ -49,8 +49,35 @@ export const TicketReviewModal = ({
     const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
     const isManual = !!matchManual;
     const tiempoManualStr = matchManual ? matchManual[1] : null;
-    const tiempoSistemaStr = formatMins(ticket?.duracionReal || 0);
+    
+    // Parse duration logic:
+    // realMins: real time spent in minutes
+    const realMins = ticket?.duracionReal || 0;
+    const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = isManual ? tiempoManualStr : tiempoSistemaStr;
+
+    // Convert manual registration to minutes if possible for difference calculation
+    // e.g. "1 h 20 min" or "50 min" or "2 h"
+    const parseManualMins = (str) => {
+        if (!str) return 0;
+        let total = 0;
+        const hMatch = str.match(/(\d+)\s*h/);
+        const mMatch = str.match(/(\d+)\s*min/);
+        if (hMatch) total += parseInt(hMatch[1], 10) * 60;
+        if (mMatch) total += parseInt(mMatch[1], 10);
+        // Fallback for simple numeric values
+        if (!hMatch && !mMatch && /^\d+$/.test(str.trim())) {
+            total = parseInt(str.trim(), 10);
+        }
+        return total;
+    };
+
+    const finalRealMins = isManual ? parseManualMins(tiempoManualStr) : realMins;
+    const estimadoMins = ticket?.tiempoEstimado || 0;
+
+    // Difference calculation
+    const diferenciaMins = finalRealMins - estimadoMins;
+    const hasDiferencia = estimadoMins > 0 && finalRealMins > 0;
 
     // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
     const notaLimpia = notaTecnico
@@ -107,7 +134,7 @@ export const TicketReviewModal = ({
                 />
                 <ModalBody>
                     <div className="flex flex-col gap-5">
-                        {isPastDate(ticket?.fechaVencimiento) && (
+                        {ticket?.isLate && (
                             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm">
                                 <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
                                 <p><strong>¡Aviso de Retraso!</strong> Esta tarea fue entregada por el técnico <strong>fuera de tiempo</strong> según su fecha de vencimiento.</p>
@@ -136,23 +163,54 @@ export const TicketReviewModal = ({
                                     </span>
                                 </div>
 
-                                {/* Banner Indicador de Tiempo (Manual vs Sistema) */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
-                                            <Icon name={isManual ? "edit_note" : "timer"} size="sm" className={isManual ? "text-amber-600" : "text-blue-600"} />
+                                {/* Bloque de tiempos de resolución */}
+                                <div className="flex flex-col gap-2.5 bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                                Tiempo Estimado
+                                            </span>
+                                            <span className="text-sm font-bold text-slate-600">
+                                                {estimadoMins > 0 ? formatMins(estimadoMins) : 'No especificado'}
+                                            </span>
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                Tiempo total
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                                Tiempo Real Empleado
                                             </span>
-                                            <span className="text-sm font-extrabold font-mono text-slate-700">
+                                            <span className="text-sm font-extrabold font-mono text-slate-800">
                                                 {tiempoAMostrar}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className={cn("px-2 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider text-center self-start sm:self-auto", isManual ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-600 border border-blue-100")}>
-                                        {isManual ? 'Registro Manual' : 'Medido por Sistema'}
+
+                                    <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-0.5">
+                                        <div className="flex items-center gap-1.5">
+                                            <Icon 
+                                                name={isManual ? "edit_note" : "timer"} 
+                                                size="xs" 
+                                                className={isManual ? "text-amber-600" : "text-blue-600"} 
+                                            />
+                                            <span className="text-[10px] font-semibold text-slate-500">
+                                                Medición: <strong className={isManual ? "text-amber-700" : "text-blue-700"}>{isManual ? "Técnico (Manual)" : "Sistema"}</strong>
+                                            </span>
+                                        </div>
+                                        {hasDiferencia && (
+                                            <span className={cn(
+                                                "text-[10px] font-bold px-2 py-0.5 rounded",
+                                                diferenciaMins > 0 
+                                                    ? "bg-red-50 text-red-700 border border-red-100" 
+                                                    : diferenciaMins < 0 
+                                                        ? "bg-green-50 text-green-700 border border-green-100" 
+                                                        : "bg-slate-50 text-slate-600 border border-slate-100"
+                                            )}>
+                                                {diferenciaMins > 0 
+                                                    ? `+${formatMins(diferenciaMins)} de más` 
+                                                    : diferenciaMins < 0 
+                                                        ? `-${formatMins(Math.abs(diferenciaMins))} de menos` 
+                                                        : 'A tiempo'}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 

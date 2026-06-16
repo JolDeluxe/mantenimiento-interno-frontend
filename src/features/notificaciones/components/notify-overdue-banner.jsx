@@ -19,17 +19,19 @@ export const NotifyOverdueBanner = ({ currentUser }) => {
     const fetchData = useCallback(async () => {
         try {
             const overdueRes = await getTickets({ vencidos: true, limit: 10 });
-            const overdueRaw = Array.isArray(overdueRes.data)
-                ? overdueRes.data
-                : (overdueRes?.data?.data ?? []);
+            // Since custom axios client returns response.data directly, overdueRes represents:
+            // { status: "success", pagination: ..., data: [...] }
+            const overdueRaw = Array.isArray(overdueRes)
+                ? overdueRes
+                : (Array.isArray(overdueRes?.data) ? overdueRes.data : []);
             setOverdue(overdueRaw);
             setDismissedOverdue((prev) => (overdueRaw.length === 0 ? false : prev));
 
             if (esAdmin) {
                 const bandejaRes = await getTickets({ huerfanos: true, limit: 30 });
-                const bandejaRaw = Array.isArray(bandejaRes.data)
-                    ? bandejaRes.data
-                    : (bandejaRes?.data?.data ?? []);
+                const bandejaRaw = Array.isArray(bandejaRes)
+                    ? bandejaRes
+                    : (Array.isArray(bandejaRes?.data) ? bandejaRes.data : []);
 
                 const criticas = bandejaRaw.filter((t) => {
                     if (!t.createdAt) return false;

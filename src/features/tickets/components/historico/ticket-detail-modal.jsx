@@ -4,16 +4,21 @@ import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
 import { formatFecha, formatFechaHora, isPastDate } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
 import { useAuthStore } from '@/stores/auth-store';
+import {
+    getClasificacionIcon,
+    getTipoStyle,
+    getCategoriaInfo
+} from '../constants';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
-const DataRow = ({ icon, label, value, fallback = 'No registrado' }) => (
-    <div className="flex gap-3 items-start">
+const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
+    <div className="flex gap-2.5 items-start">
         <div className="mt-0.5 text-slate-400 shrink-0">
             <Icon name={icon} size="sm" />
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-            <span className="text-sm font-medium text-slate-800 mt-0.5 wrap-break-word">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">{label}</span>
+            <span className={`text-xs font-semibold text-slate-800 wrap-break-word ${colorClass}`}>
                 {value || <span className="text-slate-400 italic font-normal">{fallback}</span>}
             </span>
         </div>
@@ -91,13 +96,13 @@ const MiniImageGrid = ({ urls, onExpand }) => {
     const visible = urls.slice(0, 4);
     const extra = urls.length - 4;
     return (
-        <div className="flex items-center gap-2 flex-wrap mt-3">
+        <div className="flex items-center gap-2 flex-wrap mt-2">
             {visible.map((url, i) => (
                 <button
                     key={i}
                     type="button"
                     onClick={() => onExpand(i)}
-                    className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white/60 hover:border-white transition-all group shrink-0 cursor-pointer shadow-md bg-black/10"
+                    className="relative w-14 h-14 rounded-xl overflow-hidden border border-white/60 hover:border-white transition-all group shrink-0 cursor-pointer shadow-sm bg-black/10"
                 >
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
@@ -105,7 +110,7 @@ const MiniImageGrid = ({ urls, onExpand }) => {
                     </div>
                     {i === 3 && extra > 0 && (
                         <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
-                            <span className="text-white text-sm font-extrabold drop-shadow">+{extra}</span>
+                            <span className="text-white text-xs font-extrabold drop-shadow">+{extra}</span>
                         </div>
                     )}
                 </button>
@@ -119,7 +124,7 @@ const ESTADO_CONTEXT_CONFIG = {
     EN_PAUSA: {
         icon: 'pause_circle',
         label: 'Motivo de la pausa',
-        cls: 'bg-slate-100 border-slate-300',
+        cls: 'bg-slate-50 border-slate-200',
         iconCls: 'text-slate-500',
         textCls: 'text-slate-700',
         labelCls: 'text-slate-500',
@@ -128,7 +133,7 @@ const ESTADO_CONTEXT_CONFIG = {
     RECHAZADO: {
         icon: 'report',
         label: 'Motivo del rechazo',
-        cls: 'bg-red-50 border-red-200',
+        cls: 'bg-red-50/70 border-red-100',
         iconCls: 'text-red-600',
         textCls: 'text-red-800',
         labelCls: 'text-red-600',
@@ -137,7 +142,7 @@ const ESTADO_CONTEXT_CONFIG = {
     RESUELTO: {
         icon: 'check_circle',
         label: 'Resolución del técnico',
-        cls: 'bg-green-50 border-green-200',
+        cls: 'bg-green-50/70 border-green-100',
         iconCls: 'text-green-600',
         textCls: 'text-green-800',
         labelCls: 'text-green-600',
@@ -146,7 +151,7 @@ const ESTADO_CONTEXT_CONFIG = {
     EN_PROGRESO: {
         icon: 'play_circle',
         label: 'Progreso registrado',
-        cls: 'bg-purple-50 border-purple-200',
+        cls: 'bg-purple-50/70 border-purple-100',
         iconCls: 'text-purple-600',
         textCls: 'text-purple-800',
         labelCls: 'text-purple-600',
@@ -155,7 +160,7 @@ const ESTADO_CONTEXT_CONFIG = {
     CERRADO: {
         icon: 'lock',
         label: 'Nota de cierre',
-        cls: 'bg-gray-100 border-gray-300',
+        cls: 'bg-gray-50 border-gray-200',
         iconCls: 'text-gray-600',
         textCls: 'text-gray-800',
         labelCls: 'text-gray-600',
@@ -201,7 +206,7 @@ const ParsedNote = ({ notaRaw, config }) => {
     const stateChangeRegex = /Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i;
     cleanNota = cleanNota.replace(stateChangeRegex, '').trim();
 
-    // 2. Extracción de Tiempo Manual (Formatos variados: [TIEMPO_MANUAL:15] o [TIEMPO_MANUAL:15 min])
+    // 2. Extracción de Tiempo Manual
     const manualTimeRegex = /\[TIEMPO_MANUAL:\s*([^\]]+)\]/i;
     const manualTimeMatch = cleanNota.match(manualTimeRegex);
     if (manualTimeMatch) {
@@ -238,35 +243,35 @@ const ParsedNote = ({ notaRaw, config }) => {
     const isDefault = cleanNota === "Sin observaciones adicionales";
 
     return (
-        <div className="flex flex-col gap-2.5 my-1">
-            <div className="bg-white/60 px-4 py-3 rounded-xl border border-black/5 shadow-sm relative overflow-hidden">
-                <div className={`absolute top-0 left-0 w-1.5 h-full ${config.borderLeftCls}`}></div>
-                <p className={`text-sm font-medium leading-relaxed ${isDefault ? 'text-slate-400 italic font-normal' : config.textCls}`}>
+        <div className="flex flex-col gap-1.5 my-0.5">
+            <div className="bg-white/70 px-3 py-2 rounded-lg border border-black/5 shadow-sm relative overflow-hidden">
+                <div className={`absolute top-0 left-0 w-1 h-full ${config.borderLeftCls}`}></div>
+                <p className={`text-xs font-medium leading-relaxed ${isDefault ? 'text-slate-400 italic font-normal' : config.textCls}`}>
                     {cleanNota}
                 </p>
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center mt-1">
+            <div className="flex flex-wrap gap-1.5 items-center">
                 {timeBadge && (
-                    <div className="flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
-                        <Icon name="timer" size="sm" className="text-orange-500" fill />
-                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">
+                    <div className="flex items-center gap-1 bg-white border border-black/10 px-2 py-0.5 rounded shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="timer" size="xs" className="text-orange-500" fill />
+                        <span className="text-[9px] font-black text-slate-700 uppercase tracking-tight">
                             {timeBadge} <span className="text-orange-600 ml-0.5">(Manual)</span>
                         </span>
                     </div>
                 )}
                 {isInspeccion && (
-                    <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
-                        <Icon name="fact_check" size="sm" className="text-blue-600" fill />
-                        <span className="text-[10px] font-black text-blue-700 uppercase tracking-tight">
+                    <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="fact_check" size="xs" className="text-blue-600" fill />
+                        <span className="text-[9px] font-black text-blue-700 uppercase tracking-tight">
                             Inspección
                         </span>
                     </div>
                 )}
                 {isRutina && (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md shadow-sm animate-in zoom-in duration-300">
-                        <Icon name="event_available" size="sm" className="text-emerald-600" fill />
-                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tight">
+                    <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded shadow-sm animate-in zoom-in duration-300">
+                        <Icon name="event_available" size="xs" className="text-emerald-600" fill />
+                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-tight">
                             Rutina
                         </span>
                     </div>
@@ -288,10 +293,10 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
     if (!nota && images.length === 0) return null;
 
     return (
-        <div className={`flex flex-col gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${config.cls}`}>
-            <div className="flex items-center gap-2">
+        <div className={`flex flex-col gap-2 p-3 rounded-lg border animate-in fade-in slide-in-from-top-2 duration-300 ${config.cls}`}>
+            <div className="flex items-center gap-1.5">
                 <Icon name={config.icon} size="sm" className={config.iconCls} fill />
-                <span className={`text-[10px] font-extrabold uppercase tracking-widest ${config.labelCls}`}>
+                <span className={`text-[9px] font-extrabold uppercase tracking-widest ${config.labelCls}`}>
                     {config.label}
                 </span>
             </div>
@@ -303,24 +308,24 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
             )}
 
             {actor && (
-                <div className="flex items-center gap-2 pt-2 mt-1 border-t border-black/5">
+                <div className="flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-black/5">
                     {actor.imagen ? (
                         <img
                             src={actor.imagen}
                             alt=""
-                            className="w-5 h-5 rounded-full object-cover border border-white/50 shrink-0 shadow-sm"
+                            className="w-4 h-4 rounded-full object-cover border border-white/50 shrink-0 shadow-sm"
                             onError={(e) => { e.target.style.display = 'none'; }}
                         />
                     ) : (
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-black/10`}>
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-black/10">
                             <Icon name="person" size="xs" className={config.iconCls} />
                         </div>
                     )}
-                    <span className={`text-xs font-semibold ${config.textCls} opacity-90`}>
+                    <span className={`text-[10px] font-bold ${config.textCls} opacity-90`}>
                         {actor.nombre}
                     </span>
                     {entry?.createdAt && (
-                        <span className={`text-[10px] font-bold ${config.textCls} opacity-60 ml-auto shrink-0 tracking-wide uppercase`}>
+                        <span className={`text-[9px] font-bold ${config.textCls} opacity-60 ml-auto shrink-0 tracking-wide uppercase`}>
                             {formatFechaHora(entry.createdAt)}
                         </span>
                     )}
@@ -356,7 +361,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
     const fechaFinalizada = entryResuelto?.createdAt;
 
-    // Detección mejorada de Tiempo Manual: Revisa el flag y también escanea las notas por tags
+    // Detección de Tiempo Manual
     const esTiempoManual = Boolean(
         ticket.historial?.some(h => 
             h.esTiempoManual === true || 
@@ -366,170 +371,270 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
 
     const handleImageExpand = (images, index) => setVisor({ images, index });
 
+    // Determinar la etiqueta dinámica del creador
+    const getCreadorLabel = () => {
+        if (!creador) return "Reportado por";
+        const esCreadorCliente = creador.rol === 'CLIENTE_INTERNO';
+        const esTipoTicket = ticket.tipo === 'TICKET';
+        return (esCreadorCliente && esTipoTicket) ? "Reportado por" : "Creado por";
+    };
+
     const renderDetalleCreador = () => {
         if (!creador) return null;
-        const esInterno = ['JEFE', 'COORDINADOR', 'ADMIN'].includes(creador.rol?.toUpperCase());
+        const esInterno = ['JEFE_MTTO', 'COORDINADOR_MTTO', 'SUPER_ADMIN'].includes(creador.rol);
 
         if (esInterno) {
             return (
                 <div className="flex flex-col">
-                    <span className="text-sm">{creador.nombre}</span>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">{creador.rol || 'Staff Interno'}</span>
+                    <span className="text-xs font-semibold text-slate-800 leading-tight">{creador.nombre}</span>
+                    <span className="text-[9px] text-brand-dark/70 font-bold uppercase mt-0.5 tracking-wider">{creador.cargo || 'Mantenimiento'}</span>
                 </div>
             );
         }
 
         return (
             <div className="flex flex-col">
-                <span className="text-sm font-semibold text-slate-800">{creador.nombre}</span>
-                {creador.email && <span className="text-xs text-slate-500 font-normal mt-0.5">{creador.email}</span>}
-                {creador.telefono && <span className="text-xs text-slate-500 font-normal">{creador.telefono}</span>}
+                <span className="text-xs font-semibold text-slate-800 leading-tight">{creador.nombre}</span>
+                {creador.cargo && <span className="text-[9px] text-slate-500 font-medium mt-0.5">{creador.cargo}</span>}
+                {creador.telefono && <span className="text-[10px] text-slate-500 font-normal mt-0.5">{creador.telefono}</span>}
             </div>
         );
     };
 
     const isResolvedOrClosed = ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO';
+    const esAtrasada = !isResolvedOrClosed && ticket.fechaVencimiento && isPastDate(ticket.fechaVencimiento);
+    
     let statusRetraso = null;
-
     if (ticket.fechaVencimiento) {
         if (isResolvedOrClosed && fechaFinalizada) {
             const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
             const fFin = new Date(fechaFinalizada).setHours(0, 0, 0, 0);
             if (fFin > fVenc) {
                 statusRetraso = (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-red-50 text-red-700 border-red-200 uppercase tracking-wide">
-                        Entregada con Retraso
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded uppercase shrink-0">
+                        <Icon name="timer_off" size="xs" /> Entregada con Retraso
                     </span>
                 );
             } else {
                 statusRetraso = (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-green-50 text-green-700 border-green-200 uppercase tracking-wide">
-                        Entregada a Tiempo
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded uppercase shrink-0">
+                        <Icon name="check_circle" size="xs" /> Entregada a Tiempo
                     </span>
                 );
             }
-        } else if (!isResolvedOrClosed && isPastDate(ticket.fechaVencimiento)) {
+        } else if (esAtrasada) {
             statusRetraso = (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-red-100 text-red-800 border-red-300 uppercase tracking-wide">
-                    Atrasada
+                <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded uppercase shrink-0">
+                    <Icon name="warning" size="xs" /> Atrasada
                 </span>
             );
         }
     }
+
+    // Lógica comparativa de tiempos
+    const renderComparativaTiempos = () => {
+        const est = ticket.tiempoEstimado;
+        const real = ticket.duracionReal;
+
+        if (!est && !real) {
+            return <span className="text-xs text-slate-400 italic">Sin registro de tiempos</span>;
+        }
+
+        let porcentajeDif = null;
+        let diferenciaCls = 'text-slate-800';
+        let badgeMetodo = null;
+
+        if (real > 0) {
+            badgeMetodo = (
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest border ${esTiempoManual ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                    {esTiempoManual ? 'Manual' : 'Medido por Sistema'}
+                </span>
+            );
+        }
+
+        if (est && real) {
+            const diff = real - est;
+            const pct = Math.round((diff / est) * 100);
+            if (diff > 0) {
+                porcentajeDif = `+${pct}% de lo estimado`;
+                diferenciaCls = 'text-red-600 font-bold';
+            } else if (diff < 0) {
+                porcentajeDif = `${pct}% de lo estimado`;
+                diferenciaCls = 'text-emerald-600 font-bold';
+            } else {
+                porcentajeDif = 'Exacto al estimado';
+                diferenciaCls = 'text-emerald-600 font-bold';
+            }
+        }
+
+        return (
+            <div className="flex flex-col gap-2 bg-slate-50 border border-slate-200/60 rounded-lg p-2.5">
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                        <span className="text-slate-500 font-medium block">Estimado:</span>
+                        <span className="font-bold text-slate-700">{est ? `${est} min` : 'No especificado'}</span>
+                    </div>
+                    <div>
+                        <span className="text-slate-500 font-medium block">Real transcurrido:</span>
+                        <span className={`font-bold ${diferenciaCls}`}>{real ? `${real} min` : 'Pendiente'}</span>
+                    </div>
+                </div>
+                {(porcentajeDif || badgeMetodo) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/60">
+                        {badgeMetodo}
+                        {porcentajeDif && (
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">
+                                {porcentajeDif}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <>
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}
-                /* En desktop ampliamos el ancho del modal para que los paneles se acomoden sin compactarse, 
-                   y quitamos toda atadura de altura para que el scroll nativo fluya si hace falta. */
-                className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-[1100px]' : 'md:max-w-3xl lg:max-w-4xl'}`}
+                className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-6xl xl:max-w-[1300px]' : 'md:max-w-4xl lg:max-w-5xl'}`}
             >
-                <ModalHeader title={`Detalle — #${ticket.id}`} onClose={onClose} />
+                <ModalHeader title={`Ticket #${ticket.id}`} onClose={onClose} />
 
-                {/* Quitamos los bloqueos y restauramos el comportamiento estándar */}
-                <ModalBody>
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                <ModalBody className="p-4 md:p-5 overflow-y-auto max-h-[82vh]">
+                    <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-                        {/* Panel izquierdo: información principal */}
-                        <div className="flex-1 w-full min-w-0 flex flex-col gap-5">
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                <TicketStatusBadge estado={ticket.estado} />
-                                <TicketPriorityBadge prioridad={ticket.prioridad} />
+                        {/* Panel izquierdo: Información Principal */}
+                        <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
+                            
+                            {/* Metadata bar con etiquetas explícitas */}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-3.5 border-b border-slate-200/80 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado:</span>
+                                    <TicketStatusBadge estado={ticket.estado} />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prioridad:</span>
+                                    <TicketPriorityBadge prioridad={ticket.prioridad} />
+                                </div>
                                 {ticket.tipo && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border bg-slate-100 text-slate-600 border-slate-200 uppercase tracking-wide">
-                                        {ticket.tipo}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo:</span>
+                                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border leading-none ${getTipoStyle(ticket.tipo)}`}>
+                                            {ticket.tipo}
+                                        </span>
+                                    </div>
                                 )}
-                                {statusRetraso}
+                                {ticket.clasificacion && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clasificación:</span>
+                                        <span className="inline-flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
+                                            <Icon name={getClasificacionIcon(ticket.clasificacion)} size="xs" className="text-slate-500 shrink-0" />
+                                            <span>{ticket.clasificacion}</span>
+                                        </span>
+                                    </div>
+                                )}
+                                {ticket.categoria && (() => {
+                                    const catInfo = getCategoriaInfo(ticket.categoria);
+                                    return (
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Categoría:</span>
+                                            <span className="inline-flex items-center gap-1 text-slate-700 font-bold text-xs uppercase">
+                                                <Icon name={catInfo.icon} size="xs" className="text-slate-500 shrink-0" />
+                                                <span>{catInfo.label}</span>
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
-                            <ContextualBanner ticket={ticket} onImageExpand={handleImageExpand} />
-
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
-                                <h3 className="text-lg font-extrabold text-slate-900 leading-tight mb-3">
-                                    {ticket.titulo}
-                                </h3>
-                                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                            {/* Tarjeta de Título + Descripción + Indicador de Retraso/Alerta */}
+                            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+                                <div className="flex flex-wrap items-center gap-2.5 mb-2">
+                                    <h3 className="text-base font-black text-slate-900 leading-snug">
+                                        {ticket.titulo}
+                                    </h3>
+                                    {statusRetraso}
+                                </div>
+                                <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                                     {ticket.descripcion}
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <ContextualBanner ticket={ticket} onImageExpand={handleImageExpand} />
 
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
-                                        <Icon name="location_on" size="sm" className="text-marca-primario" />
+                            {/* Fichas técnicas en grilla de 3 columnas */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                
+                                {/* Tarjeta 1: Ubicación */}
+                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
+                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                                        <Icon name="location_on" size="xs" className="text-slate-500" />
                                         Ubicación
                                     </h4>
-                                    <DataRow icon="factory" label="Planta" value={ticket.planta} />
-                                    <DataRow icon="place" label="Área" value={ticket.area} />
-                                    <DataRow icon="category" label="Clasificación" value={ticket.clasificacion} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <DataRow icon="factory" label="Planta" value={ticket.planta} />
+                                        <DataRow icon="place" label="Área" value={ticket.area} />
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
-                                        <Icon name="group" size="sm" className="text-marca-primario" />
+                                {/* Tarjeta 2: Personal */}
+                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
+                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                                        <Icon name="group" size="xs" className="text-slate-500" />
                                         Personal
                                     </h4>
-                                    <DataRow icon="person" label="Reportado por" value={renderDetalleCreador()} />
-                                    <DataRow
-                                        icon="engineering"
-                                        label="Técnico(s) asignado(s)"
-                                        value={responsables.length > 0 ? responsables.map(r => r.nombre).join(', ') : null}
-                                        fallback="Sin asignar"
-                                    />
+                                    <div className="space-y-3">
+                                        <DataRow icon="person" label={getCreadorLabel()} value={renderDetalleCreador()} />
+                                        <DataRow
+                                            icon="engineering"
+                                            label="Personal Asignado"
+                                            value={responsables.length > 0 ? responsables.map(r => r.nombre).join(', ') : null}
+                                            fallback="Sin asignar"
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
-                                        <Icon name="schedule" size="sm" className="text-marca-primario" />
-                                        Tiempos
+                                {/* Tarjeta 3: Tiempos y Control */}
+                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
+                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                                        <Icon name="schedule" size="xs" className="text-slate-500" />
+                                        Tiempos y Control
                                     </h4>
-                                    <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
-                                    {fechaFinalizada && (
-                                        <DataRow icon="task_alt" label="Finalizado" value={formatFechaHora(fechaFinalizada)} />
-                                    )}
-                                    <DataRow icon="event" label="Vencimiento" value={formatFecha(ticket.fechaVencimiento)} fallback="Sin fecha límite" />
-                                    <DataRow icon="timer" label="Tiempo estimado" value={ticket.tiempoEstimado ? `${ticket.tiempoEstimado} min` : null} fallback="No especificado" />
-
-                                    <DataRow
-                                        icon="hourglass_bottom"
-                                        label="Tiempo real"
-                                        value={ticket.duracionReal ? (
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <span className={
-                                                    ticket.tiempoEstimado
-                                                        ? (ticket.duracionReal > ticket.tiempoEstimado ? 'text-red-600 font-bold' : 'text-green-600 font-bold')
-                                                        : 'text-slate-800 font-bold'
-                                                }>
-                                                    {ticket.duracionReal} min
-                                                </span>
-                                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest border ${esTiempoManual ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                                    {esTiempoManual ? 'Manual' : 'Automático'}
-                                                </span>
-                                            </div>
-                                        ) : null}
-                                        fallback="Sin registro"
-                                    />
+                                    <div className="space-y-2.5">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
+                                            <DataRow 
+                                                icon="event" 
+                                                label="Vence" 
+                                                value={
+                                                    <span className={esAtrasada ? 'text-red-600 font-extrabold' : ''}>
+                                                        {formatFecha(ticket.fechaVencimiento)}
+                                                    </span>
+                                                } 
+                                                fallback="Sin límite" 
+                                            />
+                                        </div>
+                                        {fechaFinalizada && (
+                                            <DataRow icon="task_alt" label="Finalizado" value={formatFechaHora(fechaFinalizada)} />
+                                        )}
+                                        {renderComparativaTiempos()}
+                                    </div>
                                 </div>
 
                             </div>
                         </div>
 
-                        {/* Panel derecho: línea de tiempo condicional. Fluye naturalmente de arriba hacia abajo sin scrollbars internos forzados. */}
+                        {/* Panel de Línea de Tiempo (Historial) - Se inyecta sin doble scrollbars ni constricciones y con espaciador automático */}
                         {mostrarHistorial && !esTecnico && (
-                            <div className="w-full lg:w-[380px] shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-6">
-                                <TicketTimeline historial={ticket.historial} responsables={responsables} />
-                            </div>
+                            <TicketTimeline historial={ticket.historial} responsables={responsables} />
                         )}
 
                     </div>
                 </ModalBody>
 
-                <ModalFooter className="flex justify-end w-full">
+                <ModalFooter className="flex justify-end gap-2 p-3 border-t border-slate-100">
                     {tieneHistorial && !esTecnico && (
                         <Button
                             variant="accion"

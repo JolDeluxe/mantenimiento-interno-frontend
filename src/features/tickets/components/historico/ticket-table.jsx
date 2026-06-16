@@ -9,7 +9,11 @@ import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import {
+    getClasificacionIcon,
+    getTipoStyle,
+    getCategoriaInfo
+} from '../constants';
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
@@ -180,27 +184,14 @@ export const TicketsTable = ({
                 );
 
                 const tipoBadge = row.tipo ? (
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 ${
-                        {
-                            TICKET: 'bg-slate-100 text-slate-600 border-slate-200/60',
-                            PLANEADA: 'bg-blue-50 text-blue-700 border-blue-200/60',
-                            EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
-                        }[row.tipo] || 'bg-slate-100 text-slate-500 border-slate-200'
-                    }`}>
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 ${getTipoStyle(row.tipo)}`}>
                         {row.tipo}
                     </span>
                 ) : null;
 
-                const clasifIcon = {
-                    PREVENTIVO: 'build_circle',
-                    CORRECTIVO: 'report_problem',
-                    INSPECCION: 'search',
-                    RUTINA: 'sync',
-                }[row.clasificacion] || 'label';
-
                 const clasifContent = row.clasificacion ? (
                     <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
-                        <Icon name={clasifIcon} size="xs" className="text-slate-400 shrink-0" />
+                        <Icon name={getClasificacionIcon(row.clasificacion)} size="xs" className="text-slate-400 shrink-0" />
                         <span>{row.clasificacion}</span>
                     </div>
                 ) : (
@@ -225,11 +216,7 @@ export const TicketsTable = ({
                 if (row.isSkeleton) return <Skeleton className="h-5 w-18 mx-auto rounded-md" />;
                 if (!row.categoria) return <span className="text-xs text-slate-400 italic">-</span>;
                 
-                const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === row.categoria) || {
-                    label: row.categoria,
-                    icon: 'category',
-                    colorClass: 'bg-slate-100 text-slate-500 border-slate-200'
-                };
+                const catInfo = getCategoriaInfo(row.categoria);
 
                 return (
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide whitespace-nowrap`}>
