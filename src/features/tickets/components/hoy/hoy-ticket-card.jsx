@@ -107,6 +107,7 @@ export const HoyTicketCard = ({
     const { rol, id: userId } = currentUser ?? {};
     const [responsablesExpanded, setResponsablesExpanded] = useState(false);
     const [showHighlight, setShowHighlight] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const cardRef = useRef(null);
 
     useEffect(() => {
@@ -175,7 +176,7 @@ export const HoyTicketCard = ({
         <div
             ref={cardRef}
             className={cn(
-                'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full transition-all duration-700',
+                'bg-white border rounded-2xl p-4 shadow-sm flex flex-col gap-3 h-full transition-all duration-700 hover:shadow-md',
                 showHighlight
                     ? 'border-yellow-400 bg-yellow-50/50 shadow-[0_0_0_4px_rgba(250,204,21,0.45),0_8px_24px_rgba(250,204,21,0.2)] -translate-y-0.5'
                     : baseClasses,
@@ -183,8 +184,8 @@ export const HoyTicketCard = ({
             )}
         >
             <div
-                className="flex items-start justify-between gap-2 cursor-pointer active:opacity-70 transition-opacity"
-                onClick={() => onViewDetail?.(ticket)}
+                className="flex items-start justify-between gap-2 cursor-pointer active:opacity-75 transition-opacity select-none"
+                onClick={() => setIsExpanded(!isExpanded)}
             >
                 <div className="flex-1 min-w-0">
                     <span className="flex items-center flex-wrap gap-2 text-xs font-mono font-bold text-slate-400 mb-1.5">
@@ -206,8 +207,18 @@ export const HoyTicketCard = ({
                         </h3>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                    <TicketStatusBadge estado={ticket.estado} />
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1">
+                        <TicketStatusBadge estado={ticket.estado} />
+                        <Icon
+                            name="keyboard_arrow_down"
+                            size="sm"
+                            className={cn(
+                                'text-slate-400 transition-transform duration-300',
+                                isExpanded && 'rotate-180'
+                            )}
+                        />
+                    </div>
                     <TicketPriorityBadge prioridad={ticket.prioridad} />
                 </div>
             </div>
@@ -225,68 +236,70 @@ export const HoyTicketCard = ({
                 </div>
             )}
 
-            <div className="flex flex-col gap-1.5 ml-1 flex-1">
-                {ticket.planta && (
-                    <p className="flex items-center gap-2">
-                        <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
-                        <span className="text-xs text-slate-500">
-                            {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
-                        </span>
-                    </p>
-                )}
-                {(() => {
-                    const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === ticket.categoria);
-                    if (!ticket.categoria) return null;
-                    return (
+            {isExpanded && (
+                <div className="flex flex-col gap-1.5 ml-1 flex-1 border-t border-slate-100/50 pt-2.5 animate-fadeIn">
+                    {ticket.planta && (
                         <p className="flex items-center gap-2">
-                            <Icon name={catInfo?.icon || 'label'} size="xs" className="text-slate-300 shrink-0" />
+                            <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
                             <span className="text-xs text-slate-500">
-                                {catInfo?.label || ticket.categoria}
+                                {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
                             </span>
                         </p>
-                    );
-                })()}
-                {ticket.responsables?.length > 0 && (
-                    <div className="flex items-start gap-2">
-                        <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
-                        <div className="flex flex-col gap-1.5 min-w-0">
-                            {responsablesMostrar.map((r) => (
-                                <div key={r.id} className="flex items-center gap-1.5">
-                                    {r.imagen ? (
-                                        <img
-                                            src={r.imagen}
-                                            alt={r.nombre}
-                                            className="w-5 h-5 rounded-full object-cover border border-slate-200 shrink-0"
-                                            onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
-                                        />
-                                    ) : (
-                                        <div className="w-5 h-5 rounded-full bg-marca-primario/10 flex items-center justify-center text-[9px] font-bold text-marca-primario shrink-0">
-                                            {r.nombre?.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                    <span className="text-xs text-slate-500 truncate">{r.nombre}</span>
-                                </div>
-                            ))}
-                            {responsablesExtra > 0 && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setResponsablesExpanded(!responsablesExpanded); }}
-                                    className="text-[10px] font-bold text-marca-primario hover:underline self-start cursor-pointer"
-                                >
-                                    {responsablesExpanded ? 'Ver menos' : `+ ${responsablesExtra} más`}
-                                </button>
-                            )}
+                    )}
+                    {(() => {
+                        const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === ticket.categoria);
+                        if (!ticket.categoria) return null;
+                        return (
+                            <p className="flex items-center gap-2">
+                                <Icon name={catInfo?.icon || 'label'} size="xs" className="text-slate-300 shrink-0" />
+                                <span className="text-xs text-slate-500">
+                                    {catInfo?.label || ticket.categoria}
+                                </span>
+                            </p>
+                        );
+                    })()}
+                    {ticket.responsables?.length > 0 && (
+                        <div className="flex items-start gap-2">
+                            <Icon name="engineering" size="xs" className="text-slate-300 shrink-0 mt-0.5" />
+                            <div className="flex flex-col gap-1.5 min-w-0">
+                                {responsablesMostrar.map((r) => (
+                                    <div key={r.id} className="flex items-center gap-1.5">
+                                        {r.imagen ? (
+                                            <img
+                                                src={r.imagen}
+                                                alt={r.nombre}
+                                                className="w-5 h-5 rounded-full object-cover border border-slate-200 shrink-0"
+                                                onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
+                                            />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full bg-marca-primario/10 flex items-center justify-center text-[9px] font-bold text-marca-primario shrink-0">
+                                                {r.nombre?.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <span className="text-xs text-slate-500 truncate">{r.nombre}</span>
+                                    </div>
+                                ))}
+                                {responsablesExtra > 0 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setResponsablesExpanded(!responsablesExpanded); }}
+                                        className="text-[10px] font-bold text-marca-primario hover:underline self-start cursor-pointer"
+                                    >
+                                        {responsablesExpanded ? 'Ver menos' : `+ ${responsablesExtra} más`}
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
-                {ticket.fechaVencimiento && (
-                    <p className="flex items-center gap-2">
-                        <Icon name="event" size="xs" className={cn('shrink-0', vencida ? 'text-orange-500/80' : 'text-slate-300')} />
-                        <span className={cn('text-xs font-medium', vencida ? 'text-orange-600 font-bold' : 'text-slate-500')}>
-                            {formatFechaHora(ticket.fechaVencimiento)}
-                        </span>
-                    </p>
-                )}
-            </div>
+                    )}
+                    {ticket.fechaVencimiento && (
+                        <p className="flex items-center gap-2">
+                            <Icon name="event" size="xs" className={cn('shrink-0', vencida ? 'text-orange-500/80' : 'text-slate-300')} />
+                            <span className={cn('text-xs font-medium', vencida ? 'text-orange-600 font-bold' : 'text-slate-500')}>
+                                {formatFechaHora(ticket.fechaVencimiento)}
+                            </span>
+                        </p>
+                    )}
+                </div>
+            )}
 
             <div className="flex items-center gap-2 pt-3 border-t border-slate-100 flex-wrap w-full mt-auto">
                 {puedeCancelar && (
