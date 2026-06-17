@@ -598,13 +598,13 @@ export const TicketProgressModal = ({
                                         <button
                                             type="button"
                                             onClick={() => {
+                                                const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                const redondeado = Math.round(base / 5) * 5;
+                                                setTiempoManualMins(Math.min(redondeado, 1435) || 60);
                                                 if (isAtrasada) {
                                                     setFechaFinManual(isoToDateInput(new Date().toISOString()));
                                                     setTimePhase('atrasada_fecha');
                                                 } else {
-                                                    const base = elapsedMins > 0 ? elapsedMins : 60;
-                                                    const redondeado = Math.round(base / 5) * 5;
-                                                    setTiempoManualMins(Math.min(redondeado, 1435) || 60);
                                                     setTimePhase('manual');
                                                 }
                                             }}

@@ -203,3 +203,25 @@ export const getDateRange = (type) => {
             return { startDate: null, endDate: null };
     }
 };
+
+export const formatDurationToDaysHours = (minutes) => {
+    if (minutes === undefined || minutes === null || isNaN(minutes) || minutes < 0) {
+        minutes = 0;
+    }
+    if (minutes < 60) return `${minutes} min`;
+    
+    const totalHours = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    
+    if (totalHours < 24) {
+        return m > 0 ? `${totalHours} h ${m} min` : `${totalHours} h`;
+    }
+    
+    const d = Math.floor(totalHours / 24);
+    const h = totalHours % 24;
+    
+    const dStr = `${d} día${d > 1 ? 's' : ''}`;
+    const hStr = h > 0 ? ` ${h} h` : '';
+    const mStr = m > 0 ? ` ${m} min` : '';
+    return `${dStr}${hStr}${mStr}`;
+};

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
-import { isPastDate, formatFechaHora } from '@/lib/date';
+import { isPastDate, formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 // Helper local para formatear los minutos del sistema
@@ -26,11 +26,16 @@ export const TicketReviewModal = ({
     ticket,
     onConfirm,
     isSubmitting,
+    currentUser,
 }) => {
     const [nota, setNota] = useState('');
     const [decision, setDecision] = useState(null);
     const [error, setError] = useState(null);
     const [previewIndex, setPreviewIndex] = useState(null);
+    const [nuevaFechaVencimiento, setNuevaFechaVencimiento] = useState('');
+    const [errorFecha, setErrorFecha] = useState('');
+
+    const esSupervisor = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(currentUser?.rol);
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
     const notaTecnico = resolucion?.nota || '';
@@ -92,8 +97,18 @@ export const TicketReviewModal = ({
             setDecision(null);
             setError(null);
             setPreviewIndex(null);
+            setNuevaFechaVencimiento('');
+            setErrorFecha('');
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (decision === 'RECHAZADO' && esSupervisor && !nuevaFechaVencimiento) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString()));
+        }
+    }, [decision, esSupervisor, nuevaFechaVencimiento]);
 
     useEffect(() => {
         if (previewIndex === null || imagenesEvidenciaUrls.length <= 1) return;
@@ -119,9 +134,22 @@ export const TicketReviewModal = ({
             setError('Selecciona una decisión para continuar.');
             return;
         }
+        if (decision === 'RECHAZADO' && esSupervisor) {
+            if (!nuevaFechaVencimiento) {
+                setErrorFecha('La fecha de vencimiento es requerida.');
+                return;
+            }
+            if (nuevaFechaVencimiento < getMinDateHoy()) {
+                setErrorFecha('La fecha de vencimiento no puede estar en el pasado.');
+                return;
+            }
+        }
         const formData = new FormData();
         formData.append('estado', decision);
         if (nota.trim()) formData.append('nota', nota.trim());
+        if (decision === 'RECHAZADO' && esSupervisor && nuevaFechaVencimiento) {
+            formData.append('fechaVencimiento', fechaInputToISOLocal(nuevaFechaVencimiento));
+        }
         onConfirm(ticket.id, formData);
     };
 
@@ -314,6 +342,29 @@ export const TicketReviewModal = ({
                             </div>
                             {error && <p className="text-xs text-estado-rechazado font-bold mt-1">{error}</p>}
                         </div>
+
+                        {decision === 'RECHAZADO' && esSupervisor && (
+                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <Label htmlFor="nueva-fecha-vencimiento" error={!!errorFecha}>
+                                    Nueva fecha de vencimiento *
+                                </Label>
+                                <input
+                                    id="nueva-fecha-vencimiento"
+                                    type="date"
+                                    min={getMinDateHoy()}
+                                    value={nuevaFechaVencimiento}
+                                    onChange={(e) => {
+                                        setNuevaFechaVencimiento(e.target.value);
+                                        setErrorFecha('');
+                                    }}
+                                    className={cn(
+                                        "w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all",
+                                        errorFecha ? "border-red-400 focus:ring-red-200" : ""
+                                    )}
+                                />
+                                {errorFecha && <p className="text-xs text-estado-rechazado font-bold mt-1">{errorFecha}</p>}
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="rev-nota">

@@ -36,7 +36,7 @@ const esAtrasadaActiva = (ticket) =>
     ESTADOS_VALIDOS_ATRASADAS.includes(ticket.estado);
 
 const perteneceAHoy = (ticket) => {
-    if (ticket.estado === 'RECHAZADO' || ticket.estado === 'RESUELTO') return true;
+    if (ticket.estado === 'RECHAZADO' || ticket.estado === 'RESUELTO' || ticket.estado === 'EN_PROGRESO' || ticket.estado === 'EN_PAUSA') return true;
     if (!ticket.fechaVencimiento) return false;
     return isOnDate(ticket.fechaVencimiento, 0) || esAtrasadaActiva(ticket);
 };
@@ -107,13 +107,9 @@ export default function TicketsHoyPage() {
         const rol = currentUser?.rol;
         const esAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(rol);
 
-        const STATUS_ORDER = {
-            EN_PAUSA: 5,
-            EN_PROGRESO: 4,
-            ASIGNADA: 3,
-            RECHAZADO: 3,
-            RESUELTO: 1
-        };
+        const STATUS_ORDER = esAdmin
+            ? { RESUELTO: 5, EN_PAUSA: 4, EN_PROGRESO: 3, ASIGNADA: 2, RECHAZADO: 2 }
+            : { EN_PROGRESO: 5, EN_PAUSA: 4, ASIGNADA: 3, RECHAZADO: 3, RESUELTO: 2 };
 
         return [...tickets].sort((a, b) => {
             if (highlightId) {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '../historico/ticket-status-badge';
-import { isPastDate, formatFechaHora } from '@/lib/date';
+import { isPastDate, formatFechaHora, formatDurationToDaysHours } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
@@ -38,18 +38,11 @@ const getStatusLabelData = (ticket) => {
             const lastInterval = ticket.intervalos[ticket.intervalos.length - 1];
             if (lastInterval.fin) pauseDate = new Date(lastInterval.fin);
         }
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const fechaPausa = new Date(pauseDate);
-        fechaPausa.setHours(0, 0, 0, 0);
-        const diffDays = Math.round((hoy.getTime() - fechaPausa.getTime()) / (1000 * 60 * 60 * 24));
-
-        let label = 'Tarea pausada';
-        if (diffDays === 1) label = 'Tarea con 1 día en pausa';
-        else if (diffDays > 1) label = `Tarea con ${diffDays} días en pausa`;
+        const elapsedMins = Math.max(0, Math.floor((Date.now() - pauseDate.getTime()) / 60000));
+        const durationStr = formatDurationToDaysHours(elapsedMins);
 
         return {
-            label,
+            label: `Tarea pausada (${durationStr})`,
             icon: 'pause_circle',
             colorClasses: 'text-slate-500 bg-slate-100 border-slate-200',
             pulse: false,
@@ -65,13 +58,7 @@ const getStatusLabelData = (ticket) => {
             }
         }
         const acum = (ticket.duracionReal || 0) + extraMins;
-        let timeString = '';
-        if (acum < 60) timeString = `${acum} min`;
-        else {
-            const h = Math.floor(acum / 60);
-            const m = acum % 60;
-            timeString = m > 0 ? `${h} h ${m} min` : `${h} h`;
-        }
+        const timeString = formatDurationToDaysHours(acum);
         return {
             label: `${timeString} en progreso`,
             icon: 'timer',
@@ -84,11 +71,41 @@ const getStatusLabelData = (ticket) => {
 
 const getEstadoActionMeta = (estado) => {
     switch (estado) {
-        case 'ASIGNADA': return { text: 'Iniciar', icon: 'play_arrow' };
-        case 'EN_PROGRESO': return { text: 'Finalizar', icon: 'check_circle' };
-        case 'EN_PAUSA': return { text: 'Reanudar', icon: 'play_arrow' };
-        case 'RECHAZADO': return { text: 'Reiniciar', icon: 'replay' };
-        default: return { text: 'Estado', icon: 'swap_horiz' };
+        case 'ASIGNADA':
+            return {
+                text: 'Iniciar',
+                icon: 'play_arrow',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
+        case 'EN_PROGRESO':
+            return {
+                text: 'Finalizar',
+                icon: 'check_circle',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-resuelto shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-resuelto bg-estado-resuelto/10 hover:bg-estado-resuelto/20'
+            };
+        case 'EN_PAUSA':
+            return {
+                text: 'Reanudar',
+                icon: 'play_arrow',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
+        case 'RECHAZADO':
+            return {
+                text: 'Reiniciar',
+                icon: 'replay',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-rechazado shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-rechazado/20'
+            };
+        default:
+            return {
+                text: 'Estado',
+                icon: 'swap_horiz',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
     }
 };
 
@@ -341,8 +358,8 @@ export const HoyTicketCard = ({
                         className={cn(
                             'flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all cursor-pointer',
                             esEstadoPrimario
-                                ? 'px-3 py-1.5 text-white bg-estado-en-progreso shadow-sm'
-                                : 'px-2.5 py-1.5 text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20'
+                                ? actionMeta.primaryClass
+                                : actionMeta.ghostClass
                         )}
                     >
                         <Icon name={actionMeta.icon} size="xs" />

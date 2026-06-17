@@ -18,14 +18,41 @@ const isVencida = (ticket) => {
 const getEstadoActionMeta = (estado) => {
     switch (estado) {
         case 'ASIGNADA':
-            return { text: 'Iniciar', icon: 'play_arrow' };
+            return {
+                text: 'Iniciar',
+                icon: 'play_arrow',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
         case 'EN_PROGRESO':
         case 'EN_PROCESO':
-            return { text: 'Finalizar', icon: 'check_circle' };
+            return {
+                text: 'Finalizar',
+                icon: 'check_circle',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-resuelto shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-resuelto bg-estado-resuelto/10 hover:bg-estado-resuelto/20'
+            };
         case 'EN_PAUSA':
-            return { text: 'Reanudar', icon: 'play_arrow' };
+            return {
+                text: 'Reanudar',
+                icon: 'play_arrow',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
+        case 'RECHAZADO':
+            return {
+                text: 'Reiniciar',
+                icon: 'replay',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-rechazado shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-rechazado bg-estado-rechazado/10 hover:bg-estado-rechazado/20'
+            };
         default:
-            return { text: 'Estado', icon: 'swap_horiz' };
+            return {
+                text: 'Estado',
+                icon: 'swap_horiz',
+                primaryClass: 'px-3 py-1.5 text-white bg-estado-asignada shadow-sm',
+                ghostClass: 'px-2.5 py-1.5 text-estado-asignada bg-estado-asignada/10 hover:bg-estado-asignada/20'
+            };
     }
 };
 
@@ -249,8 +276,8 @@ export const TicketCard = ({
                         className={cn(
                             "flex items-center gap-1.5 rounded-lg text-xs font-bold active:scale-95 transition-all",
                             esEstadoPrimario
-                                ? "px-3 py-1.5 text-white bg-estado-en-progreso shadow-sm"
-                                : "px-2.5 py-1.5 text-estado-en-progreso bg-estado-en-progreso/10 hover:bg-estado-en-progreso/20"
+                                ? actionMeta.primaryClass
+                                : actionMeta.ghostClass
                         )}
                         title={actionMeta.text}
                     >

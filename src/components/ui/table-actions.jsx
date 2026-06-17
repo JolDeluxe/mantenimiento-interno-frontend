@@ -67,8 +67,40 @@ export const TableActions = ({ row, actions = [] }) => {
             {actions.map(({ key, enabled, hidden, onClick, tooltip: tooltipOverride }) => {
                 if (hidden || !enabled) return null;
 
-                const config = ACTION_CONFIG[key];
+                let config = ACTION_CONFIG[key];
                 if (!config) return null;
+
+                if (key === 'cambiar_estado' && row?.estado) {
+                    if (row.estado === 'ASIGNADA') {
+                        config = {
+                            icon: 'play_arrow',
+                            tooltip: 'Iniciar tarea',
+                            variant: 'dark',
+                            className: 'text-estado-asignada hover:bg-estado-asignada/10'
+                        };
+                    } else if (row.estado === 'EN_PROGRESO' || row.estado === 'EN_PROCESO') {
+                        config = {
+                            icon: 'check_circle',
+                            tooltip: 'Finalizar tarea',
+                            variant: 'dark',
+                            className: 'text-estado-resuelto hover:bg-estado-resuelto/10'
+                        };
+                    } else if (row.estado === 'EN_PAUSA') {
+                        config = {
+                            icon: 'play_arrow',
+                            tooltip: 'Reanudar tarea',
+                            variant: 'dark',
+                            className: 'text-estado-asignada hover:bg-estado-asignada/10'
+                        };
+                    } else if (row.estado === 'RECHAZADO') {
+                        config = {
+                            icon: 'replay',
+                            tooltip: 'Reiniciar tarea',
+                            variant: 'dark',
+                            className: 'text-estado-rechazado hover:bg-estado-rechazado/10'
+                        };
+                    }
+                }
 
                 const tooltip = tooltipOverride ?? config.tooltip;
 

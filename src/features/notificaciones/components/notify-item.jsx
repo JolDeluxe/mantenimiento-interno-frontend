@@ -83,7 +83,7 @@ const buildAcciones = (notif, rol) => {
 
         case 'REVISION_PENDIENTE':
         case 'TAREA_RESUELTA':
-            if (accionada) {
+            if (accionada || (estadoActual && estadoActual !== 'RESUELTO')) {
                 const labelChip = estadoActual === 'CERRADO' ? 'Aprobada' : estadoActual === 'RECHAZADO' ? 'Rechazada' : 'Revisada';
                 const iconChip = estadoActual === 'RECHAZADO' ? 'cancel' : 'check_circle';
                 const colorChip = estadoActual === 'RECHAZADO'
@@ -93,7 +93,7 @@ const buildAcciones = (notif, rol) => {
                 return [verDetalle(), chip(labelChip, iconChip, colorChip)];
             }
             // Aquí ahora entrará el Admin correctamente porque el cortocircuito anterior ya no lo bloquea.
-            if (esAdmin || esJefe || esCoord) {
+            if ((esAdmin || esJefe || esCoord) && estadoActual === 'RESUELTO') {
                 return [
                     verDetalle(),
                     { key: 'revisar', label: 'Revisar', icon: 'fact_check', variant: 'guardar', isStatus: false, isCTA: true },

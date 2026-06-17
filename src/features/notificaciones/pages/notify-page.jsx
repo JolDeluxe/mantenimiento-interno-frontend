@@ -233,7 +233,7 @@ export default function NotifyPage() {
             {isDesktop ? <NotifyDesktop {...sharedProps} /> : <NotifyMobile {...sharedProps} />}
 
             <NotifyDetailModal isOpen={detailOpen} onClose={handleCloseModals} ticket={activeTicket} />
-            <NotifyReviewModal isOpen={reviewOpen} onClose={handleCloseModals} ticket={activeTicket} isSubmitting={changeSubmit} onConfirm={handleChangeStatus} />
+            <NotifyReviewModal isOpen={reviewOpen} onClose={handleCloseModals} ticket={activeTicket} isSubmitting={changeSubmit} currentUser={currentUser} onConfirm={handleChangeStatus} />
             <NotifyStatusModal isOpen={statusOpen} onClose={handleCloseModals} ticket={activeTicket} currentUser={currentUser} isSubmitting={changeSubmit} onConfirm={handleChangeStatus} />
         </div>
     );

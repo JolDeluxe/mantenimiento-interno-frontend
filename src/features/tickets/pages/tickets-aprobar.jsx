@@ -115,6 +115,7 @@ export default function TicketsAprobarPage() {
                     ticket={selectedTicket}
                     onConfirm={handleConfirmReview}
                     isSubmitting={isSubmitting}
+                    currentUser={currentUser}
                 />
             )}
         </>

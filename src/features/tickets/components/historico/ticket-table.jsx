@@ -456,6 +456,7 @@ export const TicketsTable = ({
                 onClose={() => setReviewTarget(null)}
                 ticket={reviewTarget}
                 isSubmitting={submitting}
+                currentUser={currentUser}
                 onConfirm={async (id, payload) => {
                     await onChangeStatus(id, payload);
                     setReviewTarget(null);

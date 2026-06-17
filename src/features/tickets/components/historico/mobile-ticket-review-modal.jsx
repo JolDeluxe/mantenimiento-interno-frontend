@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
-import { isPastDate, formatFechaHora } from '@/lib/date';
+import { isPastDate, formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 // Helper local para formatear los minutos del sistema
@@ -128,20 +128,38 @@ export const MobileTicketReviewModal = ({
     ticket,
     onConfirm,
     isSubmitting,
+    currentUser,
 }) => {
     const [nota, setNota] = useState('');
     const [decision, setDecision] = useState(null);
     const [error, setError] = useState(null);
     const [previewIndex, setPreviewIndex] = useState(null);
+    const [nuevaFechaVencimiento, setNuevaFechaVencimiento] = useState('');
+    const [errorFecha, setErrorFecha] = useState('');
+
+    const esSupervisor = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(currentUser?.rol);
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
     const notaTecnico = resolucion?.nota || '';
     const actorResolucion = resolucion?.usuario || resolucion?.actor || null;
     const fechaResolucion = resolucion?.createdAt || null;
 
-    // Lógica DTO: El frontend es ciego, obedece al boolean de la Base de Datos
-    const isManual = Boolean(resolucion?.esTiempoManual);
-    const tiempoAMostrar = formatMins(ticket?.duracionReal || 0);
+    // Lógica de parsing para el tiempo manual vs sistema
+    const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
+    const isManual = !!matchManual || Boolean(resolucion?.esTiempoManual);
+    const tiempoManualStr = matchManual ? matchManual[1] : null;
+    
+    // Parse duration logic:
+    const realMins = ticket?.duracionReal || 0;
+    const tiempoSistemaStr = formatMins(realMins);
+    const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
+
+    // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
+    const notaLimpia = notaTecnico
+        .replace(/\[TIEMPO_MANUAL:(.+?)\]/g, '')
+        .replace(/\[ENTREGA_ATRASADA_MANUAL\]/g, '')
+        .replace(/\[RUTINA\]/g, '')
+        .trim();
 
     const imagenesEvidenciaBrutas = resolucion?.imagenes?.length > 0
         ? resolucion.imagenes
@@ -157,8 +175,18 @@ export const MobileTicketReviewModal = ({
             setDecision(null);
             setError(null);
             setPreviewIndex(null);
+            setNuevaFechaVencimiento('');
+            setErrorFecha('');
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (decision === 'RECHAZADO' && esSupervisor && !nuevaFechaVencimiento) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString()));
+        }
+    }, [decision, esSupervisor, nuevaFechaVencimiento]);
 
     if (!ticket) return null;
 
@@ -167,9 +195,22 @@ export const MobileTicketReviewModal = ({
             setError('Selecciona una decisión para continuar.');
             return;
         }
+        if (decision === 'RECHAZADO' && esSupervisor) {
+            if (!nuevaFechaVencimiento) {
+                setErrorFecha('La fecha de vencimiento es requerida.');
+                return;
+            }
+            if (nuevaFechaVencimiento < getMinDateHoy()) {
+                setErrorFecha('La fecha de vencimiento no puede estar en el pasado.');
+                return;
+            }
+        }
         const formData = new FormData();
         formData.append('estado', decision);
         if (nota.trim()) formData.append('nota', nota.trim());
+        if (decision === 'RECHAZADO' && esSupervisor && nuevaFechaVencimiento) {
+            formData.append('fechaVencimiento', fechaInputToISOLocal(nuevaFechaVencimiento));
+        }
         onConfirm(ticket.id, formData);
     };
 
@@ -201,7 +242,7 @@ export const MobileTicketReviewModal = ({
                             )}
                         </div>
 
-                        {(notaTecnico || imagenesEvidenciaUrls?.length > 0 || actorResolucion) && (
+                        {(notaLimpia || imagenesEvidenciaUrls?.length > 0 || actorResolucion) && (
                             <div className="bg-blue-50/40 border border-blue-100 rounded-xl p-4 shadow-sm">
                                 <p className="text-xs text-blue-700 font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5">
                                     <Icon name="info" size="xs" /> Evidencia del Técnico
@@ -227,11 +268,11 @@ export const MobileTicketReviewModal = ({
                                     </div>
                                 </div>
 
-                                {notaTecnico && (
+                                {notaLimpia && (
                                     <div className="relative mb-4">
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-300 rounded-l-md"></div>
                                         <p className="text-sm text-slate-700 italic bg-white p-3 pl-4 rounded-md border border-slate-100 shadow-sm leading-relaxed">
-                                            "{notaTecnico}"
+                                            "{notaLimpia}"
                                         </p>
                                     </div>
                                 )}
@@ -306,6 +347,29 @@ export const MobileTicketReviewModal = ({
                             </div>
                             {error && <p className="text-xs text-red-600 font-bold mt-1 animate-in slide-in-from-top-1">{error}</p>}
                         </div>
+
+                        {decision === 'RECHAZADO' && esSupervisor && (
+                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <Label htmlFor="nueva-fecha-vencimiento" error={!!errorFecha}>
+                                    Nueva fecha de vencimiento *
+                                </Label>
+                                <input
+                                    id="nueva-fecha-vencimiento"
+                                    type="date"
+                                    min={getMinDateHoy()}
+                                    value={nuevaFechaVencimiento}
+                                    onChange={(e) => {
+                                        setNuevaFechaVencimiento(e.target.value);
+                                        setErrorFecha('');
+                                    }}
+                                    className={cn(
+                                        "w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all",
+                                        errorFecha ? "border-red-400 focus:ring-red-200" : ""
+                                    )}
+                                />
+                                {errorFecha && <p className="text-xs text-red-600 font-bold mt-1">{errorFecha}</p>}
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-1.5 pb-4">
                             <Label htmlFor="rev-nota">

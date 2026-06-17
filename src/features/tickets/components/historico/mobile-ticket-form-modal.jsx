@@ -191,20 +191,9 @@ export const MobileTicketFormModal = ({
         setResponsables((prev) => prev.filter((x) => x !== idStr));
     };
 
-    // Genera label enriquecido para el option nativo
+    // Genera label para el option nativo (solo nombre)
     const buildOptionLabel = (t) => {
-        const { workload } = t;
-        const sinTareas = !workload ||
-            (workload.asignadas === 0 && workload.enProgreso === 0 && workload.enPausa === 0);
-
-        if (sinTareas) return `${t.nombre}${t.cargo ? ` — ${t.cargo}` : ''} · Sin tareas`;
-
-        const parts = [];
-        if (workload.asignadas > 0) parts.push(`Asig. ${workload.asignadas}`);
-        if (workload.enProgreso > 0) parts.push(`Prog. ${workload.enProgreso}`);
-        if (workload.enPausa > 0) parts.push(`Pausa ${workload.enPausa}`);
-
-        return `${t.nombre}${t.cargo ? ` — ${t.cargo}` : ''} · ${parts.join('  ')}`;
+        return t.nombre;
     };
 
     const handleSubmit = async () => {
@@ -429,9 +418,21 @@ export const MobileTicketFormModal = ({
                     <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
                             <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
-                            <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                {descripcion.length}/{MAX_DESCRIPCION}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                {!descripcion && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDescripcion('Sin descripción.')}
+                                        disabled={isSubmitting}
+                                        className="text-[10px] font-bold text-slate-400 hover:text-marca-primario bg-slate-100 hover:bg-marca-primario/10 px-2 py-0.5 rounded-full transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        Sin descripción
+                                    </button>
+                                )}
+                                <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
+                                    {descripcion.length}/{MAX_DESCRIPCION}
+                                </span>
+                            </div>
                         </div>
                         <Input
                             id="tf-desc"
