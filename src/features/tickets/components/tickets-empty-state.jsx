@@ -6,11 +6,11 @@ export const TicketsEmptyState = ({
     isFiltering,
     isMobile = false,
     mensaje = "Bandeja limpia",
-    subtexto = "No hay tickets pendientes o registrados en esta sección por el momento.",
+    subtexto = "No hay reportes pendientes o registrados en esta sección por el momento.",
     icon = "done_all"
 }) => {
     const title = isFiltering ? 'Sin coincidencias' : mensaje;
-    const description = isFiltering ? 'No encontramos tickets que coincidan con los filtros aplicados. Prueba cambiando tu búsqueda.' : subtexto;
+    const description = isFiltering ? 'No encontramos reportes que coincidan con los filtros aplicados. Prueba cambiando tu búsqueda.' : subtexto;
     const currentIcon = isFiltering ? 'filter_list_off' : icon;
 
     return (

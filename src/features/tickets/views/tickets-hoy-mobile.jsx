@@ -169,7 +169,7 @@ export const TicketsHoyMobile = ({
                                     onClearFilters={onClearFilters}
                                     onRefresh={onRefresh}
                                     mensaje={dateOffset === 0 ? "Sin tareas para hoy" : "Sin tareas para mañana"}
-                                    subtexto="No hay tickets programados para esta fecha."
+                                    subtexto="No hay tareas programadas para esta fecha."
                                     icon={dateOffset === 0 ? "today" : "event"}
                                 />
                             </div>

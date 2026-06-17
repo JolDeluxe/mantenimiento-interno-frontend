@@ -203,7 +203,7 @@ export const TicketsHistoricoMobile = ({
                                 onClearFilters={onClearFilters}
                                 onRefresh={onRefresh}
                                 mensaje="Historial Vacío"
-                                subtexto="No hay tickets registrados en el historial para este periodo."
+                                subtexto="No hay tareas registradas en el historial para este periodo."
                                 icon="history"
                             />
                         </div>

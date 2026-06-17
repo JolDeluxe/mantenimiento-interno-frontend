@@ -30,7 +30,7 @@ export const TicketsBandejaDesktop = ({
                     {isLoading ? (
                         <Skeleton className="h-4 w-48 mt-1" />
                     ) : total === 0 ? (
-                        <span>No hay tareas pendientes en este momento</span>
+                        <span>No hay reportes pendientes en este momento</span>
                     ) : (
                         <>
                             Hay <span className="font-extrabold text-marca-primario text-base">{total}</span> tarea{total !== 1 ? 's' : ''} sin asignar
@@ -60,7 +60,7 @@ export const TicketsBandejaDesktop = ({
                         onClearFilters={onClearFilters}
                         onRefresh={onRefresh}
                         mensaje="¡Bandeja Limpia!"
-                        subtexto="Todos los tickets han sido asignados exitosamente."
+                        subtexto="Todos los reportes han sido asignados exitosamente."
                         icon="inbox"
                     />
                 </div>

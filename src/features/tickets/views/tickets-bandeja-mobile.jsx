@@ -65,7 +65,7 @@ export const TicketsBandejaMobile = ({
                             onClearFilters={onClearFilters}
                             onRefresh={onRefresh}
                             mensaje="Bandeja Limpia"
-                            subtexto="No hay tickets pendientes."
+                            subtexto="No hay reportes pendientes."
                             icon="inbox"
                         />
                     </div>
