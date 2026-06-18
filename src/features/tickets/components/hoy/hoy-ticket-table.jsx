@@ -140,6 +140,7 @@ export const HoyTicketTable = ({
             header: 'Tipo / Clasificación',
             accessorKey: 'tipo_clasificacion',
             sortable: false,
+            align: 'center',
             headerClassName: 'w-[15%] min-w-[130px]',
             cell: (row) => {
                 if (row.isSkeleton) return (
@@ -168,7 +169,7 @@ export const HoyTicketTable = ({
                     RUTINA: 'sync',
                 }[row.clasificacion] || 'label';
 
-                const clasifContent = row.clasificacion ? (
+                const clasifContent = (row.clasificacion && row.categoria === 'MAQUINARIA') ? (
                     <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
                         <Icon name={clasifIcon} size="xs" className="text-slate-400 shrink-0" />
                         <span>{row.clasificacion}</span>

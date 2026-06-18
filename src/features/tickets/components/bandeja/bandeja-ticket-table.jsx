@@ -88,7 +88,7 @@ export const BandejaTicketTable = ({
                                     {row.planta}{row.area ? ` — ${row.area}` : ''}
                                 </span>
                             )}
-                            {(row.tipo || row.clasificacion) && (
+                            {(row.tipo || (row.clasificacion && row.categoria === 'MAQUINARIA')) && (
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     {row.tipo && (
                                         <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none ${
@@ -101,7 +101,7 @@ export const BandejaTicketTable = ({
                                             {row.tipo}
                                         </span>
                                     )}
-                                    {row.clasificacion && (
+                                    {row.clasificacion && row.categoria === 'MAQUINARIA' && (
                                         <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none ${
                                             {
                                                 PREVENTIVO: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',

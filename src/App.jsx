@@ -14,6 +14,11 @@ export const App = () => {
 
     window.addEventListener('online', handleOnline);
 
+    // Procesar cola al montar si ya cuenta con conexión activa
+    if (navigator.onLine) {
+      processOfflineQueue();
+    }
+
     return () => window.removeEventListener('online', handleOnline);
   }, []);
 

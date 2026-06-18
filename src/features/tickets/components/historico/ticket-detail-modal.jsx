@@ -526,7 +526,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         </span>
                                     </div>
                                 )}
-                                {ticket.clasificacion && (
+                                {ticket.clasificacion && ticket.categoria === 'MAQUINARIA' && (
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clasificación:</span>
                                         <span className="inline-flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">

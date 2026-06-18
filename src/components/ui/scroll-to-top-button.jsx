@@ -1,6 +1,6 @@
 // src/components/ui/scroll-to-top-button.jsx
 import { useState, useEffect } from 'react';
-import { Icon } from '@/components/ui/z_index';
+import { Icon } from './icon';
 
 const glassStyle = {
     background: 'rgba(255,255,255,0.18)',

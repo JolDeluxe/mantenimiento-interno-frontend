@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Icon, Tooltip } from '@/components/ui/z_index';
+import { Icon } from './icon';
+import { Tooltip } from './tooltip';
 import { cn } from '@/utils/cn';
 
 export const SearchableSelect = ({
@@ -13,6 +14,7 @@ export const SearchableSelect = ({
     disabled = false,
     className,
     menuClassName,
+    onToggle,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -23,36 +25,48 @@ export const SearchableSelect = ({
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
                 setIsOpen(false);
+                if (onToggle) onToggle(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [onToggle]);
 
-    const selectedOption = useMemo(() =>
-        options.find(opt => String(opt.value) === String(value)),
-        [options, value]);
+    const selectedOption = useMemo(() => {
+        if (!options || !Array.isArray(options)) return null;
+        return options.find(opt => opt && String(opt.value ?? '') === String(value ?? ''));
+    }, [options, value]);
 
-    const filteredOptions = useMemo(() =>
-        options.filter(opt =>
-            opt.label.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-        [options, searchQuery]);
+    const filteredOptions = useMemo(() => {
+        if (!options || !Array.isArray(options)) return [];
+        return options.filter(opt => {
+            if (!opt) return false;
+            const labelStr = String(opt.label ?? opt.value ?? '');
+            return labelStr.toLowerCase().includes((searchQuery ?? '').toLowerCase());
+        });
+    }, [options, searchQuery]);
 
     const handleSelect = (val) => {
         onChange(val);
         setIsOpen(false);
+        if (onToggle) onToggle(false);
         setSearchQuery("");
     };
 
     return (
-        <div className="relative shrink-0" ref={containerRef}>
+        <div className="relative w-full" ref={containerRef}>
             <button
                 type="button"
                 disabled={disabled}
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={() => {
+                    if (!disabled) {
+                        const nextState = !isOpen;
+                        setIsOpen(nextState);
+                        if (onToggle) onToggle(nextState);
+                    }
+                }}
                 className={cn(
-                    "flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-medium rounded-xl border transition-all h-9.5",
+                    "flex items-center justify-between gap-2 px-3 py-1.5 text-sm font-medium rounded-xl border transition-all h-9.5 w-full",
                     disabled ? "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed" : "cursor-pointer",
                     value && !disabled
                         ? "bg-marca-primario/[0.03] border-marca-primario/30 text-marca-primario shadow-sm"
@@ -126,18 +140,21 @@ export const SearchableSelect = ({
                         )}
 
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    onClick={() => handleSelect(String(opt.value))}
-                                    className={cn(
-                                        "w-full text-left px-4 py-2.5 text-sm hover:bg-marca-primario/5 transition-colors border-t border-slate-50 cursor-pointer whitespace-nowrap",
-                                        String(value) === String(opt.value) ? "bg-marca-primario/5 font-bold text-marca-primario" : "text-slate-600"
-                                    )}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))
+                            filteredOptions.map((opt) => {
+                                const valStr = opt.value !== undefined && opt.value !== null ? String(opt.value) : '';
+                                return (
+                                    <button
+                                        key={valStr || opt.label}
+                                        onClick={() => handleSelect(valStr)}
+                                        className={cn(
+                                            "w-full text-left px-4 py-2.5 text-sm hover:bg-marca-primario/5 transition-colors border-t border-slate-50 cursor-pointer whitespace-nowrap",
+                                            String(value ?? '') === valStr ? "bg-marca-primario/5 font-bold text-marca-primario" : "text-slate-600"
+                                        )}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                );
+                            })
                         ) : (
                             <div className="px-4 py-3 text-sm text-slate-500 text-center italic">
                                 No se encontraron resultados

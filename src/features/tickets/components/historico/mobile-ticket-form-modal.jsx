@@ -1,4 +1,3 @@
-// src/features/tickets/components/historico/mobile-ticket-form-modal.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
@@ -11,12 +10,28 @@ import {
     TIPOS_ADMIN,
     ROLES_ADMIN,
     AREAS_POR_PLANTA,
-    AREAS
+    AREAS,
+    CATEGORIAS_EQUIPO
 } from '../../constants';
 import { cn } from '@/utils/cn';
 
-const MAX_TITULO = 80;
+const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
+
+const deducirPlantaDeArea = (areaName, plantaActual) => {
+    if (!areaName || typeof areaName !== 'string') return '';
+    const areasMap = AREAS_POR_PLANTA || {};
+
+    if (plantaActual && Array.isArray(areasMap[plantaActual]) && areasMap[plantaActual].includes(areaName)) {
+        return plantaActual;
+    }
+    for (const [plantaKey, areasList] of Object.entries(areasMap)) {
+        if (Array.isArray(areasList) && areasList.includes(areaName)) {
+            return plantaKey;
+        }
+    }
+    return '';
+};
 
 // ── Duration Picker (mobile — selects nativos en grid 2 cols) ─────────────
 const HORAS_OPTIONS = Array.from({ length: 24 }, (_, i) => i);
@@ -31,7 +46,6 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
     return (
         <div className="flex flex-col gap-1.5">
             <div className="grid grid-cols-2 gap-2">
-                {/* Horas */}
                 <div className="relative">
                     <select
                         value={horas}
@@ -48,7 +62,6 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
                     </div>
                 </div>
 
-                {/* Minutos */}
                 <div className="relative">
                     <select
                         value={minutos}
@@ -76,7 +89,6 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
     );
 };
 
-// ── Chip de técnico seleccionado ──────────────────────────────────────────
 const TecnicoChip = ({ tecnico, onRemove }) => (
     <span className="inline-flex items-center gap-1.5 pl-1.5 pr-1 py-0.5 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
         {tecnico?.imagen ? (
@@ -97,7 +109,6 @@ const TecnicoChip = ({ tecnico, onRemove }) => (
     </span>
 );
 
-// ── Modal principal ───────────────────────────────────────────────────────
 export const MobileTicketFormModal = ({
     isOpen,
     onClose,
@@ -112,6 +123,7 @@ export const MobileTicketFormModal = ({
 
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
+    const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
     const [categoria, setCategoria] = useState('');
     const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
@@ -129,11 +141,15 @@ export const MobileTicketFormModal = ({
         [tecnicos]
     );
 
-    // Opciones para el <select> nativo — excluye ya seleccionados
     const opcionesDisponibles = useMemo(() =>
         tecnicos.filter((t) => !responsables.includes(String(t.id))),
         [tecnicos, responsables]
     );
+
+    const areasOptions = useMemo(() => {
+        const list = (planta && AREAS_POR_PLANTA?.[planta]) ? AREAS_POR_PLANTA[planta] : (AREAS || []);
+        return Array.isArray(list) ? list.map(a => ({ value: String(a), label: String(a) })) : [];
+    }, [planta]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -143,20 +159,21 @@ export const MobileTicketFormModal = ({
         if (esEdicion) {
             setTitulo(ticketAEditar.titulo ?? '');
             setDescripcion(ticketAEditar.descripcion ?? '');
+            setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
             setCategoria(ticketAEditar.categoria ?? '');
             setPlanta(ticketAEditar.planta ?? '');
             setArea(ticketAEditar.area ?? '');
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
-            // Corrección: usar isoToDateInput para evitar crash en Safari/iOS con split('T')[0]
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
+            setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
-            setClasificacion(''); setTipo('PLANEADA');
+            setClasificacion('PREVENTIVO'); setTipo('PLANEADA');
             setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
         }
     }, [isOpen, esEdicion, ticketAEditar]);
@@ -164,8 +181,7 @@ export const MobileTicketFormModal = ({
     const getErrors = () => {
         const e = {};
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
-        if (!descripcion.trim() || descripcion.length < 3) e.descripcion = 'Mínimo 3 caracteres.';
-        if (!clasificacion) e.clasificacion = 'Selecciona la clasificación.';
+        if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (!planta.trim()) e.planta = 'Selecciona la planta.';
         if (!area.trim()) e.area = 'El área es obligatoria.';
@@ -191,7 +207,6 @@ export const MobileTicketFormModal = ({
         setResponsables((prev) => prev.filter((x) => x !== idStr));
     };
 
-    // Genera label para el option nativo (solo nombre)
     const buildOptionLabel = (t) => {
         return t.nombre;
     };
@@ -204,7 +219,7 @@ export const MobileTicketFormModal = ({
 
         const formData = new FormData();
         formData.append('titulo', titulo);
-        formData.append('descripcion', descripcion);
+        formData.append('descripcion', descripcion.trim() || 'Sin descripción.');
         formData.append('clasificacion', clasificacion);
         if (categoria) formData.append('categoria', categoria);
         if (planta) formData.append('planta', planta);
@@ -229,13 +244,13 @@ export const MobileTicketFormModal = ({
     };
 
     const fe = submitted ? getErrors() : {};
-    const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
     const isHoy = fechaVencimiento === hoyLocal;
     const isManana = fechaVencimiento === mananaLocal;
+    
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
@@ -270,15 +285,8 @@ export const MobileTicketFormModal = ({
                         />
                     </div>
 
-                    {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
-                    <div className={cn("grid gap-4", esAdmin ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
-                            <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)} error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
-                                <option value="" disabled hidden>Selecciona…</option>
-                                {clasificacionesOpts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                            </Select>
-                        </div>
+                    {/* ── FILA 1: Prioridad | Categoría | Tipo ── */}
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-prioridad">Prioridad *</Label>
                             <Select id="tf-prioridad" value={prioridad} onChange={(e) => setPrioridad(e.target.value)} disabled={isSubmitting}>
@@ -287,17 +295,31 @@ export const MobileTicketFormModal = ({
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
-                            <Select id="tf-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                            <Select id="tf-cat" value={categoria} onChange={(e) => {
+                                const val = e.target.value;
+                                setCategoria(val);
+                                if (val === 'RUTINA') {
+                                    setClasificacion('RUTINA');
+                                } else if (val !== 'MAQUINARIA') {
+                                    setClasificacion('PREVENTIVO');
+                                }
+                            }}
                                 error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
-                                <option value="MAQUINARIA">Maquinaria</option>
-                                <option value="INFRAESTRUCTURA">Infraestructura</option>
-                                <option value="MOBILIARIO">Mobiliario</option>
-                                <option value="SISTEMAS">Sistemas / IT</option>
-                                <option value="VEHICULOS">Vehículos</option>
-                                <option value="GENERAL">General / Otro</option>
+                                {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
+                        {categoria === 'MAQUINARIA' && (
+                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
+                                <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
+                                    error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
+                                    <option value="" disabled hidden>Selecciona…</option>
+                                    <option value="PREVENTIVO">Preventivo</option>
+                                    <option value="CORRECTIVO">Correctivo</option>
+                                </Select>
+                            </div>
+                        )}
                         {esAdmin && (
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-tipo">Tipo de tarea *</Label>
@@ -312,17 +334,38 @@ export const MobileTicketFormModal = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-planta" error={!!fe.planta}>Planta *</Label>
-                            <Select id="tf-planta" value={planta} onChange={(e) => { setPlanta(e.target.value); setArea(''); }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
+                            <Select id="tf-planta" value={planta} onChange={(e) => { 
+                                const val = e.target.value;
+                                setPlanta(val); 
+                                const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
+                                setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
+                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea *</Label>
-                            <Select id="tf-area" value={area} onChange={(e) => setArea(e.target.value)} error={!!fe.area} helperText={fe.area} disabled={isSubmitting}>
-                                <option value="" disabled hidden>Selecciona…</option>
-                                {(planta && AREAS_POR_PLANTA[planta] ? AREAS_POR_PLANTA[planta] : AREAS).map((a) => (
-                                    <option key={a} value={a}>{a}</option>
+                            <Select
+                                id="tf-area"
+                                value={area || ''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setArea(val);
+                                    if (val) {
+                                        const plantaDeducida = deducirPlantaDeArea(val, planta);
+                                        if (plantaDeducida) {
+                                            setPlanta(plantaDeducida);
+                                        }
+                                    }
+                                }}
+                                error={!!fe.area}
+                                helperText={fe.area}
+                                disabled={isSubmitting}
+                            >
+                                <option value="" disabled hidden>Selecciona área…</option>
+                                {areasOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                             </Select>
                         </div>
@@ -415,37 +458,51 @@ export const MobileTicketFormModal = ({
                     )}
 
                     {/* ── DESCRIPCIÓN ── */}
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex justify-between items-center">
-                            <Label htmlFor="tf-desc" error={!!fe.descripcion}>Descripción *</Label>
-                            <div className="flex items-center gap-2">
-                                {!descripcion && (
+                    {!mostrarDescripcion ? (
+                        <div className="flex justify-start">
+                            <button
+                                type="button"
+                                onClick={() => setMostrarDescripcion(true)}
+                                className="flex items-center gap-1 text-xs font-bold text-marca-primario hover:text-marca-primario/80 transition-colors bg-marca-primario/5 hover:bg-marca-primario/10 px-3 py-1.5 rounded-lg border border-marca-primario/10 cursor-pointer"
+                            >
+                                <Icon name="add" size="xs" />
+                                Más detalles (Descripción)
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="tf-desc" error={!!fe.descripcion}>Detalles adicionales / Descripción</Label>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
+                                        {descripcion.length}/{MAX_DESCRIPCION}
+                                    </span>
                                     <button
                                         type="button"
-                                        onClick={() => setDescripcion('Sin descripción.')}
+                                        onClick={() => {
+                                            setDescripcion('');
+                                            setMostrarDescripcion(false);
+                                        }}
                                         disabled={isSubmitting}
-                                        className="text-[10px] font-bold text-slate-400 hover:text-marca-primario bg-slate-100 hover:bg-marca-primario/10 px-2 py-0.5 rounded-full transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="text-[10px] text-rose-600 hover:text-rose-800 font-bold bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
                                     >
-                                        Sin descripción
+                                        Quitar
                                     </button>
-                                )}
-                                <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                    {descripcion.length}/{MAX_DESCRIPCION}
-                                </span>
+                                </div>
                             </div>
+                            <Input
+                                id="tf-desc"
+                                multiline
+                                rows={3}
+                                value={descripcion}
+                                onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
+                                error={!!fe.descripcion}
+                                helperText={fe.descripcion}
+                                placeholder="Describe el problema o tarea con el mayor detalle posible…"
+                                disabled={isSubmitting}
+                            />
                         </div>
-                        <Input
-                            id="tf-desc"
-                            multiline
-                            rows={4}
-                            value={descripcion}
-                            onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
-                            error={!!fe.descripcion}
-                            helperText={fe.descripcion}
-                            placeholder="Describe el problema o tarea con el mayor detalle posible…"
-                            disabled={isSubmitting}
-                        />
-                    </div>
+                    )}
 
                 </div>
             </ModalBody>

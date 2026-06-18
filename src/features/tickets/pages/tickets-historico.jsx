@@ -27,6 +27,7 @@ export default function TicketsHistoricoPage() {
         fetchMetricas,
         fetchTecnicos,
         createTicket,
+        createBatch,
         updateTicket,
         changeStatus,
     } = useTickets();
@@ -169,6 +170,20 @@ export default function TicketsHistoricoPage() {
     }, [tickets]);
 
     const handleCreate = async (payloads) => {
+        // Batch mode: array of plain objects from carrito
+        if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
+            try {
+                await createBatch(payloads);
+                notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
+                setShowCreate(false);
+                await loadTickets();
+            } catch (err) {
+                notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las tareas.');
+                throw err;
+            }
+            return;
+        }
+        // Legacy: single FormData or array of FormData (edit mode)
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
             for (const payload of items) await createTicket(payload);

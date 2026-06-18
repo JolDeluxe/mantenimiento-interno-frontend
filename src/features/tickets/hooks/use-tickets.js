@@ -7,6 +7,7 @@ import {
     changeTicketStatus,
     getAsignables,
     getTicketMetrics,
+    createTicketsBatch,
 } from '../api/tickets-api';
 import { readSnapshot, writeSnapshot } from '@/lib/idb';
 
@@ -172,6 +173,15 @@ export const useTickets = () => {
         }
     }, []);
 
+    const handleCreateBatch = useCallback(async (tareas) => {
+        setSubmitting(true);
+        try {
+            return await createTicketsBatch(tareas);
+        } finally {
+            setSubmitting(false);
+        }
+    }, []);
+
     const handleUpdate = useCallback(async (id, data) => {
         setSubmitting(true);
         try {
@@ -211,6 +221,7 @@ export const useTickets = () => {
         fetchMetricas,
         fetchTecnicos,
         createTicket: handleCreate,
+        createBatch: handleCreateBatch,
         updateTicket: handleUpdate,
         changeStatus: handleChangeStatus,
     };

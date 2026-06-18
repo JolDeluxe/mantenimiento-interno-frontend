@@ -29,15 +29,16 @@ const resolverTipo = (ticket, forcedEstado) => {
     if (forcedEstado === 'CANCELADA') return TIPO.CANCELAR;
     if (!ticket) return TIPO.NULO;
 
-    const { estado, clasificacion } = ticket;
+    const { estado, clasificacion, categoria } = ticket;
+    const esRutina = clasificacion === 'RUTINA' || categoria === 'RUTINA';
 
     switch (estado) {
         case 'ASIGNADA':
-            return clasificacion === 'RUTINA' ? TIPO.RUTINA : TIPO.INICIAR;
+            return esRutina ? TIPO.RUTINA : TIPO.INICIAR;
         case 'RECHAZADO':
-            return clasificacion === 'RUTINA' ? TIPO.RUTINA : TIPO.REINICIAR;
+            return esRutina ? TIPO.RUTINA : TIPO.REINICIAR;
         case 'EN_PROGRESO':
-            return clasificacion === 'RUTINA' ? TIPO.RUTINA : TIPO.EN_PROGRESO;
+            return esRutina ? TIPO.RUTINA : TIPO.EN_PROGRESO;
         case 'EN_PAUSA': return TIPO.PAUSA;
         case 'PENDIENTE': return TIPO.ACTIVAR;
         case 'RESUELTO':

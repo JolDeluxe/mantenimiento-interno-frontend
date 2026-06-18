@@ -4,6 +4,125 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { cn } from '@/utils/cn';
 import { isPastDate } from '@/lib/date';
 
+const MAX_DURATION_MINS = 540; // 9 horas
+
+const TimePicker = ({ totalMins, onChange }) => {
+    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState('07:00');
+    const [endTime, setEndTime] = useState('08:00');
+
+    const horas = Math.floor(totalMins / 60);
+    const minutos = totalMins % 60;
+
+    useEffect(() => {
+        if (mode === 'range') {
+            const [h1, m1] = startTime.split(':').map(Number);
+            const [h2, m2] = endTime.split(':').map(Number);
+            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (diff < 0) diff += 1440; // Cruzó medianoche
+            onChange(diff);
+        }
+    }, [startTime, endTime, mode]);
+
+    const selectCls =
+        'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+                <button
+                    type="button"
+                    onClick={() => setMode('duration')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+                        mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Duración
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('range')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+                        mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Rango horario
+                </button>
+            </div>
+
+            {mode === 'duration' ? (
+                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={horas}
+                            onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                            className={selectCls}
+                        >
+                            {Array.from({ length: 10 }, (_, i) => (
+                                <option key={i} value={i}>{i} h</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+                    </div>
+
+                    <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
+
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={minutos}
+                            onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                            className={selectCls}
+                        >
+                            {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
+                    <span className="text-slate-300 pb-2">a</span>
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Mensajes de validación */}
+            <div className="flex flex-col gap-1">
+                {totalMins > MAX_DURATION_MINS && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="error" size="xs" />
+                        Máximo permitido: 9 horas.
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const TicketCheckModal = ({
     isOpen,
     onClose,
@@ -14,6 +133,7 @@ export const TicketCheckModal = ({
     const [marcada, setMarcada] = useState(false);
     const [archivos, setArchivos] = useState([]);
     const [nota, setNota] = useState('');
+    const [tiempoManualMins, setTiempoManualMins] = useState(0);
     const fileRef = useRef(null);
     const MAX_FOTOS = 3;
 
@@ -22,6 +142,7 @@ export const TicketCheckModal = ({
             setMarcada(false);
             setArchivos([]);
             setNota('');
+            setTiempoManualMins(0);
         }
     }, [isOpen]);
 
@@ -57,6 +178,10 @@ export const TicketCheckModal = ({
         const fd = new FormData();
         fd.append('estado', 'CERRADO');
         if (nota.trim()) fd.append('nota', nota.trim());
+        if (tiempoManualMins > 0) {
+            const timePayload = { duracionManualMinutos: tiempoManualMins };
+            fd.append('registroTiempoManual', JSON.stringify(timePayload));
+        }
         archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
         onConfirm(ticket.id, fd);
     };
@@ -205,6 +330,14 @@ export const TicketCheckModal = ({
                                     </>
                                 )}
                             </div>
+
+                            {/* Registro de Tiempo Opcional */}
+                            <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-3 w-full">
+                                <label className="text-sm font-semibold text-slate-700">
+                                    Tiempo invertido <span className="font-normal text-slate-400">(opcional)</span>
+                                </label>
+                                <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                            </div>
                         </div>
                     )}
 
@@ -224,7 +357,7 @@ export const TicketCheckModal = ({
                     variant="guardar"
                     icon="task_alt"
                     isLoading={isSubmitting}
-                    disabled={!marcada}
+                    disabled={!marcada || tiempoManualMins > MAX_DURATION_MINS}
                     onClick={handleConfirmar}
                     className="flex-1 sm:flex-none text-xs sm:text-sm"
                 >

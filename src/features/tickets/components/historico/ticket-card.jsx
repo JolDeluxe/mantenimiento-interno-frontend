@@ -127,6 +127,11 @@ export const TicketCard = ({
                                 {ticket.tipo}
                             </span>
                         )}
+                        {ticket.categoria === 'MAQUINARIA' && ticket.clasificacion && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">
+                                {ticket.clasificacion}
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">

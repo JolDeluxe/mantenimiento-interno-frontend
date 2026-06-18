@@ -31,6 +31,9 @@ export const changeTicketStatus = (id, data) =>
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 
+export const createTicketsBatch = (tareas) =>
+    api.post('/api/tickets/batch', { tareas });
+
 // ── Personal asignable ─────────────────────────────────────────────────────
 
 /**
