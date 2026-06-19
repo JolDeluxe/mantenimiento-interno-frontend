@@ -21,6 +21,7 @@ import TicketsHoyPage from '@/features/tickets/pages/tickets-hoy';
 import TicketsAprobarPage from '@/features/tickets/pages/tickets-aprobar';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import NotifyPage from '@/features/notificaciones/pages/notify-page';
+import MaquinariaPage from '@/features/maquinaria/pages/maquinaria-page';
 
 import DashboardPage from '@/features/dashboard/pages/dashboard-page';
 import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
@@ -38,6 +39,7 @@ const ROLES = {
   usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
   notificaciones: MODULES_CONFIG.find(m => m.id === 'notificaciones')?.allowedRoles || [],
   reportes: MODULES_CONFIG.find(m => m.id === 'reportes')?.allowedRoles || [],
+  maquinaria: MODULES_CONFIG.find(m => m.id === 'maquinaria')?.allowedRoles || [],
   reportesGeneral: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-general')?.allowedRoles || [],
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
@@ -92,6 +94,11 @@ export const AppRoutes = () => {
           {/* Módulo: Usuarios */}
           <Route element={<RoleGuard allowedRoles={ROLES.usuarios} />}>
             <Route path="/usuarios" element={<UsersPage />} />
+          </Route>
+
+          {/* Módulo: Maquinaria */}
+          <Route element={<RoleGuard allowedRoles={ROLES.maquinaria} />}>
+            <Route path="/maquinaria" element={<MaquinariaPage />} />
           </Route>
 
           {/* Módulo: Notificaciones */}

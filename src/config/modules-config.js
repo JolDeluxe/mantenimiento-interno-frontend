@@ -78,6 +78,13 @@ export const MODULES_CONFIG = [
     ]
   },
   {
+    id: 'maquinaria',
+    name: 'Maquinaria',
+    icon: 'precision_manufacturing',
+    route: '/maquinaria',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+  },
+  {
     id: 'usuarios',
     name: 'Usuarios',
     icon: 'group',
