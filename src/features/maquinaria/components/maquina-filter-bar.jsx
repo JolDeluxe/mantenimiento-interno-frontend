@@ -1,139 +1,171 @@
-import React from 'react';
-import { Icon, Button } from '@/components/ui/z_index';
-import { Select, Input } from '@/components/form/z_index';
+import React, { useState, useEffect } from 'react';
+import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 
 const ESTADOS_MAQUINARIA = [
-  { value: 'OPERATIVA', label: 'Operativa' },
-  { value: 'EN_REPARACION', label: 'En Reparación' },
-  { value: 'INACTIVA', label: 'Inactiva' },
-  { value: 'BAJA', label: 'De Baja' }
+  { value: 'OPERATIVA', label: 'OPERATIVA' },
+  { value: 'EN_REPARACION', label: 'EN REPARACIÓN' },
+  { value: 'INACTIVA', label: 'INACTIVA' },
+  { value: 'BAJA', label: 'DE BAJA' }
 ];
 
 const CRITICIDADES_MAQUINARIA = [
-  { value: 'A', label: 'Clase A (Crítica)' },
-  { value: 'B', label: 'Clase B (Media)' },
-  { value: 'C', label: 'Clase C (Baja)' }
+  { value: 'A', label: 'CLASE A' },
+  { value: 'B', label: 'CLASE B' },
+  { value: 'C', label: 'CLASE C' }
 ];
 
-const PLANTAS_MAQUINARIA = [
-  { value: 'Planta Baja', label: 'Planta Baja' },
-  { value: 'Planta Alta', label: 'Planta Alta' }
-];
+const normalizeOpts = (opts = []) => opts.map(o => {
+  if (typeof o === 'string') return { value: o, label: o };
+  return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
+});
+
+const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
+  <div className={`relative ${className}`}>
+    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+      <Icon name="search" size="sm" className="text-slate-400" />
+    </div>
+    <input
+      type="text"
+      value={localValue}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="Buscar por código o nombre..."
+      className="w-full pl-9 pr-8 py-2.5 text-sm border border-slate-200 rounded-xl bg-white
+                 focus:outline-none focus:ring-2 focus:ring-marca-secundario/20
+                 focus:border-marca-secundario transition-all placeholder:text-slate-400 h-9.5"
+    />
+    {localValue && (
+      <button
+        onClick={onClear}
+        className="absolute inset-y-0 right-2 flex items-center px-2 text-slate-400 cursor-pointer"
+      >
+        <Icon name="close" size="xs" />
+      </button>
+    )}
+  </div>
+);
 
 export const MaquinaFilterBar = ({
   filters,
   onFilterChange,
-  areas = [],
+  catalogs = { plantas: [], areas: [], procesos: [] },
   onClearFilters,
   onAddNewClick
 }) => {
+  const [localValue, setLocalValue] = useState(filters.q || '');
+
+  useEffect(() => {
+    setLocalValue(filters.q || '');
+  }, [filters.q]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localValue !== (filters.q || '')) {
+        onFilterChange({ q: localValue, page: 1 });
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [localValue, filters.q, onFilterChange]);
+
+  const hasActiveFilters = Boolean(
+    filters.q || filters.planta || filters.area || filters.criticidad || filters.estado || filters.proceso
+  );
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-200">
-      
-      {/* Inputs y Selects */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:flex flex-1 items-center gap-3">
-        
-        {/* Buscador por Texto */}
-        <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-          <Input
-            icon="search"
-            placeholder="Buscar por código o nombre..."
-            value={filters.q || ''}
-            onChange={(e) => onFilterChange({ q: e.target.value, page: 1 })}
-            className="text-xs font-semibold"
+    <div className="flex flex-col gap-3 w-full pt-2">
+      <div className="flex items-center gap-3 w-full">
+        <SearchInput
+          localValue={localValue}
+          onChange={setLocalValue}
+          onClear={() => setLocalValue('')}
+          className="flex-1 max-w-md min-w-[180px]"
+        />
+
+        <div className="flex items-center gap-3 flex-none ml-auto">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              onClick={onClearFilters}
+              className="text-xs text-slate-400 hover:text-slate-600 font-bold shrink-0 self-center"
+            >
+              <Icon name="filter_alt_off" className="mr-1" size="sm" />
+              Limpiar
+            </Button>
+          )}
+
+          {onAddNewClick && (
+            <Button
+              onClick={onAddNewClick}
+              className="bg-marca-primario hover:bg-marca-primario-oscuro text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm shrink-0 flex items-center gap-2 uppercase tracking-wide h-9.5"
+            >
+              <Icon name="add" size="sm" />
+              Añadir Máquina
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5 w-full flex-wrap">
+        <div className="min-w-40 flex-1 lg:flex-none">
+          <SearchableSelect
+            options={normalizeOpts(catalogs.plantas)}
+            value={filters.planta || ''}
+            onChange={(val) => onFilterChange({ planta: val, area: '', page: 1 })}
+            placeholder="PLANTA..."
+            icon="domain"
+            allOptionText="TODAS"
+            className="w-full font-bold text-[11px] uppercase tracking-wide"
           />
         </div>
 
-        {/* Filtro Planta */}
-        <div className="flex flex-col gap-1 min-w-[150px]">
-          <Select
-            icon="store"
-            value={filters.planta || ''}
-            onChange={(e) => onFilterChange({ planta: e.target.value, page: 1 })}
-            onClear={() => onFilterChange({ planta: '', page: 1 })}
-            className="text-xs font-bold uppercase tracking-wide"
-          >
-            <option value="">Planta (Todas)...</option>
-            {PLANTAS_MAQUINARIA.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Filtro Área */}
-        <div className="flex flex-col gap-1 min-w-[150px]">
-          <Select
-            icon="location_on"
+        <div className="min-w-40 flex-1 lg:flex-none">
+          <SearchableSelect
+            options={normalizeOpts(catalogs.areas)}
             value={filters.area || ''}
-            onChange={(e) => onFilterChange({ area: e.target.value, page: 1 })}
-            onClear={() => onFilterChange({ area: '', page: 1 })}
-            disabled={areas.length === 0}
-            className="text-xs font-bold uppercase tracking-wide"
-          >
-            <option value="">Área (Todas)...</option>
-            {areas.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </Select>
+            onChange={(val) => onFilterChange({ area: val, page: 1 })}
+            placeholder="ÁREA..."
+            icon="place"
+            allOptionText="TODAS"
+            disabled={catalogs.areas.length === 0}
+            className="w-full font-bold text-[11px] uppercase tracking-wide"
+          />
         </div>
 
-        {/* Filtro Criticidad */}
-        <div className="flex flex-col gap-1 min-w-[140px]">
-          <Select
-            icon="priority_high"
+        <div className="min-w-40 flex-1 lg:flex-none">
+          <SearchableSelect
+            options={normalizeOpts(catalogs.procesos)}
+            value={filters.proceso || ''}
+            onChange={(val) => onFilterChange({ proceso: val, page: 1 })}
+            placeholder="PROCESO / TIPO..."
+            icon="build"
+            allOptionText="TODOS"
+            className="w-full font-bold text-[11px] uppercase tracking-wide"
+          />
+        </div>
+
+        <div className="min-w-40 flex-1 lg:flex-none">
+          <SearchableSelect
+            options={CRITICIDADES_MAQUINARIA}
             value={filters.criticidad || ''}
-            onChange={(e) => onFilterChange({ criticidad: e.target.value, page: 1 })}
-            onClear={() => onFilterChange({ criticidad: '', page: 1 })}
-            className="text-xs font-bold uppercase tracking-wide"
-          >
-            <option value="">Criticidad...</option>
-            {CRITICIDADES_MAQUINARIA.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </Select>
+            onChange={(val) => onFilterChange({ criticidad: val, page: 1 })}
+            placeholder="CRITICIDAD..."
+            icon="priority_high"
+            allOptionText="TODAS"
+            className="w-full font-bold text-[11px] uppercase tracking-wide"
+          />
         </div>
 
-        {/* Filtro Estado */}
-        <div className="flex flex-col gap-1 min-w-[150px]">
-          <Select
-            icon="settings"
+        <div className="min-w-40 flex-1 lg:flex-none">
+          <SearchableSelect
+            options={ESTADOS_MAQUINARIA}
             value={filters.estado || ''}
-            onChange={(e) => onFilterChange({ estado: e.target.value, page: 1 })}
-            onClear={() => onFilterChange({ estado: '', page: 1 })}
-            className="text-xs font-bold uppercase tracking-wide"
-          >
-            <option value="">Estado (Todos)...</option>
-            {ESTADOS_MAQUINARIA.map((est) => (
-              <option key={est.value} value={est.value}>{est.label}</option>
-            ))}
-          </Select>
+            onChange={(val) => onFilterChange({ estado: val, page: 1 })}
+            placeholder="ESTADO..."
+            icon="settings"
+            allOptionText="TODOS"
+            className="w-full font-bold text-[11px] uppercase tracking-wide"
+          />
         </div>
-
-        {/* Botón de limpiar filtros si hay alguno activo */}
-        {(filters.q || filters.planta || filters.area || filters.criticidad || filters.estado) && (
-          <Button
-            variant="ghost"
-            onClick={onClearFilters}
-            className="text-xs text-slate-400 hover:text-slate-600 font-bold shrink-0 self-center"
-          >
-            <Icon name="filter_alt_off" className="mr-1" size="sm" />
-            Limpiar
-          </Button>
-        )}
-
       </div>
-
-      {/* Botón Agregar Máquina (Para admin roles) */}
-      {onAddNewClick && (
-        <Button
-          onClick={onAddNewClick}
-          className="bg-marca-primario hover:bg-marca-primario-oscuro text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm shrink-0 flex items-center gap-2 self-start md:self-center uppercase tracking-wide"
-        >
-          <Icon name="add" size="sm" />
-          Añadir Máquina
-        </Button>
-      )}
-
     </div>
   );
 };

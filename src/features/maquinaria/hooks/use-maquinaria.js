@@ -10,7 +10,13 @@ export const useMaquinaria = () => {
     page: 1,
     limit: 20,
     total: 0,
+    totalPages: 1,
     pages: 1
+  });
+  const [catalogs, setCatalogs] = useState({
+    plantas: [],
+    areas: [],
+    procesos: []
   });
   const [filters, setFilters] = useState({
     q: '',
@@ -18,12 +24,13 @@ export const useMaquinaria = () => {
     criticidad: '',
     planta: '',
     area: '',
+    proceso: '',
     page: 1,
     limit: 20
   });
 
-  const fetchMaquinas = useCallback(async (newFilters = {}) => {
-    setLoading(true);
+  const fetchMaquinas = useCallback(async (newFilters = {}, silent = false) => {
+    if (!silent) setLoading(true);
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
 
@@ -31,10 +38,18 @@ export const useMaquinaria = () => {
       const res = await api.getMaquinas(updatedFilters);
       if (res?.data) {
         setMaquinas(res.data || []);
+        if (res.catalogs) {
+          setCatalogs({
+            plantas: res.catalogs.plantas || [],
+            areas: res.catalogs.areas || [],
+            procesos: res.catalogs.procesos || []
+          });
+        }
         setPagination({
           page: res.pagination?.page || 1,
           limit: res.pagination?.limit || 20,
           total: res.pagination?.total || 0,
+          totalPages: res.pagination?.totalPages || res.pagination?.pages || 1,
           pages: res.pagination?.totalPages || res.pagination?.pages || 1
         });
       }
@@ -42,7 +57,7 @@ export const useMaquinaria = () => {
       console.error(err);
       notify.error(err?.response?.data?.error || 'Error al cargar el catálogo de maquinaria.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [filters]);
 
@@ -68,7 +83,7 @@ export const useMaquinaria = () => {
     try {
       const res = await api.updateMaquina(id, data);
       notify.success('Máquina actualizada correctamente.');
-      await fetchMaquinas();
+      await fetchMaquinas({}, true); // silent update
       return { success: true, data: res.data };
     } catch (err) {
       console.error(err);
@@ -125,6 +140,7 @@ export const useMaquinaria = () => {
     submitting,
     pagination,
     filters,
+    catalogs,
     fetchMaquinas,
     createMaquina,
     updateMaquina,

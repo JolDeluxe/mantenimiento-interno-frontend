@@ -47,11 +47,13 @@ export const Modal = ({
   );
 };
 
-export const ModalHeader = ({ title, onClose, className = "" }) => (
+export const ModalHeader = ({ title, onClose, className = "", children }) => (
   <div className={cn("shrink-0 p-6 pb-4 border-b border-slate-100 relative", className)}>
-    <h2 className="text-lg font-bold text-marca-primario text-center uppercase tracking-wider fuente-titulos">
-      {title}
-    </h2>
+    {children || (
+      <h2 className="text-lg font-bold text-marca-primario text-center uppercase tracking-wider fuente-titulos">
+        {title}
+      </h2>
+    )}
     {onClose && (
       <button
         type="button"

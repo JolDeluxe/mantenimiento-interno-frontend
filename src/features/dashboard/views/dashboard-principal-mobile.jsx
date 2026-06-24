@@ -59,11 +59,11 @@ export default function DashboardPrincipalMobile({ data, loading, error, current
             <div className="flex flex-col gap-5 pb-28 animate-in fade-in duration-300">
 
                 {/* ── Encabezado ── */}
-                <div className="flex flex-col gap-1">
+                <div className="px-1 mb-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="fuente-titulos text-xl text-marca-primario uppercase tracking-wide">
+                        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
                             Dashboard Principal
-                        </h2>
+                        </h1>
                         {loading && <Skeleton className="h-6 w-28 rounded-full" />}
                         {!loading && periodo && (
                             <span className="bg-marca-primario/10 text-marca-primario px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-marca-primario/20 shadow-sm">
@@ -71,7 +71,7 @@ export default function DashboardPrincipalMobile({ data, loading, error, current
                             </span>
                         )}
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
                         {subtitulo}
                     </p>
                 </div>

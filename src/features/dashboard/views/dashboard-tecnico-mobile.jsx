@@ -12,11 +12,11 @@ export default function DashboardTecnicoMobile({ data, loading, error, currentUs
             <div className="flex flex-col pb-28 animate-in fade-in duration-300 px-4 pt-4 relative z-10">
 
                 {/* Cabeçalho da Vista */}
-                <div className="flex flex-col gap-1.5 mb-6">
+                <div className="px-1 mb-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="fuente-titulos text-3xl text-marca-primario uppercase tracking-wide">
+                        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
                             Panel Operativo
-                        </h2>
+                        </h1>
                         {loading && <Skeleton className="h-6 w-24 rounded-full shadow-sm" />}
                         {!loading && data?.periodo && (
                             <span className="bg-marca-primario/10 text-marca-primario px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-marca-primario/20 shadow-sm">
@@ -24,6 +24,9 @@ export default function DashboardTecnicoMobile({ data, loading, error, currentUs
                             </span>
                         )}
                     </div>
+                    <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+                        Tu rendimiento personal y tareas activas.
+                    </p>
                 </div>
 
                 {error && (

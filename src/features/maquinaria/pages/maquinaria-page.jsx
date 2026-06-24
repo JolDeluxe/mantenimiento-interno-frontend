@@ -12,10 +12,10 @@ export default function MaquinariaPage() {
     submitting,
     pagination,
     filters,
+    catalogs,
     fetchMaquinas,
     createMaquina,
     updateMaquina,
-    changeStatus,
     getKpis,
     getDetails
   } = useMaquinaria();
@@ -36,6 +36,7 @@ export default function MaquinariaPage() {
       criticidad: '',
       planta: '',
       area: '',
+      proceso: '',
       page: 1
     });
   };
@@ -46,17 +47,18 @@ export default function MaquinariaPage() {
     submitting,
     pagination,
     filters,
+    catalogs,
     onFilterChange: handleFilterChange,
     onClearFilters: handleClearFilters,
+    onRefresh: fetchMaquinas,
     createMaquina,
     updateMaquina,
-    changeStatus,
     getKpis,
     getDetails
   };
 
   return (
-    <div className="w-full max-w-full mx-auto p-4 md:p-6 bg-transparent">
+    <div className="w-full max-w-full mx-auto p-1 lg:p-4 bg-transparent">
       {isDesktop ? (
         <MaquinariaDesktop {...viewProps} />
       ) : (

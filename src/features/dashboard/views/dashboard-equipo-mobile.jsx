@@ -84,6 +84,15 @@ export default function DashboardEquipoMobile({
                     />
                 ) : (
                     <>
+                        <div className="px-1 mb-2">
+                            <span className="text-[10px] font-extrabold text-marca-primario bg-marca-primario/5 border border-marca-primario/20 px-2 py-1 rounded-md uppercase tracking-wider">
+                                Rendimiento de Personal
+                            </span>
+                            <p className="text-xs text-slate-400 mt-2">
+                                Tiempos de ciclo y productividad individual de técnicos y coordinadores.
+                            </p>
+                        </div>
+
                         <EquipoCambioRol rolActivo={rolActivo} setRolActivo={setRolActivo} />
 
                         <EquipoCicloPanel

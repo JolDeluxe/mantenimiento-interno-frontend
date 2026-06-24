@@ -9,9 +9,9 @@ const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = 
       <Icon name={icon} size="sm" />
     </div>
     <div className="flex flex-col min-w-0">
-      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</span>
-      <span className={`text-xs font-bold text-slate-700 wrap-break-word ${colorClass}`}>
-        {value || <span className="text-slate-300 italic font-normal">{fallback}</span>}
+      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">{label}</span>
+      <span className={`text-xs font-semibold text-slate-800 wrap-break-word ${colorClass}`}>
+        {value || <span className="text-slate-400 italic font-normal">{fallback}</span>}
       </span>
     </div>
   </div>
@@ -26,16 +26,19 @@ export const MaquinaDetailModal = ({
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [totalTickets, setTotalTickets] = useState(0);
 
   useEffect(() => {
     if (isOpen && maquina) {
       setLoading(true);
       Promise.all([
         getKpis(maquina.id),
-        api.get('/api/tickets', { params: { maquinaId: maquina.id, limit: 10 } })
+        api.get('/api/tickets', { params: { maquinaId: maquina.id, limit } })
       ]).then(([kpisData, ticketsRes]) => {
         setKpis(kpisData);
         setTickets(ticketsRes?.data?.data || []);
+        setTotalTickets(ticketsRes?.data?.pagination?.total || ticketsRes?.data?.data?.length || 0);
       }).catch(err => {
         console.error('Error al cargar datos del detalle de máquina:', err);
       }).finally(() => {
@@ -44,8 +47,10 @@ export const MaquinaDetailModal = ({
     } else {
       setKpis(null);
       setTickets([]);
+      setTotalTickets(0);
+      setLimit(10);
     }
-  }, [isOpen, maquina, getKpis]);
+  }, [isOpen, maquina, getKpis, limit]);
 
   if (!maquina) return null;
 
@@ -55,11 +60,6 @@ export const MaquinaDetailModal = ({
     const h = Math.floor(min / 60);
     const m = min % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  };
-
-  const formatMTBF = (days) => {
-    if (days === null || days === undefined) return 'Sin datos';
-    return `${days} ${days === 1 ? 'día' : 'días'}`;
   };
 
   const getCriticidadLabel = (crit) => {
@@ -106,9 +106,9 @@ export const MaquinaDetailModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl">
-      <ModalHeader>
-        <div className="flex items-center justify-between w-full pr-6">
+    <Modal isOpen={isOpen} onClose={onClose} className="w-full md:max-w-4xl lg:max-w-5xl">
+      <ModalHeader onClose={onClose}>
+        <div className="flex items-center justify-between w-full pr-8">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-marca-primario/10 rounded-lg text-marca-primario">
               <Icon name="precision_manufacturing" size="sm" />
@@ -126,138 +126,231 @@ export const MaquinaDetailModal = ({
         </div>
       </ModalHeader>
 
-      <ModalBody className="p-6 max-h-[70dvh] overflow-y-auto custom-scrollbar">
+      <ModalBody className="p-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Spinner size="md" className="text-marca-primario" />
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando expediente técnico...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="flex flex-col gap-6">
             
-            {/* Ficha Técnica (Izquierda) */}
-            <div className="lg:col-span-5 bg-slate-50/50 border border-slate-200/60 rounded-2xl p-4 space-y-4">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-2">
-                Ficha Técnica
+            {/* Sección 1: Indicadores */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon name="analytics" size="sm" className="text-slate-500" />
+                Indicadores de Fiabilidad
               </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                <DataRow icon="build" label="Tipo / Proceso" value={maquina.proceso} />
-                <div className="flex gap-2.5 items-start">
-                  <div className="mt-0.5 text-slate-400 shrink-0">
-                    <Icon name="priority_high" size="sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                {/* Fallas Reportadas */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
+                  <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl shrink-0 flex items-center justify-center">
+                    <Icon name="report_problem" size="sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Criticidad</span>
-                    <span className={`text-xs font-bold leading-none self-start mt-0.5 ${getCriticidadStyle(maquina.criticidad)}`}>
-                      {getCriticidadLabel(maquina.criticidad)}
-                    </span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Fallas Reportadas</span>
+                    <span className="text-lg font-black text-slate-800 leading-snug">{kpis?.resumen?.totalFallas ?? 0}</span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Total acumulado</span>
                   </div>
                 </div>
-                <DataRow icon="store" label="Planta" value={maquina.planta} />
-                <DataRow icon="location_on" label="Área / Ubicación" value={maquina.area} />
-                <DataRow icon="map" label="Ubicación Específica" value={maquina.ubicacionDetalle} />
-                <DataRow icon="badge" label="Marca" value={maquina.marca} />
-                <DataRow icon="bookmark" label="Modelo" value={maquina.modelo} />
-                <DataRow icon="qr_code" label="Número de Serie" value={maquina.numeroSerie} />
-                <DataRow icon="corporate_fare" label="Departamento Asignado" value={maquina.departamento?.nombre} />
-                <DataRow icon="calendar_today" label="Fecha de Instalación" value={maquina.fechaInstalacion ? formatFecha(maquina.fechaInstalacion) : null} />
-                {maquina.descripcion && (
-                  <div className="col-span-full border-t border-slate-200 pt-3">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none block mb-1.5">Notas adicionales</span>
-                    <p className="text-xs font-medium text-slate-600 bg-white p-3 border border-slate-200/50 rounded-xl max-h-32 overflow-y-auto custom-scrollbar">
-                      {maquina.descripcion}
-                    </p>
+
+                {/* Promedio Solución */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
+                  <div className="p-3 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl shrink-0 flex items-center justify-center">
+                    <Icon name="build_circle" size="sm" />
                   </div>
-                )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Promedio de Solución</span>
+                    <span className="text-sm font-black text-slate-800 leading-snug break-words">
+                      {formatMTTR(kpis?.resumen?.mttrMinutos)}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Por reporte</span>
+                  </div>
+                </div>
+
+                {/* Tiempo en Reparación */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
+                  <div className="p-3 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl shrink-0 flex items-center justify-center">
+                    <Icon name="hourglass_empty" size="sm" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Tiempo en Reparación</span>
+                    <span className="text-sm font-black text-slate-800 leading-snug break-words">
+                      {formatMTTR(kpis?.resumen?.minutosReparacionAcumulados)}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Total de horas</span>
+                  </div>
+                </div>
+
+                {/* Último Mantenimiento */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl shrink-0 flex items-center justify-center">
+                    <Icon name="calendar_today" size="sm" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Último Mantenimiento</span>
+                    <span className="text-sm font-black text-slate-800 leading-snug break-words">
+                      {kpis?.resumen?.fechaUltimoServicio ? formatFecha(kpis?.resumen?.fechaUltimoServicio) : 'Sin datos'}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Fecha de servicio</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 
-            {/* KPIs e Historial (Derecha) */}
-            <div className="lg:col-span-7 space-y-6">
+            {/* Sección 2: Ficha Técnica */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon name="description" size="sm" className="text-slate-500" />
+                Ficha Técnica
+              </h4>
               
-              {/* KPIs de Fiabilidad */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                  Indicadores de Fiabilidad
-                </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3">
-                  
-                  {/* Frecuencia Fallas */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-between">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fallas totales</span>
-                    <span className="text-2xl font-black text-slate-800 mt-2">{kpis?.resumen?.totalFallas ?? 0}</span>
-                  </div>
+                {/* Tarjeta 1: Especificaciones */}
+                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
+                  <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Icon name="settings" size="xs" className="text-slate-500" />
+                    Especificaciones
+                  </h5>
+                  <div className="space-y-3 grow">
+                    <DataRow icon="build" label="Tipo / Proceso" value={maquina.proceso} />
+                    
+                    <div className="flex gap-2.5 items-start">
+                      <div className="mt-0.5 text-slate-400 shrink-0">
+                        <Icon name="priority_high" size="sm" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">Criticidad</span>
+                        <span className={`text-xs font-bold leading-none self-start mt-0.5 ${getCriticidadStyle(maquina.criticidad)}`}>
+                          {getCriticidadLabel(maquina.criticidad)}
+                        </span>
+                      </div>
+                    </div>
 
-                  {/* MTTR */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-between">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">MTTR (Reparación)</span>
-                    <span className="text-xs font-extrabold text-slate-800 mt-2 truncate">
-                      {formatMTTR(kpis?.resumen?.mttrMinutos)}
-                    </span>
+                    {maquina.marca && <DataRow icon="badge" label="Marca" value={maquina.marca} />}
+                    {maquina.modelo && <DataRow icon="bookmark" label="Modelo" value={maquina.modelo} />}
+                    {maquina.numeroSerie && <DataRow icon="qr_code" label="Número de Serie" value={maquina.numeroSerie} />}
                   </div>
-
-                  {/* MTBF */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-between">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">MTBF (Fallas)</span>
-                    <span className="text-xs font-extrabold text-slate-800 mt-2 truncate">
-                      {formatMTBF(kpis?.resumen?.mtbfDias)}
-                    </span>
-                  </div>
-
-                  {/* Tiempo Acumulado */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-between">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">T. Reparación</span>
-                    <span className="text-xs font-extrabold text-slate-800 mt-2 truncate">
-                      {formatMTTR(kpis?.resumen?.minutosReparacionAcumulados)}
-                    </span>
-                  </div>
-
                 </div>
+
+                {/* Tarjeta 2: Ubicación y Área */}
+                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
+                  <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Icon name="location_on" size="xs" className="text-slate-500" />
+                    Ubicación y Área
+                  </h5>
+                  <div className="space-y-3 grow">
+                    {(() => {
+                      const showPlanta = maquina.planta !== 'BAJA' && maquina.planta !== 'VENTA';
+                      const showArea = maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
+                      if (!showPlanta && !showArea) {
+                        return <DataRow icon="store" label="Planta y Área" value="-" />;
+                      }
+                      return (
+                        <>
+                          {showPlanta && <DataRow icon="store" label="Planta" value={maquina.planta} />}
+                          {showArea && <DataRow icon="place" label="Área / Ubicación" value={maquina.area} />}
+                        </>
+                      );
+                    })()}
+
+                    {maquina.ubicacionDetalle && 
+                     maquina.ubicacionDetalle !== 'BAJA' && 
+                     maquina.ubicacionDetalle !== 'VENTA' && 
+                     maquina.ubicacionDetalle !== maquina.area && (
+                      <DataRow icon="map" label="Ubicación Específica" value={maquina.ubicacionDetalle} />
+                    )}
+
+                    {maquina.departamento?.nombre && (
+                      <DataRow icon="corporate_fare" label="Departamento Asignado" value={maquina.departamento.nombre} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Tarjeta 3: Notas Adicionales */}
+                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
+                  <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Icon name="event_note" size="xs" className="text-slate-500" />
+                    Notas Adicionales
+                  </h5>
+                  <div className="grow flex flex-col">
+                    {maquina.descripcion ? (
+                      <p className="text-xs font-medium text-slate-600 bg-white p-3 border border-slate-200/50 rounded-xl h-full max-h-36 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+                        {maquina.descripcion}
+                      </p>
+                    ) : (
+                      <span className="text-xs text-slate-400 italic font-normal py-4 block text-center my-auto">
+                        Sin notas u observaciones registradas.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
               </div>
+            </div>
 
-              {/* Historial de Fallas */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                  Últimos Reportes de Falla ({tickets.length})
-                </h4>
+            {/* Sección 3: Historial de Mantenimiento */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                <Icon name="history" size="sm" className="text-slate-500" />
+                Historial de Mantenimiento ({totalTickets})
+              </h4>
 
-                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                  {tickets.length > 0 ? (
-                    <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto custom-scrollbar">
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                {tickets.length > 0 ? (
+                  <>
+                    <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto custom-scrollbar">
                       {tickets.map((t) => (
-                        <div key={t.id} className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-slate-50 transition-colors">
+                        <div key={t.id} className="p-3.5 flex items-center justify-between gap-4 text-xs hover:bg-slate-50 transition-colors">
                           <div className="flex flex-col min-w-0">
-                            <span className="font-mono text-[10px] font-bold text-slate-400">#{t.id} — {formatFecha(t.createdAt)}</span>
-                            <span className="font-semibold text-slate-700 truncate mt-0.5">{t.titulo}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[10px] font-extrabold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#{t.id}</span>
+                              <span className="text-[10px] font-bold text-slate-400">{formatFecha(t.createdAt)}</span>
+                            </div>
+                            <span className="font-bold text-slate-700 mt-1.5 leading-snug">{t.titulo}</span>
                           </div>
-                          <span className={`text-[10px] font-black uppercase border px-2 py-0.5 rounded tracking-wide shrink-0 ${getTicketEstadoStyle(t.estado)}`}>
+                          <span className={`text-[10px] font-black uppercase border px-2.5 py-1 rounded tracking-wide shrink-0 ${getTicketEstadoStyle(t.estado)}`}>
                             {t.estado}
                           </span>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="p-8 text-center text-slate-400 italic">
-                      <Icon name="check_circle_outline" className="text-emerald-500 mb-1 mx-auto" size="md" />
-                      No se registran fallas para esta máquina.
-                    </div>
-                  )}
-                </div>
+                    {totalTickets > tickets.length && (
+                      <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setLimit(1000)}
+                          className="text-xs font-bold text-marca-primario hover:text-marca-primario/80 transition-colors flex items-center justify-center gap-1 cursor-pointer w-full py-1.5 rounded-lg hover:bg-slate-100"
+                        >
+                          <Icon name="expand_more" size="xs" />
+                          Ver todos ({totalTickets})
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-8 flex flex-col items-center justify-center text-center text-slate-400 italic gap-2.5">
+                    <Icon name="construction" className="text-emerald-500" size="md" />
+                    <span className="max-w-md text-xs leading-normal">
+                      No se han registrado mantenimientos asociados a esta máquina.
+                    </span>
+                  </div>
+                )}
               </div>
-
             </div>
 
           </div>
         )}
       </ModalBody>
 
-      <ModalFooter className="p-4 bg-slate-50 flex justify-end rounded-b-2xl border-t border-slate-100">
+      <ModalFooter>
         <Button
           type="button"
+          variant="cancelar"
           onClick={onClose}
-          className="bg-marca-primario hover:bg-marca-primario-oscuro text-white font-bold text-xs uppercase"
         >
           Cerrar
         </Button>

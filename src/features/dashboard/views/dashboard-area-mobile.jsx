@@ -40,12 +40,12 @@ export default function DashboardAreaMobile({
     return (
         <>
             <div className="flex flex-col gap-4 pb-32 animate-in fade-in duration-300">
-                <div className="flex flex-col gap-0.5 px-1">
-                    <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">
+                <div className="px-1 mb-2">
+                    <span className="text-[10px] font-extrabold text-marca-primario bg-marca-primario/5 border border-marca-primario/20 px-2 py-1 rounded-md uppercase tracking-wider">
                         Métricas Operativas
-                    </h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Rendimiento por Planta y Área
+                    </span>
+                    <p className="text-xs text-slate-400 mt-2">
+                        Rendimiento por planta y área de producción.
                     </p>
                 </div>
 

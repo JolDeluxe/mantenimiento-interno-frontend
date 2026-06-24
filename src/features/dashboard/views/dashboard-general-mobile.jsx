@@ -30,6 +30,15 @@ export default function DashboardGeneralMobile({ data, loading, onRefresh }) {
                     />
                 ) : (
                     <>
+                        <div className="px-1 mb-2">
+                            <span className="text-[10px] font-extrabold text-marca-primario bg-marca-primario/5 border border-marca-primario/20 px-2 py-1 rounded-md uppercase tracking-wider">
+                                Resumen General
+                            </span>
+                            <p className="text-xs text-slate-400 mt-2">
+                                Indicadores clave de rendimiento y distribución de tareas.
+                            </p>
+                        </div>
+
                         <GeneralMetricasHeader
                             totalGeneradas={resumen.totalGeneradas}
                             totalTerminadas={resumen.totalTerminadas}
