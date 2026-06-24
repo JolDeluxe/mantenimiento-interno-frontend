@@ -5,6 +5,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { Label, Input } from '@/components/form/z_index';
 import { isPastDate, formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -137,6 +138,38 @@ export const MobileTicketReviewModal = ({
     const [nuevaFechaVencimiento, setNuevaFechaVencimiento] = useState('');
     const [errorFecha, setErrorFecha] = useState('');
 
+    const [maquinaId, setMaquinaId] = useState('');
+    const [maquinaInfo, setMaquinaInfo] = useState(null);
+
+    useEffect(() => {
+        if (ticket?.maquinaId) {
+            setMaquinaId(String(ticket.maquinaId));
+        } else {
+            setMaquinaId('');
+            setMaquinaInfo(null);
+        }
+    }, [ticket]);
+
+    useEffect(() => {
+        if (!maquinaId) {
+            setMaquinaInfo(null);
+            return;
+        }
+        const fetchMaquina = async () => {
+            try {
+                const response = await getMaquinaById(Number(maquinaId));
+                if (response?.data?.data) {
+                    setMaquinaInfo(response.data.data);
+                } else if (response?.data) {
+                    setMaquinaInfo(response.data);
+                }
+            } catch (err) {
+                console.error("Error al validar maquina en review:", err);
+            }
+        };
+        fetchMaquina();
+    }, [maquinaId]);
+
     const esSupervisor = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(currentUser?.rol);
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
@@ -238,6 +271,12 @@ export const MobileTicketReviewModal = ({
                                 <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
                                     <Icon name="engineering" size="xs" className="text-blue-500" />
                                     {ticket.responsables.map((r) => r.nombre).join(', ')}
+                                </p>
+                            )}
+                            {maquinaInfo && (
+                                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 border-t border-slate-200/60 pt-1.5">
+                                    <Icon name="precision_manufacturing" size="xs" className="text-marca-primario" />
+                                    <span>Máquina: <strong>{maquinaInfo.nombre}</strong> [{maquinaInfo.codigo}]</span>
                                 </p>
                             )}
                         </div>

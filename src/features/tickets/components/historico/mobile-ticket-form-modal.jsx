@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS,
     CLASIFICACIONES_CLIENTE,
@@ -133,6 +134,11 @@ export const MobileTicketFormModal = ({
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
     const [responsables, setResponsables] = useState([]);
+    const [maquinaId, setMaquinaId] = useState('');
+    const [maquinaInfo, setMaquinaInfo] = useState(null);
+    const [validatingMaquina, setValidatingMaquina] = useState(false);
+    const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
+    const [maquinasRaw, setMaquinasRaw] = useState([]);
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
@@ -169,14 +175,76 @@ export const MobileTicketFormModal = ({
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
             setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
+            setMaquinaId(ticketAEditar.maquinaId ? String(ticketAEditar.maquinaId) : '');
+            setMaquinaInfo(ticketAEditar.maquina ?? null);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
             setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
             setClasificacion('PREVENTIVO'); setTipo('PLANEADA');
             setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
+            setMaquinaId('');
+            setMaquinaInfo(null);
         }
     }, [isOpen, esEdicion, ticketAEditar]);
+
+    // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const cargarCatalogoMaquinas = async () => {
+            try {
+                const res = await getMaquinas({ limit: 500 });
+                const list = res?.data?.data || res?.data || [];
+                setMaquinasRaw(list);
+                const opts = list.map(m => ({
+                    value: String(m.id),
+                    label: `${m.codigo} - ${m.nombre}`
+                }));
+                setOpcionesMaquinas(opts);
+            } catch (err) {
+                console.error("Error al cargar máquinas en modal móvil:", err);
+            }
+        };
+
+        cargarCatalogoMaquinas();
+    }, [isOpen]);
+
+    // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
+    useEffect(() => {
+        if (!maquinaId) {
+            setMaquinaInfo(null);
+            return;
+        }
+
+        const fetchMaquinaInfo = async () => {
+            setValidatingMaquina(true);
+            try {
+                const response = await getMaquinaById(Number(maquinaId));
+                if (response?.data?.status === 'success' && response?.data?.data) {
+                    const maq = response.data.data;
+                    setMaquinaInfo(maq);
+                    setPlanta(maq.planta || '');
+                    setArea(maq.area || '');
+                } else if (response?.data && !response.data.status) {
+                    const maq = response.data;
+                    setMaquinaInfo(maq);
+                    setPlanta(maq.planta || '');
+                    setArea(maq.area || '');
+                } else {
+                    setMaquinaInfo(null);
+                }
+            } catch (err) {
+                console.error("Error al validar máquina en móvil:", err);
+                setMaquinaInfo(null);
+            } finally {
+                setValidatingMaquina(false);
+            }
+        };
+
+        const timer = setTimeout(fetchMaquinaInfo, 400); // debounce de 400ms
+        return () => clearTimeout(timer);
+    }, [maquinaId]);
 
     const getErrors = () => {
         const e = {};
@@ -185,6 +253,9 @@ export const MobileTicketFormModal = ({
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (!planta.trim()) e.planta = 'Selecciona la planta.';
         if (!area.trim()) e.area = 'El área es obligatoria.';
+        if (maquinaId && !maquinaInfo && !validatingMaquina) {
+            e.maquinaId = 'La máquina ingresada no existe.';
+        }
 
         if (esAdmin && fechaVencimiento) {
             const hoy = getMinDateHoy();
@@ -225,6 +296,7 @@ export const MobileTicketFormModal = ({
         if (planta) formData.append('planta', planta);
         if (area) formData.append('area', area);
         formData.append('prioridad', prioridad);
+        if (maquinaId) formData.append('maquinaId', maquinaId);
 
         if (esAdmin) {
             formData.append('tipo', tipo);
@@ -303,12 +375,62 @@ export const MobileTicketFormModal = ({
                                 } else if (val !== 'MAQUINARIA') {
                                     setClasificacion('PREVENTIVO');
                                 }
+                                if (val !== 'MAQUINARIA') {
+                                    setMaquinaId('');
+                                    setMaquinaInfo(null);
+                                    setPlanta('');
+                                    setArea('');
+                                }
                             }}
                                 error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
+                        {categoria === 'MAQUINARIA' && (
+                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>Maquinaria Relacionada</Label>
+                                    {validatingMaquina && (
+                                        <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
+                                            <Icon name="sync" size="xs" className="animate-spin" /> Validando...
+                                        </span>
+                                    )}
+                                </div>
+                                <SearchableSelect
+                                    options={opcionesMaquinas}
+                                    value={maquinaId}
+                                    onChange={(selectedId) => {
+                                        if (!selectedId) {
+                                            setMaquinaId('');
+                                            setMaquinaInfo(null);
+                                            setPlanta('');
+                                            setArea('');
+                                            return;
+                                        }
+                                        setMaquinaId(selectedId);
+                                        const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
+                                        if (maq) {
+                                            setMaquinaInfo(maq);
+                                            setPlanta(maq.planta || '');
+                                            setArea(maq.area || '');
+                                        }
+                                    }}
+                                    placeholder="Seleccionar máquina por código o nombre..."
+                                    searchPlaceholder="Buscar por MBCxxxx o nombre..."
+                                    allOptionText={null}
+                                    disabled={isSubmitting}
+                                    icon="precision_manufacturing"
+                                />
+                                {fe.maquinaId && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.maquinaId}</p>}
+                                {maquinaInfo && (
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
+                                        <Icon name="info" size="xs" />
+                                        <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {categoria === 'MAQUINARIA' && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
@@ -339,7 +461,7 @@ export const MobileTicketFormModal = ({
                                 setPlanta(val); 
                                 const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
                                 setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
-                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting}>
+                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || !!maquinaInfo}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
@@ -361,7 +483,7 @@ export const MobileTicketFormModal = ({
                                 }}
                                 error={!!fe.area}
                                 helperText={fe.area}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !!maquinaInfo}
                             >
                                 <option value="" disabled hidden>Selecciona área…</option>
                                 {areasOptions.map((opt) => (

@@ -577,6 +577,15 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         <DataRow icon="factory" label="Planta" value={ticket.planta} />
                                         <DataRow icon="place" label="Área" value={ticket.area} />
                                     </div>
+                                    {ticket.maquina && (
+                                        <div className="pt-2 border-t border-slate-200/60">
+                                            <DataRow 
+                                                icon="precision_manufacturing" 
+                                                label="Maquinaria" 
+                                                value={`${ticket.maquina.codigo} - ${ticket.maquina.nombre}`} 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Tarjeta 2: Personal */}
