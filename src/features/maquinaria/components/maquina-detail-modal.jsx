@@ -3,6 +3,20 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button, Spinner } fro
 import { formatFecha } from '@/lib/date';
 import api from '@/lib/axios';
 
+const limpiarNota = (nota) => {
+  if (!nota) return '';
+  return nota
+    .replace(/\s*\[TIEMPO_MANUAL:[^\]]+\]/gi, '')
+    .replace(/\s*\|\|\[META:TIEMPO_MANUAL\]\|\|/gi, '')
+    .trim();
+};
+
+const obtenerTiempoManual = (nota) => {
+  if (!nota) return null;
+  const match = nota.match(/\[TIEMPO_MANUAL:([^\]]+)\]/i);
+  return match ? match[1] : null;
+};
+
 const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
   <div className="flex gap-2.5 items-start">
     <div className="mt-0.5 text-slate-400 shrink-0">
@@ -26,8 +40,16 @@ export const MaquinaDetailModal = ({
   const [kpis, setKpis] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(3);
   const [totalTickets, setTotalTickets] = useState(0);
+  const [expandedTickets, setExpandedTickets] = useState({});
+
+  const toggleExpand = (id) => {
+    setExpandedTickets(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   useEffect(() => {
     if (isOpen && maquina) {
@@ -37,8 +59,8 @@ export const MaquinaDetailModal = ({
         api.get('/api/tickets', { params: { maquinaId: maquina.id, limit } })
       ]).then(([kpisData, ticketsRes]) => {
         setKpis(kpisData);
-        setTickets(ticketsRes?.data?.data || []);
-        setTotalTickets(ticketsRes?.data?.pagination?.total || ticketsRes?.data?.data?.length || 0);
+        setTickets(ticketsRes?.data || []);
+        setTotalTickets(ticketsRes?.pagination?.total || ticketsRes?.data?.length || 0);
       }).catch(err => {
         console.error('Error al cargar datos del detalle de máquina:', err);
       }).finally(() => {
@@ -48,7 +70,8 @@ export const MaquinaDetailModal = ({
       setKpis(null);
       setTickets([]);
       setTotalTickets(0);
-      setLimit(10);
+      setLimit(3);
+      setExpandedTickets({});
     }
   }, [isOpen, maquina, getKpis, limit]);
 
@@ -60,6 +83,11 @@ export const MaquinaDetailModal = ({
     const h = Math.floor(min / 60);
     const m = min % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+
+  const formatMTBF = (days) => {
+    if (days === null || days === undefined) return 'Sin datos';
+    return `Cada ${days} ${days === 1 ? 'día' : 'días'}`;
   };
 
   const getCriticidadLabel = (crit) => {
@@ -76,12 +104,46 @@ export const MaquinaDetailModal = ({
     return map[crit] || 'text-slate-700';
   };
 
+  // ─── BADGE: Clasificación — fondo neutro, punto de color semántico ───────────
+  const getClasificacionBadge = (clasif) => {
+    if (!clasif) return null;
+    const dotColor = {
+      CORRECTIVO: 'bg-rose-400',
+      PREVENTIVO: 'bg-emerald-400',
+      AUTONOMO: 'bg-blue-400'
+    }[clasif] || 'bg-slate-400';
+
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border border-slate-200 bg-slate-50 text-slate-500 leading-none">
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+        {clasif}
+      </span>
+    );
+  };
+
+  // ─── BADGE: Tipo — completamente neutro, el ícono diferencia ─────────────────
+  const getTipoBadge = (tipo) => {
+    const map = {
+      TICKET:        { label: 'Reporte Cliente', icon: 'person' },
+      PLANEADA:      { label: 'Planeado',        icon: 'calendar_today' },
+      EXTRAORDINARIA:{ label: 'Extraordinario',  icon: 'bolt' }
+    };
+    const item = map[tipo] || { label: tipo, icon: 'assignment' };
+    return (
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold border border-slate-200 bg-slate-100 text-slate-500 leading-none">
+        <Icon name={item.icon} size="10px" className="shrink-0" />
+        {item.label}
+      </span>
+    );
+  };
+
+  // ─── BADGE: Estado máquina — se usa solo una vez en el header ────────────────
   const getEstadoBadge = (est) => {
     const map = {
-      OPERATIVA: { label: 'Operativa', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-      EN_REPARACION: { label: 'En Reparación', cls: 'text-amber-700 bg-amber-50 border-amber-200' },
-      INACTIVA: { label: 'Inactiva', cls: 'text-slate-700 bg-slate-50 border-slate-200' },
-      BAJA: { label: 'Baja', cls: 'text-red-700 bg-red-50 border-red-200' }
+      OPERATIVA:    { label: 'Operativa',     cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+      EN_REPARACION:{ label: 'En Reparación', cls: 'text-amber-700 bg-amber-50 border-amber-200' },
+      INACTIVA:     { label: 'Inactiva',      cls: 'text-slate-700 bg-slate-50 border-slate-200' },
+      BAJA:         { label: 'Baja',          cls: 'text-red-700 bg-red-50 border-red-200' }
     };
     const c = map[est] || { label: est, cls: 'text-slate-700 bg-slate-50 border-slate-200' };
     return (
@@ -91,18 +153,19 @@ export const MaquinaDetailModal = ({
     );
   };
 
+  // ─── BADGE: Estado ticket — solo PENDIENTE/RESUELTO llevan color ─────────────
   const getTicketEstadoStyle = (state) => {
     const map = {
-      PENDIENTE: 'text-yellow-700 bg-yellow-50',
-      ASIGNADA: 'text-blue-700 bg-blue-50',
-      EN_PROGRESO: 'text-purple-700 bg-purple-50',
-      EN_PAUSA: 'text-slate-700 bg-slate-100',
-      RESUELTO: 'text-green-700 bg-green-50',
-      CERRADO: 'text-emerald-700 bg-emerald-100',
-      RECHAZADO: 'text-red-700 bg-red-50',
-      CANCELADA: 'text-slate-400 bg-slate-50'
+      PENDIENTE:   'text-amber-700 bg-amber-50 border-amber-200',
+      ASIGNADA:    'text-slate-600 bg-slate-50 border-slate-300',
+      EN_PROGRESO: 'text-slate-700 bg-slate-100 border-slate-300',
+      EN_PAUSA:    'text-slate-500 bg-slate-50 border-slate-200',
+      RESUELTO:    'text-emerald-700 bg-emerald-50 border-emerald-200',
+      CERRADO:     'text-slate-700 bg-slate-100 border-slate-300',
+      RECHAZADO:   'text-slate-500 bg-slate-50 border-slate-200',
+      CANCELADA:   'text-slate-400 bg-slate-50 border-slate-100'
     };
-    return map[state] || 'text-slate-600 bg-slate-50';
+    return map[state] || 'text-slate-600 bg-slate-50 border-slate-200';
   };
 
   return (
@@ -141,11 +204,10 @@ export const MaquinaDetailModal = ({
                 <Icon name="analytics" size="sm" className="text-slate-500" />
                 Indicadores de Fiabilidad
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 
-                {/* Fallas Reportadas */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-                  <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl shrink-0 flex items-center justify-center">
+                  <div className="p-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl shrink-0 flex items-center justify-center">
                     <Icon name="report_problem" size="sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
@@ -155,9 +217,8 @@ export const MaquinaDetailModal = ({
                   </div>
                 </div>
 
-                {/* Promedio Solución */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-                  <div className="p-3 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl shrink-0 flex items-center justify-center">
+                  <div className="p-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl shrink-0 flex items-center justify-center">
                     <Icon name="build_circle" size="sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
@@ -169,9 +230,8 @@ export const MaquinaDetailModal = ({
                   </div>
                 </div>
 
-                {/* Tiempo en Reparación */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-                  <div className="p-3 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl shrink-0 flex items-center justify-center">
+                  <div className="p-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl shrink-0 flex items-center justify-center">
                     <Icon name="hourglass_empty" size="sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
@@ -179,13 +239,25 @@ export const MaquinaDetailModal = ({
                     <span className="text-sm font-black text-slate-800 leading-snug break-words">
                       {formatMTTR(kpis?.resumen?.minutosReparacionAcumulados)}
                     </span>
-                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Total de horas</span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Total acumulado</span>
                   </div>
                 </div>
 
-                {/* Último Mantenimiento */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-                  <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl shrink-0 flex items-center justify-center">
+                  <div className="p-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl shrink-0 flex items-center justify-center">
+                    <Icon name="update" size="sm" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Frecuencia de Solicitud</span>
+                    <span className="text-sm font-black text-slate-800 leading-snug break-words">
+                      {formatMTBF(kpis?.resumen?.mtbfDias)}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">MTBF Promedio</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
+                  <div className="p-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl shrink-0 flex items-center justify-center">
                     <Icon name="calendar_today" size="sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
@@ -209,7 +281,6 @@ export const MaquinaDetailModal = ({
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                {/* Tarjeta 1: Especificaciones */}
                 <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
                   <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
                     <Icon name="settings" size="xs" className="text-slate-500" />
@@ -236,7 +307,6 @@ export const MaquinaDetailModal = ({
                   </div>
                 </div>
 
-                {/* Tarjeta 2: Ubicación y Área */}
                 <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
                   <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
                     <Icon name="location_on" size="xs" className="text-slate-500" />
@@ -270,7 +340,6 @@ export const MaquinaDetailModal = ({
                   </div>
                 </div>
 
-                {/* Tarjeta 3: Notas Adicionales */}
                 <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
                   <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
                     <Icon name="event_note" size="xs" className="text-slate-500" />
@@ -302,27 +371,140 @@ export const MaquinaDetailModal = ({
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                 {tickets.length > 0 ? (
                   <>
-                    <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto custom-scrollbar">
-                      {tickets.map((t) => (
-                        <div key={t.id} className="p-3.5 flex items-center justify-between gap-4 text-xs hover:bg-slate-50 transition-colors">
-                          <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] font-extrabold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#{t.id}</span>
-                              <span className="text-[10px] font-bold text-slate-400">{formatFecha(t.createdAt)}</span>
+                    <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto custom-scrollbar">
+                      {tickets.map((t) => {
+                        const isExpanded = !!expandedTickets[t.id];
+                        // Buscar el evento de resolución del técnico primero (para ver sus observaciones reales de reparación)
+                        let eventoResolucion = t.historial?.find(
+                          (h) => h.estadoNuevo === 'RESUELTO'
+                        );
+                        // Si no hay evento de RESUELTO, buscar el de CERRADO (ej. inspecciones o rutinas directas)
+                        if (!eventoResolucion) {
+                          eventoResolucion = t.historial?.find(
+                            (h) => h.estadoNuevo === 'CERRADO'
+                          );
+                        }
+                        
+                        const tiempoManual = eventoResolucion ? obtenerTiempoManual(eventoResolucion.nota) : null;
+                        const notaLimpia = eventoResolucion ? limpiarNota(eventoResolucion.nota) : '';
+                        
+                        return (
+                          <div key={t.id} className="flex flex-col hover:bg-slate-50/30 transition-colors">
+                            {/* Cabecera del Item */}
+                            <div 
+                              onClick={() => toggleExpand(t.id)}
+                              className="p-3.5 flex items-center justify-between gap-4 text-xs cursor-pointer select-none"
+                            >
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="font-mono text-[9px] font-extrabold text-slate-400">#{t.id}</span>
+                                  {getTipoBadge(t.tipo)}
+                                  {getClasificacionBadge(t.clasificacion)}
+                                  <span className="text-[10px] font-medium text-slate-400">
+                                    {t.finalizadoAt ? `Finalizado: ${formatFecha(t.finalizadoAt)}` : `Creado: ${formatFecha(t.createdAt)}`}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-slate-700 mt-1.5 leading-snug">{t.titulo}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-[10px] font-black uppercase border px-2.5 py-1 rounded tracking-wide ${getTicketEstadoStyle(t.estado)}`}>
+                                  {t.estado}
+                                </span>
+                                <Icon 
+                                  name={isExpanded ? 'expand_less' : 'expand_more'} 
+                                  className="text-slate-400 transition-transform duration-200" 
+                                  size="sm" 
+                                />
+                              </div>
                             </div>
-                            <span className="font-bold text-slate-700 mt-1.5 leading-snug">{t.titulo}</span>
+
+                            {/* Contenido Desplegable */}
+                            {isExpanded && (
+                              <div className="px-4 pb-4 pt-1 border-t border-slate-100 bg-slate-50/20 text-xs text-slate-600 animate-in slide-in-from-top-2 duration-150 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Izquierda */}
+                                  <div className="space-y-2">
+                                    <div>
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Solicitado por:</span>
+                                      <span className="font-medium text-slate-700">
+                                        {t.tipo === 'TICKET' 
+                                          ? `Cliente: ${t.creador?.nombre || 'Desconocido'} (${t.creador?.departamento?.nombre || 'Sin departamento'})`
+                                          : `Equipo Técnico: ${t.creador?.nombre || 'Desconocido'} (${t.creador?.cargo || 'Mantenimiento'})`}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Técnicos Responsables:</span>
+                                      <span className="font-medium text-slate-700">
+                                        {t.responsables && t.responsables.length > 0
+                                          ? t.responsables.map(r => `${r.nombre} (${r.cargo || 'Técnico'})`).join(', ')
+                                          : 'Sin técnicos asignados.'}
+                                      </span>
+                                    </div>
+                                    {t.descripcion && t.descripcion !== 'Sin descripción.' && (
+                                      <div>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Detalles del problema:</span>
+                                        <p className="mt-0.5 text-slate-600 bg-white p-2 border border-slate-200/50 rounded-lg whitespace-pre-wrap leading-relaxed">
+                                          {t.descripcion}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Derecha */}
+                                  <div className="space-y-2 border-t md:border-t-0 md:border-l border-slate-200/60 md:pl-4">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Observaciones de Reparación:</span>
+                                    {eventoResolucion ? (
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center gap-1.5">
+                                          <Icon name="check_circle" className="text-emerald-500" size="14px" />
+                                          <span className="font-bold text-slate-700">Resuelto por {eventoResolucion.usuario?.nombre}</span>
+                                        </div>
+                                        <div className="bg-white p-2.5 border border-slate-200/50 rounded-lg flex flex-col gap-1.5">
+                                          <p className="font-medium text-slate-700 leading-relaxed">
+                                            {notaLimpia || 'Sin observaciones de cierre.'}
+                                          </p>
+                                          <div className="flex flex-wrap gap-1.5 mt-1">
+                                            {tiempoManual && (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                                                <Icon name="timer" size="12px" />
+                                                Tiempo registrado: {tiempoManual}
+                                              </span>
+                                            )}
+                                            {eventoResolucion.esTiempoManual && !tiempoManual && (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                                                <Icon name="timer" size="12px" />
+                                                Tiempo registrado manualmente
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-[9px] text-slate-400 mt-1 font-bold flex items-center justify-between border-t border-slate-100 pt-1.5">
+                                            <span>Fecha de reparación:</span>
+                                            <span>{formatFecha(eventoResolucion.createdAt)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="p-3 bg-white border border-slate-200/50 rounded-lg text-slate-400 italic flex items-center gap-1.5">
+                                        <Icon name="hourglass_empty" size="14px" />
+                                        {t.estado === 'CANCELADA' 
+                                          ? 'El mantenimiento fue cancelado sin registrar solución.' 
+                                          : 'Esta tarea aún se encuentra activa o en proceso de reparación.'}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <span className={`text-[10px] font-black uppercase border px-2.5 py-1 rounded tracking-wide shrink-0 ${getTicketEstadoStyle(t.estado)}`}>
-                            {t.estado}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     {totalTickets > tickets.length && (
                       <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex justify-center">
                         <button
                           type="button"
-                          onClick={() => setLimit(1000)}
+                          onClick={() => setLimit(500)}
                           className="text-xs font-bold text-marca-primario hover:text-marca-primario/80 transition-colors flex items-center justify-center gap-1 cursor-pointer w-full py-1.5 rounded-lg hover:bg-slate-100"
                         >
                           <Icon name="expand_more" size="xs" />
