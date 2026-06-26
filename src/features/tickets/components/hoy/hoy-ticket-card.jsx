@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '../historico/ticket-status-badge';
-import { isPastDate, formatFechaHora, formatDurationToDaysHours } from '@/lib/date';
+import { formatFechaHora, formatDurationToDaysHours } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
@@ -10,9 +10,7 @@ const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
 
 const isVencida = (ticket) => {
-    if (!ticket.fechaVencimiento) return false;
-    if (['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
-    return isPastDate(ticket.fechaVencimiento);
+    return !!ticket.isOverdue;
 };
 
 const getStatusLabelData = (ticket) => {
@@ -52,7 +50,12 @@ const getStatusLabelData = (ticket) => {
         let extraMins = 0;
         const abierto = ticket.intervalos?.find((i) => !i.fin);
         if (abierto) {
-            const inicioMs = Date.parse(abierto.inicio);
+            const inicioMs = new Date(abierto.inicio).getTime();
+            if (!isNaN(inicioMs)) {
+                extraMins = Math.max(0, Math.floor((Date.now() - inicioMs) / 60000));
+            }
+        } else if (ticket.fechaInicio) {
+            const inicioMs = new Date(ticket.fechaInicio).getTime();
             if (!isNaN(inicioMs)) {
                 extraMins = Math.max(0, Math.floor((Date.now() - inicioMs) / 60000));
             }

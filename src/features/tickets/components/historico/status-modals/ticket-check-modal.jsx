@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
-import { isPastDate } from '@/lib/date';
 
 const MAX_DURATION_MINS = 540; // 9 horas
 
@@ -196,7 +195,7 @@ export const TicketCheckModal = ({
                 <div className="flex flex-col items-center gap-6 py-4">
 
                     {/* Alerta de Retraso */}
-                    {isPastDate(ticket?.fechaVencimiento) && (
+                    {ticket?.isOverdue && (
                         <div className="w-full flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
                             <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
                             <p><strong>¡Atención!</strong> Estás a punto de finalizar esta tarea, pero ya se encuentra <strong>atrasada</strong> según su fecha límite.</p>

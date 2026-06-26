@@ -218,34 +218,7 @@ export default function TicketsHistoricoPage() {
         }
     };
 
-    const sortedTickets = useMemo(() => {
-        if (!tickets) return [];
-        if (sortConfig?.key && sortConfig.key !== 'createdAt') {
-            return tickets;
-        }
-
-        const PRIORIDAD_ORDER = { CRITICA: 4, ALTA: 3, MEDIA: 2, BAJA: 1 };
-
-        return [...tickets].sort((a, b) => {
-            const aClosed = a.estado === 'CERRADO' || a.estado === 'CERRADA';
-            const bClosed = b.estado === 'CERRADO' || b.estado === 'CERRADA';
-            if (aClosed !== bClosed) return aClosed ? 1 : -1;
-
-            const aIsRechazado = a.estado === 'RECHAZADO';
-            const bIsRechazado = b.estado === 'RECHAZADO';
-            if (aIsRechazado !== bIsRechazado) return aIsRechazado ? -1 : 1;
-
-            const aAtrasada = a.isOverdue;
-            const bAtrasada = b.isOverdue;
-            if (aAtrasada !== bAtrasada) return aAtrasada ? -1 : 1;
-
-            const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;
-            const bPrio = PRIORIDAD_ORDER[b.prioridad] || 0;
-            if (aPrio !== bPrio) return bPrio - aPrio;
-
-            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        });
-    }, [tickets, sortConfig]);
+    const sortedTickets = useMemo(() => tickets || [], [tickets]);
 
     const sharedViewProps = {
         tickets: sortedTickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-import { isPastDate, isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
+import { isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
 
 // ── Constantes de Tiempo ───────────────────────────────────────────────────
 const MIN_TECNICO = 5;
@@ -15,7 +15,15 @@ const MAX_DURATION_MINS = 540; // 9 horas
 const calcElapsedMins = (ticket) => {
     const acumulado = ticket.duracionReal || 0;
     const abierto = ticket.intervalos?.find((i) => !i.fin);
-    if (!abierto) return acumulado;
+    if (!abierto) {
+        if (ticket.fechaInicio) {
+            const mins = Math.max(0, Math.floor(
+                (Date.now() - new Date(ticket.fechaInicio).getTime()) / 60000
+            ));
+            return acumulado + mins;
+        }
+        return acumulado;
+    }
     const mins = Math.max(0, Math.floor(
         (Date.now() - new Date(abierto.inicio).getTime()) / 60000
     ));
@@ -41,7 +49,7 @@ const formatMinsFull = (mins) => {
 const evaluarTiempo = (mins, ticket) => {
     const fechaVencimiento = ticket.fechaLimite || ticket.fechaVencimiento;
 
-    if (fechaVencimiento && isPastDate(fechaVencimiento)) {
+    if (ticket.isOverdue) {
         return {
             alerta: true,
             tipo: 'alto',
@@ -430,7 +438,7 @@ export const TicketPausaModal = ({
                 <div className="flex flex-col gap-5 py-2">
 
                     {/* Alerta de Retraso Global para el Modal */}
-                    {isPastDate(ticket?.fechaVencimiento) && (
+                    {ticket?.isOverdue && (
                         <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
                             <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
                             <p><strong>¡Atención!</strong> La tarea que estás gestionando ya se encuentra <strong>atrasada</strong>.</p>

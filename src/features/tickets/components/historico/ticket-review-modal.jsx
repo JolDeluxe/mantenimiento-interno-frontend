@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
-import { isPastDate, formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 // Helper local para formatear los minutos del sistema

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
-import { isPastDate, formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 
@@ -257,7 +257,7 @@ export const MobileTicketReviewModal = ({
                 <ModalBody>
                     <div className="flex flex-col gap-6">
 
-                        {isPastDate(ticket?.fechaVencimiento) && (
+                        {ticket?.isLate && (
                             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm">
                                 <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
                                 <p><strong>¡Aviso de Retraso!</strong> Esta tarea fue entregada por el técnico <strong>fuera de tiempo</strong> según su fecha de vencimiento.</p>

@@ -89,7 +89,8 @@ export const TicketsHoyDesktop = ({
     onOpenCreate,
     onRefresh,
     isFiltering = false,
-    onClearFilters
+    onClearFilters,
+    onOpenDrawerAmnistia,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
@@ -170,6 +171,7 @@ export const TicketsHoyDesktop = ({
                 existenciaGlobal={existenciaGlobal} 
                 totalAtrasadasGlobal={totalAtrasadasGlobal} 
                 currentUser={currentUser} 
+                onOpenDrawerAmnistia={onOpenDrawerAmnistia}
                 hideStatusFilter 
             />
 

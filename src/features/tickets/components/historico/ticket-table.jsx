@@ -17,29 +17,6 @@ import {
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
-// const isVencida = (ticket) => {
-//     if (!ticket.fechaVencimiento) return false;
-//     if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-//     return isPastDate(ticket.fechaVencimiento);
-// };
-
-// const isEntregadaTarde = (ticket) => {
-//     if (!ticket.fechaVencimiento) return false;
-//     // Solo se evalúa si el ticket ya fue terminado
-//     if (ticket.estado !== 'RESUELTO' && ticket.estado !== 'CERRADO') return false;
-
-//     // Extraemos la fecha en la que realmente se resolvió (o el updatedAt si el historial no viene populado)
-//     const entryResuelto = ticket.historial?.find(h => h.estadoNuevo === 'RESUELTO');
-//     const fechaFin = entryResuelto?.createdAt || ticket.updatedAt;
-
-//     if (!fechaFin) return false;
-
-//     const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
-//     const fFin = new Date(fechaFin).setHours(0, 0, 0, 0);
-
-//     return fFin > fVenc;
-// };
-
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
 

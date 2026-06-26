@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
-import { formatFecha, formatFechaHora, isPastDate } from '@/lib/date';
+import { formatFecha, formatFechaHora } from '@/lib/date';
 import { TicketTimeline } from './ticket-timeline';
 import { useAuthStore } from '@/stores/auth-store';
 import {
@@ -406,14 +406,12 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     };
 
     const isResolvedOrClosed = ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO';
-    const esAtrasada = !isResolvedOrClosed && ticket.fechaVencimiento && isPastDate(ticket.fechaVencimiento);
+    const esAtrasada = !!ticket.isOverdue;
     
     let statusRetraso = null;
     if (ticket.fechaVencimiento) {
-        if (isResolvedOrClosed && fechaFinalizada) {
-            const fVenc = new Date(ticket.fechaVencimiento).setHours(0, 0, 0, 0);
-            const fFin = new Date(fechaFinalizada).setHours(0, 0, 0, 0);
-            if (fFin > fVenc) {
+        if (isResolvedOrClosed) {
+            if (ticket.isLate) {
                 statusRetraso = (
                     <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded uppercase shrink-0">
                         <Icon name="timer_off" size="xs" /> Entregada con Retraso

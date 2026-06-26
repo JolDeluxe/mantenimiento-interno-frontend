@@ -710,9 +710,10 @@ export const TicketFormModal = ({
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
-            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
+            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? ticketAEditar.tiempoEstimadoMins ?? 0);
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
-            setMaquinaId(ticketAEditar.maquinaId ? String(ticketAEditar.maquinaId) : '');
+            const targetMaquinaId = ticketAEditar.maquinaId ?? ticketAEditar.maquina?.id;
+            setMaquinaId(targetMaquinaId ? String(targetMaquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
@@ -811,8 +812,8 @@ export const TicketFormModal = ({
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
 
-            // Validación: Tiempo estimado obligatorio (si no es rutina)
-            if (!esRutina && tiempoEstimadoMins <= 0) {
+            // Validación: Tiempo estimado obligatorio para tickets generales, opcional en MAQUINARIA
+            if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
                 e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
             }
 

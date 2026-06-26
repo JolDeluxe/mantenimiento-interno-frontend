@@ -6,13 +6,8 @@ const getEstadoVisual = (tarea) => {
     if (tarea.historial && tarea.historial.length > 0) return { label: 'Rechazada', color: 'text-red-700 bg-red-50 border-red-200', icon: 'error' };
     if (!tarea.fechaVencimiento) return { label: 'Sin Fecha', color: 'text-slate-500 bg-slate-50 border-slate-200', icon: 'schedule' };
 
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const vencimiento = new Date(tarea.fechaVencimiento);
-    vencimiento.setHours(0, 0, 0, 0);
-
-    if (vencimiento < hoy) return { label: 'Atrasada', color: 'text-orange-700 bg-orange-50 border-orange-200', icon: 'warning' };
-    if (vencimiento.getTime() === hoy.getTime()) return { label: 'Para Hoy', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: 'today' };
+    if (tarea.isOverdue) return { label: 'Atrasada', color: 'text-orange-700 bg-orange-50 border-orange-200', icon: 'warning' };
+    if (tarea.perteneceAHoy) return { label: 'Para Hoy', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: 'today' };
     return { label: 'Próxima', color: 'text-blue-700 bg-blue-50 border-blue-200', icon: 'event' };
 };
 

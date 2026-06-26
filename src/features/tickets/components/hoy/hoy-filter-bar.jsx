@@ -58,6 +58,7 @@ export const HoyFilterBar = ({
     onVistaEquipoChange,
     equipoCount = 0,
     misTareasCount = 0,
+    onOpenDrawerAmnistia,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -114,6 +115,19 @@ export const HoyFilterBar = ({
                             </span>
                         )}
                     </div>
+
+                    {/* Botón contextual: solo aparece cuando el filtro de atrasadas está activo y el usuario es admin */}
+                    {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
+                        <Button
+                            variant="filtro_gris"
+                            icon="schedule_send"
+                            size="sm"
+                            onClick={onOpenDrawerAmnistia}
+                            className="flex-none h-[38px] bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 animate-in fade-in duration-200"
+                        >
+                            Reprogramar
+                        </Button>
+                    )}
 
                     <div className="relative">
                         <Button

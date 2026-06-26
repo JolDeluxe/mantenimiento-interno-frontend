@@ -1,7 +1,6 @@
 // src/features/tickets/components/historico/status-modals/ticket-start-modal.jsx
 import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
-import { isPastDate } from '@/lib/date';
 
 export const TicketStartModal = ({
     isOpen,
@@ -50,7 +49,7 @@ export const TicketStartModal = ({
             <ModalBody>
                 <div className="flex flex-col items-center gap-6 py-4 text-center">
 
-                    {isPastDate(ticket?.fechaVencimiento) && (
+                    {ticket?.isOverdue && (
                         <div className="w-full flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
                             <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
                             <p><strong>¡Atención!</strong> Estás a punto de {esReinicio ? 'retomar' : 'iniciar'} una tarea que se encuentra con <strong>retraso</strong>.</p>

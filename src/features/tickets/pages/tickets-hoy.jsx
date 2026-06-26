@@ -8,37 +8,16 @@ import { TicketsHoyDesktop } from '../views/tickets-hoy-desktop';
 import { TicketsHoyMobile } from '../views/tickets-hoy-mobile';
 import { HoyFormModal } from '../components/hoy/hoy-form-modal';
 import { MobileHoyFormModal } from '../components/hoy/mobile-hoy-form-modal';
+import { BacklogRescheduleDrawer } from '../components/hoy/backlog-reschedule-drawer';
 
-const PRIORIDAD_ORDER = { CRITICA: 4, ALTA: 3, MEDIA: 2, BAJA: 1 };
-const ESTADOS_EXCLUIDOS = ['PENDIENTE', 'CANCELADA', 'CERRADO'];
-const ESTADOS_VALIDOS_ATRASADAS = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA'];
 const ESTADOS_SUMMARY = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA', 'RESUELTO'];
 
-const getDateBounds = (offset = 0) => {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-    const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-    return { start, end };
-};
-
-const isOnDate = (isoStr, offset = 0) => {
-    if (!isoStr) return false;
-    const { start, end } = getDateBounds(offset);
-    const d = new Date(isoStr);
-    return d >= start && d <= end;
-};
-
-const esAtrasadaActiva = (ticket) => ticket.isOverdue;
-
-const perteneceAHoy = (ticket) => ticket.perteneceAHoy;
-
-const sortManana = (tickets) =>
-    [...tickets].sort((a, b) => {
-        const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;
-        const bPrio = PRIORIDAD_ORDER[b.prioridad] || 0;
-        return bPrio - aPrio;
-    });
+/**
+ * Calcula la fecha de mañana en zona horaria America/Mexico_City (YYYY-MM-DD).
+ * Uso permitido: solo para filtro de pestaña de UI, no para lógica de negocio.
+ */
+const getMananaMX = () =>
+    new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
 
 export default function TicketsHoyPage() {
     const isDesktop = useIsDesktop();
@@ -70,6 +49,7 @@ export default function TicketsHoyPage() {
     const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
+    const [isDrawerAmnistiaOpen, setIsDrawerAmnistiaOpen] = useState(false);
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [vistaEquipo, setVistaEquipo] = useState(true);
 
@@ -82,12 +62,13 @@ export default function TicketsHoyPage() {
         setFiltroCategoria('');
         setFiltroResponsable('');
         setMostrarAtrasadas(false);
+        setIsDrawerAmnistiaOpen(false);
         setMostrarRechazadas(false);
         setVistaEquipo(true);
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
-    const queryPayload = useMemo(() => ({ limit: 500 }), []);
+    const queryPayload = useMemo(() => ({ limit: 5000 }), []);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las tareas.'));
@@ -96,56 +77,34 @@ export default function TicketsHoyPage() {
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    const customSortHoy = useCallback((tickets) => {
-        const rol = currentUser?.rol;
-        const esAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(rol);
-
-        const STATUS_ORDER = esAdmin
-            ? { RESUELTO: 5, EN_PAUSA: 4, EN_PROGRESO: 3, ASIGNADA: 2, RECHAZADO: 2 }
-            : { EN_PROGRESO: 5, EN_PAUSA: 4, ASIGNADA: 3, RECHAZADO: 3, RESUELTO: 2 };
-
-        return [...tickets].sort((a, b) => {
-            if (highlightId) {
-                if (String(a.id) === highlightId) return -1;
-                if (String(b.id) === highlightId) return 1;
-            }
-
-            const aIsRechazado = a.estado === 'RECHAZADO';
-            const bIsRechazado = b.estado === 'RECHAZADO';
-            if (aIsRechazado !== bIsRechazado) return aIsRechazado ? -1 : 1;
-
-            const aAtrasadaAsig = esAtrasadaActiva(a) && a.estado === 'ASIGNADA';
-            const bAtrasadaAsig = esAtrasadaActiva(b) && b.estado === 'ASIGNADA';
-            if (aAtrasadaAsig !== bAtrasadaAsig) return aAtrasadaAsig ? -1 : 1;
-
-            const aStatusW = STATUS_ORDER[a.estado] || 0;
-            const bStatusW = STATUS_ORDER[b.estado] || 0;
-            if (aStatusW !== bStatusW) return bStatusW - aStatusW;
-
-            const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;
-            const bPrio = PRIORIDAD_ORDER[b.prioridad] || 0;
-            if (aPrio !== bPrio) return bPrio - aPrio;
-
-            return new Date(a.fechaVencimiento || 0).getTime() - new Date(b.fechaVencimiento || 0).getTime();
-        });
-    }, [currentUser, highlightId]);
-
     const getBaseTickets = useCallback(() => {
-        let base = allTickets.filter(t => !ESTADOS_EXCLUIDOS.includes(t.estado));
-        
+        // El backend ya filtra CANCELADA y controla qué tickets se envían.
+        // Solo restringimos por responsable para el rol TECNICO.
         const esTecnico = currentUser?.rol === 'TECNICO';
-
-        // Solo el Técnico tiene una base restringida permanentemente
         if (esTecnico) {
-            base = base.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser.id)));
+            return allTickets.filter(t =>
+                t.responsables?.some(r => String(r.id) === String(currentUser.id))
+            );
         }
-
-        return base;
+        return allTickets;
     }, [allTickets, currentUser]);
 
     const ticketsTabActual = useMemo(() => {
         const base = getBaseTickets();
-        const delDia = dateOffset === 0 ? base.filter(perteneceAHoy) : base.filter(t => isOnDate(t.fechaVencimiento, dateOffset));
+        // Estados terminales excluidos en AMBAS pestañas (espeja la lógica de perteneceAHoy del backend).
+        const ESTADOS_TERMINALES_HOY = ['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'];
+
+        const delDia = dateOffset === 0
+            // Filtrado declarativo: si el backend dice perteneceAHoy, el frontend lo pinta sin cuestionar.
+            ? base.filter(t => t.perteneceAHoy === true)
+            : base.filter(t => {
+                if (!t.fechaVencimiento) return false;
+                // Excluir terminales: misma lógica que el backend usa para perteneceAHoy
+                if (ESTADOS_TERMINALES_HOY.includes(t.estado)) return false;
+                const mananaMX = getMananaMX();
+                const ticketVencMX = new Date(t.fechaVencimiento).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                return ticketVencMX === mananaMX;
+            });
         
         // CALCULAMOS CONTADORES SIEMPRE SOBRE EL TOTAL DEL DÍA
         // Independientemente de lo que el usuario esté viendo en ese momento
@@ -193,7 +152,7 @@ export default function TicketsHoyPage() {
             filtered = getBaseTickets().filter(t => {
                 if (highlightId && String(t.id) === highlightId) return true;
                 let match = true;
-                if (mostrarAtrasadas) match = match && esAtrasadaActiva(t);
+                if (mostrarAtrasadas) match = match && t.isOverdue === true;
                 if (mostrarRechazadas) match = match && t.estado === 'RECHAZADO';
                 
                 // Si el coordinador está en vista "Mis Tareas", solo mostrar atrasadas/rechazadas suyas
@@ -225,12 +184,20 @@ export default function TicketsHoyPage() {
             );
         }
 
-        return dateOffset === 0 ? customSortHoy(filtered) : sortManana(filtered);
-    }, [ticketsTabActual, getBaseTickets, dateOffset, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, query, customSortHoy, highlightId, allTickets, currentUser, vistaEquipo]);
+        return filtered;
+    }, [ticketsTabActual, getBaseTickets, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, query, highlightId, allTickets, currentUser, vistaEquipo]);
 
-    const totalHoy = useMemo(() => getBaseTickets().filter(perteneceAHoy).length, [getBaseTickets]);
-    const totalManana = useMemo(() => getBaseTickets().filter(t => isOnDate(t.fechaVencimiento, 1)).length, [getBaseTickets]);
-    const totalAtrasadas = useMemo(() => getBaseTickets().filter(esAtrasadaActiva).length, [getBaseTickets]);
+    const totalHoy = useMemo(() => getBaseTickets().filter(t => t.perteneceAHoy === true).length, [getBaseTickets]);
+    const totalManana = useMemo(() => {
+        const mananaMX = getMananaMX();
+        return getBaseTickets().filter(t =>
+            t.fechaVencimiento &&
+            new Date(t.fechaVencimiento).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) === mananaMX
+        ).length;
+    }, [getBaseTickets]);
+    // Incluye TODOS los estados vencibles: PENDIENTE, ASIGNADA, EN_PROGRESO, EN_PAUSA, RECHAZADO
+    const ticketsAtrasados = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
+    const totalAtrasadas = ticketsAtrasados.length;
     const totalRechazadas = useMemo(() => getBaseTickets().filter(t => t.estado === 'RECHAZADO').length, [getBaseTickets]);
 
     const handleCreate = async (payloads) => {
@@ -315,7 +282,9 @@ export default function TicketsHoyPage() {
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,
+        // Siempre filtra por atrasadas al hacer click; el drawer se abre por separado
         onToggleAtrasadas: () => setMostrarAtrasadas(p => !p),
+        onOpenDrawerAmnistia: () => setIsDrawerAmnistiaOpen(true),
         mostrarRechazadas,
         onToggleRechazadas: () => setMostrarRechazadas(p => !p),
         vistaEquipo,
@@ -338,6 +307,12 @@ export default function TicketsHoyPage() {
             ) : (
                 <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
+            <BacklogRescheduleDrawer
+                isOpen={isDrawerAmnistiaOpen}
+                onClose={() => setIsDrawerAmnistiaOpen(false)}
+                ticketsAtrasados={ticketsAtrasados}
+                onSuccessSincronizacion={loadTickets}
+            />
         </div>
     );
 }

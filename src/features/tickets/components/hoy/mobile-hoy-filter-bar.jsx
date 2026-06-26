@@ -108,6 +108,7 @@ export const MobileHoyFilterBar = ({
     existenciaGlobal = {},
     totalAtrasadasGlobal = 0,
     currentUser,
+    onOpenDrawerAmnistia,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -212,6 +213,20 @@ export const MobileHoyFilterBar = ({
                         </span>
                     )}
                 </button>
+
+                {/* Botón Reprogramar contextual: solo cuando filtro de atrasadas activo y admin */}
+                {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
+                    <button
+                        type="button"
+                        onClick={onOpenDrawerAmnistia}
+                        style={{ ...glassBase('light'), borderRadius: 14, backgroundColor: '#fefce8', borderColor: '#fcd34d' }}
+                        className="relative overflow-hidden flex items-center gap-1 h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 text-amber-700 animate-in fade-in slide-in-from-right-2 duration-200"
+                    >
+                        <GlassSheen />
+                        <Icon name="schedule_send" size="sm" className="relative z-10" />
+                        <span className="relative z-10 text-[11px] font-black">Reprogramar</span>
+                    </button>
+                )}
 
                 <button
                     type="button"

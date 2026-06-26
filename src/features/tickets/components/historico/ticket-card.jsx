@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge.jsx';
-import { isPastDate, formatFecha, formatFechaRelativa } from '@/lib/date';
+import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
@@ -10,9 +10,7 @@ const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
 
 const isVencida = (ticket) => {
-    if (!ticket.fechaVencimiento) return false;
-    if (ESTADOS_FINALES.includes(ticket.estado)) return false;
-    return isPastDate(ticket.fechaVencimiento);
+    return !!ticket.isOverdue;
 };
 
 const getEstadoActionMeta = (estado) => {

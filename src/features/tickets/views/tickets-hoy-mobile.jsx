@@ -117,7 +117,8 @@ export const TicketsHoyMobile = ({
     onOpenCreate,
     onRefresh,
     isFiltering = false,
-    onClearFilters
+    onClearFilters,
+    onOpenDrawerAmnistia,
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -143,7 +144,7 @@ export const TicketsHoyMobile = ({
                 
                 <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
                 
-                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroCategoria={filtroCategoria} onCategoriaChange={onCategoriaChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} vistaEquipo={vistaEquipo} onVistaEquipoChange={onVistaEquipoChange} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} hideStatusFilter />
+                <MobileHoyFilterBar query={query} onSearchChange={onSearchChange} filtroEstado={filtroEstado} onEstadoChange={onEstadoChange} filtroTipo={filtroTipo} onTipoChange={onTipoChange} filtroPrioridad={filtroPrioridad} onPrioridadChange={onPrioridadChange} filtroCategoria={filtroCategoria} onCategoriaChange={onCategoriaChange} filtroResponsable={filtroResponsable} onResponsableChange={onResponsableChange} opcionesResponsables={tecnicos} mostrarAtrasadas={mostrarAtrasadas} onToggleAtrasadas={onToggleAtrasadas} mostrarRechazadas={mostrarRechazadas} onToggleRechazadas={onToggleRechazadas} vistaEquipo={vistaEquipo} onVistaEquipoChange={onVistaEquipoChange} existenciaGlobal={existenciaGlobal} totalAtrasadasGlobal={totalAtrasadasGlobal} currentUser={currentUser} onOpenDrawerAmnistia={onOpenDrawerAmnistia} hideStatusFilter />
 
                 {esCoordinador && (
                     <div className="px-0.5 mt-0.5 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -174,13 +175,7 @@ export const TicketsHoyMobile = ({
                                 />
                             </div>
                         )
-                        : [...tickets].sort((a, b) => {
-                            const priorizaRechazos = currentUser?.rol === 'TECNICO' || ROLES_ADMIN.has(currentUser?.rol);
-                            if (!priorizaRechazos) return 0;
-                            if (a.estado === 'RECHAZADO' && b.estado !== 'RECHAZADO') return -1;
-                            if (b.estado === 'RECHAZADO' && a.estado !== 'RECHAZADO') return 1;
-                            return 0;
-                        }).map((ticket) => (
+                        : tickets.map((ticket) => (
                             <HoyTicketCard key={ticket.id} ticket={ticket} isHighlighted={highlightId === String(ticket.id)} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
                         ))
                 }
