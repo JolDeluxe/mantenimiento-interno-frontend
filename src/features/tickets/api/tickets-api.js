@@ -34,6 +34,9 @@ export const changeTicketStatus = (id, data) =>
 export const createTicketsBatch = (tareas) =>
     api.post('/api/tickets/batch', { tareas });
 
+export const rescheduleTicketsBatch = (payload) =>
+    api.patch('/api/tickets/reschedule', payload);
+
 // ── Personal asignable ─────────────────────────────────────────────────────
 
 /**

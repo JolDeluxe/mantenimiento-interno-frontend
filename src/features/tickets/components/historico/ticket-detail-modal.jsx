@@ -353,6 +353,10 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
 
     if (!ticket) return null;
 
+    const originalFechaStr = ticket.fechaVencimientoOriginal ? formatFecha(ticket.fechaVencimientoOriginal) : '';
+    const vencFechaStr = ticket.fechaVencimiento ? formatFecha(ticket.fechaVencimiento) : '';
+    const tieneFechaModificada = Boolean(originalFechaStr && originalFechaStr !== vencFechaStr);
+
     const creador = ticket.creador;
     const responsables = ticket.responsables ?? [];
     const tieneHistorial = ticket.historial && ticket.historial.length > 0;
@@ -618,9 +622,18 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                                 icon="event" 
                                                 label="Vence" 
                                                 value={
-                                                    <span className={esAtrasada ? 'text-red-600 font-extrabold' : ''}>
-                                                        {formatFecha(ticket.fechaVencimiento)}
-                                                    </span>
+                                                    ticket.fechaVencimiento ? (
+                                                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                                                            <span className={esAtrasada ? 'text-red-600 font-extrabold' : ''}>
+                                                                {vencFechaStr}
+                                                            </span>
+                                                            {tieneFechaModificada && (
+                                                                <span className="text-[10px] font-normal text-slate-400 shrink-0">
+                                                                    (Original: {originalFechaStr})
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    ) : null
                                                 } 
                                                 fallback="Sin límite" 
                                             />
