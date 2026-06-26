@@ -4,3 +4,4 @@ export { MaquinaFormModal } from './maquina-form-modal';
 export { MaquinaDetailModal } from './maquina-detail-modal';
 export { MaquinaTable } from './maquina-table';
 export { MaquinaCard } from './maquina-card';
+export { QrCodeCard } from './qr-code-card';

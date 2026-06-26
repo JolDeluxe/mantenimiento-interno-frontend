@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
+import { useQrPrintStore } from '../stores/qr-print-store';
 
 const ESTADOS_MAQUINARIA = [
   { value: 'OPERATIVA', label: 'OPERATIVA' },
@@ -52,6 +53,7 @@ export const MaquinaFilterBar = ({
   onAddNewClick
 }) => {
   const [localValue, setLocalValue] = useState(filters.q || '');
+  const { isPrintMode, togglePrintMode } = useQrPrintStore();
 
   useEffect(() => {
     setLocalValue(filters.q || '');
@@ -91,6 +93,19 @@ export const MaquinaFilterBar = ({
               Limpiar
             </Button>
           )}
+
+          <button
+            type="button"
+            onClick={togglePrintMode}
+            className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl shadow-sm border transition-all cursor-pointer h-9.5 active:scale-95 uppercase tracking-wide ${
+              isPrintMode
+                ? 'bg-amber-600 border-amber-600 hover:bg-amber-700 text-white font-black'
+                : 'bg-white border-slate-300 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold'
+            }`}
+          >
+            <Icon name={isPrintMode ? 'print_disabled' : 'print'} size="sm" className="shrink-0" />
+            {isPrintMode ? 'Salir Impresión' : 'Impresión Masiva'}
+          </button>
 
           {onAddNewClick && (
             <Button

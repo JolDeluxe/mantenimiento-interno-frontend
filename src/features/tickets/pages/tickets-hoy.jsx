@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { notify } from '@/components/notification/adaptive-notify';
-import { isPastDate } from '@/lib/date';
 import { useTickets } from '../hooks/use-tickets';
 import { TicketsHoyDesktop } from '../views/tickets-hoy-desktop';
 import { TicketsHoyMobile } from '../views/tickets-hoy-mobile';
@@ -30,16 +29,9 @@ const isOnDate = (isoStr, offset = 0) => {
     return d >= start && d <= end;
 };
 
-const esAtrasadaActiva = (ticket) =>
-    Boolean(ticket.fechaVencimiento) &&
-    isPastDate(ticket.fechaVencimiento) &&
-    ESTADOS_VALIDOS_ATRASADAS.includes(ticket.estado);
+const esAtrasadaActiva = (ticket) => ticket.isOverdue;
 
-const perteneceAHoy = (ticket) => {
-    if (ticket.estado === 'RECHAZADO' || ticket.estado === 'RESUELTO' || ticket.estado === 'EN_PROGRESO' || ticket.estado === 'EN_PAUSA') return true;
-    if (!ticket.fechaVencimiento) return false;
-    return isOnDate(ticket.fechaVencimiento, 0) || esAtrasadaActiva(ticket);
-};
+const perteneceAHoy = (ticket) => ticket.perteneceAHoy;
 
 const sortManana = (tickets) =>
     [...tickets].sort((a, b) => {

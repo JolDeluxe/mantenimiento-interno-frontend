@@ -227,3 +227,39 @@
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   REGLAS DE IMPRESIÓN (Soporte de Impresión Masiva de QR)
+   ───────────────────────────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  body {
+    background: white !important;
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Ocultar todo el sitio por defecto */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Mostrar únicamente la sección del grid de impresión */
+  #printable-area, #printable-area * {
+    visibility: visible;
+  }
+
+  #printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+}

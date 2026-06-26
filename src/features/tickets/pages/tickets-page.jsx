@@ -1,11 +1,11 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import TicketsLayoutDesktop from '../views/tickets-layout-desktop';
 import TicketsLayoutMobile from '../views/tickets-layout-mobile';
 
 export default function TicketsPage() {
-    const isDesktop = useMediaQuery('(min-width: 1024px)');
+    const isDesktop = useIsDesktop();
 
     return (
         <div className="max-w-full mx-auto">

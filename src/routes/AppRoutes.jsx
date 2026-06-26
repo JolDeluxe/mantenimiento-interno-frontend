@@ -22,6 +22,7 @@ import TicketsAprobarPage from '@/features/tickets/pages/tickets-aprobar';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import NotifyPage from '@/features/notificaciones/pages/notify-page';
 import MaquinariaPage from '@/features/maquinaria/pages/maquinaria-page';
+import QrBatchPrintPage from '@/features/maquinaria/pages/qr-batch-print-page';
 
 import DashboardPage from '@/features/dashboard/pages/dashboard-page';
 import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
@@ -99,6 +100,7 @@ export const AppRoutes = () => {
           {/* Módulo: Maquinaria */}
           <Route element={<RoleGuard allowedRoles={ROLES.maquinaria} />}>
             <Route path="/maquinaria" element={<MaquinariaPage />} />
+            <Route path="/maquinaria/imprimir-qr" element={<QrBatchPrintPage />} />
           </Route>
 
           {/* Módulo: Notificaciones */}

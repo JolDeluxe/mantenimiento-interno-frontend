@@ -1,5 +1,35 @@
 import React from 'react';
 import { Table, Icon, TableActions, Skeleton } from '@/components/ui/z_index';
+import { useQrPrintStore } from '../stores/qr-print-store';
+import { getMaquinas } from '../api/maquinaria-api';
+
+const SelectionHeaderCheckbox = ({ maquinas, selectedMaquinas, selectAll }) => {
+  const pageIds = (maquinas || []).filter(m => m && !m.isSkeleton).map(m => m.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedMaquinas.includes(id));
+  
+  const handleHeaderChange = () => {
+    if (allPageSelected) {
+      // Remover las IDs de la página actual del arreglo de selección
+      const newSelection = selectedMaquinas.filter(id => !pageIds.includes(id));
+      selectAll(newSelection);
+    } else {
+      // Agregar las IDs de la página actual sin duplicados
+      const otherSelected = selectedMaquinas.filter(id => !pageIds.includes(id));
+      selectAll([...otherSelected, ...pageIds]);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center">
+      <input
+        type="checkbox"
+        checked={allPageSelected}
+        onChange={handleHeaderChange}
+        className="w-4 h-4 rounded border-slate-300 text-marca-primario focus:ring-marca-primario cursor-pointer"
+      />
+    </div>
+  );
+};
 
 export const MaquinaTable = ({
   maquinas = [],
@@ -11,6 +41,7 @@ export const MaquinaTable = ({
   onViewDetail,
   onEdit
 }) => {
+  const { selectedMaquinas, toggleSelect, selectAll, isPrintMode } = useQrPrintStore();
   const getCriticidadStyle = (crit) => {
     const map = {
       A: 'bg-rose-50 text-rose-700 border-rose-200',
@@ -32,6 +63,32 @@ export const MaquinaTable = ({
   };
 
   const columns = [
+    {
+      header: (
+        <SelectionHeaderCheckbox
+          maquinas={maquinas}
+          selectedMaquinas={selectedMaquinas}
+          selectAll={selectAll}
+        />
+      ),
+      accessorKey: 'selection',
+      align: 'center',
+      headerClassName: 'w-[5%] min-w-[50px] text-center',
+      cell: (row) => {
+        if (row.isSkeleton) return <Skeleton className="h-4 w-4 mx-auto rounded" />;
+        const isSelected = selectedMaquinas.includes(row.id);
+        return (
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => toggleSelect(row.id)}
+              className="w-4 h-4 rounded border-slate-300 text-marca-primario focus:ring-marca-primario cursor-pointer"
+            />
+          </div>
+        );
+      }
+    },
     {
       header: 'Código',
       accessorKey: 'codigo',
@@ -188,10 +245,12 @@ export const MaquinaTable = ({
     ? Array.from({ length: 6 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
     : maquinas;
 
+  const filteredColumns = isPrintMode ? columns : columns.filter(c => c.accessorKey !== 'selection');
+
   return (
     <Table
       data={tableData}
-      columns={columns}
+      columns={filteredColumns}
       loading={false}
       emptyMessage="No se encontraron máquinas con los filtros seleccionados."
       onRowClick={onViewDetail}

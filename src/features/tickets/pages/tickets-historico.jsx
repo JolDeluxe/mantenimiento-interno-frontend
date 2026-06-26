@@ -235,21 +235,8 @@ export default function TicketsHistoricoPage() {
             const bIsRechazado = b.estado === 'RECHAZADO';
             if (aIsRechazado !== bIsRechazado) return aIsRechazado ? -1 : 1;
 
-            const isAtrasada = (t) => {
-                const ESTADOS_VALIDOS_ATRASADAS = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA'];
-                const isPastDate = (dateStr) => {
-                    if (!dateStr) return false;
-                    const d = new Date(dateStr);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    d.setHours(0, 0, 0, 0);
-                    return d < today;
-                };
-                return Boolean(t.fechaVencimiento) && isPastDate(t.fechaVencimiento) && ESTADOS_VALIDOS_ATRASADAS.includes(t.estado);
-            };
-
-            const aAtrasada = isAtrasada(a);
-            const bAtrasada = isAtrasada(b);
+            const aAtrasada = a.isOverdue;
+            const bAtrasada = b.isOverdue;
             if (aAtrasada !== bAtrasada) return aAtrasada ? -1 : 1;
 
             const aPrio = PRIORIDAD_ORDER[a.prioridad] || 0;

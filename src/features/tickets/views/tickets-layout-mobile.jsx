@@ -5,15 +5,7 @@ import { MODULES_CONFIG } from '@/config/modules-config';
 import { useAuthStore } from '@/stores/auth-store';
 import { getTickets } from '../api/tickets-api';
 
-const calculateDaysWaiting = (createdAt) => {
-    if (!createdAt) return 0;
-    const created = new Date(createdAt);
-    const today = new Date();
-    created.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    const diffTime = today.getTime() - created.getTime();
-    return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
-};
+
 
 export default function TicketsLayoutMobile() {
     const navigate = useNavigate();
@@ -43,7 +35,7 @@ export default function TicketsLayoutMobile() {
                     const rawData = response?.data?.data || response?.data;
                     const ticketsData = Array.isArray(rawData) ? rawData : [];
                     const unassigned = ticketsData.filter(t => !t.responsables || t.responsables.length === 0);
-                    const isCritical = unassigned.some(t => calculateDaysWaiting(t.createdAt) >= 3);
+                    const isCritical = unassigned.some(t => t.diasEnEspera >= 3);
                     setUnassignedCount(unassigned.length);
                     setHasCritical(isCritical);
                 }
