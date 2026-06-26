@@ -12,13 +12,6 @@ import { BacklogRescheduleDrawer } from '../components/hoy/backlog-reschedule-dr
 
 const ESTADOS_SUMMARY = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA', 'RESUELTO'];
 
-/**
- * Calcula la fecha de mañana en zona horaria America/Mexico_City (YYYY-MM-DD).
- * Uso permitido: solo para filtro de pestaña de UI, no para lógica de negocio.
- */
-const getMananaMX = () =>
-    new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-
 export default function TicketsHoyPage() {
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
@@ -68,7 +61,42 @@ export default function TicketsHoyPage() {
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
-    const queryPayload = useMemo(() => ({ limit: 5000 }), []);
+    const queryPayload = useMemo(() => {
+        const params = { limit: 200 };
+
+        if (dateOffset === 0) {
+            params.perteneceAHoy = true;
+        } else if (dateOffset === 1) {
+            params.venceManana = true;
+        } else {
+            const targetDate = new Date(Date.now() + dateOffset * 86400000);
+            const fechaStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+            params.vencimientoDesde = fechaStr;
+            params.vencimientoHasta = fechaStr;
+        }
+
+        if (query) params.q = query;
+
+        if (mostrarRechazadas) {
+            params.estado = 'RECHAZADO';
+        } else if (filtroEstado !== 'TODOS') {
+            params.estado = filtroEstado;
+        }
+
+        if (filtroTipo) params.tipo = filtroTipo;
+        if (filtroPrioridad) params.prioridad = filtroPrioridad;
+        if (filtroCategoria) params.categoria = filtroCategoria;
+
+        if (filtroResponsable) {
+            params.responsableId = filtroResponsable;
+        } else if (currentUser?.rol === 'COORDINADOR_MTTO' && !vistaEquipo) {
+            params.responsableId = currentUser.id;
+        }
+
+        if (mostrarAtrasadas) params.vencidos = true;
+
+        return params;
+    }, [dateOffset, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las tareas.'));
@@ -77,60 +105,18 @@ export default function TicketsHoyPage() {
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    const getBaseTickets = useCallback(() => {
-        // El backend ya filtra CANCELADA y controla qué tickets se envían.
-        // Solo restringimos por responsable para el rol TECNICO.
-        const esTecnico = currentUser?.rol === 'TECNICO';
-        if (esTecnico) {
-            return allTickets.filter(t =>
-                t.responsables?.some(r => String(r.id) === String(currentUser.id))
-            );
-        }
-        return allTickets;
-    }, [allTickets, currentUser]);
-
-    const ticketsTabActual = useMemo(() => {
-        const base = getBaseTickets();
-        // Estados terminales excluidos en AMBAS pestañas (espeja la lógica de perteneceAHoy del backend).
-        const ESTADOS_TERMINALES_HOY = ['RESUELTO', 'CERRADO', 'CANCELADA', 'RECHAZADO'];
-
-        const delDia = dateOffset === 0
-            // Filtrado declarativo: si el backend dice perteneceAHoy, el frontend lo pinta sin cuestionar.
-            ? base.filter(t => t.perteneceAHoy === true)
-            : base.filter(t => {
-                if (!t.fechaVencimiento) return false;
-                // Excluir terminales: misma lógica que el backend usa para perteneceAHoy
-                if (ESTADOS_TERMINALES_HOY.includes(t.estado)) return false;
-                const mananaMX = getMananaMX();
-                const ticketVencMX = new Date(t.fechaVencimiento).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-                return ticketVencMX === mananaMX;
-            });
-        
-        // CALCULAMOS CONTADORES SIEMPRE SOBRE EL TOTAL DEL DÍA
-        // Independientemente de lo que el usuario esté viendo en ese momento
-        const misTareasDelDia = delDia.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id)));
-        
-        const equipoCount = delDia.length;
-        const misTareasCount = misTareasDelDia.length;
-
-        // Filtramos qué tickets se van a procesar para la lista final
-        const ticketsParaLista = (currentUser?.rol === 'COORDINADOR_MTTO' && !vistaEquipo)
-            ? misTareasDelDia
-            : delDia;
-
-        return {
-            tickets: ticketsParaLista,
-            equipoCount,
-            misTareasCount
-        };
-    }, [getBaseTickets, dateOffset, currentUser, vistaEquipo]);
+    const totalHoy = useMemo(() => dateOffset === 0 ? allTickets.length : 0, [allTickets, dateOffset]);
+    const totalManana = useMemo(() => dateOffset === 1 ? allTickets.length : 0, [allTickets, dateOffset]);
+    const ticketsAtrasados = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
+    const totalAtrasadas = useMemo(() => ticketsAtrasados.length, [ticketsAtrasados]);
+    const totalRechazadas = useMemo(() => allTickets.filter(t => t.estado === 'RECHAZADO').length, [allTickets]);
 
     const conteos = useMemo(() => {
-        return ticketsTabActual.tickets.reduce((acc, t) => {
+        return allTickets.reduce((acc, t) => {
             acc[t.estado] = (acc[t.estado] || 0) + 1;
             return acc;
         }, {});
-    }, [ticketsTabActual]);
+    }, [allTickets]);
 
     const totalParaSummary = useMemo(() => {
         return Object.entries(conteos).reduce((acc, [estado, count]) => {
@@ -138,70 +124,12 @@ export default function TicketsHoyPage() {
         }, 0);
     }, [conteos]);
 
-    const ticketsFiltrados = useMemo(() => {
-        let filtered = ticketsTabActual.tickets;
-
-        if (highlightId && !filtered.some(t => String(t.id) === highlightId)) {
-            const ticketResaltado = allTickets.find(t => String(t.id) === highlightId);
-            if (ticketResaltado) {
-                filtered = [ticketResaltado, ...filtered];
-            }
-        }
-
-        if (mostrarAtrasadas || mostrarRechazadas) {
-            filtered = getBaseTickets().filter(t => {
-                if (highlightId && String(t.id) === highlightId) return true;
-                let match = true;
-                if (mostrarAtrasadas) match = match && t.isOverdue === true;
-                if (mostrarRechazadas) match = match && t.estado === 'RECHAZADO';
-                
-                // Si el coordinador está en vista "Mis Tareas", solo mostrar atrasadas/rechazadas suyas
-                if (currentUser?.rol === 'COORDINADOR_MTTO' && !vistaEquipo) {
-                    match = match && t.responsables?.some(r => String(r.id) === String(currentUser.id));
-                }
-                
-                return match;
-            });
-        }
-
-        if (filtroEstado !== 'TODOS') filtered = filtered.filter(t => t.estado === filtroEstado || (highlightId && String(t.id) === highlightId));
-        if (filtroTipo) filtered = filtered.filter(t => t.tipo === filtroTipo || (highlightId && String(t.id) === highlightId));
-        if (filtroPrioridad) filtered = filtered.filter(t => t.prioridad === filtroPrioridad || (highlightId && String(t.id) === highlightId));
-        if (filtroCategoria) filtered = filtered.filter(t => t.categoria === filtroCategoria || (highlightId && String(t.id) === highlightId));
-
-        if (filtroResponsable) {
-            filtered = filtered.filter(t => t.responsables?.some(r => String(r.id) === String(filtroResponsable)) || (highlightId && String(t.id) === highlightId));
-        }
-
-        if (query) {
-            const q = query.toLowerCase();
-            filtered = filtered.filter(t =>
-                (highlightId && String(t.id) === highlightId) ||
-                t.titulo?.toLowerCase().includes(q) ||
-                t.area?.toLowerCase().includes(q) ||
-                t.planta?.toLowerCase().includes(q) ||
-                String(t.id) === q
-            );
-        }
-
-        return filtered;
-    }, [ticketsTabActual, getBaseTickets, mostrarAtrasadas, mostrarRechazadas, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, query, highlightId, allTickets, currentUser, vistaEquipo]);
-
-    const totalHoy = useMemo(() => getBaseTickets().filter(t => t.perteneceAHoy === true).length, [getBaseTickets]);
-    const totalManana = useMemo(() => {
-        const mananaMX = getMananaMX();
-        return getBaseTickets().filter(t =>
-            t.fechaVencimiento &&
-            new Date(t.fechaVencimiento).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' }) === mananaMX
-        ).length;
-    }, [getBaseTickets]);
-    // Incluye TODOS los estados vencibles: PENDIENTE, ASIGNADA, EN_PROGRESO, EN_PAUSA, RECHAZADO
-    const ticketsAtrasados = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
-    const totalAtrasadas = ticketsAtrasados.length;
-    const totalRechazadas = useMemo(() => getBaseTickets().filter(t => t.estado === 'RECHAZADO').length, [getBaseTickets]);
+    const equipoCount = useMemo(() => allTickets.length, [allTickets]);
+    const misTareasCount = useMemo(() => {
+        return allTickets.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id))).length;
+    }, [allTickets, currentUser]);
 
     const handleCreate = async (payloads) => {
-        // Batch mode: array of plain objects from carrito
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 await createBatch(payloads);
@@ -214,7 +142,6 @@ export default function TicketsHoyPage() {
             }
             return;
         }
-        // Legacy: single FormData or array of FormData (edit mode)
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
             for (const payload of items) await createTicket(payload);
@@ -250,12 +177,11 @@ export default function TicketsHoyPage() {
     };
 
     const toApproveCount = useMemo(() => {
-        if (!allTickets) return 0;
         return allTickets.filter(t => t.estado === 'RESUELTO').length;
     }, [allTickets]);
 
     const sharedProps = {
-        tickets: ticketsFiltrados,
+        tickets: allTickets,
         toApproveCount,
         highlightId,
         loading,
@@ -282,15 +208,14 @@ export default function TicketsHoyPage() {
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,
-        // Siempre filtra por atrasadas al hacer click; el drawer se abre por separado
         onToggleAtrasadas: () => setMostrarAtrasadas(p => !p),
         onOpenDrawerAmnistia: () => setIsDrawerAmnistiaOpen(true),
         mostrarRechazadas,
         onToggleRechazadas: () => setMostrarRechazadas(p => !p),
         vistaEquipo,
         onVistaEquipoChange: setVistaEquipo,
-        equipoCount: ticketsTabActual.equipoCount,
-        misTareasCount: ticketsTabActual.misTareasCount,
+        equipoCount,
+        misTareasCount,
         existenciaGlobal: { 'RECHAZADO': totalRechazadas },
         totalAtrasadasGlobal: totalAtrasadas,
         onSave: handleUpdate,
