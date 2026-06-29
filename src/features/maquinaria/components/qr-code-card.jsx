@@ -4,7 +4,7 @@ export const QrCodeCard = ({ maquina }) => {
   if (!maquina) return null;
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-    `${window.location.origin}/tickets/hoy?prefill=${maquina.codigo}`
+    `${window.location.origin}/hoy/todas?prefill=${maquina.codigo}`
   )}`;
 
   return (

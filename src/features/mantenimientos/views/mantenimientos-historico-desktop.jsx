@@ -1,0 +1,163 @@
+// src/features/tickets/views/tickets-historico-desktop.jsx
+import { TicketsTable } from '../components/historico/ticket-table';
+import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
+import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
+import { TicketFechas } from '../components/historico/ticket-fechas';
+import { TicketAddButton } from '../components/historico/ticket-add-button';
+import { RefreshFab } from '@/components/ui/z_index';
+import { TicketsEmptyState } from '../components/tickets-empty-state';
+import { ROLES_ADMIN } from '../constants';
+import { hardReload } from '@/utils/hard-reload';
+
+export const MantenimientosHistoricoDesktop = ({
+    currentUser,
+    tickets,
+    loading,
+    submitting,
+    tecnicos,
+    page,
+    limit,
+    totalPages,
+    totalParaSummary,
+    totalParaPaginador,
+    sortConfig,
+    query,
+    filtroEstado,
+    filtroTipo,
+    filtroPrioridad,
+    filtroCategoria,
+    filtroClasificacion,
+    filtroResponsable,
+    filtroPlanta,
+    filtroArea,
+    filtroProgramacion,
+    filtroConclusion,
+    filtroYear,
+    filtroMonth,
+    conteos,
+    existenciaGlobal,
+    totalAtrasadasGlobal,
+    mostrarPapelera,
+    onTogglePapelera,
+    mostrarRechazadas,
+    onToggleRechazadas,
+    mostrarAtrasadas,
+    onToggleAtrasadas,
+    onPageChange,
+    onSortChange,
+    onSearchChange,
+    onFilterChange,
+    onTipoChange,
+    onPrioridadChange,
+    onCategoriaChange,
+    onClasificacionChange,
+    onResponsableChange,
+    onPlantaChange,
+    onAreaChange,
+    onProgramacionChange,
+    onConclusionChange,
+    onYearChange,
+    onMonthChange,
+    onSave,
+    onChangeStatus,
+    onOpenCreate,
+    onRefresh,
+    onExport,
+    isFiltering = false,
+    onClearFilters
+}) => {
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+
+    return (
+        <div className="flex flex-col gap-4 relative">
+
+            <TicketFechas
+                year={filtroYear}
+                month={filtroMonth}
+                onYearChange={onYearChange}
+                onMonthChange={onMonthChange}
+                existenciaGlobal={existenciaGlobal}
+            />
+
+            <TicketSummaryBar
+                totalParaSummary={totalParaSummary}
+                conteos={conteos}
+                filtroActual={filtroEstado}
+                onFilterChange={onFilterChange}
+                loading={loading}
+                mostrarPapelera={mostrarPapelera}
+                mostrarRechazadas={mostrarRechazadas}
+            />
+
+
+
+            {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
+
+            <TicketFilterBar
+                currentUser={currentUser}
+                query={query}
+                onSearchChange={onSearchChange}
+                filtroTipo={filtroTipo}
+                onTipoChange={onTipoChange}
+                filtroPrioridad={filtroPrioridad}
+                onPrioridadChange={onPrioridadChange}
+                filtroCategoria={filtroCategoria}
+                onCategoriaChange={onCategoriaChange}
+                filtroClasificacion={filtroClasificacion}
+                onClasificacionChange={onClasificacionChange}
+                filtroResponsable={filtroResponsable}
+                onResponsableChange={onResponsableChange}
+                opcionesResponsables={tecnicos}
+                filtroPlanta={filtroPlanta}
+                onPlantaChange={onPlantaChange}
+                filtroArea={filtroArea}
+                onAreaChange={onAreaChange}
+                filtroProgramacion={filtroProgramacion}
+                onProgramacionChange={onProgramacionChange}
+                filtroConclusion={filtroConclusion}
+                onConclusionChange={onConclusionChange}
+                mostrarRechazadas={mostrarRechazadas}
+                onToggleRechazadas={onToggleRechazadas}
+                mostrarPapelera={mostrarPapelera}
+                onTogglePapelera={onTogglePapelera}
+                mostrarAtrasadas={mostrarAtrasadas}
+                onToggleAtrasadas={onToggleAtrasadas}
+                existenciaGlobal={existenciaGlobal}
+                totalAtrasadasGlobal={totalAtrasadasGlobal}
+                conteos={conteos}
+                onExport={onExport}
+            />
+
+            {!loading && (!tickets || tickets.length === 0) ? (
+                <div className="mt-8">
+                    <TicketsEmptyState
+                        isFiltering={isFiltering}
+                        onClearFilters={onClearFilters}
+                        onRefresh={onRefresh}
+                        mensaje="Historial Vacío"
+                        subtexto="No hay tareas registradas en el historial para este periodo."
+                        icon="history"
+                    />
+                </div>
+            ) : (
+                <TicketsTable
+                    tickets={tickets}
+                    loading={loading}
+                    submitting={submitting}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    page={page}
+                    limit={limit}
+                    totalPages={totalPages}
+                    totalItems={totalParaPaginador}
+                    sortConfig={sortConfig}
+                    onPageChange={onPageChange}
+                    onSortChange={onSortChange}
+                    onSave={onSave}
+                    onChangeStatus={onChangeStatus}
+                    onRefresh={onRefresh}
+                />
+            )}
+        </div>
+    );
+};

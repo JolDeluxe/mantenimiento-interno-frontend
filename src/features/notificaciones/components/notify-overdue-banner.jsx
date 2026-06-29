@@ -93,8 +93,8 @@ export const NotifyOverdueBanner = ({ currentUser }) => {
                                     const firstId = overdue[0]?.id;
                                     navigate(
                                         totalOverdue === 1 && firstId
-                                            ? `/tickets/hoy?highlight=${firstId}`
-                                            : '/tickets/hoy'
+                                            ? `/hoy/todas?highlight=${firstId}`
+                                            : '/hoy/todas'
                                     );
                                 }}
                             >

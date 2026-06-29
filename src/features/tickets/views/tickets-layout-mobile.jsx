@@ -56,7 +56,7 @@ export default function TicketsLayoutMobile() {
     const { moduleInfo, menuOptions } = useMemo(() => {
         const config = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenuOptions = [
-            { configId: 'tickets-hoy', id: '/tickets/hoy', label: 'Mi Día', icon: 'today' },
+            // { configId: 'hoy-actividades', id: '/hoy/actividades', label: 'Mi Día', icon: 'today' },
             { configId: 'tickets-aprobar', id: '/tickets/aprobar', label: 'Por Aprobar', icon: 'check' },
             { configId: 'tickets-bandeja', id: '/tickets/bandeja', label: 'Bandeja', icon: 'inbox' },
             { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' }
@@ -64,6 +64,11 @@ export default function TicketsLayoutMobile() {
 
         const filteredOptions = baseMenuOptions
             .filter(opt => {
+                if (opt.configId === 'hoy-actividades') {
+                    const hoyConfig = MODULES_CONFIG.find(m => m.id === 'hoy');
+                    const childConfig = hoyConfig?.children?.find(c => c.id === 'hoy-actividades');
+                    return childConfig ? childConfig.allowedRoles.includes(userRole) : false;
+                }
                 const childConfig = config?.children?.find(c => c.id === opt.configId);
                 return childConfig ? childConfig.allowedRoles.includes(userRole) : false;
             })
@@ -110,7 +115,7 @@ export default function TicketsLayoutMobile() {
 
     const activePath = menuOptions.find(opt => location.pathname.includes(opt.id))?.id
         || menuOptions[0]?.id
-        || '/tickets/hoy';
+        || '/hoy/actividades';
 
     return (
         <>

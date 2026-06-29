@@ -149,7 +149,7 @@ export default function NotifyPage() {
         }
 
         if (actionKey === 'ir_a_hoy') {
-            navigate(`/tickets/hoy?highlight=${notificacion.tareaId}`);
+            navigate(`/hoy/todas?highlight=${notificacion.tareaId}`);
             return;
         }
 

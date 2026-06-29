@@ -1,0 +1,1 @@
+export { MobileTicketFormModal as MobileHoyFormModal } from '../historico/mobile-ticket-form-modal';

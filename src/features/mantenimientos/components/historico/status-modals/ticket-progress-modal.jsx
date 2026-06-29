@@ -1,0 +1,915 @@
+// src/features/tickets/components/historico/status-modals/ticket-progress-modal.jsx
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
+import { Label, Select } from '@/components/form/z_index';
+import { cn } from '@/utils/cn';
+import { isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
+
+// ── Constantes ─────────────────────────────────────────────────────────────
+const MIN_TECNICO = 5;
+const MAX_EXTRA_ESTIMADO = 60;
+const MAX_SIN_ESTIMADO = 480;
+const MAX_DURATION_MINS = 540; // 9 horas
+
+const MOTIVOS_PAUSA = [
+    'Espera de refacciones o materiales',
+    'Espera de autorización',
+    'Interrupción por requerimiento de producción',
+    'Fin de turno / relevo de personal',
+    'Herramienta o equipo no disponible',
+    'Suspensión por condiciones de seguridad',
+    'Otro motivo',
+];
+
+// ── Utilidades de tiempo ───────────────────────────────────────────────────
+const calcElapsedMins = (ticket) => {
+    const acumulado = ticket.duracionReal || 0;
+    const abierto = ticket.intervalos?.find((i) => !i.fin);
+    if (!abierto) {
+        if (ticket.fechaInicio) {
+            const mins = Math.max(0, Math.floor(
+                (Date.now() - new Date(ticket.fechaInicio).getTime()) / 60000
+            ));
+            return acumulado + mins;
+        }
+        return acumulado;
+    }
+    const mins = Math.max(0, Math.floor(
+        (Date.now() - new Date(abierto.inicio).getTime()) / 60000
+    ));
+    return acumulado + mins;
+};
+
+const formatMins = (mins) => {
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h} h ${m} min` : `${h} h`;
+};
+
+const formatMinsFull = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const durationStr = h > 0
+        ? (m > 0 ? `${h} h ${m} min` : `${h} h`)
+        : `${m} min`;
+    return `${durationStr} (${mins} min)`;
+};
+
+const evaluarTiempo = (mins, ticket) => {
+    const fechaVencimiento = ticket.fechaLimite || ticket.fechaVencimiento;
+
+    if (ticket.isOverdue) {
+        return {
+            alerta: true,
+            tipo: 'alto',
+            mensaje: 'La tarea ha superado su fecha límite en el calendario.',
+        };
+    }
+
+    const tiempoEstimado = ticket.tiempoEstimado;
+
+    if (mins < MIN_TECNICO) {
+        return {
+            alerta: true,
+            tipo: 'bajo',
+            mensaje: `El tiempo detectado es de solo ${formatMins(mins)}, por debajo del mínimo técnico.`,
+        };
+    }
+    if (tiempoEstimado && mins > tiempoEstimado + MAX_EXTRA_ESTIMADO) {
+        return {
+            alerta: true,
+            tipo: 'alto',
+            mensaje: `El tiempo (${formatMins(mins)}) supera en más de 1 h el estimado de ${formatMins(tiempoEstimado)}.`,
+        };
+    }
+    if (!tiempoEstimado && mins > MAX_SIN_ESTIMADO) {
+        return {
+            alerta: true,
+            tipo: 'alto',
+            mensaje: `El tiempo registrado (${formatMins(mins)}) es inusualmente alto.`,
+        };
+    }
+
+    return { alerta: false };
+};
+
+// ── Sub-componente: Selector de tiempo ─────────────────────────────────────
+const TimePicker = ({ totalMins, onChange }) => {
+    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState('07:00');
+    const [endTime, setEndTime] = useState('08:00');
+
+    const horas = Math.floor(totalMins / 60);
+    const minutos = totalMins % 60;
+
+    useEffect(() => {
+        if (mode === 'range') {
+            const [h1, m1] = startTime.split(':').map(Number);
+            const [h2, m2] = endTime.split(':').map(Number);
+            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if (diff < 0) diff += 1440; // Cruzó medianoche
+            onChange(diff);
+        }
+    }, [startTime, endTime, mode]);
+
+    const selectCls =
+        'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+                <button
+                    type="button"
+                    onClick={() => setMode('duration')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Duración
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('range')}
+                    className={cn(
+                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                >
+                    Rango horario
+                </button>
+            </div>
+
+            {mode === 'duration' ? (
+                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={horas}
+                            onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
+                            className={selectCls}
+                        >
+                            {Array.from({ length: 10 }, (_, i) => (
+                                <option key={i} value={i}>{i} h</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horas</span>
+                    </div>
+
+                    <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
+
+                    <div className="flex flex-col gap-1.5 items-center">
+                        <select
+                            value={minutos}
+                            onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
+                            className={selectCls}
+                        >
+                            {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                                <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
+                            ))}
+                        </select>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Minutos</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
+                    <span className="text-slate-300 pb-2">a</span>
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
+                        <input
+                            type="time"
+                            min="07:00"
+                            max="20:00"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className={selectCls}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Mensajes de validación */}
+            <div className="flex flex-col gap-1">
+                {totalMins > MAX_DURATION_MINS && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="error" size="xs" />
+                        Máximo permitido: 9 horas.
+                    </p>
+                )}
+                {mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00') && (
+                    <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
+                        <Icon name="info" size="xs" />
+                        Rango permitido: 07:00 AM a 08:00 PM.
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ── Sub-componente: Sección de evidencias ────────────────────────────────
+const EvidenceSection = ({ archivos, onAgregar, onEliminar }) => {
+    const fileRef = useRef(null);
+    const MAX_FOTOS = 5;
+
+    const handleFileChange = (e) => {
+        const nuevos = Array.from(e.target.files || []).slice(0, MAX_FOTOS - archivos.length);
+        const items = nuevos.map((file) => ({
+            file,
+            preview: URL.createObjectURL(file),
+        }));
+        onAgregar(items);
+        e.target.value = '';
+    };
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Icon name="photo_camera" size="sm" className="text-slate-400" />
+                    Evidencia fotográfica
+                    <span className="text-xs font-normal text-slate-400">(opcional)</span>
+                </span>
+                <span className={cn(
+                    'text-xs font-bold tabular-nums',
+                    archivos.length >= MAX_FOTOS ? 'text-estado-rechazado' : 'text-slate-400'
+                )}>
+                    {archivos.length}/{MAX_FOTOS}
+                </span>
+            </div>
+
+            {archivos.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {archivos.map((item, idx) => (
+                        <div
+                            key={idx}
+                            className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 group shadow-sm"
+                        >
+                            <img
+                                src={item.preview}
+                                alt={`Evidencia ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                            <button
+                                type="button"
+                                onClick={() => onEliminar(idx)}
+                                className="absolute top-1 right-1 w-5 h-5 bg-estado-rechazado rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                            >
+                                <Icon name="close" size="xs" className="text-white" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {archivos.length < MAX_FOTOS && (
+                <>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-medium text-slate-500 hover:border-marca-secundario hover:text-marca-secundario transition-colors cursor-pointer"
+                    >
+                        <Icon name="add_a_photo" size="sm" />
+                        {archivos.length === 0 ? 'Agregar evidencia' : 'Agregar más fotos'}
+                    </button>
+                </>
+            )}
+        </div>
+    );
+};
+
+// ── Componente principal ───────────────────────────────────────────────────
+export const TicketProgressModal = ({
+    isOpen,
+    onClose,
+    ticket,
+    isSubmitting,
+    onConfirm,
+}) => {
+    const [vista, setVista] = useState('principal');
+
+    const [motivoPausa, setMotivoPausa] = useState('');
+    const [notaOtro, setNotaOtro] = useState('');
+
+    const [archivos, setArchivos] = useState([]);
+    const [notaResolver, setNotaResolver] = useState('');
+    const [elapsedMins, setElapsedMins] = useState(0);
+    const [evaluacion, setEvaluacion] = useState(null);
+    const [timePhase, setTimePhase] = useState('confirmado');
+    const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [fechaFinManual, setFechaFinManual] = useState('');
+    const [errorPausa, setErrorPausa] = useState(false);
+    const [refacciones, setRefacciones] = useState([]);
+
+    const handleAddRefaccion = () => {
+        setRefacciones((prev) => [...prev, { nombre: '', cantidad: 1, codigo: '' }]);
+    };
+
+    const handleRemoveRefaccion = (index) => {
+        setRefacciones((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRefaccionChange = (index, field, value) => {
+        setRefacciones((prev) =>
+            prev.map((r, i) => (i === index ? { ...r, [field]: value } : r))
+        );
+    };
+
+    useEffect(() => {
+        return () => {
+            archivos.forEach((item) => URL.revokeObjectURL(item.preview));
+        };
+    }, [archivos]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setVista('principal');
+            setMotivoPausa('');
+            setNotaOtro('');
+            setNotaResolver('');
+            setArchivos([]);
+            setEvaluacion(null);
+            setTimePhase('confirmado');
+            setTiempoManualMins(0);
+            setFechaFinManual('');
+            setErrorPausa(false);
+            setRefacciones([]);
+        }
+    }, [isOpen]);
+
+    if (!ticket) return null;
+
+    const minDate = isoToDateInput(ticket.createdAt);
+    const maxDate = isoToDateInput(new Date().toISOString());
+    const isFechaFinValida = fechaFinManual && fechaFinManual >= minDate && fechaFinManual <= maxDate;
+
+    const handleEntrarResolver = () => {
+        const mins = calcElapsedMins(ticket);
+        setElapsedMins(mins);
+
+        const ev = evaluarTiempo(mins, ticket);
+        setEvaluacion(ev);
+
+        // Intercepción Liquid UI: Si es 0 min, saltamos la pregunta y forzamos manual
+        if (mins === 0) {
+            setTiempoManualMins(60);
+            if (ev?.tipo === 'alto') {
+                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                setTimePhase('atrasada_fecha');
+            } else {
+                setTimePhase('manual');
+            }
+        } else {
+            setTimePhase('preguntando');
+        }
+
+        setVista('resolver');
+    };
+
+    const handleAgregar = useCallback((items) => {
+        setArchivos((prev) => [...prev, ...items].slice(0, 5));
+    }, []);
+
+    const handleEliminar = useCallback((idx) => {
+        setArchivos((prev) => {
+            const copia = [...prev];
+            URL.revokeObjectURL(copia[idx].preview);
+            copia.splice(idx, 1);
+            return copia;
+        });
+    }, []);
+
+    const buildFdPausar = () => {
+        const fd = new FormData();
+        fd.append('estado', 'EN_PAUSA');
+        const nota = motivoPausa === 'Otro motivo'
+            ? notaOtro.trim() || motivoPausa
+            : motivoPausa;
+        if (nota) fd.append('nota', nota);
+        return fd;
+    };
+
+    const buildFdResolver = () => {
+        const fd = new FormData();
+        fd.append('estado', 'RESUELTO');
+        if (notaResolver.trim()) {
+            fd.append('nota', notaResolver.trim());
+        }
+        if (refacciones.length > 0) {
+            fd.append('refacciones', JSON.stringify(refacciones));
+        }
+
+        // Fix: Construcción segura del payload para Zod
+        let timePayload = {};
+
+        if (timePhase === 'manual') {
+            timePayload = { duracionManualMinutos: tiempoManualMins };
+        } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
+            const finStr = fechaInputToISOLocal(fechaFinManual);
+            timePayload = {
+                finManual: new Date(finStr).toISOString(),
+                duracionManualMinutos: tiempoManualMins
+            };
+        }
+
+        if (Object.keys(timePayload).length > 0) {
+            fd.append('registroTiempoManual', JSON.stringify(timePayload));
+        }
+
+        archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
+        return fd;
+    };
+
+    const handleConfirmarPausar = () => {
+        if (!motivoPausa) { setErrorPausa(true); return; }
+        if (motivoPausa === 'Otro motivo' && !notaOtro.trim()) { setErrorPausa(true); return; }
+        onConfirm(ticket.id, buildFdPausar());
+    };
+
+    const handleConfirmarResolver = () => {
+        onConfirm(ticket.id, buildFdResolver());
+    };
+
+    let tiempoDisplay = formatMinsFull(elapsedMins);
+    if (timePhase === 'manual' || timePhase === 'atrasada_fecha') {
+        tiempoDisplay = formatMinsFull(tiempoManualMins);
+    }
+
+    // Se eliminó la variable isInvalidRange que causaba el ReferenceError 
+    // y se dejó la lógica robusta con `tiempoManualMins`.
+
+    const esMaquinaria = ticket?.maquinaId !== null && ticket?.maquinaId !== undefined;
+
+    const resolverDisabled =
+        timePhase === 'preguntando' ||
+        ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
+        (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
+        (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
+        (esMaquinaria && !notaResolver.trim());
+
+    const isAtrasada = evaluacion?.tipo === 'alto';
+
+    return (
+        <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()}>
+            <ModalHeader
+                title={
+                    vista === 'principal' ? 'Actualizar Progreso'
+                        : vista === 'pausar' ? 'Pausar Tarea'
+                            : 'Marcar como Resuelta'
+                }
+                onClose={() => !isSubmitting && onClose()}
+            />
+
+            <ModalBody>
+                <div className="flex flex-col gap-4 py-1">
+                    {/* ALERTA DE RETRASO GLOBAL PARA ESTE MODAL */}
+                    {ticket?.isOverdue && (
+                        <div className="w-full flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-lg text-sm text-left">
+                            <Icon name="warning" size="sm" className="shrink-0 mt-0.5" />
+                            <p><strong>¡Atención!</strong> Esta tarea se encuentra con <strong>retraso</strong> según su fecha de vencimiento.</p>
+                        </div>
+                    )}
+
+                    {vista === 'principal' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">En progreso</p>
+                                <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setVista('pausar')}
+                                    className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-en-pausa/50 hover:bg-estado-en-pausa/5 transition-all duration-200 active:scale-95 cursor-pointer"
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-estado-en-pausa/10 flex items-center justify-center">
+                                        <Icon name="pause_circle" size="32px" className="text-estado-en-pausa" fill />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-slate-700">Pausar</p>
+                                        <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                                            El tiempo se detendrá
+                                        </p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleEntrarResolver}
+                                    className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5 transition-all duration-200 active:scale-95 cursor-pointer"
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
+                                        <Icon name="check_circle" size="32px" className="text-estado-resuelto" fill />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-slate-700">Resolver</p>
+                                        <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                                            Marcar como terminada
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {vista === 'pausar' && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-start gap-3 px-4 py-3 bg-estado-en-pausa/10 border border-estado-en-pausa/20 rounded-xl">
+                                <Icon name="timer_off" size="sm" className="text-estado-en-pausa shrink-0 mt-0.5" />
+                                <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                                    El tiempo <strong>dejará de ser medido</strong> hasta que reanudes la tarea.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="motivo-pausa" error={errorPausa && !motivoPausa}>
+                                    Motivo de pausa *
+                                </Label>
+                                <Select
+                                    id="motivo-pausa"
+                                    value={motivoPausa}
+                                    onChange={(e) => { setMotivoPausa(e.target.value); setErrorPausa(false); }}
+                                    error={errorPausa && !motivoPausa}
+                                    helperText={errorPausa && !motivoPausa ? 'Selecciona un motivo para continuar.' : ''}
+                                >
+                                    <option value="" disabled hidden>Selecciona el motivo…</option>
+                                    {MOTIVOS_PAUSA.map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            {motivoPausa === 'Otro motivo' && (
+                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <Label htmlFor="nota-otro" error={errorPausa && !notaOtro.trim()}>
+                                        Describe el motivo *
+                                    </Label>
+                                    <textarea
+                                        id="nota-otro"
+                                        rows={3}
+                                        value={notaOtro}
+                                        onChange={(e) => { setNotaOtro(e.target.value); setErrorPausa(false); }}
+                                        placeholder="Explica brevemente el motivo de la pausa…"
+                                        className={cn(
+                                            'w-full border rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 transition-all',
+                                            errorPausa && !notaOtro.trim()
+                                                ? 'border-red-400 focus:ring-red-200'
+                                                : 'border-slate-300 focus:ring-marca-secundario/30 focus:border-marca-secundario'
+                                        )}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {vista === 'resolver' && (
+                        <div className="flex flex-col gap-5">
+                            {timePhase === 'preguntando' && (
+                                <div className="flex flex-col gap-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center shrink-0">
+                                            <Icon name="timer" size="sm" className="text-amber-700" fill />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-amber-800">
+                                                {isAtrasada ? '¿La tarea se entregó fuera de tiempo?' : '¿El tiempo registrado es correcto?'}
+                                            </p>
+                                            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                                                {isAtrasada
+                                                    ? `El tiempo registrado (${formatMins(elapsedMins)}) supera el límite. Si concluiste la tarea antes y olvidaste registrarla, puedes ingresar la fecha y el tiempo real trabajado.`
+                                                    : `El sistema ha medido un total de ${formatMins(elapsedMins)}. Puedes confirmarlo o ajustarlo manualmente.`
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-center py-2">
+                                        <span className="text-4xl font-extrabold font-mono text-amber-700">
+                                            {formatMins(elapsedMins)}
+                                        </span>
+                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-1">
+                                            Tiempo medido por el sistema
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {/* Botón 1: Confirmar lo que dice el sistema */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setTimePhase('confirmado')}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border-2 border-amber-300 bg-white text-amber-800 text-sm font-bold hover:bg-amber-50 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="check" size="sm" />
+                                            {isAtrasada ? 'Sí, se terminó con atraso' : 'Sí, es correcto'}
+                                        </button>
+
+                                        {/* Botón 2: Corregir tiempo (Ya no se duplica el 'Sí') */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                const redondeado = Math.round(base / 5) * 5;
+                                                setTiempoManualMins(Math.min(redondeado, 1435) || 60);
+                                                if (isAtrasada) {
+                                                    setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                                                    setTimePhase('atrasada_fecha');
+                                                } else {
+                                                    setTimePhase('manual');
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors cursor-pointer active:scale-95"
+                                        >
+                                            <Icon name="edit" size="sm" />
+                                            {isAtrasada ? 'No, corregir fecha/tiempo' : 'No, corregir tiempo'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {timePhase === 'manual' && (
+                                <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
+                                        <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
+                                    </div>
+                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                    {tiempoManualMins === 0 && (
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
+                                            <Icon name="warning" size="xs" />
+                                            El tiempo debe ser mayor a 0 minutos
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {timePhase === 'atrasada_fecha' && (
+                                <div className="flex flex-col gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Resumen de entrega y estimación */}
+                                    <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Entrega real</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                                                <Icon name="calendar_today" size="xs" className="text-marca-primario" />
+                                                {fechaFinManual ? new Date(fechaFinManual + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '--'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-right">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duración estimada</span>
+                                            <span className="text-sm font-bold text-slate-700 flex items-center justify-end gap-1.5">
+                                                <Icon name="history" size="xs" className="text-slate-400" />
+                                                {ticket.tiempoEstimado ? formatMins(ticket.tiempoEstimado) : 'No estimada'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 border-b border-slate-200 pb-5">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name="event_available" size="sm" className="text-marca-primario" />
+                                            <p className="text-sm font-bold text-slate-700">Fecha real de término</p>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label htmlFor="fecha-fin-manual">Selecciona el día que la terminaste *</Label>
+                                            <input
+                                                id="fecha-fin-manual"
+                                                type="date"
+                                                min={minDate}
+                                                max={maxDate}
+                                                value={fechaFinManual}
+                                                onChange={(e) => setFechaFinManual(e.target.value)}
+                                                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
+                                            />
+                                            {!isFechaFinValida && (
+                                                <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                                    <Icon name="warning" size="xs" />
+                                                    La fecha debe estar entre la creación del ticket y hoy.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
+                                            <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
+                                        </div>
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                        {tiempoManualMins === 0 && (
+                                            <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                                <Icon name="warning" size="xs" />
+                                                El tiempo debe ser mayor a 0 minutos
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {timePhase !== 'preguntando' && (
+                                <>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-3 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
+                                        <span className="text-xs sm:text-sm font-medium text-slate-700 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                            <Icon name="timer" size="sm" className="text-estado-resuelto shrink-0" />
+                                            <span>Tiempo total a registrar</span>
+                                            {(timePhase === 'manual' || timePhase === 'atrasada_fecha') && (
+                                                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                    Manual
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className="text-base sm:text-lg font-extrabold font-mono text-estado-resuelto self-start sm:self-auto ml-5 sm:ml-0">
+                                            {tiempoDisplay}
+                                        </span>
+                                    </div>
+
+                                    {timePhase === 'confirmado' && elapsedMins === 0 && (
+                                        <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 mt-1">
+                                            <Icon name="warning" size="xs" />
+                                            No se puede resolver una tarea con 0 minutos. Selecciona "No, corregir tiempo".
+                                        </p>
+                                    )}
+
+                                    <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <Label htmlFor="nota-resolver">
+                                            {esMaquinaria ? (
+                                                <span className="flex items-center gap-1">
+                                                    <Icon name="description" size="xs" className="text-marca-secundario shrink-0" />
+                                                    Diagnóstico Técnico <span className="font-extrabold text-estado-rechazado text-xs sm:text-sm">(Obligatorio)</span>
+                                                </span>
+                                            ) : (
+                                                <>Nota de resolución <span className="font-normal text-slate-400 text-xs sm:text-sm">(opcional)</span></>
+                                            )}
+                                        </Label>
+                                        <textarea
+                                            id="nota-resolver"
+                                            rows={3}
+                                            value={notaResolver}
+                                            onChange={(e) => setNotaResolver(e.target.value)}
+                                            placeholder={esMaquinaria ? "Describe detalladamente el diagnóstico técnico y el trabajo realizado en la máquina..." : "Describe las acciones realizadas para resolver el ticket..."}
+                                            className="w-full border border-slate-300 rounded-sm px-3 py-2 text-base sm:text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
+                                        />
+                                    </div>
+
+                                    {esMaquinaria && (
+                                        <div className="flex flex-col gap-3 mt-4 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="font-bold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
+                                                    <Icon name="construction" size="xs" className="text-slate-500 shrink-0" />
+                                                    Refacciones Utilizadas
+                                                </Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    icon="add"
+                                                    onClick={handleAddRefaccion}
+                                                    className="text-marca-secundario border border-marca-secundario/25 bg-marca-secundario/5 hover:bg-marca-secundario/10 font-bold"
+                                                >
+                                                    Agregar Refacción
+                                                </Button>
+                                            </div>
+
+                                            {refacciones.length === 0 ? (
+                                                <p className="text-xs text-slate-400 italic bg-slate-50 border border-slate-200/60 rounded p-2.5 text-center">
+                                                    No se han registrado refacciones en esta reparación.
+                                                </p>
+                                            ) : (
+                                                <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                                                    {refacciones.map((ref, idx) => (
+                                                        <div key={idx} className="flex gap-2 items-center bg-slate-50 border border-slate-200/60 p-2 rounded-lg">
+                                                            <div className="flex-1">
+                                                                <input
+                                                                    type="text"
+                                                                    value={ref.nombre}
+                                                                    onChange={(e) => handleRefaccionChange(idx, 'nombre', e.target.value)}
+                                                                    placeholder="Nombre / Repuesto"
+                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
+                                                                />
+                                                            </div>
+                                                            <div className="w-16">
+                                                                <input
+                                                                    type="number"
+                                                                    min={1}
+                                                                    value={ref.cantidad}
+                                                                    onChange={(e) => handleRefaccionChange(idx, 'cantidad', parseInt(e.target.value) || 1)}
+                                                                    placeholder="Cant."
+                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
+                                                                />
+                                                            </div>
+                                                            <div className="w-24">
+                                                                <input
+                                                                    type="text"
+                                                                    value={ref.codigo}
+                                                                    onChange={(e) => handleRefaccionChange(idx, 'codigo', e.target.value)}
+                                                                    placeholder="Código (opc)"
+                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveRefaccion(idx)}
+                                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-all shrink-0 cursor-pointer"
+                                                            >
+                                                                <Icon name="delete" size="xs" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <EvidenceSection
+                                        archivos={archivos}
+                                        onAgregar={handleAgregar}
+                                        onEliminar={handleEliminar}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                </div>
+            </ModalBody>
+
+            <ModalFooter>
+                {vista === 'principal' && (
+                    <Button
+                        variant="cancelar"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
+                    >
+                        Cerrar
+                    </Button>
+                )}
+
+                {vista === 'pausar' && (
+                    <>
+                        <Button
+                            variant="cancelar"
+                            onClick={() => setVista('principal')}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        >
+                            Volver
+                        </Button>
+                        <Button
+                            variant="pausa"
+                            icon="pause"
+                            isLoading={isSubmitting}
+                            onClick={handleConfirmarPausar}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        >
+                            Pausar tarea
+                        </Button>
+                    </>
+                )}
+
+                {vista === 'resolver' && (
+                    <>
+                        <Button
+                            variant="cancelar"
+                            onClick={() => setVista('principal')}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        >
+                            Volver
+                        </Button>
+                        {timePhase !== 'preguntando' && (
+                            <Button
+                                variant="guardar"
+                                icon="check_circle"
+                                isLoading={isSubmitting}
+                                disabled={resolverDisabled}
+                                onClick={handleConfirmarResolver}
+                                className="flex-1 sm:flex-none text-xs sm:text-sm"
+                            >
+                                Confirmar
+                            </Button>
+                        )}
+                    </>
+                )}
+            </ModalFooter>
+        </Modal>
+    );
+};

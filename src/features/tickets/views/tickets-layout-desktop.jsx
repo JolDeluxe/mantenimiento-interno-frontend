@@ -17,12 +17,17 @@ export default function TicketsLayoutDesktop() {
     const menu = useMemo(() => {
         const ticketsModule = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenu = [
-            { id: 'tickets-hoy', label: 'Tareas de Hoy', path: '/tickets/hoy', icon: 'today' },
+            // { id: 'hoy-actividades', label: 'Tareas de Hoy', path: '/hoy/actividades', icon: 'today' },
             { id: 'tickets-aprobar', label: 'Por Aprobar', path: '/tickets/aprobar', icon: 'check' },
             { id: 'tickets-bandeja', label: 'Bandeja de Entrada', path: '/tickets/bandeja', icon: 'inbox' },
             { id: 'tickets-historico', label: 'Historial', path: '/tickets/historico', icon: 'assignment_globe' },
         ];
         return baseMenu.filter(item => {
+            if (item.id === 'hoy-actividades') {
+                const hoyConfig = MODULES_CONFIG.find(m => m.id === 'hoy');
+                const childConfig = hoyConfig?.children?.find(c => c.id === 'hoy-actividades');
+                return childConfig ? childConfig.allowedRoles.includes(currentUser?.rol) : false;
+            }
             const childConfig = ticketsModule?.children?.find(c => c.id === item.id);
             return childConfig ? childConfig.allowedRoles.includes(currentUser?.rol) : false;
         });

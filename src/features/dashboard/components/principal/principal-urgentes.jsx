@@ -8,7 +8,7 @@ export const PrincipalUrgentes = ({ urgentes = [], loading = false }) => {
     const navigate = useNavigate();
 
     const irATareasDeHoy = () => {
-        navigate('/tickets/hoy');
+        navigate('/hoy/todas');
     };
 
     // 1. PRIMERO INTERCEPTAMOS LA CARGA

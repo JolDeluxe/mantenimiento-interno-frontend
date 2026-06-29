@@ -59,7 +59,7 @@ export default function TicketsHistoricoPage() {
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
     const queryPayload = useMemo(() => {
-        const params = { page, limit: LIMIT };
+        const params = { page, limit: LIMIT, scope: 'actividades' };
         if (query) params.q = query;
 
         if (mostrarRechazadas) {

@@ -47,7 +47,7 @@ export const MaquinaDetailModal = ({
 
   const qrUrl = maquina
     ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-        `${window.location.origin}/tickets/hoy?prefill=${maquina.codigo}`
+        `${window.location.origin}/hoy/todas?prefill=${maquina.codigo}`
       )}`
     : '';
 
@@ -672,7 +672,7 @@ export const MaquinaDetailModal = ({
             <div className="space-y-1 bg-slate-50 border border-slate-100 p-2.5 rounded-2xl w-full">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">URL del QR</span>
               <span className="text-[10px] font-mono text-slate-500 break-all select-all font-medium">
-                {window.location.origin}/tickets/hoy?prefill={maquina.codigo}
+                {window.location.origin}/hoy/todas?prefill={maquina.codigo}
               </span>
             </div>
 

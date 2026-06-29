@@ -54,7 +54,7 @@ export const PrincipalTareasHoy = ({ conteosPorEstado = {}, loading = false }) =
                     variant="guardar"
                     size="sm"
                     icon="today"
-                    onClick={() => navigate('/tickets/hoy')}
+                    onClick={() => navigate('/hoy/todas')}
                     className="shrink-0"
                 >
                     Ver Bandeja
@@ -139,7 +139,7 @@ export const PrincipalTareasHoy = ({ conteosPorEstado = {}, loading = false }) =
                 variant={theme.btn}
                 size="sm"
                 icon="arrow_forward"
-                onClick={() => navigate('/tickets/hoy')}
+                onClick={() => navigate('/hoy/todas')}
                 className="shrink-0"
             >
                 Ir Ahora

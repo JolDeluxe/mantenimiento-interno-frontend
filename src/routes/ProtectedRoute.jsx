@@ -4,10 +4,11 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export const ProtectedRoute = () => {
   const { isAuthenticated, user, token, refreshToken } = useAuthStore();
+  const currentUser = user?.data || user;
   const [loopDetected, setLoopDetected] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && user?.rol === 'CLIENTE_INTERNO') {
+    if (isAuthenticated && currentUser?.rol === 'CLIENTE_INTERNO') {
       let urlDestino = import.meta.env.VITE_URL_PORTAL_CLIENTE || 'http://localhost:5001';
       if (urlDestino.endsWith('/')) urlDestino = urlDestino.slice(0, -1); 
 
@@ -23,7 +24,7 @@ export const ProtectedRoute = () => {
 
       window.location.replace(`${urlDestino}/sso-receiver#payload=${payload}`);
     }
-  }, [isAuthenticated, user, token, refreshToken]);
+  }, [isAuthenticated, currentUser, token, refreshToken]);
 
   if (loopDetected) {
     return <div className="p-10 text-red-600 font-mono font-bold text-center">🛑 BUCLE INFINITO PREVENIDO: {loopDetected}</div>;
@@ -31,7 +32,7 @@ export const ProtectedRoute = () => {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  if (user?.rol === 'CLIENTE_INTERNO') {
+  if (currentUser?.rol === 'CLIENTE_INTERNO') {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 space-y-6">
           <img 

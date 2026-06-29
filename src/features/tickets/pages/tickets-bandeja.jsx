@@ -41,6 +41,7 @@ export default function TicketsBandejaPage() {
         sort: getSortPayload(sortOrder),
         page,
         limit: 12,
+        scope: 'actividades'
     }), [sortOrder, page]);
 
     const loadTickets = useCallback(() => {

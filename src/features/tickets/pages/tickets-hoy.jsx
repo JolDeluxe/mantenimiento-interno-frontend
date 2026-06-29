@@ -62,7 +62,7 @@ export default function TicketsHoyPage() {
     }, [highlightId, setSearchParams]);
 
     const queryPayload = useMemo(() => {
-        const params = { limit: 200 };
+        const params = { limit: 200, scope: 'actividades' };
 
         if (dateOffset === 0) {
             params.perteneceAHoy = true;

@@ -5,6 +5,33 @@
 
 export const MODULES_CONFIG = [
   {
+    id: 'hoy',
+    name: 'Hoy',
+    icon: 'today',
+    route: '/hoy',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    children: [
+      {
+        id: 'hoy-todas',
+        name: 'Todas las Tareas',
+        route: '/hoy/todas',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+      },
+      {
+        id: 'hoy-actividades',
+        name: 'Actividades de Hoy',
+        route: '/hoy/actividades',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+      },
+      {
+        id: 'hoy-mantenimientos',
+        name: 'Mantenimientos de Hoy',
+        route: '/hoy/mantenimientos',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+      },
+    ]
+  },
+  {
     id: 'tickets',
     name: 'Gestión de Actividades',
     icon: 'assignment',
@@ -12,21 +39,9 @@ export const MODULES_CONFIG = [
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
     children: [
       {
-        id: 'tickets-hoy',
-        name: 'Tareas de Hoy',
-        route: '/tickets/hoy',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
-      },
-      {
         id: 'tickets-aprobar',
         name: 'Por Aprobar',
         route: '/tickets/aprobar',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
-      },
-      {
-        id: 'tickets-bandeja',
-        name: 'Bandeja de Entrada',
-        route: '/tickets/bandeja',
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
       {
@@ -36,6 +51,46 @@ export const MODULES_CONFIG = [
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
       }
     ]
+  },
+  {
+    id: 'mantenimientos',
+    name: 'Gestión de Mantenimientos',
+    icon: 'build_circle',
+    route: '/mantenimientos',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    children: [
+      {
+        id: 'mantenimientos-aprobar',
+        name: 'Por Aprobar',
+        route: '/mantenimientos/aprobar',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'mantenimientos-correctivos',
+        name: 'Correctivos',
+        route: '/mantenimientos/correctivos',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+      },
+      {
+        id: 'mantenimientos-preventivos',
+        name: 'Preventivos',
+        route: '/mantenimientos/preventivos',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+      },
+      {
+        id: 'mantenimientos-historico',
+        name: 'Histórico',
+        route: '/mantenimientos/historico',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+      }
+    ]
+  },
+  {
+    id: 'bandeja',
+    name: 'Bandeja de Entrada',
+    icon: 'inbox',
+    route: '/bandeja',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'dashboard',
