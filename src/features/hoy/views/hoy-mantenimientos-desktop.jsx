@@ -2,14 +2,14 @@
 import React, { useMemo } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
-import { HoyAddButton } from '../components/hoy-mantenimientos/hoy-add-button';
-import { HoyFilterBar } from '../components/hoy-mantenimientos/hoy-filter-bar';
-import { HoySummaryBar } from '../components/hoy-mantenimientos/hoy-summary-bar';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
-import { HoyTicketTable } from '../components/hoy-mantenimientos/hoy-ticket-table';
+import { HoyAddButton } from '../components/common/hoy-add-button';
+import { MantenimientosFilterBar } from '../components/hoy-mantenimientos/mantenimientos-filter-bar';
+import { HoySummaryBar } from '../components/common/hoy-summary-bar';
+import { TicketsEmptyState } from '../components/common/tickets-empty-state';
+import { MantenimientosTicketTable } from '../components/hoy-mantenimientos/mantenimientos-ticket-table';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
-import { HoyAprobarPanel } from '../components/hoy-mantenimientos/hoy-aprobar-panel';
+import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
 const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => (
     <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-sm">
@@ -114,9 +114,21 @@ export const HoyMantenimientosDesktop = ({
         if (onClearFilters) onClearFilters();
     };
 
-    // --- SEPARACIÓN DE AGENDA Y COLA ---
-    const agendaTickets = useMemo(() => tickets.filter(t => t.horaInicioProgramada), [tickets]);
-    const colaTickets = useMemo(() => tickets.filter(t => !t.horaInicioProgramada), [tickets]);
+    const sortedTickets = useMemo(() => {
+        const typeOrder = { TICKET: 1, PLANEADA: 2, EXTRAORDINARIA: 3 };
+        const critOrder = { A: 1, B: 2, C: 3 };
+        return [...tickets].sort((a, b) => {
+            const orderA = typeOrder[a.tipo] || 4;
+            const orderB = typeOrder[b.tipo] || 4;
+            if (orderA !== orderB) return orderA - orderB;
+
+            const critA = a.maquina?.criticidad ? (critOrder[a.maquina.criticidad] || 4) : 4;
+            const critB = b.maquina?.criticidad ? (critOrder[b.maquina.criticidad] || 4) : 4;
+            if (critA !== critB) return critA - critB;
+
+            return b.id - a.id;
+        });
+    }, [tickets]);
 
     return (
         <div className="flex flex-col gap-5 relative">
@@ -142,11 +154,11 @@ export const HoyMantenimientosDesktop = ({
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 <div className="flex items-center gap-2">
-                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
+                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} scope="mantenimientos" />}
                 </div>
             </div>
 
-            <HoyFilterBar
+            <MantenimientosFilterBar
                 query={query}
                 onSearchChange={onSearchChange}
                 filtroEstado={filtroEstado}
@@ -187,47 +199,17 @@ export const HoyMantenimientosDesktop = ({
                     />
                 </div>
             ) : (
-                <div className="flex flex-col gap-8">
-                    {/* SECCIÓN 1: AGENDA CRONOLÓGICA */}
-                    {agendaTickets.length > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                                <Icon name="schedule" className="text-marca-secundario shrink-0" />
-                                <h3 className="font-bold text-slate-800 text-sm uppercase">Agenda Programada (Cronológica)</h3>
-                            </div>
-                            <HoyTicketTable
-                                tickets={agendaTickets}
-                                loading={loading}
-                                submitting={submitting}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                highlightId={highlightId}
-                                onSave={onSave}
-                                onChangeStatus={onChangeStatus}
-                            />
-                        </div>
-                    )}
-
-                    {/* SECCIÓN 2: COLA DE TRABAJO */}
-                    {(colaTickets.length > 0 || agendaTickets.length === 0) && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                                <Icon name="view_list" className="text-slate-500 shrink-0" />
-                                <h3 className="font-bold text-slate-800 text-sm uppercase">Cola de Trabajo (On-Demand / Sin Hora)</h3>
-                            </div>
-                            <HoyTicketTable
-                                tickets={colaTickets}
-                                loading={loading}
-                                submitting={submitting}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                highlightId={highlightId}
-                                onSave={onSave}
-                                onChangeStatus={onChangeStatus}
-                            />
-                        </div>
-                    )}
-                </div>
+                <MantenimientosTicketTable
+                    tickets={sortedTickets}
+                    loading={loading}
+                    submitting={submitting}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    highlightId={highlightId}
+                    onSave={onSave}
+                    onChangeStatus={onChangeStatus}
+                    scope="mantenimientos"
+                />
             )}
         </div>
     );

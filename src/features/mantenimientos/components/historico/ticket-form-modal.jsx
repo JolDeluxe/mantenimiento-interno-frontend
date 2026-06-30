@@ -850,7 +850,7 @@ export const TicketFormModal = ({
             prioridad, clasificacion, tipo, fechaVencimiento,
             tiempoEstimado: tiempoEstimadoMins, esRutina,
             responsables: tecnicoCartId ? [tecnicoCartId] : [],
-            maquinaId: Number(maquinaId),
+            maquinaId: maquinaId ? Number(maquinaId) : null,
         }]);
         
         // Solo reseteamos lo que cambia por tarea. El contexto (planta, área, etc) se mantiene.

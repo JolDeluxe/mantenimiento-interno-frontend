@@ -1,9 +1,8 @@
-// src/features/tickets/components/hoy/mobile-hoy-filter-bar.jsx
+// src/features/hoy/components/common/mobile-hoy-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '../../constants';
-import { HoyTeamToggle } from './hoy-team-toggle';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>

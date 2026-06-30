@@ -35,32 +35,37 @@ export const MobileSidebar = ({ userModules = [] }) => {
         <nav className="flex-1 overflow-y-auto py-5 px-3 custom-scrollbar">
           <ul className="space-y-2.5">
             {userModules.map((module) => (
-              <li key={module.id}>
-                <NavLink
-                  to={module.route}
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-4 px-4 py-3.5 outline-none select-none transition-transform active:scale-[0.98]"
-                  style={({ isActive }) => (
-                    isActive
-                      ? { ...glassBase('primary'), borderRadius: '14px' }
-                      : { borderRadius: '14px', background: 'transparent' }
-                  )}
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <GlassSheen />}
-                      <Icon
-                        name={module.icon}
-                        size="md"
-                        className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
-                      />
-                      <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
-                        {module.name}
-                      </span>
-                    </>
-                  )}
-                </NavLink>
-              </li>
+              <React.Fragment key={module.id}>
+                {module.divider && (
+                  <li className="h-px bg-marca-primario/20 my-2 mx-4" />
+                )}
+                <li>
+                  <NavLink
+                    to={module.route}
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-4 px-4 py-3.5 outline-none select-none transition-transform active:scale-[0.98]"
+                    style={({ isActive }) => (
+                      isActive
+                        ? { ...glassBase('primary'), borderRadius: '14px' }
+                        : { borderRadius: '14px', background: 'transparent' }
+                    )}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <GlassSheen />}
+                        <Icon
+                          name={module.icon}
+                          size="md"
+                          className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
+                        />
+                        <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
+                          {module.name}
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                </li>
+              </React.Fragment>
             ))}
           </ul>
         </nav>

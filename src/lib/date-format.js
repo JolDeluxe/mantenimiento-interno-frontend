@@ -107,3 +107,52 @@ export const formatDurationToDaysHours = (minutes) => {
     const mStr = m > 0 ? ` ${m} min` : '';
     return `${dStr}${hStr}${mStr}`;
 };
+
+export const getMXOffsetMinutes = (date) => {
+    const tzString = date.toLocaleString('en-US', { timeZone: 'America/Mexico_City' });
+    const localDate = new Date(tzString);
+    const utcString = date.toLocaleString('en-US', { timeZone: 'UTC' });
+    const utcDate = new Date(utcString);
+    return Math.round((localDate.getTime() - utcDate.getTime()) / 60000);
+};
+
+export const localMXTimeToISO = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return null;
+    const dateNominal = new Date(`${dateStr}T${timeStr}:00.000Z`);
+    if (isNaN(dateNominal.getTime())) return null;
+
+    const offsetMin = getMXOffsetMinutes(dateNominal);
+    const resultDate = new Date(dateNominal.getTime() - offsetMin * 60000);
+    return resultDate.toISOString();
+};
+
+export const isoToLocalMXTime = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Mexico_City',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).formatToParts(d);
+    
+    const hour = parts.find(p => p.type === 'hour').value;
+    const minute = parts.find(p => p.type === 'minute').value;
+    
+    const h = hour === '24' ? '00' : hour;
+    return `${h}:${minute}`;
+};
+
+export const format12h = (timeStr) => {
+    if (!timeStr) return '';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // la hora '0' debe ser '12'
+    return `${hours}:${minutes} ${ampm}`;
+};

@@ -98,6 +98,7 @@ export const MODULES_CONFIG = [
     icon: 'dashboard',
     route: '/dashboard',
     allowedRoles: ['SUPER_ADMIN', 'TECNICO'],
+    divider: true,
   },
   {
     id: 'reportes',
@@ -105,6 +106,7 @@ export const MODULES_CONFIG = [
     icon: 'bar_chart',
     route: '/reportes',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    divider: true,
     children: [
       {
         id: 'reportes-general',
@@ -175,7 +177,6 @@ export const MODULES_CONFIG = [
     icon: 'settings',
     route: '/configuracion',
     allowedRoles: ['SUPER_ADMIN'],
-
   },
 ];
 

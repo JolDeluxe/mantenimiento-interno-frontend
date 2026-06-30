@@ -60,32 +60,49 @@ export const MobileHeader = ({ showBurger = false }) => {
           </button>
 
           {profileOpen && (
-            <div
-              className="absolute left-0 mt-3 w-64 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col p-1.5"
-              style={{ ...glassBase('primary'), background: 'rgba(72, 43, 44, 0.98)', boxShadow: '0 24px 48px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset', borderRadius: '20px' }}
-            >
-              <GlassSheen />
-              <div className="relative z-10 px-4 py-4 border-b border-white/15">
-                <p className="text-[15px] font-bold text-white leading-tight drop-shadow-sm">{currentUser?.nombre || 'Usuario'}</p>
-                <p className="text-xs text-white/70 mt-1 truncate font-medium">{currentUser?.email}</p>
-                <div className="mt-3">
-                  <span className="inline-block px-2.5 py-1 bg-white/10 text-white text-[10px] font-extrabold uppercase tracking-widest rounded-md backdrop-blur-md border border-white/20 shadow-inner">
-                    {currentUser?.rol?.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              </div>
-              <div className="relative z-10 py-1.5 flex flex-col gap-1">
-                <button onClick={handleNavigateProfile} className="w-full px-3 py-3 text-left text-sm font-bold hover:bg-white/10 active:bg-white/20 transition-all flex items-center gap-3 text-white/95 rounded-xl outline-none">
-                  <Icon name="account_circle" size="20px" className="text-white drop-shadow-sm" />
-                  <span>Ver Perfil Completo</span>
-                </button>
-                <button onClick={handleLogout} className="w-full px-3 py-3 text-left text-sm font-bold hover:bg-red-500/30 active:bg-red-500/50 transition-all flex items-center gap-3 text-red-100 rounded-xl outline-none">
-                  <Icon name="logout" size="20px" className="text-red-300 drop-shadow-sm" />
-                  <span>Cerrar Sesión</span>
-                </button>
-              </div>
-            </div>
-          )}
+  <div
+    className="absolute left-0 mt-3 w-64 z-50 animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col overflow-hidden"
+    style={{
+      // Base sólida pero ultra transparente
+      background: 'linear-gradient(135deg, rgba(72, 43, 44, 0.85), rgba(45, 25, 26, 0.95))',
+      backdropFilter: 'blur(20px) saturate(180%)', // El blur es clave
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      border: '1px solid rgba(255, 255, 255, 0.15)', // Borde de cristal fino
+      boxShadow: '0 20px 40px -10px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.2)',
+      borderRadius: '24px' // Más redondeado se siente más orgánico
+    }}
+  >
+    <GlassSheen /> {/* Mantenemos tu efecto de brillo superior */}
+    
+    <div className="relative z-10 px-5 py-5 border-b border-white/10">
+      <p className="text-[15px] font-bold text-white leading-tight drop-shadow-md">{currentUser?.nombre || 'Usuario'}</p>
+      <p className="text-xs text-white/60 mt-1 truncate font-medium tracking-wide">{currentUser?.email}</p>
+      <div className="mt-4">
+        <span className="inline-block px-3 py-1 bg-white/5 text-white/90 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-white/10 shadow-sm backdrop-blur-sm">
+          {currentUser?.rol?.replace(/_/g, ' ')}
+        </span>
+      </div>
+    </div>
+
+    <div className="relative z-10 p-2 flex flex-col gap-1">
+      <button 
+        onClick={handleNavigateProfile} 
+        className="w-full px-4 py-3 text-left text-sm font-semibold hover:bg-white/10 active:bg-white/20 transition-all flex items-center gap-3 text-white/90 rounded-xl outline-none group"
+      >
+        <Icon name="account_circle" size="20px" className="text-white/80 group-hover:text-white transition-colors" />
+        <span>Ver Perfil</span>
+      </button>
+      
+      <button 
+        onClick={handleLogout} 
+        className="w-full px-4 py-3 text-left text-sm font-bold hover:bg-red-500/20 active:bg-red-500/30 transition-all flex items-center gap-3 text-red-100/90 rounded-xl outline-none group"
+      >
+        <Icon name="logout" size="20px" className="text-red-300/80 group-hover:text-red-200 transition-colors" />
+        <span>Cerrar Sesión</span>
+      </button>
+    </div>
+  </div>
+)}
         </div>
 
         {/* CENTRO: Logo */}

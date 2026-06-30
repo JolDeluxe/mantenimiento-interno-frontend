@@ -198,7 +198,7 @@ export const MobileHoyFilterBar = ({
                 <button
                     type="button"
                     onClick={onToggleAtrasadas}
-                    style={mostrarAtrasadas ? { ...glassBase('light'), backgroundColor: '#f59e0b', borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
+                    style={mostrarAtrasadas ? { ...glassBase('light'), background: '#f59e0b', borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
                     className={`
                         relative overflow-hidden flex items-center justify-center h-[38px] shrink-0 transition-all duration-200 active:scale-95
                         ${totalAtrasadas > 0 && !mostrarAtrasadas ? 'w-auto px-2 gap-1.5' : 'w-[38px]'}
@@ -219,7 +219,7 @@ export const MobileHoyFilterBar = ({
                     <button
                         type="button"
                         onClick={onOpenDrawerAmnistia}
-                        style={{ ...glassBase('light'), borderRadius: 14, backgroundColor: '#fefce8', borderColor: '#fcd34d' }}
+                        style={{ ...glassBase('light'), borderRadius: 14, background: '#fefce8', borderColor: '#fcd34d' }}
                         className="relative overflow-hidden flex items-center gap-1 h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 text-amber-700 animate-in fade-in slide-in-from-right-2 duration-200"
                     >
                         <GlassSheen />

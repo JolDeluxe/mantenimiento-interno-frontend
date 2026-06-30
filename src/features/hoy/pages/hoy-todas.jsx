@@ -7,11 +7,13 @@ import { notify } from '@/components/notification/adaptive-notify';
 import { useHoy } from '../hooks/use-hoy';
 import { HoyTodasDesktop } from '../views/hoy-todas-desktop';
 import { HoyTodasMobile } from '../views/hoy-todas-mobile';
-import { HoyFormModal } from '../components/hoy-todas/hoy-form-modal';
-import { MobileHoyFormModal } from '../components/hoy-todas/mobile-hoy-form-modal';
-import { BacklogRescheduleDrawer } from '../components/hoy-todas/backlog-reschedule-drawer';
+import { HoyFormModal } from '../components/common/hoy-form-modal';
+import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
+import { BacklogRescheduleDrawer } from '../components/common/backlog-reschedule-drawer';
+import { createTicket, createTicketsBatch } from '@/features/tickets/api/tickets-api';
 
-const ESTADOS_SUMMARY = ['ASIGNADA', 'EN_PROGRESO', 'EN_PAUSA', 'RESUELTO'];
+
+
 
 export default function HoyTodasPage() {
     const isDesktop = useIsDesktop();
@@ -29,6 +31,10 @@ export default function HoyTodasPage() {
         fetchTickets,
         fetchTecnicos,
         updateTicket,
+        changeStatus,
+        // Métricas server-side (mismo where que la tabla)
+        resumenEstados,
+        totalAbsoluto,
     } = useHoy('general');
 
     const [dateOffset, setDateOffset] = useState(0);
@@ -109,23 +115,40 @@ export default function HoyTodasPage() {
     const totalAtrasadas = useMemo(() => ticketsAtrasados.length, [ticketsAtrasados]);
     const totalRechazadas = useMemo(() => allTickets.filter(t => t.estado === 'RECHAZADO').length, [allTickets]);
 
-    const conteos = useMemo(() => {
-        return allTickets.reduce((acc, t) => {
-            acc[t.estado] = (acc[t.estado] || 0) + 1;
-            return acc;
-        }, {});
-    }, [allTickets]);
-
-    const totalParaSummary = useMemo(() => {
-        return Object.entries(conteos).reduce((acc, [estado, count]) => {
-            return ESTADOS_SUMMARY.includes(estado) ? acc + count : acc;
-        }, 0);
-    }, [conteos]);
+    // conteos y totalParaSummary vienen del backend (resumenEstados del response)
+    // Esto garantiza sincronía 1:1 entre la tabla y las tarjetas de resumen.
+    const conteos = resumenEstados;
+    const totalParaSummary = totalAbsoluto;
 
     const equipoCount = useMemo(() => allTickets.length, [allTickets]);
     const misTareasCount = useMemo(() => {
         return allTickets.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id))).length;
     }, [allTickets, currentUser]);
+
+    const handleCreate = async (payloads) => {
+        if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
+            try {
+                await createTicketsBatch(payloads);
+                notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
+                setShowCreate(false);
+                loadTickets();
+            } catch (err) {
+                notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las tareas.');
+                throw err;
+            }
+            return;
+        }
+        const items = Array.isArray(payloads) ? payloads : [payloads];
+        try {
+            for (const payload of items) await createTicket(payload);
+            notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
+            setShowCreate(false);
+            loadTickets();
+        } catch (err) {
+            notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la tarea.');
+            throw err;
+        }
+    };
 
     const handleUpdate = async (id, payload) => {
         try {
@@ -140,7 +163,7 @@ export default function HoyTodasPage() {
 
     const handleChangeStatus = async (id, payload) => {
         try {
-            await updateTicket(id, payload); // useHoy's updateTicket delegates to updateHoyTicket
+            await changeStatus(id, payload);
             notify.success('Estado actualizado correctamente.');
             loadTickets();
         } catch (err) {
@@ -201,15 +224,16 @@ export default function HoyTodasPage() {
         <>
             {isDesktop ? <HoyTodasDesktop {...sharedProps} /> : <HoyTodasMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={loadTickets} />
+                <HoyFormModal scope="general" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             ) : (
-                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={loadTickets} />
+                <MobileHoyFormModal scope="general" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}
                 onClose={() => setIsDrawerAmnistiaOpen(false)}
                 ticketsAtrasados={ticketsAtrasados}
                 onSuccessSincronizacion={loadTickets}
+                scope="general"
             />
         </>
     );

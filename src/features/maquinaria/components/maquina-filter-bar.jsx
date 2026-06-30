@@ -104,7 +104,7 @@ export const MaquinaFilterBar = ({
             }`}
           >
             <Icon name={isPrintMode ? 'print_disabled' : 'print'} size="sm" className="shrink-0" />
-            {isPrintMode ? 'Salir Impresión' : 'Impresión Masiva'}
+            {isPrintMode ? 'Salir Impresión' : 'Impresión'}
           </button>
 
           {onAddNewClick && (

@@ -5,7 +5,7 @@ export const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA'];
 export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
 export const TIPOS = [
-    { value: 'TICKET', label: 'Ticket' },
+    { value: 'TICKET', label: 'Reporte' },
     { value: 'PLANEADA', label: 'Planeada' },
     { value: 'EXTRAORDINARIA', label: 'Extraordinaria' },
 ];

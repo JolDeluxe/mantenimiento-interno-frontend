@@ -2,14 +2,14 @@
 import React, { useMemo } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
-import { HoyAddButton } from '../components/hoy-todas/hoy-add-button';
-import { HoyFilterBar } from '../components/hoy-todas/hoy-filter-bar';
-import { HoySummaryBar } from '../components/hoy-todas/hoy-summary-bar';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
-import { HoyTicketTable } from '../components/hoy-todas/hoy-ticket-table';
+import { HoyAddButton } from '../components/common/hoy-add-button';
+import { HoyFilterBar } from '../components/common/hoy-filter-bar';
+import { HoySummaryBar } from '../components/common/hoy-summary-bar';
+import { TicketsEmptyState } from '../components/common/tickets-empty-state';
+import { HoyTicketTable } from '../components/common/hoy-ticket-table';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
-import { HoyAprobarPanel } from '../components/hoy-todas/hoy-aprobar-panel';
+import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
 const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => (
     <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-sm">
@@ -114,10 +114,6 @@ export const HoyTodasDesktop = ({
         if (onClearFilters) onClearFilters();
     };
 
-    // --- SEPARACIÓN DE AGENDA Y COLA ---
-    const agendaTickets = useMemo(() => tickets.filter(t => t.horaInicioProgramada), [tickets]);
-    const colaTickets = useMemo(() => tickets.filter(t => !t.horaInicioProgramada), [tickets]);
-
     return (
         <div className="flex flex-col gap-5 relative">
             <div>
@@ -141,9 +137,9 @@ export const HoyTodasDesktop = ({
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
-                </div>
+                </div> */}
             </div>
 
             <HoyFilterBar
@@ -187,47 +183,17 @@ export const HoyTodasDesktop = ({
                     />
                 </div>
             ) : (
-                <div className="flex flex-col gap-8">
-                    {/* SECCIÓN 1: AGENDA CRONOLÓGICA */}
-                    {agendaTickets.length > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                                <Icon name="schedule" className="text-marca-secundario shrink-0" />
-                                <h3 className="font-bold text-slate-800 text-sm uppercase">Agenda Programada (Cronológica)</h3>
-                            </div>
-                            <HoyTicketTable
-                                tickets={agendaTickets}
-                                loading={loading}
-                                submitting={submitting}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                highlightId={highlightId}
-                                onSave={onSave}
-                                onChangeStatus={onChangeStatus}
-                            />
-                        </div>
-                    )}
-
-                    {/* SECCIÓN 2: COLA DE TRABAJO */}
-                    {(colaTickets.length > 0 || agendaTickets.length === 0) && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                                <Icon name="view_list" className="text-slate-500 shrink-0" />
-                                <h3 className="font-bold text-slate-800 text-sm uppercase">Cola de Trabajo (On-Demand / Sin Hora)</h3>
-                            </div>
-                            <HoyTicketTable
-                                tickets={colaTickets}
-                                loading={loading}
-                                submitting={submitting}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                highlightId={highlightId}
-                                onSave={onSave}
-                                onChangeStatus={onChangeStatus}
-                            />
-                        </div>
-                    )}
-                </div>
+                <HoyTicketTable
+                    tickets={tickets}
+                    loading={loading}
+                    submitting={submitting}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    highlightId={highlightId}
+                    onSave={onSave}
+                    onChangeStatus={onChangeStatus}
+                    scope="general"
+                />
             )}
         </div>
     );

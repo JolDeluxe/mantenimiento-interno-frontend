@@ -118,6 +118,7 @@ export const MobileTicketFormModal = ({
     currentUser,
     tecnicos = [],
     isSubmitting,
+    scope = 'general',
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -181,7 +182,7 @@ export const MobileTicketFormModal = ({
             setTitulo(''); setDescripcion(''); setCategoria('');
             setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
-            setClasificacion('PREVENTIVO'); setTipo('PLANEADA');
+            setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo('PLANEADA');
             setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
             setMaquinaInfo(null);
@@ -255,6 +256,15 @@ export const MobileTicketFormModal = ({
         if (!area.trim()) e.area = 'El área es obligatoria.';
         if (maquinaId && !maquinaInfo && !validatingMaquina) {
             e.maquinaId = 'La máquina ingresada no existe.';
+        }
+
+        if (scope === 'mantenimientos') {
+            if (!maquinaId) {
+                e.maquinaId = 'La máquina es obligatoria para mantenimientos.';
+            }
+            if (!clasificacion) {
+                e.clasificacion = 'La clasificación es obligatoria para mantenimientos.';
+            }
         }
 
         if (esAdmin && fechaVencimiento) {
@@ -387,10 +397,10 @@ export const MobileTicketFormModal = ({
                                 {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
-                        {categoria === 'MAQUINARIA' && (
+                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>Maquinaria Relacionada</Label>
+                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     {validatingMaquina && (
                                         <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
                                             <Icon name="sync" size="xs" className="animate-spin" /> Validando...
@@ -431,9 +441,9 @@ export const MobileTicketFormModal = ({
                                 )}
                             </div>
                         )}
-                        {categoria === 'MAQUINARIA' && (
+                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
+                                <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                 <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
                                     error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
                                     <option value="" disabled hidden>Selecciona…</option>

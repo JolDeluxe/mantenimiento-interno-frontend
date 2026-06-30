@@ -1,21 +1,74 @@
-// src/features/tickets/components/historico/ticket-form-modal.jsx
+// src/features/hoy/components/hoy-mantenimientos/hoy-mantenimientos-form.jsx
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
-import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime, format12h } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
-    PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
-    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
+    PLANTAS, CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS
 } from '../../constants';
+
+const CLASIFICACIONES_MANTENIMIENTO = [
+    { value: 'PREVENTIVO', label: 'Preventivo' },
+    { value: 'CORRECTIVO', label: 'Correctivo' },
+    { value: 'AUTONOMO', label: 'Autónomo' }
+];
 
 const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
 
 const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+const getSmartDefaultTimeRange = () => {
+    const now = new Date();
+    const hrs = now.getHours();
+    const mins = now.getMinutes();
+    
+    if (hrs < 8 || hrs >= 17) {
+        return { inicio: '08:00', fin: '09:00' };
+    }
+    
+    let roundedMins = Math.ceil(mins / 5) * 5;
+    let startHrs = hrs;
+    if (roundedMins === 60) {
+        roundedMins = 0;
+        startHrs += 1;
+    }
+    
+    if (startHrs > 16 || (startHrs === 16 && roundedMins > 30)) {
+        return { inicio: '16:30', fin: '17:30' };
+    }
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${pad(startHrs)}:${pad(roundedMins)}`;
+    
+    let endHrs = startHrs + 1;
+    let endMins = roundedMins;
+    if (endHrs > 17 || (endHrs === 17 && endMins > 30)) {
+        endHrs = 17;
+        endMins = 30;
+    }
+    const endStr = `${pad(endHrs)}:${pad(endMins)}`;
+    
+    return { inicio: startStr, fin: endStr };
+};
+
+const getDurationLabel = (inicio, fin) => {
+    if (!inicio || !fin) return null;
+    const [h1, m1] = inicio.split(':').map(Number);
+    const [h2, m2] = fin.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff <= 0) return null;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    if (h > 0) {
+        return `${h} h ${m > 0 ? `${m} min` : ''}`;
+    }
+    return `${diff} min`;
+};
 
 const deducirPlantaDeArea = (areaName, plantaActual) => {
     if (!areaName) return '';
@@ -30,8 +83,6 @@ const deducirPlantaDeArea = (areaName, plantaActual) => {
     return '';
 };
 
-
-
 const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
     const horas = Math.floor((valueMins || 0) / 60);
     const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
@@ -41,24 +92,18 @@ const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
         <div className="flex flex-col gap-1.5">
             <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
-
                     <select
                         value={horas}
                         onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
                         disabled={disabled}
                         className={cn(
                             "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
-                            error
-                                ? "border-rose-500 focus:ring-rose-200"
-                                : "border-slate-300 focus:ring-marca-secundario/30"
+                            error ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
                         )}
                     >
                         {HORAS_OPTIONS.map(h => <option key={h} value={h}>{h} h</option>)}
                     </select>
-                    <div className={cn(
-                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
-                        error ? "text-rose-400" : "text-slate-400"
-                    )}>
+                    <div className={cn("pointer-events-none absolute inset-y-0 right-0 flex items-center px-2", error ? "text-rose-400" : "text-slate-400")}>
                         <Icon name="expand_more" size="sm" />
                     </div>
                 </div>
@@ -70,27 +115,18 @@ const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
                         disabled={disabled}
                         className={cn(
                             "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
-                            error
-                                ? "border-rose-500 focus:ring-rose-200"
-                                : "border-slate-300 focus:ring-marca-secundario/30"
+                            error ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
                         )}
                     >
                         {MINUTOS_OPTIONS.map(m => <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>)}
                     </select>
-                    <div className={cn(
-                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
-                        error ? "text-rose-400" : "text-slate-400"
-                    )}>
+                    <div className={cn("pointer-events-none absolute inset-y-0 right-0 flex items-center px-2", error ? "text-rose-400" : "text-slate-400")}>
                         <Icon name="expand_more" size="sm" />
                     </div>
                 </div>
             </div>
-
             {totalLabel && (
-                <p className={cn(
-                    "text-[11px] flex items-center gap-1 transition-colors",
-                    error ? "text-rose-600 font-bold" : "text-slate-400"
-                )}>
+                <p className={cn("text-[11px] flex items-center gap-1 transition-colors", error ? "text-rose-600 font-bold" : "text-slate-400")}>
                     <Icon name="timer" size="xs" /> {totalLabel}
                 </p>
             )}
@@ -115,9 +151,7 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
             onClick={onClick}
             className={cn(
                 'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors border-b border-slate-50 last:border-0 cursor-pointer',
-                isSelected
-                    ? 'bg-marca-primario/8 hover:bg-marca-primario/10'
-                    : 'bg-white hover:bg-slate-50'
+                isSelected ? 'bg-marca-primario/8 hover:bg-marca-primario/10' : 'bg-white hover:bg-slate-50'
             )}
         >
             {tecnico.imagen ? (
@@ -138,10 +172,7 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
 
             <div className="flex flex-col flex-1 min-w-0 gap-0.5">
                 <div className="flex items-center justify-between gap-2">
-                    <span className={cn(
-                        'text-sm font-bold truncate',
-                        isSelected ? 'text-marca-primario' : 'text-slate-800'
-                    )}>
+                    <span className={cn('text-sm font-bold truncate', isSelected ? 'text-marca-primario' : 'text-slate-800')}>
                         {tecnico.nombre}
                     </span>
                     {sinTareas ? (
@@ -151,11 +182,7 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                     ) : (
                         <span className={cn(
                             'text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
-                            totalTareas >= 5
-                                ? 'bg-estado-rechazado/10 text-estado-rechazado'
-                                : totalTareas >= 3
-                                    ? 'bg-prioridad-alta/10 text-prioridad-alta'
-                                    : 'bg-estado-pendiente/10 text-estado-pendiente'
+                            totalTareas >= 5 ? 'bg-estado-rechazado/10 text-estado-rechazado' : totalTareas >= 3 ? 'bg-prioridad-alta/10 text-prioridad-alta' : 'bg-estado-pendiente/10 text-estado-pendiente'
                         )}>
                             {totalTareas} tarea{totalTareas !== 1 ? 's' : ''}
                         </span>
@@ -169,24 +196,15 @@ const TecnicoRow = ({ tecnico, isSelected, onClick }) => {
                     {!sinTareas && (
                         <>
                             {tecnico.cargo && <span className="text-[10px] text-slate-300">·</span>}
-                            {wl.asignadas > 0 && (
-                                <WorkloadBadge label="Asig." count={wl.asignadas} colorClass="bg-estado-asignada/10 text-estado-asignada" />
-                            )}
-                            {wl.enProgreso > 0 && (
-                                <WorkloadBadge label="Prog." count={wl.enProgreso} colorClass="bg-estado-en-progreso/10 text-estado-en-progreso" />
-                            )}
-                            {wl.enPausa > 0 && (
-                                <WorkloadBadge label="Pausa" count={wl.enPausa} colorClass="bg-estado-en-pausa/10 text-estado-en-pausa" />
-                            )}
+                            {wl.asignadas > 0 && <WorkloadBadge label="Asig." count={wl.asignadas} colorClass="bg-estado-asignada/10 text-estado-asignada" />}
+                            {wl.enProgreso > 0 && <WorkloadBadge label="Prog." count={wl.enProgreso} colorClass="bg-estado-en-progreso/10 text-estado-en-progreso" />}
+                            {wl.enPausa > 0 && <WorkloadBadge label="Pausa" count={wl.enPausa} colorClass="bg-estado-en-pausa/10 text-estado-en-pausa" />}
                         </>
                     )}
                 </div>
             </div>
 
-            <div className={cn(
-                'shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
-                isSelected ? 'bg-marca-primario border-marca-primario' : 'border-slate-300 bg-white'
-            )}>
+            <div className={cn('shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all', isSelected ? 'bg-marca-primario border-marca-primario' : 'border-slate-300 bg-white')}>
                 {isSelected && <Icon name="check" size="xs" className="text-white" />}
             </div>
         </button>
@@ -199,17 +217,10 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
     const containerRef = useRef(null);
     const searchRef = useRef(null);
 
-    const tecnicoSeleccionado = useMemo(
-        () => tecnicos.find(t => String(t.id) === String(value)),
-        [tecnicos, value]
-    );
-
+    const tecnicoSeleccionado = useMemo(() => tecnicos.find(t => String(t.id) === String(value)), [tecnicos, value]);
     const tecnicosFiltrados = useMemo(() => {
         const q = busqueda.toLowerCase();
-        return tecnicos.filter(t =>
-            t.nombre.toLowerCase().includes(q) ||
-            (t.cargo ?? '').toLowerCase().includes(q)
-        );
+        return tecnicos.filter(t => t.nombre.toLowerCase().includes(q) || (t.cargo ?? '').toLowerCase().includes(q));
     }, [tecnicos, busqueda]);
 
     useEffect(() => {
@@ -263,25 +274,16 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                 {tecnicoSeleccionado ? (
                     <>
                         {tecnicoSeleccionado.imagen ? (
-                            <img
-                                src={tecnicoSeleccionado.imagen}
-                                alt=""
-                                className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0"
-                                onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }}
-                            />
+                            <img src={tecnicoSeleccionado.imagen} alt="" className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }} />
                         ) : (
                             <div className="w-6 h-6 rounded-full bg-marca-primario/10 flex items-center justify-center text-[10px] font-black text-marca-primario shrink-0">
                                 {tecnicoSeleccionado.nombre?.charAt(0).toUpperCase()}
                             </div>
                         )}
                         <div className="flex-1 min-w-0 flex items-center gap-2">
-                            <span className="text-sm font-bold text-marca-primario truncate">
-                                {tecnicoSeleccionado.nombre}
-                            </span>
+                            <span className="text-sm font-bold text-marca-primario truncate">{tecnicoSeleccionado.nombre}</span>
                             {sinTareasSelected ? (
-                                <span className="text-[10px] font-bold text-estado-resuelto bg-estado-resuelto/10 px-1.5 py-0.5 rounded-full shrink-0">
-                                    Libre
-                                </span>
+                                <span className="text-[10px] font-bold text-estado-resuelto bg-estado-resuelto/10 px-1.5 py-0.5 rounded-full shrink-0">Libre</span>
                             ) : (
                                 <span className="text-[10px] font-bold text-estado-pendiente bg-estado-pendiente/10 px-1.5 py-0.5 rounded-full shrink-0">
                                     {(wl.asignadas + wl.enProgreso + wl.enPausa)} tareas
@@ -289,17 +291,7 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                             )}
                         </div>
                         {!disabled && (
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={handleClear}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleClear(e);
-                                    }
-                                }}
-                                className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
-                            >
+                            <span role="button" tabIndex={0} onClick={handleClear} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClear(e); }} className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-500 transition-colors cursor-pointer">
                                 <Icon name="close" size="xs" />
                             </span>
                         )}
@@ -308,11 +300,7 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                     <>
                         <Icon name="person_search" size="sm" className="text-slate-400 shrink-0" />
                         <span className="flex-1 text-slate-400">{placeholder}</span>
-                        <Icon
-                            name="expand_more"
-                            size="sm"
-                            className={cn('text-slate-400 shrink-0 transition-transform', isOpen && 'rotate-180')}
-                        />
+                        <Icon name="expand_more" size="sm" className={cn('text-slate-400 shrink-0 transition-transform', isOpen && 'rotate-180')} />
                     </>
                 )}
             </button>
@@ -322,17 +310,9 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                     <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
                         <div className="relative">
                             <Icon name="search" size="xs" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                value={busqueda}
-                                onChange={(e) => setBusqueda(e.target.value)}
-                                placeholder="Buscar por nombre o cargo..."
-                                className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
-                            />
+                            <input ref={searchRef} type="text" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre o cargo..." className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white" />
                         </div>
                     </div>
-
                     <div className="max-h-64 overflow-y-auto custom-scrollbar">
                         {tecnicos.length === 0 ? (
                             <div className="flex flex-col items-center py-8 text-slate-400 gap-2">
@@ -340,17 +320,10 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
                                 <p className="text-sm italic">No hay personal disponible.</p>
                             </div>
                         ) : tecnicosFiltrados.length === 0 ? (
-                            <div className="py-6 text-center text-sm text-slate-400 italic">
-                                Sin resultados para "{busqueda}"
-                            </div>
+                            <div className="py-6 text-center text-sm text-slate-400 italic">Sin resultados para "{busqueda}"</div>
                         ) : (
                             tecnicosFiltrados.map(t => (
-                                <TecnicoRow
-                                    key={t.id}
-                                    tecnico={t}
-                                    isSelected={String(t.id) === String(value)}
-                                    onClick={() => handleSelect(t)}
-                                />
+                                <TecnicoRow key={t.id} tecnico={t} isSelected={String(t.id) === String(value)} onClick={() => handleSelect(t)} />
                             ))
                         )}
                     </div>
@@ -361,96 +334,103 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
 };
 
 const TecnicoChip = ({ tecnico, onRemove }) => (
-    <span className="inline-flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full text-xs font-bold bg-marca-primario/10 text-marca-primario border border-marca-primario/20">
+    <div className="flex items-center gap-1.5 bg-marca-primario/6 border border-marca-primario/10 rounded-full pl-2 pr-1 py-1 text-xs text-marca-primario font-bold animate-in zoom-in-95 duration-150">
         {tecnico?.imagen ? (
-            <img src={tecnico.imagen} alt={tecnico?.nombre} className="w-5 h-5 rounded-full object-cover" />
+            <img src={tecnico.imagen} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }} />
         ) : (
-            <div className="w-5 h-5 rounded-full bg-marca-primario/20 flex items-center justify-center text-[10px]">
-                {tecnico?.nombre?.charAt(0)}
+            <div className="w-5 h-5 rounded-full bg-marca-primario/10 flex items-center justify-center text-[9px] font-black shrink-0">
+                {tecnico?.nombre?.charAt(0).toUpperCase() ?? '?'}
             </div>
         )}
-        <span className="pl-1 truncate max-w-[120px]">{tecnico?.nombre}</span>
-        <button type="button" onClick={onRemove}
-            className="flex items-center justify-center w-4 h-4 rounded-full bg-marca-primario/20 hover:bg-marca-primario/40 transition-colors cursor-pointer shrink-0">
-            <Icon name="close" size="xs" />
+        <span className="truncate max-w-28">{tecnico?.nombre}</span>
+        <button type="button" onClick={onRemove} className="w-4 h-4 rounded-full bg-marca-primario/10 hover:bg-rose-100 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer shrink-0">
+            <Icon name="close" size="xxs" />
         </button>
-    </span>
+    </div>
 );
 
 const TecnicoDropdown = ({ opciones, onAdd, disabled, onToggle }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
+    const [busqueda, setBusqueda] = useState('');
+    const containerRef = useRef(null);
+
+    const filtradas = useMemo(() => {
+        const q = busqueda.toLowerCase();
+        return opciones.filter(o => o.tecnico.nombre.toLowerCase().includes(q));
+    }, [opciones, busqueda]);
 
     useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                setIsOpen(false); onToggle?.(false);
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setIsOpen(false);
+                if (onToggle) onToggle(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
     }, [onToggle]);
 
-    const toggle = () => {
+    const handleOpenToggle = () => {
         if (disabled) return;
         const next = !isOpen;
         setIsOpen(next);
-        onToggle?.(next);
+        if (onToggle) onToggle(next);
     };
 
     return (
-        <div className="relative" ref={dropdownRef}>
-            <div onClick={toggle} className={cn(
-                "flex items-center justify-between w-full px-3 py-2 text-sm border rounded-lg transition-colors",
-                disabled ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed" : "bg-white border-slate-300 hover:border-marca-primario text-slate-700 cursor-pointer"
-            )}>
-                <div className="flex items-center gap-2">
-                    <Icon name="engineering" size="sm" className={disabled ? "text-slate-400" : "text-slate-500"} />
-                    <span>Añadir técnico...</span>
-                </div>
-                <Icon name={isOpen ? "expand_less" : "expand_more"} size="sm" />
-            </div>
-            {isOpen && !disabled && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {opciones.length === 0 ? (
-                        <div className="p-3 text-sm text-center text-slate-500">No hay más técnicos disponibles</div>
-                    ) : (
-                        opciones.map(opt => {
-                            const t = opt.tecnico;
-                            const wl = t.workload || { asignadas: 0, enProgreso: 0, enPausa: 0 };
-                            const sinTareas = wl.asignadas === 0 && wl.enProgreso === 0 && wl.enPausa === 0;
-                            return (
-                                <button key={opt.value} type="button"
-                                    onClick={() => { onAdd(opt.value); setIsOpen(false); onToggle?.(false); }}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left cursor-pointer border-b border-slate-100 last:border-0">
-                                    {t.imagen ? (
-                                        <img src={t.imagen} alt={t.nombre}
-                                            className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-                                            onError={(e) => { e.target.onerror = null; e.target.src = '/img/perfil-no-foto.webp'; }} />
-                                    ) : (
-                                        <div className="w-8 h-8 rounded-full bg-marca-primario/10 flex items-center justify-center text-xs font-bold text-marca-primario shrink-0">
-                                            {t.nombre?.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <span className="text-sm font-semibold text-slate-800 truncate">{t.nombre}</span>
-                                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                            {t.cargo && <span className="text-[10px] text-slate-400 truncate">{t.cargo}</span>}
-                                            {sinTareas ? (
-                                                <span className="text-[10px] text-estado-resuelto italic">Sin tareas</span>
-                                            ) : (
-                                                <>
-                                                    {wl.asignadas > 0 && <WorkloadBadge label="Asig." count={wl.asignadas} colorClass="bg-estado-asignada/10 text-estado-asignada" />}
-                                                    {wl.enProgreso > 0 && <WorkloadBadge label="Prog." count={wl.enProgreso} colorClass="bg-estado-en-progreso/10 text-estado-en-progreso" />}
-                                                    {wl.enPausa > 0 && <WorkloadBadge label="Pausa" count={wl.enPausa} colorClass="bg-estado-en-pausa/10 text-estado-en-pausa" />}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })
-                    )}
+        <div className="relative" ref={containerRef}>
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={handleOpenToggle}
+                className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 border rounded-lg text-sm text-left bg-white transition-colors cursor-pointer disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
+                    isOpen ? 'border-marca-secundario ring-2 ring-marca-secundario/20' : 'border-slate-300 hover:border-slate-400'
+                )}
+            >
+                <Icon name="group_add" size="sm" className="text-slate-400" />
+                <span className="flex-1 text-slate-500 truncate">Seleccionar técnicos responsables…</span>
+                <Icon name="expand_more" size="sm" className={cn('text-slate-400 transition-transform', isOpen && 'rotate-180')} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="p-2 border-b border-slate-100 bg-slate-50">
+                        <input
+                            type="text"
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            placeholder="Buscar responsable..."
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
+                        />
+                    </div>
+                    <div className="max-h-56 overflow-y-auto custom-scrollbar">
+                        {filtradas.length === 0 ? (
+                            <div className="py-5 text-center text-xs text-slate-400 italic">Sin resultados</div>
+                        ) : (
+                            filtradas.map(opt => {
+                                const wl = opt.tecnico.workload || { asignadas: 0, enProgreso: 0, enPausa: 0 };
+                                const totalTareas = wl.asignadas + wl.enProgreso + wl.enPausa;
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => {
+                                            onAdd(opt.value);
+                                            setIsOpen(false);
+                                            if (onToggle) onToggle(false);
+                                        }}
+                                        className="w-full flex items-center justify-between px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-50 last:border-0 cursor-pointer"
+                                    >
+                                        <span className="font-bold">{opt.tecnico.nombre}</span>
+                                        <span className="text-[10px] text-slate-400 bg-slate-150 px-2 py-0.5 rounded-full">
+                                            {totalTareas} act.
+                                        </span>
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -463,7 +443,7 @@ const TecnicoAdicionalChip = ({ nombre, onRemove }) => (
         <button
             type="button"
             onClick={onRemove}
-            className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
+            className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer shrink-0"
         >
             <Icon name="close" size="xs" />
         </button>
@@ -479,7 +459,7 @@ const PRIORIDAD_DOT = {
 
 const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico }) => {
     const [expanded, setExpanded] = useState(false);
-    const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
+    const clasificLabel = CLASIFICACIONES_MANTENIMIENTO.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
     const dotColor = PRIORIDAD_DOT[item.prioridad] || 'bg-slate-300';
 
@@ -488,7 +468,7 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
 
     return (
         <div className={cn(
-            "rounded-xl border transition-all duration-200 overflow-hidden",
+            "rounded-xl border transition-all duration-200 overflow-visible",
             expanded ? 'border-marca-primario/25 bg-white shadow-sm' : 'border-slate-200 bg-white'
         )}>
             <div className="flex items-start gap-2.5 px-3 py-2.5">
@@ -502,7 +482,11 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                         <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.titulo}</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{clasificLabel}</span>
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">MAQUINARIA</span>
+                        {clasificLabel && <span className="text-slate-300 text-[10px]">·</span>}
+                        {clasificLabel && (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{clasificLabel}</span>
+                        )}
                         <span className="text-slate-300 text-[10px]">·</span>
                         <span className="text-[10px] text-slate-400">{item.planta}{item.area ? ` / ${item.area}` : ''}</span>
                         {tipoLabel && (
@@ -510,6 +494,31 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                                 <span className="text-slate-300 text-[10px]">·</span>
                                 <span className="text-[10px] text-slate-400">{tipoLabel}</span>
                             </>
+                        )}
+                        {item.maquinaId && (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-slate-400">M-ID: {item.maquinaId}</span>
+                            </>
+                        )}
+                        {item.modoRangoHoras ? (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-purple-650 font-extrabold">
+                                    Rango: {(() => {
+                                        const startHour = item.horaInicio || (item.horaInicioProgramada ? isoToLocalMXTime(item.horaInicioProgramada) : null);
+                                        const endHour = item.horaFin || (item.horaFinProgramada ? isoToLocalMXTime(item.horaFinProgramada) : null);
+                                        return startHour && endHour ? `${format12h(startHour)} - ${format12h(endHour)}` : 'Rango Horario';
+                                    })()}
+                                </span>
+                            </>
+                        ) : (
+                            item.tiempoEstimado > 0 && (
+                                <>
+                                    <span className="text-slate-300 text-[10px]">·</span>
+                                    <span className="text-[10px] text-blue-650 font-extrabold">{item.tiempoEstimado} min</span>
+                                </>
+                            )
                         )}
                         {item.fechaVencimiento && (
                             <>
@@ -558,14 +567,14 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                     <button type="button" onClick={() => setExpanded(!expanded)}
                         title={expanded ? 'Ocultar detalles' : 'Administrar tarea'}
                         className={cn(
-                            "p-1.5 rounded-md transition-colors",
+                            "p-1.5 rounded-md transition-colors shrink-0",
                             expanded ? 'bg-marca-primario/10 text-marca-primario' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                         )}>
-                        <Icon name={expanded ? 'expand_less' : 'expand_more'} size="xs" />
+                        <Icon name={expanded ? 'expand_less' : 'expand_more'} size="xs" className="shrink-0" />
                     </button>
                     <button type="button" onClick={() => onRemove(item._id)} title="Quitar tarea"
-                        className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                        <Icon name="close" size="xs" />
+                        className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0">
+                        <Icon name="close" size="xs" className="shrink-0" />
                     </button>
                 </div>
             </div>
@@ -625,39 +634,111 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
     );
 };
 
-export const TicketFormModal = ({
-    isOpen, onClose, onSuccess,
-    ticketAEditar, currentUser, tecnicos = [], isSubmitting,
-    scope = 'general',
-}) => {
-    const esEdicion = Boolean(ticketAEditar);
+export const HoyMantenimientosForm = ({ isOpen, onClose, ticketAEditar = null, currentUser, tecnicos = [], isSubmitting = false, onSuccess, isMobile = false }) => {
+    const esEdicion = !!ticketAEditar;
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
-    const modoCarrito = !esEdicion && esAdmin;
+    const isJefeOwner = currentUser?.rol === 'JEFE_MTTO';
+    const isCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
 
-    const isSameDepartment = currentUser?.departamentoId === ticketAEditar?.departamentoId;
-    const isJefeOwner = currentUser?.rol === 'JEFE_MTTO' && isSameDepartment;
-    const isCoordinador = currentUser?.rol === 'COORDINADOR';
     const isTicket = esEdicion ? ticketAEditar?.tipo === 'TICKET' : false;
     const lockBaseFields = esEdicion && isTicket && !isJefeOwner && !isCoordinador;
 
-    const [carrito, setCarrito] = useState([]);
-    const [tecnicoCartId, setTecnicoCartId] = useState('');
+    // --- BORRADORES DESDE LOCALSTORAGE (Solo en modo creación) ---
+    const [carrito, setCarrito] = useState(() => {
+        if (esEdicion) return [];
+        try {
+            const saved = localStorage.getItem('hoy_mantenimientos_carrito');
+            return saved ? JSON.parse(saved) : [];
+        } catch (_) { return []; }
+    });
 
-    const [titulo, setTitulo] = useState('');
-    const [descripcion, setDescripcion] = useState('');
+    const [modoLista, setModoLista] = useState(() => {
+        if (esEdicion) return false;
+        const saved = localStorage.getItem('hoy_mantenimientos_modoLista');
+        return saved !== null ? JSON.parse(saved) : false; // Mantenimientos: OFF por defecto
+    });
+
+    const [titulo, setTitulo] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_titulo') || '';
+    });
+
+    const [descripcion, setDescripcion] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_descripcion') || '';
+    });
+
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
-    const [categoria, setCategoria] = useState('');
-    const [planta, setPlanta] = useState('');
-    const [area, setArea] = useState('');
-    const [prioridad, setPrioridad] = useState('');
-    const [clasificacion, setClasificacion] = useState('');
-    const [tipo, setTipo] = useState('');
-    const [fechaVencimiento, setFechaVencimiento] = useState('');
-    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
 
-    const [responsables, setResponsables] = useState([]);
+    const [planta, setPlanta] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_planta') || '';
+    });
 
-    const [maquinaId, setMaquinaId] = useState('');
+    const [area, setArea] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_area') || '';
+    });
+
+    const [prioridad, setPrioridad] = useState(() => {
+        if (esEdicion) return 'MEDIA';
+        return localStorage.getItem('hoy_mantenimientos_prioridad') || 'MEDIA';
+    });
+
+    const [clasificacion, setClasificacion] = useState(() => {
+        if (esEdicion) return 'PREVENTIVO';
+        return localStorage.getItem('hoy_mantenimientos_clasificacion') || 'PREVENTIVO';
+    });
+
+    const [tipo, setTipo] = useState(() => {
+        if (esEdicion) return 'PLANEADA';
+        return localStorage.getItem('hoy_mantenimientos_tipo') || 'PLANEADA';
+    });
+
+    const [fechaVencimiento, setFechaVencimiento] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_fechaVencimiento') || '';
+    });
+
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(() => {
+        if (esEdicion) return 0;
+        return Number(localStorage.getItem('hoy_mantenimientos_tiempoEstimado')) || 0;
+    });
+
+    const [modoRangoHoras, setModoRangoHoras] = useState(() => {
+        if (esEdicion) return false;
+        return localStorage.getItem('hoy_mantenimientos_modoRangoHoras') === 'true';
+    });
+
+    const [horaInicio, setHoraInicio] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_horaInicio') || '';
+    });
+
+    const [horaFin, setHoraFin] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_horaFin') || '';
+    });
+
+    const [responsables, setResponsables] = useState(() => {
+        if (esEdicion) return [];
+        try {
+            const saved = localStorage.getItem('hoy_mantenimientos_responsables');
+            return saved ? JSON.parse(saved) : [];
+        } catch (_) { return []; }
+    });
+
+    const [maquinaId, setMaquinaId] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_maquinaId') || '';
+    });
+
+    const [tecnicoCartId, setTecnicoCartId] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('hoy_mantenimientos_tecnicoCartId') || '';
+    });
+
+    const [categoria] = useState('MAQUINARIA');
     const [maquinaInfo, setMaquinaInfo] = useState(null);
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
@@ -667,8 +748,8 @@ export const TicketFormModal = ({
     const [submitted, setSubmitted] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    const esRutina = ticketAEditar ? (ticketAEditar.clasificacion === 'RUTINA' || ticketAEditar.categoria === 'RUTINA') : (categoria === 'RUTINA');
-    const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
+    const modoCarrito = !esEdicion && esAdmin && !isMobile && modoLista;
+    const tecnicoCart = tecnicos.find(t => String(t.id) === String(tecnicoCartId));
 
     const areasOptions = useMemo(() => {
         const list = (planta && AREAS_POR_PLANTA[planta]) ? AREAS_POR_PLANTA[planta] : AREAS;
@@ -693,99 +774,170 @@ export const TicketFormModal = ({
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
 
+    // --- EFECTO PARA ESCRIBIR EL BORRADOR EN LOCALSTORAGE ---
+    useEffect(() => {
+        if (esEdicion) return;
+        localStorage.setItem('hoy_mantenimientos_titulo', titulo);
+        localStorage.setItem('hoy_mantenimientos_descripcion', descripcion);
+        localStorage.setItem('hoy_mantenimientos_planta', planta);
+        localStorage.setItem('hoy_mantenimientos_area', area);
+        localStorage.setItem('hoy_mantenimientos_prioridad', prioridad);
+        localStorage.setItem('hoy_mantenimientos_clasificacion', clasificacion);
+        localStorage.setItem('hoy_mantenimientos_tipo', tipo);
+        localStorage.setItem('hoy_mantenimientos_fechaVencimiento', fechaVencimiento);
+        localStorage.setItem('hoy_mantenimientos_tiempoEstimado', String(tiempoEstimadoMins));
+        localStorage.setItem('hoy_mantenimientos_modoRangoHoras', String(modoRangoHoras));
+        localStorage.setItem('hoy_mantenimientos_horaInicio', horaInicio);
+        localStorage.setItem('hoy_mantenimientos_horaFin', horaFin);
+        localStorage.setItem('hoy_mantenimientos_maquinaId', maquinaId);
+        localStorage.setItem('hoy_mantenimientos_tecnicoCartId', tecnicoCartId);
+        localStorage.setItem('hoy_mantenimientos_carrito', JSON.stringify(carrito));
+        localStorage.setItem('hoy_mantenimientos_modoLista', JSON.stringify(modoLista));
+        localStorage.setItem('hoy_mantenimientos_responsables', JSON.stringify(responsables));
+    }, [titulo, descripcion, planta, area, prioridad, clasificacion, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, maquinaId, tecnicoCartId, carrito, modoLista, responsables, esEdicion]);
+
+    const clearDraft = () => {
+        localStorage.removeItem('hoy_mantenimientos_titulo');
+        localStorage.removeItem('hoy_mantenimientos_descripcion');
+        localStorage.removeItem('hoy_mantenimientos_maquinaId');
+        localStorage.removeItem('hoy_mantenimientos_carrito');
+        localStorage.removeItem('hoy_mantenimientos_responsables');
+        setTitulo('');
+        setDescripcion('');
+        setMostrarDescripcion(false);
+        setMaquinaId('');
+        setMaquinaInfo(null);
+        setTiempoEstimadoMins(0);
+        setHoraInicio('');
+        setHoraFin('');
+        setCarrito([]);
+        setResponsables([]);
+    };
+
     useEffect(() => {
         if (!isOpen) return;
         setSubmitted(false);
         setBackendError('');
         setIsDropdownOpen(false);
-        setCarrito([]);
 
         if (esEdicion) {
             setTitulo(ticketAEditar.titulo ?? '');
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
-            setCategoria(ticketAEditar.categoria ?? '');
             setPlanta(ticketAEditar.planta ?? '');
             setArea(ticketAEditar.area ?? '');
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
-            setClasificacion(ticketAEditar.clasificacion ?? '');
+            setClasificacion(ticketAEditar.clasificacion ?? 'PREVENTIVO');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
-            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? ticketAEditar.tiempoEstimadoMins ?? 0);
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
+            
             const targetMaquinaId = ticketAEditar.maquinaId ?? ticketAEditar.maquina?.id;
             setMaquinaId(targetMaquinaId ? String(targetMaquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
+
+            if (ticketAEditar.horaInicioProgramada && ticketAEditar.horaFinProgramada) {
+                setModoRangoHoras(true);
+                setHoraInicio(isoToLocalMXTime(ticketAEditar.horaInicioProgramada));
+                setHoraFin(isoToLocalMXTime(ticketAEditar.horaFinProgramada));
+                setTiempoEstimadoMins(0);
+            } else {
+                setModoRangoHoras(false);
+                setHoraInicio('');
+                setHoraFin('');
+                setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? ticketAEditar.tiempoEstimadoMins ?? 0);
+            }
         } else {
-            setTitulo(''); setDescripcion(''); setCategoria('');
-            setMostrarDescripcion(false);
-            setPlanta(''); setArea('');
-            setPrioridad('MEDIA');
-            setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : '');
-            setTipo('PLANEADA');
-            setFechaVencimiento(hoyLocal);
-            setTiempoEstimadoMins(0); setResponsables([]);
-            setTecnicoCartId('');
-            setMaquinaId('');
-            setMaquinaInfo(null);
+            setMostrarDescripcion(Boolean(descripcion && descripcion.trim() !== ''));
+            if (!fechaVencimiento) {
+                setFechaVencimiento(hoyLocal);
+            }
         }
     }, [isOpen, esEdicion, ticketAEditar]);
 
-    // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
+    useEffect(() => {
+        if (isOpen && modoRangoHoras && !esEdicion && (!horaInicio || !horaFin)) {
+            const defaults = getSmartDefaultTimeRange();
+            if (!horaInicio) setHoraInicio(defaults.inicio);
+            if (!horaFin) setHoraFin(defaults.fin);
+        }
+    }, [modoRangoHoras, esEdicion, isOpen]);
+
+    const handleHoraInicioChange = (val) => {
+        setHoraInicio(val);
+        if (val) {
+            if (!horaFin || horaFin <= val) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h + 1;
+                let newM = m;
+                if (newH > 17 || (newH === 17 && newM > 30)) {
+                    newH = 17;
+                    newM = 30;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraFin(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
+
+    const handleHoraFinChange = (val) => {
+        setHoraFin(val);
+        if (val) {
+            if (horaInicio && val <= horaInicio) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h - 1;
+                let newM = m;
+                if (newH < 8) {
+                    newH = 8;
+                    newM = 0;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraInicio(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
+
     useEffect(() => {
         if (!isOpen) return;
 
         const cargarCatalogoMaquinas = async () => {
             try {
                 const res = await getMaquinas({ limit: 500 });
-                const list = res?.data?.data || res?.data || [];
-                setMaquinasRaw(list);
-                const opts = list.map(m => ({
-                    value: String(m.id),
-                    label: `${m.codigo} - ${m.nombre}`
-                }));
-                setOpcionesMaquinas(opts);
+                if (Array.isArray(res?.data)) {
+                    setMaquinasRaw(res.data);
+                    setOpcionesMaquinas(res.data.map(m => ({
+                        value: String(m.id),
+                        label: `${m.codigo} - ${m.nombre} (${m.proceso})`
+                    })));
+                }
             } catch (err) {
-                console.error("Error al cargar máquinas en modal:", err);
+                console.error("Error al pre-cargar catálogo de maquinaria:", err);
             }
         };
 
         cargarCatalogoMaquinas();
     }, [isOpen]);
 
-    // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
     useEffect(() => {
-        if (!maquinaId) {
-            setMaquinaInfo(null);
-            return;
-        }
+        if (!maquinaId) return;
 
-        const fetchMaquinaInfo = async () => {
+        const validarMaquinaDb = async () => {
             setValidatingMaquina(true);
             try {
-                const response = await getMaquinaById(Number(maquinaId));
-                if (response?.data?.status === 'success' && response?.data?.data) {
-                    const maq = response.data.data;
-                    setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
-                } else if (response?.data && !response.data.status) {
-                    const maq = response.data;
-                    setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
-                } else {
-                    setMaquinaInfo(null);
+                const res = await getMaquinaById(Number(maquinaId));
+                if (res?.data) {
+                    setMaquinaInfo(res.data);
+                    setPlanta(res.data.planta || '');
+                    setArea(res.data.area || '');
                 }
-            } catch (err) {
-                console.error("Error al validar máquina:", err);
+            } catch (_) {
                 setMaquinaInfo(null);
             } finally {
                 setValidatingMaquina(false);
             }
         };
 
-        const timer = setTimeout(fetchMaquinaInfo, 400); // debounce de 400ms
+        const timer = setTimeout(() => validarMaquinaDb(), 400);
         return () => clearTimeout(timer);
     }, [maquinaId]);
 
@@ -796,24 +948,16 @@ export const TicketFormModal = ({
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
         if (!planta) e.planta = 'Selecciona la planta.';
         if (!area) e.area = 'Selecciona el área.';
-        if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
-        if (maquinaId && !maquinaInfo && !validatingMaquina) {
+        if (!clasificacion) e.clasificacion = 'La clasificación es obligatoria.';
+        if (!maquinaId) {
+            e.maquinaId = 'La máquina es obligatoria para mantenimientos.';
+        } else if (!maquinaInfo && !validatingMaquina) {
             e.maquinaId = 'La máquina ingresada no existe.';
-        }
-
-        if (scope === 'mantenimientos') {
-            if (!maquinaId) {
-                e.maquinaId = 'La máquina es obligatoria para mantenimientos.';
-            }
-            if (!clasificacion) {
-                e.clasificacion = 'La clasificación es obligatoria para mantenimientos.';
-            }
         }
 
         if (esAdmin) {
             if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
 
-            // Validación: Fecha de vencimiento obligatoria
             if (!fechaVencimiento) {
                 e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
             } else if (fechaVencimiento < hoyLocal) {
@@ -822,31 +966,36 @@ export const TicketFormModal = ({
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
 
-            // Validación: Tiempo estimado obligatorio para tickets generales, opcional en MAQUINARIA
-            if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
-                e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+            if (modoRangoHoras) {
+                if (!horaInicio) {
+                    e.horaInicio = 'Selecciona la hora de inicio.';
+                } else if (horaInicio < '08:00' || horaInicio > '17:30') {
+                    e.horaInicio = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (!horaFin) {
+                    e.horaFin = 'Selecciona la hora de fin.';
+                } else if (horaFin < '08:00' || horaFin > '17:30') {
+                    e.horaFin = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (horaInicio && horaFin && horaFin <= horaInicio) {
+                    e.horaFin = 'La hora de fin debe ser posterior a la de inicio.';
+                }
+            } else {
+                if (tiempoEstimadoMins <= 0) {
+                    e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+                }
             }
 
-            // Validación: Responsables obligatorios
             if (esEdicion) {
                 if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
+            } else if (!modoCarrito) {
+                if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
             } else {
-                // En modo creación/carrito, verificamos el técnico principal seleccionado
                 if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico principal.';
             }
         }
-        return e;
-    };
 
-    const resetFormFields = () => {
-        setTitulo(''); setDescripcion(''); setCategoria('');
-        setMostrarDescripcion(false);
-        setPlanta(''); setArea(''); setPrioridad('');
-        setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo(''); setFechaVencimiento('');
-        setTiempoEstimadoMins(0); setSubmitted(false);
-        setIsDropdownOpen(false);
-        setMaquinaId('');
-        setMaquinaInfo(null);
+        return e;
     };
 
     const handleAgregarAlCarrito = () => {
@@ -858,16 +1007,24 @@ export const TicketFormModal = ({
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
             prioridad, clasificacion, tipo, fechaVencimiento,
-            tiempoEstimado: tiempoEstimadoMins, esRutina,
+            tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
             responsables: tecnicoCartId ? [tecnicoCartId] : [],
             maquinaId: maquinaId ? Number(maquinaId) : null,
+            modoRangoHoras,
+            horaInicio: modoRangoHoras ? horaInicio : null,
+            horaFin: modoRangoHoras ? horaFin : null,
+            horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
         }]);
-        
-        // Solo reseteamos lo que cambia por tarea. El contexto (planta, área, etc) se mantiene.
+
         setTitulo('');
         setDescripcion('');
-        setMostrarDescripcion(false);
         setTiempoEstimadoMins(0);
+        setHoraInicio('');
+        setHoraFin('');
+        setPlanta('');
+        setArea('');
+        setClasificacion('PREVENTIVO');
         setSubmitted(false);
         setIsDropdownOpen(false);
         setMaquinaId('');
@@ -878,48 +1035,28 @@ export const TicketFormModal = ({
         setCarrito(prev => prev.filter(item => item._id !== _id));
     };
 
-    const handleAgregarTecnicoItem = (itemId, techId) => {
+    const handleAgregarTecnicoItem = (_id, techId) => {
         setCarrito(prev => prev.map(item =>
-            item._id === itemId
-                ? { ...item, responsables: [...new Set([...item.responsables, techId])] }
+            item._id === _id
+                ? { ...item, responsables: [...(item.responsables || []), techId] }
                 : item
         ));
     };
 
-    const handleQuitarTecnicoItem = (itemId, techId) => {
+    const handleQuitarTecnicoItem = (_id, techId) => {
         setCarrito(prev => prev.map(item =>
-            item._id === itemId
-                ? { ...item, responsables: item.responsables.filter(id => id !== techId) }
+            item._id === _id
+                ? { ...item, responsables: (item.responsables || []).filter(id => id !== techId) }
                 : item
         ));
     };
 
-    const handleCambiarTecnicoItem = (itemId, techId) => {
+    const handleCambiarTecnicoItem = (_id, techId) => {
         setCarrito(prev => prev.map(item =>
-            item._id === itemId
+            item._id === _id
                 ? { ...item, responsables: [techId, ...(item.responsables || []).filter(id => id !== techId)] }
                 : item
         ));
-    };
-
-    const buildFormData = (item) => {
-        const fd = new FormData();
-        fd.append('titulo', item.titulo);
-        fd.append('descripcion', item.descripcion);
-        fd.append('clasificacion', item.clasificacion);
-        if (item.categoria) fd.append('categoria', item.categoria);
-        fd.append('planta', item.planta);
-        fd.append('area', item.area);
-        fd.append('prioridad', item.prioridad);
-        if (item.maquinaId) fd.append('maquinaId', String(item.maquinaId));
-        if (esAdmin) {
-            fd.append('tipo', item.tipo);
-            if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
-            if (!item.esRutina && item.tiempoEstimadoMins > 0)
-                fd.append('tiempoEstimado', String(item.tiempoEstimadoMins));
-            item.responsables.forEach(id => fd.append('responsables', id));
-        }
-        return fd;
     };
 
     const handleAddTecnicoEdit = (idStr) => {
@@ -941,22 +1078,33 @@ export const TicketFormModal = ({
             const fd = new FormData();
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
-            fd.append('clasificacion', clasificacion);
-            if (categoria) fd.append('categoria', categoria);
+            fd.append('categoria', categoria);
             fd.append('planta', planta);
             fd.append('area', area);
             fd.append('prioridad', prioridad);
-            if (maquinaId) fd.append('maquinaId', maquinaId);
+            fd.append('clasificacion', clasificacion);
+            fd.append('maquinaId', maquinaId ? String(maquinaId) : '');
+            
             if (esAdmin) {
                 fd.append('tipo', tipo);
                 if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-                if (!esRutina && tiempoEstimadoMins > 0)
-                    fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                
+                if (modoRangoHoras) {
+                    const isoInicio = localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio);
+                    const isoFin = localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin);
+                    if (isoInicio) fd.append('horaInicioProgramada', isoInicio);
+                    if (isoFin) fd.append('horaFinProgramada', isoFin);
+                } else {
+                    if (tiempoEstimadoMins > 0) fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                    fd.append('horaInicioProgramada', '');
+                    fd.append('horaFinProgramada', '');
+                }
                 responsables.forEach(id => fd.append('responsables', id));
             }
+
             try {
                 await onSuccess(fd);
-                setTecnicoCartId('');
+                clearDraft();
             } catch (err) {
                 const data = err?.response?.data;
                 let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
@@ -966,24 +1114,101 @@ export const TicketFormModal = ({
             return;
         }
 
-        if (carrito.length === 0) {
-            setBackendError('Agrega al menos una tarea antes de guardar.');
+        if (!modoCarrito) {
+            setSubmitted(true);
+            const errors = getErrors();
+            if (Object.keys(errors).length > 0) return;
+
+            const fd = new FormData();
+            fd.append('titulo', titulo);
+            fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
+            fd.append('categoria', categoria);
+            fd.append('planta', planta);
+            fd.append('area', area);
+            fd.append('prioridad', prioridad);
+            fd.append('clasificacion', clasificacion);
+            fd.append('maquinaId', maquinaId ? String(maquinaId) : '');
+            
+            if (esAdmin) {
+                fd.append('tipo', tipo);
+                if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
+                
+                if (modoRangoHoras) {
+                    const isoInicio = localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio);
+                    const isoFin = localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin);
+                    if (isoInicio) fd.append('horaInicioProgramada', isoInicio);
+                    if (isoFin) fd.append('horaFinProgramada', isoFin);
+                } else {
+                    if (tiempoEstimadoMins > 0) fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                }
+                responsables.forEach(id => fd.append('responsables', id));
+            }
+
+            try {
+                await onSuccess(fd);
+                clearDraft();
+            } catch (err) {
+                const data = err?.response?.data;
+                let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
+                if (Array.isArray(data?.errors)) msg = data.errors[0].message;
+                setBackendError(msg);
+            }
             return;
         }
 
-        const tieneTextoPendiente = (titulo && titulo.trim().length > 0) || (descripcion && descripcion.trim().length > 0);
-        if (tieneTextoPendiente) {
-            setBackendError("Tienes una tarea a medio escribir en el formulario. Agrégala a la lista o limpia los campos antes de guardar.");
+        // Modo Carrito (Guardar en lote)
+        let finalCarrito = [...carrito];
+        if (titulo.trim()) {
+            setSubmitted(true);
+            const errors = getErrors();
+            if (Object.keys(errors).length > 0) {
+                setBackendError("El mantenimiento actual tiene errores. Corrígelos o limpia los campos.");
+                return;
+            }
+
+            finalCarrito.push({
+                _id: `${Date.now()}-${Math.random()}`,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+                prioridad, clasificacion, tipo, fechaVencimiento,
+                tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
+                responsables: tecnicoCartId ? [tecnicoCartId] : [],
+                maquinaId: maquinaId ? Number(maquinaId) : null,
+                modoRangoHoras,
+                horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
+            });
+        }
+
+        if (finalCarrito.length === 0) {
+            setBackendError('Agrega al menos un mantenimiento a la lista antes de guardar.');
             return;
         }
 
         try {
-            const batchPayloads = carrito.map(item => ({
-                ...item,
-                fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null
-            }));
+            const batchPayloads = finalCarrito.map(item => {
+                const payload = {
+                    titulo: item.titulo,
+                    descripcion: item.descripcion,
+                    categoria: item.categoria,
+                    planta: item.planta,
+                    area: item.area,
+                    prioridad: item.prioridad,
+                    clasificacion: item.clasificacion,
+                    tipo: item.tipo,
+                    fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
+                    responsables: item.responsables.map(Number),
+                    maquinaId: item.maquinaId
+                };
+                if (item.modoRangoHoras) {
+                    payload.horaInicioProgramada = item.horaInicioProgramada;
+                    payload.horaFinProgramada = item.horaFinProgramada;
+                } else {
+                    payload.tiempoEstimado = item.tiempoEstimado;
+                }
+                return payload;
+            });
             await onSuccess(batchPayloads);
-            setTecnicoCartId('');
+            clearDraft();
         } catch (err) {
             const data = err?.response?.data;
             let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
@@ -999,7 +1224,6 @@ export const TicketFormModal = ({
     const isManana = fechaVencimiento === mananaLocal;
 
     const fe = submitted ? getErrors() : {};
-    const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
 
     return (
         <Modal
@@ -1007,10 +1231,10 @@ export const TicketFormModal = ({
             onClose={onClose}
             className={cn("w-full", modoCarrito ? "md:max-w-5xl xl:max-w-6xl" : "md:max-w-4xl lg:max-w-5xl")}
         >
-            <ModalHeader title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Reportar problema'} onClose={onClose} />
+            <ModalHeader title={esEdicion ? 'Editar Mantenimiento' : esAdmin ? 'Nuevo Mantenimiento' : 'Reportar Falla'} onClose={onClose} />
 
             <ModalBody>
-                <div className={cn("flex gap-6", modoCarrito ? "flex-col lg:flex-row" : "flex-col")}>
+                <div className={cn("flex gap-6", modoCarrito ? "flex-col lg:flex-row lg:items-start" : "flex-col")}>
 
                     {/* ── PANEL IZQUIERDO: Formulario ── */}
                     <div className={cn(
@@ -1018,30 +1242,44 @@ export const TicketFormModal = ({
                         modoCarrito && "max-h-[55vh] md:max-h-[62vh] lg:max-h-[68vh]"
                     )}>
                         {backendError && (
-                            <div className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700 shrink-0 mb-3">
+                            <div className="flex items-center justify-between gap-2 px-4 py-3 text-sm font-semibold rounded-md bg-rose-50 border border-rose-200 text-rose-700 shrink-0 mb-3 animate-in fade-in duration-250">
                                 <div className="flex items-center gap-2">
                                     <Icon name="error" size="sm" />
                                     <span>{backendError}</span>
                                 </div>
-                                {backendError.includes("medio escribir") && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            resetFormFields();
-                                            setBackendError('');
-                                        }}
-                                        className="text-xs font-bold underline hover:text-rose-900 cursor-pointer ml-auto shrink-0"
-                                    >
-                                        Limpiar campos
-                                    </button>
-                                )}
                             </div>
                         )}
 
                         <div className={cn(
                             "flex flex-col gap-4",
-                            modoCarrito ? "flex-1 overflow-y-auto pr-3 custom-scrollbar pb-3" : ""
+                            modoCarrito ? "flex-1 overflow-y-auto pr-3 custom-scrollbar pb-1" : ""
                         )}>
+
+                        {/* ── SWITCH DE MODO LISTA (Crear en lote o guardar individual) ── */}
+                        {esAdmin && !esEdicion && !isMobile && (
+                            <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-1 shrink-0 select-none">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-700">Crear varios mantenimientos (Lista)</span>
+                                    <span className="text-[10px] text-slate-400">Permite registrar múltiples mantenimientos en lote</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setModoLista(!modoLista)}
+                                    disabled={isSubmitting || carrito.length > 0}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-slate-350 transition-colors duration-200 ease-in-out focus:outline-none",
+                                        modoLista ? "bg-marca-primario border-marca-primario" : "bg-slate-200"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                                            modoLista ? "translate-x-4" : "translate-x-0"
+                                        )}
+                                    />
+                                </button>
+                            </div>
+                        )}
 
                         {esAdmin && tecnicos.length > 0 && (
                             modoCarrito ? (
@@ -1072,7 +1310,6 @@ export const TicketFormModal = ({
                                             }
                                         }}
                                         disabled={isSubmitting}
-                                        placeholder="Buscar y seleccionar técnico..."
                                     />
                                     {fe.responsables && <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1"><Icon name="error" size="xs" /> {fe.responsables}</p>}
 
@@ -1082,17 +1319,13 @@ export const TicketFormModal = ({
                                         return (
                                             <div className={cn(
                                                 'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs',
-                                                sinTareas
-                                                    ? 'bg-estado-resuelto/5 border-estado-resuelto/20 text-estado-resuelto'
-                                                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                                                sinTareas ? 'bg-estado-resuelto/5 border-estado-resuelto/20 text-estado-resuelto' : 'bg-slate-100 border-slate-200 text-slate-600'
                                             )}>
                                                 <Icon name={sinTareas ? 'check_circle' : 'assignment'} size="xs" className="shrink-0" />
                                                 {sinTareas ? (
                                                     <span><strong>{tecnicoCart.nombre}</strong> no tiene tareas activas — ideal para asignar.</span>
                                                 ) : (
-                                                    <span>
-                                                        <strong>{tecnicoCart.nombre}</strong> tiene {(wl.asignadas + wl.enProgreso + wl.enPausa)} tarea(s) activa(s).
-                                                    </span>
+                                                    <span><strong>{tecnicoCart.nombre}</strong> tiene {(wl.asignadas + wl.enProgreso + wl.enPausa)} tarea(s) activa(s).</span>
                                                 )}
                                             </div>
                                         );
@@ -1100,10 +1333,10 @@ export const TicketFormModal = ({
                                 </div>
                             ) : (
                                 <div className={cn("flex flex-col gap-2 transition-[padding] duration-300", isDropdownOpen ? "pb-[260px]" : "pb-0")}>
-                                    <Label error={!!fe.responsables}>Técnicos asignados *</Label>
+                                    <Label error={!!fe.responsables}>Técnicos responsables *</Label>
                                     <TecnicoDropdown
                                         opciones={opcionesDisponiblesEdit}
-                                        onAdd={handleAddTecnicoEdit}
+                                        onAdd={(idStr) => setResponsables(prev => [...prev, idStr])}
                                         disabled={isSubmitting || opcionesDisponiblesEdit.length === 0}
                                         onToggle={setIsDropdownOpen}
                                     />
@@ -1111,23 +1344,22 @@ export const TicketFormModal = ({
                                     {responsables.length > 0 ? (
                                         <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
                                             {responsables.map(id => (
-                                                <TecnicoChip key={id} tecnico={tecnicoMapEdit[id]} onRemove={() => handleRemoveTecnicoEdit(id)} />
+                                                <TecnicoChip key={id} tecnico={tecnicoMapEdit[id]} onRemove={() => setResponsables(prev => prev.filter(x => x !== id))} />
                                             ))}
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-dashed border-slate-300 text-slate-400 text-xs italic min-h-12">
-                                            <Icon name="engineering" size="sm" /> Sin técnicos asignados
+                                            <Icon name="engineering" size="sm" /> Sin responsables asignados
                                         </div>
                                     )}
                                 </div>
                             )
                         )}
 
-
                         {/* ── TÍTULO ── */}
                         <div className="flex flex-col gap-1.5">
                             <div className="flex justify-between items-center">
-                                <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
+                                <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título del mantenimiento *</Label>
                                 <span className={`text-[10px] font-bold ${titulo.length >= MAX_TITULO ? 'text-estado-rechazado' : 'text-slate-400'}`}>
                                     {titulo.length}/{MAX_TITULO}
                                 </span>
@@ -1135,69 +1367,31 @@ export const TicketFormModal = ({
                             <Input id="tf-titulo" value={titulo}
                                 onChange={(e) => setTitulo(e.target.value.slice(0, MAX_TITULO))}
                                 error={!!fe.titulo} helperText={fe.titulo}
-                                placeholder="Ej. Fuga de aire en compresor principal"
+                                placeholder="Ej. Cambio de bandas, calibración de sensores, limpieza profunda de moldes"
                                 disabled={isSubmitting || lockBaseFields} />
                         </div>
 
-                        {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
-                        <div className={cn(
-                            "grid gap-3 grid-cols-1",
-                            (esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) === 4
-                                ? "md:grid-cols-4"
-                                : (esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) === 3
-                                    ? "md:grid-cols-3"
-                                    : "md:grid-cols-2"
-                        )}>
-
-                            {esAdmin && (
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
-                                    <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
-                                        error={!!fe.tipo} helperText={fe.tipo}
-                                        disabled={isSubmitting || lockBaseFields}>
-                                        <option value="" disabled hidden>Selecciona…</option>
-                                        {isTicket && <option value="TICKET">Ticket</option>}
-                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                    </Select>
-                                </div>
-                            )}
-                            
+                        {/* ── FILA 1: Tipo | Clasificación | Prioridad ── */}
+                        <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría de la tarea *</Label>
-                                <Select id="tf-cat" value={categoria} onChange={(e) => {
-                                    const val = e.target.value;
-                                    setCategoria(val);
-                                    if (val === 'RUTINA') {
-                                        setClasificacion('RUTINA');
-                                    } else if (val !== 'MAQUINARIA') {
-                                        setClasificacion('PREVENTIVO');
-                                    }
-
-                                    // Si no es MAQUINARIA, limpiar toda la maquinaria y ubicaciones para evitar huerfanos (PWA-Proof)
-                                    if (val !== 'MAQUINARIA') {
-                                        setMaquinaId('');
-                                        setMaquinaInfo(null);
-                                        setPlanta('');
-                                        setArea('');
-                                    }
-                                }}
-                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
+                                <Label htmlFor="tf-tipo" error={!!fe.tipo}>Tipo de tarea *</Label>
+                                <Select id="tf-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
+                                    error={!!fe.tipo} helperText={fe.tipo}
+                                    disabled={isSubmitting || lockBaseFields || !esAdmin}>
                                     <option value="" disabled hidden>Selecciona…</option>
-                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                    {isTicket && <option value="TICKET">Ticket</option>}
+                                    {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                 </Select>
                             </div>
 
-                            {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
-                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
-                                    <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
-                                        error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
-                                        <option value="" disabled hidden>Selecciona…</option>
-                                        <option value="PREVENTIVO">Preventivo</option>
-                                        <option value="CORRECTIVO">Correctivo</option>
-                                    </Select>
-                                </div>
-                            )}
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="tf-clasif" error={!!fe.clasificacion}>Mantenimiento (Clasificación) *</Label>
+                                <Select id="tf-clasif" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
+                                    error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting || lockBaseFields}>
+                                    <option value="" disabled hidden>Selecciona…</option>
+                                    {CLASIFICACIONES_MANTENIMIENTO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                </Select>
+                            </div>
 
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="tf-pri" error={!!fe.prioridad}>Prioridad *</Label>
@@ -1209,51 +1403,49 @@ export const TicketFormModal = ({
                             </div>
                         </div>
 
-                        {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
-                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
-                                    {validatingMaquina && (
-                                        <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
-                                            <Icon name="sync" size="xs" className="animate-spin" /> Validando...
-                                        </span>
-                                    )}
-                                </div>
-                                <SearchableSelect
-                                    options={opcionesMaquinas}
-                                    value={maquinaId}
-                                    onChange={(selectedId) => {
-                                        if (!selectedId) {
-                                            setMaquinaId('');
-                                            setMaquinaInfo(null);
-                                            setPlanta('');
-                                            setArea('');
-                                            return;
-                                        }
-                                        setMaquinaId(selectedId);
-                                        const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
-                                        if (maq) {
-                                            setMaquinaInfo(maq);
-                                            setPlanta(maq.planta || '');
-                                            setArea(maq.area || '');
-                                        }
-                                    }}
-                                    placeholder="Seleccionar máquina por código o nombre..."
-                                    searchPlaceholder="Buscar por MBCxxxx o nombre..."
-                                    allOptionText={null}
-                                    disabled={isSubmitting || lockBaseFields}
-                                    icon="precision_manufacturing"
-                                />
-                                {fe.maquinaId && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.maquinaId}</p>}
-                                {maquinaInfo && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
-                                        <Icon name="info" size="xs" />
-                                        <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
-                                    </div>
+                        {/* ── MÁQUINA (maquinaId) con SearchableSelect ── */}
+                        <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>Maquinaria afectada *</Label>
+                                {validatingMaquina && (
+                                    <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
+                                        <Icon name="sync" size="xs" className="animate-spin" /> Validando...
+                                    </span>
                                 )}
                             </div>
-                        )}
+                            <SearchableSelect
+                                options={opcionesMaquinas}
+                                value={maquinaId}
+                                onChange={(selectedId) => {
+                                    if (!selectedId) {
+                                        setMaquinaId('');
+                                        setMaquinaInfo(null);
+                                        setPlanta('');
+                                        setArea('');
+                                        return;
+                                    }
+                                    setMaquinaId(selectedId);
+                                    const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
+                                    if (maq) {
+                                        setMaquinaInfo(maq);
+                                        setPlanta(maq.planta || '');
+                                        setArea(maq.area || '');
+                                    }
+                                }}
+                                placeholder="Seleccionar máquina por código o nombre..."
+                                searchPlaceholder="Buscar por MBCxxxx o nombre..."
+                                allOptionText={null}
+                                disabled={isSubmitting || lockBaseFields}
+                                icon="precision_manufacturing"
+                            />
+                            {fe.maquinaId && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.maquinaId}</p>}
+                            {maquinaInfo && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
+                                    <Icon name="info" size="xs" />
+                                    <span>Línea/Proceso: <strong>{maquinaInfo.proceso}</strong> | Código de máquina: <strong>{maquinaInfo.codigo}</strong></span>
+                                </div>
+                            )}
+                        </div>
 
                         {/* ── FILA 2: Planta | Área ── */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1296,7 +1488,7 @@ export const TicketFormModal = ({
                             </div>
                         </div>
 
-                        {/* ── FILA 3: Fecha vencimiento | Tiempo estimado ── */}
+                        {/* ── FILA 3: Fecha vencimiento | Rango de Horas ── */}
                         {esAdmin && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
@@ -1323,10 +1515,92 @@ export const TicketFormModal = ({
                                         error={!!fe.fechaVencimiento} helperText={fe.fechaVencimiento}
                                         disabled={isSubmitting} style={{ minWidth: 0 }} />
                                 </div>
+
                                 <div className="flex flex-col gap-1.5">
-                                    <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
-                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
-                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
+                                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-h-[24px] h-auto">
+                                        <Label error={!!fe.tiempoEstimado || !!fe.horaInicio || !!fe.horaFin}>
+                                            {modoRangoHoras ? 'Rango Horario *' : 'Tiempo estimado *'}
+                                        </Label>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider shrink-0 select-none font-sans">
+                                                <Icon name="schedule" style={{ fontSize: '8px' }} className="shrink-0" /> Rango Horario
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setModoRangoHoras(!modoRangoHoras)}
+                                                disabled={isSubmitting}
+                                                className={cn(
+                                                    "relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border border-slate-355 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-1 focus:ring-marca-secundario/30",
+                                                    modoRangoHoras ? "bg-marca-primario border-marca-primario" : "bg-slate-200"
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-250 ease-in-out",
+                                                        modoRangoHoras ? "translate-x-3.5" : "translate-x-0.5"
+                                                    )}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {modoRangoHoras ? (
+                                        <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inicio</span>
+                                                    <input
+                                                        type="time"
+                                                        value={horaInicio}
+                                                        onChange={(e) => handleHoraInicioChange(e.target.value)}
+                                                        disabled={isSubmitting}
+                                                        min="08:00"
+                                                        max="17:30"
+                                                        step="300"
+                                                        className={cn(
+                                                            "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                            fe.horaInicio ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fin</span>
+                                                    <input
+                                                        type="time"
+                                                        value={horaFin}
+                                                        onChange={(e) => handleHoraFinChange(e.target.value)}
+                                                        disabled={isSubmitting}
+                                                        min="08:00"
+                                                        max="17:30"
+                                                        step="300"
+                                                        className={cn(
+                                                            "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                            fe.horaFin ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {(() => {
+                                                const label = getDurationLabel(horaInicio, horaFin);
+                                                if (!label) return null;
+                                                return (
+                                                    <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 font-bold">
+                                                        <Icon name="timer" size="xs" /> Duración: {label}
+                                                    </p>
+                                                );
+                                            })()}
+                                        </div>
+                                    ) : (
+                                        <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} error={!!fe.tiempoEstimado} />
+                                    )}
+
+                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.tiempoEstimado}</p>}
+                                    {(fe.horaInicio || fe.horaFin) && (
+                                        <p className="text-[10px] text-rose-600 font-bold mt-0.5">
+                                            {fe.horaInicio || fe.horaFin}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1337,7 +1611,7 @@ export const TicketFormModal = ({
                                 <button
                                     type="button"
                                     onClick={() => setMostrarDescripcion(true)}
-                                    className="flex items-center gap-1 text-xs font-bold text-marca-primario hover:text-marca-primario/80 transition-colors bg-marca-primario/5 hover:bg-marca-primario/10 px-3 py-1.5 rounded-lg border border-marca-primario/10 cursor-pointer"
+                                    className="flex items-center gap-1 text-xs font-bold text-marca-primario hover:text-marca-primario/80 transition-colors bg-marca-primario/5 hover:bg-marca-primario/10 px-3 py-1.5 rounded-lg border border-marca-primario/10 cursor-pointer text-left"
                                 >
                                     <Icon name="add" size="xs" />
                                     Más detalles (Descripción)
@@ -1347,41 +1621,34 @@ export const TicketFormModal = ({
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="flex justify-between items-center">
                                     <Label htmlFor="tf-desc" error={!!fe.descripcion}>Detalles adicionales / Descripción</Label>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                            {descripcion.length}/{MAX_DESCRIPCION}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setDescripcion('');
-                                                setMostrarDescripcion(false);
-                                            }}
-                                            disabled={isSubmitting || lockBaseFields}
-                                            className="text-[10px] text-rose-600 hover:text-rose-800 font-bold bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-                                        >
-                                            Quitar
-                                        </button>
-                                    </div>
+                                    <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
+                                        {descripcion.length}/{MAX_DESCRIPCION}
+                                    </span>
                                 </div>
-                                <Input id="tf-desc" multiline rows={modoCarrito ? 2 : 3} value={descripcion}
+                                <Input id="tf-desc" multiline rows={2} value={descripcion}
                                     onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
                                     error={!!fe.descripcion} helperText={fe.descripcion}
-                                    placeholder="Describe el problema o tarea con el mayor detalle posible…"
+                                    placeholder="Describe el problema o mantenimiento con el mayor detalle posible…"
                                     disabled={isSubmitting || lockBaseFields} />
                             </div>
                         )}
                         </div>
 
                         {modoCarrito && (
-                            <div className="shrink-0 flex items-center justify-between pt-3 mt-1 border-t border-slate-100 bg-white">
+                            <div className="shrink-0 flex items-center justify-between pt-2 mt-0.5 border-t border-slate-100/80 bg-white">
                                 <div className="flex items-center gap-3">
-                                    <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
+                                    <Button
+                                        variant="accion"
+                                        icon="add_circle"
+                                        onClick={handleAgregarAlCarrito}
+                                        disabled={isSubmitting}
+                                        className="!py-1 !px-2.5 !h-7.5 !text-xs"
+                                    >
                                         Agregar a la lista
                                     </Button>
                                     {carrito.length > 0 && (
-                                        <span className="text-xs text-slate-500 font-medium">
-                                            {carrito.length} tarea{carrito.length !== 1 ? 's' : ''} en lista
+                                        <span className="text-[11px] text-slate-500 font-bold">
+                                            {carrito.length} {carrito.length !== 1 ? 'mantenimientos' : 'mantenimiento'} en lista
                                         </span>
                                     )}
                                 </div>
@@ -1391,11 +1658,11 @@ export const TicketFormModal = ({
 
                     {/* ── PANEL DERECHO: Carrito ── */}
                     {modoCarrito && (
-                        <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col gap-3">
+                        <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col gap-3 max-h-[55vh] md:max-h-[62vh] lg:max-h-[68vh]">
                             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
                                 <div className="flex items-center gap-2">
                                     <Icon name="list_alt" size="sm" className="text-slate-500" />
-                                    <span className="text-sm font-bold text-slate-700">Lista de tareas</span>
+                                    <span className="text-sm font-bold text-slate-700">Lista de mantenimientos</span>
                                 </div>
                                 <div className="flex items-center gap-2.5">
                                     {carrito.length > 0 && (
@@ -1426,7 +1693,7 @@ export const TicketFormModal = ({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px] pr-0.5 custom-scrollbar">
+                                <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-0.5 custom-scrollbar pb-1">
                                     {carrito.map((item, i) => (
                                         <CarritoItem
                                             key={item._id}
@@ -1446,9 +1713,7 @@ export const TicketFormModal = ({
                             {carrito.length > 0 && (
                                 <div className={cn(
                                     'flex items-center gap-2 p-2.5 rounded-lg border text-xs transition-colors mt-auto',
-                                    tecnicoCart
-                                        ? 'bg-marca-primario/5 border-marca-primario/15 text-marca-primario'
-                                        : 'bg-slate-50 border-slate-200 text-slate-500'
+                                    tecnicoCart ? 'bg-marca-primario/5 border-marca-primario/15 text-marca-primario' : 'bg-slate-50 border-slate-200 text-slate-500'
                                 )}>
                                     <Icon name={tecnicoCart ? 'engineering' : 'person_off'} size="xs" className="shrink-0" />
                                     {tecnicoCart ? (
@@ -1466,11 +1731,8 @@ export const TicketFormModal = ({
             <ModalFooter>
                 <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
                 {modoCarrito ? (
-                    <Button variant="guardar" icon="save" isLoading={isSubmitting}
-                        disabled={carrito.length === 0} onClick={handleSubmit}>
-                        Guardar {carrito.length > 0
-                            ? `${carrito.length} tarea${carrito.length !== 1 ? 's' : ''}`
-                            : 'tareas'}
+                    <Button variant="guardar" icon="save" isLoading={isSubmitting} onClick={handleSubmit}>
+                        Guardar { (carrito.length + (titulo.trim() ? 1 : 0)) > 0 ? `${carrito.length + (titulo.trim() ? 1 : 0)} mantenimiento${(carrito.length + (titulo.trim() ? 1 : 0)) !== 1 ? 's' : ''}` : 'mantenimientos' }
                     </Button>
                 ) : (
                     <Button variant="guardar" icon="save" isLoading={isSubmitting} onClick={handleSubmit}>

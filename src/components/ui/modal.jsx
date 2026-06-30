@@ -67,7 +67,7 @@ export const ModalHeader = ({ title, onClose, className = "", children }) => (
 );
 
 export const ModalBody = ({ children, className = "" }) => (
-  <div className={cn("grow overflow-y-auto p-6 font-lectura", className)}>
+  <div className={cn("grow overflow-y-auto overflow-x-hidden p-6 font-lectura", className)}>
     {children}
   </div>
 );

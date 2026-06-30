@@ -2,20 +2,19 @@
 import React, { useState, useMemo } from 'react';
 import { GlassFab, Icon, Skeleton, ScrollToTopButton } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { HoyTicketCard } from '../components/hoy-mantenimientos/hoy-ticket-card';
-import { HoyDetailModal } from '../components/hoy-mantenimientos/hoy-detail-modal';
-import { MobileHoyFormModal } from '../components/hoy-mantenimientos/mobile-hoy-form-modal';
+import { MantenimientosTicketCard } from '../components/hoy-mantenimientos/mantenimientos-ticket-card';
+import { HoyDetailModal } from '../components/common/hoy-detail-modal';
+import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/tickets/components/historico/ticket-assign-modal';
-import { HoyStatusModal } from '../components/hoy-mantenimientos/hoy-status-modal';
+import { HoyStatusModal } from '../components/common/hoy-status-modal';
 import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
-import { MobileHoyFilterBar } from '../components/hoy-mantenimientos/mobile-hoy-filter-bar';
-import { HoySummaryBar } from '../components/hoy-mantenimientos/hoy-summary-bar';
-import { HoyTeamToggle } from '../components/hoy-mantenimientos/hoy-team-toggle';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
+import { MobileMantenimientosFilterBar } from '../components/hoy-mantenimientos/mobile-mantenimientos-filter-bar';
+import { HoySummaryBar } from '../components/common/hoy-summary-bar';
+import { HoyTeamToggle } from '../components/common/hoy-team-toggle';
+import { TicketsEmptyState } from '../components/common/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
-import { hardReload } from '@/utils/hard-reload';
-import { HoyAprobarPanel } from '../components/hoy-mantenimientos/hoy-aprobar-panel';
+import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
 const SKELETON_COUNT = 4;
 
@@ -34,39 +33,35 @@ const CardSkeleton = () => (
     </div>
 );
 
-const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => (
-    <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-sm w-full">
-        {[
-            { value: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
-            { value: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
-        ].map(({ value, label, icon, count, alert }) => (
-            <button
-                key={value}
-                type="button"
-                onClick={() => onChange(value)}
-                className={cn(
-                    'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-extrabold transition-all duration-200 relative cursor-pointer',
-                    selected === value
-                        ? 'bg-marca-secundario text-white shadow-md'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-55'
-                )}
-            >
-                <Icon name={icon} size="sm" />
-                <span>{label}</span>
-                {count > 0 && (
-                    <span className={cn(
-                        'min-w-4 h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center border border-white leading-none shadow-sm',
-                        selected === value
-                            ? 'bg-white text-marca-secundario'
-                            : alert ? 'bg-estado-rechazado text-white animate-pulse' : 'bg-slate-200 text-slate-600'
-                    )}>
-                        {count}
-                    </span>
-                )}
-            </button>
-        ))}
-    </div>
-);
+const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => {
+    const options = [
+        { id: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
+        { id: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
+    ];
+    const containerStyle = { display: 'inline-flex', padding: 4, borderRadius: 14, gap: 3, position: 'relative', overflow: 'hidden', ...glassBase('light'), width: '100%' };
+
+    return (
+        <div style={containerStyle}>
+            <GlassSheen />
+            {options.map((opt) => {
+                const isActive = selected === opt.id;
+                const activeStyle = { ...glassBase('primary'), borderRadius: 10, position: 'relative', overflow: 'hidden', flex: 1 };
+                const inactiveStyle = { borderRadius: 10, background: 'transparent', border: '1px solid transparent', position: 'relative', flex: 1 };
+
+                return (
+                    <button key={opt.id} onClick={() => onChange(opt.id)} style={isActive ? activeStyle : inactiveStyle} className="flex items-center justify-center gap-1.5 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10 cursor-pointer">
+                        {isActive && <GlassSheen />}
+                        <Icon name={opt.icon} size="xs" className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')} />
+                        <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>{opt.label}</span>
+                        {opt.count > 0 && (
+                            <span className={cn('text-[9px] font-extrabold px-1 py-0.5 rounded-full relative z-10 leading-none', isActive ? 'bg-white/25 text-white' : opt.alert ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-200 text-slate-600')}>{opt.count}</span>
+                        )}
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
 
 export const HoyMantenimientosMobile = ({
     tickets = [],
@@ -113,6 +108,12 @@ export const HoyMantenimientosMobile = ({
     totalAtrasadas,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const [detailTarget, setDetailTarget] = useState(null);
+    const [editTarget, setEditTarget] = useState(null);
+    const [statusTarget, setStatusTarget] = useState(null);
+    const [assignTarget, setAssignTarget] = useState(null);
+    const [reviewTarget, setReviewTarget] = useState(null);
+    const [cancelTarget, setCancelTarget] = useState(null);
 
     const isFilteringActive = !!(
         query.trim() ||
@@ -137,14 +138,26 @@ export const HoyMantenimientosMobile = ({
         if (onClearFilters) onClearFilters();
     };
 
-    // --- SEPARACIÓN DE AGENDA Y COLA ---
-    const agendaTickets = useMemo(() => tickets.filter(t => t.horaInicioProgramada), [tickets]);
-    const colaTickets = useMemo(() => tickets.filter(t => !t.horaInicioProgramada), [tickets]);
+    const sortedTickets = useMemo(() => {
+        const typeOrder = { TICKET: 1, PLANEADA: 2, EXTRAORDINARIA: 3 };
+        const critOrder = { A: 1, B: 2, C: 3 };
+        return [...tickets].sort((a, b) => {
+            const orderA = typeOrder[a.tipo] || 4;
+            const orderB = typeOrder[b.tipo] || 4;
+            if (orderA !== orderB) return orderA - orderB;
+
+            const critA = a.maquina?.criticidad ? (critOrder[a.maquina.criticidad] || 4) : 4;
+            const critB = b.maquina?.criticidad ? (critOrder[b.maquina.criticidad] || 4) : 4;
+            if (critA !== critB) return critA - critB;
+
+            return b.id - a.id;
+        });
+    }, [tickets]);
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in pb-28">
             <div className="flex flex-col gap-2">
-                <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
+                <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
                 <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} />
             </div>
 
@@ -152,7 +165,7 @@ export const HoyMantenimientosMobile = ({
 
             <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
 
-            <MobileHoyFilterBar
+            <MobileMantenimientosFilterBar
                 query={query}
                 onSearchChange={onSearchChange}
                 filtroEstado={filtroEstado}
@@ -183,7 +196,7 @@ export const HoyMantenimientosMobile = ({
                         <CardSkeleton key={i} />
                     ))}
                 </div>
-            ) : tickets.length === 0 ? (
+            ) : sortedTickets.length === 0 ? (
                 <div className="mt-10">
                     <TicketsEmptyState
                         isMobile={true}
@@ -196,52 +209,23 @@ export const HoyMantenimientosMobile = ({
                     />
                 </div>
             ) : (
-                <div className="flex flex-col gap-6">
-                    {/* SECCIÓN 1: AGENDA CRONOLÓGICA */}
-                    {agendaTickets.length > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1.5 px-1">
-                                <Icon name="schedule" className="text-marca-secundario shrink-0" size="sm" />
-                                <h3 className="font-bold text-slate-800 text-xs uppercase">Agenda Programada</h3>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                {agendaTickets.map(ticket => (
-                                    <HoyTicketCard
-                                        key={ticket.id}
-                                        ticket={ticket}
-                                        currentUser={currentUser}
-                                        tecnicos={tecnicos}
-                                        highlightId={highlightId}
-                                        onSave={onSave}
-                                        onChangeStatus={onChangeStatus}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SECCIÓN 2: COLA DE TRABAJO */}
-                    {(colaTickets.length > 0 || agendaTickets.length === 0) && (
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1.5 px-1">
-                                <Icon name="view_list" className="text-slate-500 shrink-0" size="sm" />
-                                <h3 className="font-bold text-slate-800 text-xs uppercase">Cola de Trabajo (Sin Hora)</h3>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                {colaTickets.map(ticket => (
-                                    <HoyTicketCard
-                                        key={ticket.id}
-                                        ticket={ticket}
-                                        currentUser={currentUser}
-                                        tecnicos={tecnicos}
-                                        highlightId={highlightId}
-                                        onSave={onSave}
-                                        onChangeStatus={onChangeStatus}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                <div className="flex flex-col gap-3">
+                    {sortedTickets.map(ticket => (
+                        <MantenimientosTicketCard
+                            key={ticket.id}
+                            ticket={ticket}
+                            currentUser={currentUser}
+                            tecnicos={tecnicos}
+                            highlightId={highlightId}
+                            onSave={onSave}
+                            onChangeStatus={setStatusTarget}
+                            onViewDetail={setDetailTarget}
+                            onEdit={setEditTarget}
+                            onAssign={setAssignTarget}
+                            onReview={setReviewTarget}
+                            onCancel={setCancelTarget}
+                        />
+                    ))}
                 </div>
             )}
 
@@ -252,6 +236,13 @@ export const HoyMantenimientosMobile = ({
             )}
 
             <ScrollToTopButton bottom="84px" />
+
+            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
+            <MobileHoyFormModal scope="mantenimientos" isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+            <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
         </div>
     );
 };
