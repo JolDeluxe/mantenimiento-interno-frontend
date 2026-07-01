@@ -37,6 +37,9 @@ export const createTicketsBatch = (tareas) =>
 export const rescheduleTicketsBatch = (payload) =>
     api.patch('/api/tickets/reschedule', payload);
 
+export const approveTicketsBatch = (payload) =>
+    api.patch('/api/tickets/approve-batch', payload);
+
 // ── Personal asignable ─────────────────────────────────────────────────────
 
 /**

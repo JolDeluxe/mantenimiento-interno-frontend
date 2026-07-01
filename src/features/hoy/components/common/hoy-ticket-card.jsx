@@ -190,8 +190,6 @@ export const HoyTicketCard = ({
     let baseClasses = 'border-slate-200';
     if (esRechazada) {
         baseClasses = 'border-estado-rechazado/40 bg-red-50/40';
-    } else if (vencida) {
-        baseClasses = 'border-orange-300/50 bg-orange-50/30';
     } else if (ticket.maquina && (ticket.clasificacion === 'CORRECTIVO' || ticket.tipo === 'TICKET')) {
         if (ticket.maquina.criticidad === 'A') {
             baseClasses = 'border-red-300/50 bg-red-50/60 shadow-[inset_4px_0_0_0_#ef4444]';
@@ -240,11 +238,6 @@ export const HoyTicketCard = ({
                                 'bg-slate-100 text-slate-500 border-slate-200/50'
                             )}>
                                 {ticket.clasificacion}
-                            </span>
-                        )}
-                        {vencida && !esRechazada && (
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-white bg-red-500 px-1.5 py-0.5 rounded-md shadow-sm">
-                                Atrasada
                             </span>
                         )}
                     </span>
@@ -314,7 +307,14 @@ export const HoyTicketCard = ({
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <div className="flex items-center gap-1">
-                        <TicketStatusBadge estado={ticket.estado} className="text-[9px] px-1.5 py-0.5" />
+                        {vencida ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
+                                <Icon name="warning" size="10px" />
+                                Atrasada
+                            </span>
+                        ) : (
+                            <TicketStatusBadge estado={ticket.estado} className="text-[9px] px-1.5 py-0.5" />
+                        )}
                         <Icon
                             name="keyboard_arrow_down"
                             size="sm"

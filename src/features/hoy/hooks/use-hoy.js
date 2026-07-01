@@ -12,53 +12,6 @@ const paramsToKey = (params = {}) => {
         }, {});
     return JSON.stringify(sorted);
 };
-const PRIORIDAD_VAL = {
-    CRITICA: 4,
-    ALTA: 3,
-    MEDIA: 2,
-    BAJA: 1
-};
-
-const sortHoyTicketsHelper = (ticketsList = []) => {
-    return [...ticketsList].sort((a, b) => {
-        // 1. Primero RECHAZADAS
-        const aRechazada = a.estado === 'RECHAZADO' ? 1 : 0;
-        const bRechazada = b.estado === 'RECHAZADO' ? 1 : 0;
-        if (aRechazada !== bRechazada) {
-            return bRechazada - aRechazada;
-        }
-
-        // 2. Luego ATRASADAS (isOverdue)
-        const aAtrasada = a.isOverdue ? 1 : 0;
-        const bAtrasada = b.isOverdue ? 1 : 0;
-        if (aAtrasada !== bAtrasada) {
-            return bAtrasada - aAtrasada;
-        }
-
-        // 3. Luego por HORA (si tiene horaInicioProgramada)
-        const aTieneHora = a.horaInicioProgramada ? 1 : 0;
-        const bTieneHora = b.horaInicioProgramada ? 1 : 0;
-        
-        if (aTieneHora && bTieneHora) {
-            if (a.horaInicioProgramada < b.horaInicioProgramada) return -1;
-            if (a.horaInicioProgramada > b.horaInicioProgramada) return 1;
-        }
-        
-        if (aTieneHora !== bTieneHora) {
-            return bTieneHora - aTieneHora;
-        }
-
-        // 4. Si no tienen hora (o si tienen la misma hora), ordenar por PRIORIDAD
-        const aPrio = PRIORIDAD_VAL[a.prioridad] || 0;
-        const bPrio = PRIORIDAD_VAL[b.prioridad] || 0;
-        if (aPrio !== bPrio) {
-            return bPrio - aPrio;
-        }
-
-        // Fallback final por ID
-        return b.id - a.id;
-    });
-};
 
 export const useHoy = (scope = 'general') => {
     const [tickets, setTickets] = useState([]);
@@ -67,6 +20,7 @@ export const useHoy = (scope = 'general') => {
     const [submitting, setSubmitting] = useState(false);
     const [meta, setMeta] = useState({ totalFiltrado: 0, totalPages: 1 });
     // Métricas server-side — sincronizadas con el mismo where que la tabla
+    const [metricas, setMetricas] = useState({});
     const [resumenEstados, setResumenEstados] = useState({});
     const [totalAbsoluto, setTotalAbsoluto] = useState(0);
  
@@ -83,14 +37,16 @@ export const useHoy = (scope = 'general') => {
             if (snapshot?.data) {
                 const cached = snapshot.data;
                 const data = Array.isArray(cached.data) ? cached.data : cached;
-                const sortedData = sortHoyTicketsHelper(data);
-                setTickets(sortedData);
+                setTickets(data);
                 if (cached.pagination) {
                     setMeta({
                         totalFiltrado: cached.pagination.total ?? 0,
                         totalPages: cached.pagination.totalPages ?? 1,
                     });
                 }
+                setMetricas(cached.metricas ?? {});
+                setResumenEstados(cached.resumenEstados ?? {});
+                setTotalAbsoluto(cached.totalAbsoluto ?? cached.pagination?.total ?? 0);
             }
         } catch {}
  
@@ -102,25 +58,25 @@ export const useHoy = (scope = 'general') => {
         try {
             const res = await getHoyTickets(queryParams);
             if (Array.isArray(res)) {
-                const sorted = sortHoyTicketsHelper(res);
-                setTickets(sorted);
-                setMeta({ totalFiltrado: sorted.length, totalPages: 1 });
+                setTickets(res);
+                setMeta({ totalFiltrado: res.length, totalPages: 1 });
+                setMetricas({});
                 setResumenEstados({});
-                setTotalAbsoluto(sorted.length);
-                await writeSnapshot('tickets', sorted, cacheKey);
+                setTotalAbsoluto(res.length);
+                await writeSnapshot('tickets', res, cacheKey);
             } else {
                 const pagination = res.pagination ?? {};
                 const data = Array.isArray(res.data) ? res.data : [];
-                const sortedData = sortHoyTicketsHelper(data);
-                setTickets(sortedData);
+                setTickets(data);
                 setMeta({
                     totalFiltrado: pagination.total ?? 0,
                     totalPages: pagination.totalPages ?? 1,
                 });
                 // Consumir métricas server-side directamente
+                setMetricas(res.metricas ?? {});
                 setResumenEstados(res.resumenEstados ?? {});
                 setTotalAbsoluto(res.totalAbsoluto ?? pagination.total ?? 0);
-                await writeSnapshot('tickets', { ...res, data: sortedData }, cacheKey);
+                await writeSnapshot('tickets', { ...res, data }, cacheKey);
             }
         } catch (err) {
             console.warn('[useHoy] fetch error:', err);
@@ -169,6 +125,7 @@ export const useHoy = (scope = 'general') => {
         loading,
         submitting,
         // Métricas sincronizadas con el filtro activo (vienen del backend)
+        metricas,
         resumenEstados,
         totalAbsoluto,
         fetchTickets,

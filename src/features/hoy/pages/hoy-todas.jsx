@@ -33,8 +33,8 @@ export default function HoyTodasPage() {
         updateTicket,
         changeStatus,
         // Métricas server-side (mismo where que la tabla)
+        metricas,
         resumenEstados,
-        totalAbsoluto,
     } = useHoy('general');
 
     const [dateOffset, setDateOffset] = useState(0);
@@ -109,21 +109,18 @@ export default function HoyTodasPage() {
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    const totalHoy = useMemo(() => dateOffset === 0 ? allTickets.length : 0, [allTickets, dateOffset]);
-    const totalManana = useMemo(() => dateOffset === 1 ? allTickets.length : 0, [allTickets, dateOffset]);
-    const ticketsAtrasados = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
-    const totalAtrasadas = useMemo(() => ticketsAtrasados.length, [ticketsAtrasados]);
-    const totalRechazadas = useMemo(() => allTickets.filter(t => t.estado === 'RECHAZADO').length, [allTickets]);
+    const totalHoy = metricas?.totalHoy ?? 0;
+    const totalManana = metricas?.totalManana ?? 0;
+    const totalAtrasadas = metricas?.totalAtrasadas ?? 0;
+    const totalRechazadas = metricas?.totalRechazadas ?? 0;
+    const equipoCount = metricas?.equipoCount ?? 0;
+    const misTareasCount = metricas?.misTareasCount ?? 0;
+    const backlogTicketsForDrawer = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
 
     // conteos y totalParaSummary vienen del backend (resumenEstados del response)
     // Esto garantiza sincronía 1:1 entre la tabla y las tarjetas de resumen.
     const conteos = resumenEstados;
-    const totalParaSummary = totalAbsoluto;
-
-    const equipoCount = useMemo(() => allTickets.length, [allTickets]);
-    const misTareasCount = useMemo(() => {
-        return allTickets.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id))).length;
-    }, [allTickets, currentUser]);
+    const totalParaSummary = metricas?.totalResumen ?? 0;
 
     const handleCreate = async (payloads) => {
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
@@ -172,9 +169,7 @@ export default function HoyTodasPage() {
         }
     };
 
-    const toApproveCount = useMemo(() => {
-        return allTickets.filter(t => t.estado === 'RESUELTO').length;
-    }, [allTickets]);
+    const toApproveCount = resumenEstados?.RESUELTO ?? 0;
 
     const sharedProps = {
         tickets: allTickets,
@@ -231,7 +226,7 @@ export default function HoyTodasPage() {
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}
                 onClose={() => setIsDrawerAmnistiaOpen(false)}
-                ticketsAtrasados={ticketsAtrasados}
+                ticketsAtrasados={backlogTicketsForDrawer}
                 onSuccessSincronizacion={loadTickets}
                 scope="general"
             />

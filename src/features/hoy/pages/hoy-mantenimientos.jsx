@@ -32,8 +32,8 @@ export default function HoyMantenimientosPage() {
         updateTicket,
         changeStatus,
         // Métricas server-side (mismo where que la tabla)
+        metricas,
         resumenEstados,
-        totalAbsoluto,
     } = useHoy('mantenimientos');
 
     const [dateOffset, setDateOffset] = useState(0);
@@ -41,6 +41,8 @@ export default function HoyMantenimientosPage() {
     const [query, setQuery] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
     const [filtroTipo, setFiltroTipo] = useState('');
+    const [filtroClasificacion, setFiltroClasificacion] = useState('');
+    const [filtroCriticidad, setFiltroCriticidad] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
     const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
@@ -54,6 +56,8 @@ export default function HoyMantenimientosPage() {
         setQuery('');
         setFiltroEstado('TODOS');
         setFiltroTipo('');
+        setFiltroClasificacion('');
+        setFiltroCriticidad('');
         setFiltroPrioridad('');
         setFiltroCategoria('');
         setFiltroResponsable('');
@@ -87,6 +91,8 @@ export default function HoyMantenimientosPage() {
         }
 
         if (filtroTipo) params.tipo = filtroTipo;
+        if (filtroClasificacion) params.clasificacion = filtroClasificacion;
+        if (filtroCriticidad) params.criticidadMaquina = filtroCriticidad;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroCategoria) params.categoria = filtroCategoria;
 
@@ -99,7 +105,7 @@ export default function HoyMantenimientosPage() {
         if (mostrarAtrasadas) params.vencidos = true;
 
         return params;
-    }, [dateOffset, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
+    }, [dateOffset, query, filtroEstado, filtroTipo, filtroClasificacion, filtroCriticidad, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar los mantenimientos.'));
@@ -108,21 +114,18 @@ export default function HoyMantenimientosPage() {
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
-    const totalHoy = useMemo(() => dateOffset === 0 ? allTickets.length : 0, [allTickets, dateOffset]);
-    const totalManana = useMemo(() => dateOffset === 1 ? allTickets.length : 0, [allTickets, dateOffset]);
-    const ticketsAtrasados = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
-    const totalAtrasadas = useMemo(() => ticketsAtrasados.length, [ticketsAtrasados]);
-    const totalRechazadas = useMemo(() => allTickets.filter(t => t.estado === 'RECHAZADO').length, [allTickets]);
+    const totalHoy = metricas?.totalHoy ?? 0;
+    const totalManana = metricas?.totalManana ?? 0;
+    const totalAtrasadas = metricas?.totalAtrasadas ?? 0;
+    const totalRechazadas = metricas?.totalRechazadas ?? 0;
+    const equipoCount = metricas?.equipoCount ?? 0;
+    const misTareasCount = metricas?.misTareasCount ?? 0;
+    const backlogTicketsForDrawer = useMemo(() => allTickets.filter(t => t.isOverdue === true), [allTickets]);
 
     // conteos y totalParaSummary vienen del backend (resumenEstados del response)
     // scope=mantenimientos forzado en backend garantiza métricas de solo tareas con máquina.
     const conteos = resumenEstados;
-    const totalParaSummary = totalAbsoluto;
-
-    const equipoCount = useMemo(() => allTickets.length, [allTickets]);
-    const misTareasCount = useMemo(() => {
-        return allTickets.filter(t => t.responsables?.some(r => String(r.id) === String(currentUser?.id))).length;
-    }, [allTickets, currentUser]);
+    const totalParaSummary = metricas?.totalResumen ?? 0;
 
     const handleCreate = async (payloads) => {
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
@@ -171,9 +174,7 @@ export default function HoyMantenimientosPage() {
         }
     };
 
-    const toApproveCount = useMemo(() => {
-        return allTickets.filter(t => t.estado === 'RESUELTO').length;
-    }, [allTickets]);
+    const toApproveCount = resumenEstados?.RESUELTO ?? 0;
 
     const sharedProps = {
         tickets: allTickets,
@@ -196,6 +197,10 @@ export default function HoyMantenimientosPage() {
         onEstadoChange: setFiltroEstado,
         filtroTipo,
         onTipoChange: setFiltroTipo,
+        filtroClasificacion,
+        onClasificacionChange: setFiltroClasificacion,
+        filtroCriticidad,
+        onCriticidadChange: setFiltroCriticidad,
         filtroPrioridad,
         onPrioridadChange: setFiltroPrioridad,
         filtroCategoria,
@@ -230,7 +235,7 @@ export default function HoyMantenimientosPage() {
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}
                 onClose={() => setIsDrawerAmnistiaOpen(false)}
-                ticketsAtrasados={ticketsAtrasados}
+                ticketsAtrasados={backlogTicketsForDrawer}
                 onSuccessSincronizacion={loadTickets}
                 scope="mantenimientos"
             />

@@ -6,7 +6,6 @@ const ESTADOS_ACTIVOS = [
     { id: 'ASIGNADA', label: 'Asignada', color: 'asignada' },
     { id: 'EN_PROGRESO', label: 'En Progreso', color: 'en_progreso' },
     { id: 'EN_PAUSA', label: 'En Pausa', color: 'en_pausa' },
-    { id: 'RESUELTO', label: 'Resuelto', color: 'resuelto' },
 ];
 
 const SummaryBarSkeleton = ({ count }) => (
@@ -47,7 +46,7 @@ export const HoySummaryBar = ({
     loading,
 }) => {
     if (loading && totalParaSummary === 0 && Object.keys(conteos).length === 0) {
-        return <SummaryBarSkeleton count={5} />;
+        return <SummaryBarSkeleton count={ESTADOS_ACTIVOS.length} />;
     }
 
     const items = ESTADOS_ACTIVOS.map((e) => ({

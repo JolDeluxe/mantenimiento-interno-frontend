@@ -189,9 +189,7 @@ export const ActividadesTicketCard = ({
 
     const baseClasses = esRechazada
         ? 'border-estado-rechazado/40 bg-red-50/40'
-        : vencida
-            ? 'border-orange-300/50 bg-orange-50/30'
-            : 'border-slate-200';
+        : 'border-slate-200';
 
     return (
         <div
@@ -231,11 +229,6 @@ export const ActividadesTicketCard = ({
                                 'bg-slate-100 text-slate-500 border-slate-200/50'
                             )}>
                                 {ticket.clasificacion}
-                            </span>
-                        )}
-                        {vencida && !esRechazada && (
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider text-white bg-red-500 px-1.5 py-0.5 rounded-md shadow-sm">
-                                Atrasada
                             </span>
                         )}
                     </span>
@@ -286,7 +279,14 @@ export const ActividadesTicketCard = ({
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <div className="flex items-center gap-1">
-                        <TicketStatusBadge estado={ticket.estado} className="text-[9px] px-1.5 py-0.5" />
+                        {vencida ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
+                                <Icon name="warning" size="10px" />
+                                Atrasada
+                            </span>
+                        ) : (
+                            <TicketStatusBadge estado={ticket.estado} className="text-[9px] px-1.5 py-0.5" />
+                        )}
                         <Icon
                             name="keyboard_arrow_down"
                             size="sm"

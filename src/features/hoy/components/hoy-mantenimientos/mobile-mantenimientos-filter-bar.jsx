@@ -4,6 +4,17 @@ import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 
+const CLASIFICACIONES_MANTENIMIENTO = [
+    { value: 'CORRECTIVO', label: 'Correctivos', icon: 'report_problem', tone: 'danger' },
+    { value: 'PREVENTIVO', label: 'Preventivos', icon: 'build_circle', tone: 'primary' },
+];
+
+const CRITICIDADES_MAQUINA = [
+    { value: 'A', label: 'Crit. A', tone: 'danger' },
+    { value: 'B', label: 'Crit. B', tone: 'warning' },
+    { value: 'C', label: 'Crit. C', tone: 'light' },
+];
+
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
         typeof o === 'string'
@@ -24,7 +35,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
             type="text"
             value={localValue}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Buscar..."
+            placeholder="Buscar tarea o máquina..."
             className="w-full pl-8 pr-7 py-2.5 text-xs bg-transparent relative z-10 text-slate-700
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 rounded-[14px]
                        transition-all placeholder:text-slate-500 h-[38px]"
@@ -73,11 +84,39 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
     );
 };
 
+const getChipStyle = (active, tone) => {
+    if (!active) return { ...glassBase('light'), borderRadius: 999 };
+    if (tone === 'danger') return { ...glassBase('danger'), borderRadius: 999 };
+    if (tone === 'warning') return { ...glassBase('light'), background: '#f59e0b', borderRadius: 999 };
+    if (tone === 'primary') return { ...glassBase('primary'), borderRadius: 999 };
+    return { ...glassBase('light'), background: '#475569', borderRadius: 999 };
+};
+
+const QuickGlassChip = ({ active, icon, label, tone = 'light', onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        style={getChipStyle(active, tone)}
+        className={`
+            relative overflow-hidden flex items-center gap-1.5 h-[32px] px-3 shrink-0 transition-all duration-200 active:scale-95
+            ${active ? 'text-white' : 'text-slate-600'}
+        `}
+    >
+        <GlassSheen />
+        {icon && <Icon name={icon} size="xs" className="relative z-10" />}
+        <span className="relative z-10 text-[11px] font-black whitespace-nowrap">{label}</span>
+    </button>
+);
+
 export const MobileMantenimientosFilterBar = ({
     query,
     onSearchChange,
     filtroTipo,
     onTipoChange,
+    filtroClasificacion,
+    onClasificacionChange,
+    filtroCriticidad,
+    onCriticidadChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -116,12 +155,14 @@ export const MobileMantenimientosFilterBar = ({
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     const hasActiveFilters = Boolean(
-        filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
+        filtroTipo || filtroClasificacion || filtroCriticidad || filtroPrioridad || filtroCategoria || filtroResponsable ||
         mostrarAtrasadas || mostrarRechazadas
     );
 
     const handleClearFilters = () => {
         if (filtroTipo) onTipoChange('');
+        if (filtroClasificacion) onClasificacionChange('');
+        if (filtroCriticidad) onCriticidadChange('');
         if (filtroPrioridad) onPrioridadChange('');
         if (filtroCategoria) onCategoriaChange('');
         if (filtroResponsable) onResponsableChange('');
@@ -171,7 +212,7 @@ export const MobileMantenimientosFilterBar = ({
 
     return (
         <div className="flex flex-col gap-2.5 w-full">
-            <div className="flex items-center gap-1.5 overflow-x-hidden">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
                 <SearchInput
                     localValue={localValue}
                     onChange={setLocalValue}
@@ -197,20 +238,6 @@ export const MobileMantenimientosFilterBar = ({
                         </span>
                     )}
                 </button>
-
-                {/* Botón Reprogramar contextual: solo cuando filtro de atrasadas activo y admin */}
-                {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
-                    <button
-                        type="button"
-                        onClick={onOpenDrawerAmnistia}
-                        style={{ ...glassBase('light'), borderRadius: 14, background: '#fefce8', borderColor: '#fcd34d' }}
-                        className="relative overflow-hidden flex items-center gap-1 h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 text-amber-700 animate-in fade-in slide-in-from-right-2 duration-200"
-                    >
-                        <GlassSheen />
-                        <Icon name="schedule_send" size="sm" className="relative z-10" />
-                        <span className="relative z-10 text-[11px] font-black">Reprogramar</span>
-                    </button>
-                )}
 
                 <button
                     type="button"
@@ -245,6 +272,49 @@ export const MobileMantenimientosFilterBar = ({
                         <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-marca-acento rounded-full border-2 border-white z-20"></span>
                     )}
                 </button>
+            </div>
+
+            {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
+                <button
+                    type="button"
+                    onClick={onOpenDrawerAmnistia}
+                    style={{ ...glassBase('light'), borderRadius: 14, background: '#fefce8', borderColor: '#fcd34d' }}
+                    className="relative overflow-hidden flex items-center justify-center gap-2 h-[38px] w-full transition-all duration-200 active:scale-[0.98] text-amber-700 animate-in fade-in slide-in-from-top-1 duration-200"
+                >
+                    <GlassSheen />
+                    <Icon name="schedule_send" size="sm" className="relative z-10" />
+                    <span className="relative z-10 text-[11px] font-black">Reprogramar atrasadas</span>
+                </button>
+            )}
+
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
+                <QuickGlassChip
+                    active={filtroTipo === 'TICKET'}
+                    icon="warning"
+                    label="Reportes"
+                    tone="warning"
+                    onClick={() => onTipoChange(filtroTipo === 'TICKET' ? '' : 'TICKET')}
+                />
+                {CLASIFICACIONES_MANTENIMIENTO.map((item) => (
+                    <QuickGlassChip
+                        key={item.value}
+                        active={filtroClasificacion === item.value}
+                        icon={item.icon}
+                        label={item.label}
+                        tone={item.tone}
+                        onClick={() => onClasificacionChange(filtroClasificacion === item.value ? '' : item.value)}
+                    />
+                ))}
+                {CRITICIDADES_MAQUINA.map((item) => (
+                    <QuickGlassChip
+                        key={item.value}
+                        active={filtroCriticidad === item.value}
+                        icon="precision_manufacturing"
+                        label={item.label}
+                        tone={item.tone}
+                        onClick={() => onCriticidadChange(filtroCriticidad === item.value ? '' : item.value)}
+                    />
+                ))}
             </div>
 
             {showFilters && (

@@ -789,21 +789,46 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
     }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, maquinaId, tecnicoCartId, carrito, modoLista, responsables, esEdicion]);
 
     const clearDraft = () => {
-        localStorage.removeItem('hoy_actividades_titulo');
-        localStorage.removeItem('hoy_actividades_descripcion');
-        localStorage.removeItem('hoy_actividades_maquinaId');
-        localStorage.removeItem('hoy_actividades_carrito');
-        localStorage.removeItem('hoy_actividades_responsables');
+        [
+            'hoy_actividades_titulo',
+            'hoy_actividades_descripcion',
+            'hoy_actividades_categoria',
+            'hoy_actividades_planta',
+            'hoy_actividades_area',
+            'hoy_actividades_prioridad',
+            'hoy_actividades_tipo',
+            'hoy_actividades_fechaVencimiento',
+            'hoy_actividades_tiempoEstimado',
+            'hoy_actividades_modoRangoHoras',
+            'hoy_actividades_horaInicio',
+            'hoy_actividades_horaFin',
+            'hoy_actividades_maquinaId',
+            'hoy_actividades_tecnicoCartId',
+            'hoy_actividades_carrito',
+            'hoy_actividades_modoLista',
+            'hoy_actividades_responsables',
+        ].forEach((key) => localStorage.removeItem(key));
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
+        setCategoria('');
+        setPlanta('');
+        setArea('');
+        setPrioridad('MEDIA');
+        setTipo('PLANEADA');
+        setFechaVencimiento(hoyLocal);
         setMaquinaId('');
         setMaquinaInfo(null);
         setTiempoEstimadoMins(0);
+        setModoRangoHoras(false);
         setHoraInicio('');
         setHoraFin('');
+        setTecnicoCartId('');
         setCarrito([]);
+        setModoLista(true);
         setResponsables([]);
+        setSubmitted(false);
+        setIsDropdownOpen(false);
     };
 
     useEffect(() => {

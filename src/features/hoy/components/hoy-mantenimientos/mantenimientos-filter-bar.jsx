@@ -4,6 +4,17 @@ import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
 import { HoyTeamToggle } from '../common/hoy-team-toggle';
 
+const CLASIFICACIONES_MANTENIMIENTO = [
+    { value: 'CORRECTIVO', label: 'Correctivos', icon: 'report_problem' },
+    { value: 'PREVENTIVO', label: 'Preventivos', icon: 'build_circle' },
+];
+
+const CRITICIDADES_MAQUINA = [
+    { value: 'A', label: 'Crit. A', color: 'red' },
+    { value: 'B', label: 'Crit. B', color: 'amber' },
+    { value: 'C', label: 'Crit. C', color: 'slate' },
+];
+
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
         typeof o === 'string'
@@ -20,7 +31,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) =>
             type="text"
             value={localValue}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Buscar tarea, área, ID…"
+            placeholder="Buscar tarea, máquina, área, ID…"
             className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-xl bg-white
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/20
                        focus:border-marca-secundario transition-all placeholder:text-slate-400 h-[38px]"
@@ -36,11 +47,38 @@ const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) =>
     </div>
 );
 
+const QuickFilterButton = ({ active, icon, children, color = 'slate', onClick }) => {
+    const activeClasses = {
+        amber: 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600',
+        red: 'bg-red-600 text-white border-red-600 hover:bg-red-700',
+        blue: 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700',
+        slate: 'bg-slate-800 text-white border-slate-800 hover:bg-slate-900',
+    }[color] || 'bg-slate-800 text-white border-slate-800 hover:bg-slate-900';
+
+    return (
+        <Button
+            type="button"
+            variant="filtro_gris"
+            size="sm"
+            icon={icon}
+            isActive={active}
+            onClick={onClick}
+            className={`h-[34px] px-3 flex-none justify-center ${active ? activeClasses : ''}`}
+        >
+            {children}
+        </Button>
+    );
+};
+
 export const MantenimientosFilterBar = ({
     query,
     onSearchChange,
     filtroTipo,
     onTipoChange,
+    filtroClasificacion,
+    onClasificacionChange,
+    filtroCriticidad,
+    onCriticidadChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -148,6 +186,43 @@ export const MantenimientosFilterBar = ({
                         )}
                     </div>
                 </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full overflow-x-auto pb-0.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex-none mr-1">
+                    Rápidos
+                </span>
+                <QuickFilterButton
+                    active={filtroTipo === 'TICKET'}
+                    icon="warning"
+                    color="amber"
+                    onClick={() => onTipoChange(filtroTipo === 'TICKET' ? '' : 'TICKET')}
+                >
+                    Reportes
+                </QuickFilterButton>
+                {CLASIFICACIONES_MANTENIMIENTO.map((item) => (
+                    <QuickFilterButton
+                        key={item.value}
+                        active={filtroClasificacion === item.value}
+                        icon={item.icon}
+                        color={item.value === 'CORRECTIVO' ? 'red' : 'blue'}
+                        onClick={() => onClasificacionChange(filtroClasificacion === item.value ? '' : item.value)}
+                    >
+                        {item.label}
+                    </QuickFilterButton>
+                ))}
+                <span className="h-6 w-px bg-slate-200 mx-1 flex-none" />
+                {CRITICIDADES_MAQUINA.map((item) => (
+                    <QuickFilterButton
+                        key={item.value}
+                        active={filtroCriticidad === item.value}
+                        icon="precision_manufacturing"
+                        color={item.color}
+                        onClick={() => onCriticidadChange(filtroCriticidad === item.value ? '' : item.value)}
+                    >
+                        {item.label}
+                    </QuickFilterButton>
+                ))}
             </div>
 
             <div className="flex items-center gap-3 w-full flex-wrap">

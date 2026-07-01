@@ -1,5 +1,5 @@
 // src/features/hoy/views/hoy-mantenimientos-desktop.jsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
 import { HoyAddButton } from '../components/common/hoy-add-button';
@@ -57,6 +57,10 @@ export const HoyMantenimientosDesktop = ({
     onEstadoChange,
     filtroTipo,
     onTipoChange,
+    filtroClasificacion,
+    onClasificacionChange,
+    filtroCriticidad,
+    onCriticidadChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -90,11 +94,14 @@ export const HoyMantenimientosDesktop = ({
     totalAtrasadas,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const totalPeriodo = dateOffset === 0 ? totalHoy : totalManana;
 
     const isFilteringActive = !!(
         query.trim() ||
         (filtroEstado && filtroEstado !== 'TODOS') ||
         filtroTipo ||
+        filtroClasificacion ||
+        filtroCriticidad ||
         filtroPrioridad ||
         filtroCategoria ||
         filtroResponsable ||
@@ -106,6 +113,8 @@ export const HoyMantenimientosDesktop = ({
         onSearchChange('');
         onEstadoChange('TODOS');
         onTipoChange('');
+        onClasificacionChange('');
+        onCriticidadChange('');
         onPrioridadChange('');
         onCategoriaChange('');
         onResponsableChange('');
@@ -114,22 +123,6 @@ export const HoyMantenimientosDesktop = ({
         if (onClearFilters) onClearFilters();
     };
 
-    const sortedTickets = useMemo(() => {
-        const typeOrder = { TICKET: 1, PLANEADA: 2, EXTRAORDINARIA: 3 };
-        const critOrder = { A: 1, B: 2, C: 3 };
-        return [...tickets].sort((a, b) => {
-            const orderA = typeOrder[a.tipo] || 4;
-            const orderB = typeOrder[b.tipo] || 4;
-            if (orderA !== orderB) return orderA - orderB;
-
-            const critA = a.maquina?.criticidad ? (critOrder[a.maquina.criticidad] || 4) : 4;
-            const critB = b.maquina?.criticidad ? (critOrder[b.maquina.criticidad] || 4) : 4;
-            if (critA !== critB) return critA - critB;
-
-            return b.id - a.id;
-        });
-    }, [tickets]);
-
     return (
         <div className="flex flex-col gap-5 relative">
             <div>
@@ -137,7 +130,7 @@ export const HoyMantenimientosDesktop = ({
                 <p className="text-sm text-slate-500 mt-0.5">
                     {loading ? 'Cargando…' : (
                         <>
-                            {tickets.length} mantenimiento{tickets.length !== 1 ? 's' : ''}
+                            {totalPeriodo} mantenimiento{totalPeriodo !== 1 ? 's' : ''}
                             {dateOffset === 0 ? ' para hoy' : ' para mañana'}
                             {dateOffset === 0 && totalAtrasadas > 0 && (
                                 <span className="ml-2 font-semibold text-estado-rechazado">· {totalAtrasadas} atrasado{totalAtrasadas !== 1 ? 's' : ''}</span>
@@ -165,6 +158,10 @@ export const HoyMantenimientosDesktop = ({
                 onEstadoChange={onEstadoChange}
                 filtroTipo={filtroTipo}
                 onTipoChange={onTipoChange}
+                filtroClasificacion={filtroClasificacion}
+                onClasificacionChange={onClasificacionChange}
+                filtroCriticidad={filtroCriticidad}
+                onCriticidadChange={onCriticidadChange}
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
@@ -200,7 +197,7 @@ export const HoyMantenimientosDesktop = ({
                 </div>
             ) : (
                 <MantenimientosTicketTable
-                    tickets={sortedTickets}
+                    tickets={tickets}
                     loading={loading}
                     submitting={submitting}
                     currentUser={currentUser}

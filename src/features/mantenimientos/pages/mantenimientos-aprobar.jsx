@@ -9,6 +9,7 @@ import { MantenimientosAprobarDesktop } from '../views/mantenimientos-aprobar-de
 import { MantenimientosAprobarMobile } from '../views/mantenimientos-aprobar-mobile';
 import { AprobarDetailModal } from '../components/aprobar/aprobar-detail-modal';
 import { AprobarReviewModal } from '../components/aprobar/aprobar-review-modal';
+import { AprobarBatchDrawer } from '../components/aprobar/aprobar-batch-drawer';
 
 export default function MantenimientosAprobarPage() {
     const isDesktop = useIsDesktop();
@@ -19,6 +20,7 @@ export default function MantenimientosAprobarPage() {
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isApproveBatchOpen, setIsApproveBatchOpen] = useState(false);
 
     const {
         mantenimientos: tickets,
@@ -32,7 +34,7 @@ export default function MantenimientosAprobarPage() {
     const queryPayload = useMemo(() => ({
         estado: 'RESUELTO',
         page,
-        limit: 12,
+        limit: 100, // fetch all or a large batch for quick approval
     }), [page]);
 
     const loadTickets = useCallback(() => {
@@ -87,6 +89,7 @@ export default function MantenimientosAprobarPage() {
                     pagination={pagination}
                     onPageChange={setPage}
                     onRefresh={loadTickets}
+                    onOpenApproveBatch={() => setIsApproveBatchOpen(true)}
                 />
             ) : (
                 <MantenimientosAprobarMobile
@@ -97,6 +100,7 @@ export default function MantenimientosAprobarPage() {
                     pagination={pagination}
                     onPageChange={setPage}
                     onRefresh={loadTickets}
+                    onOpenApproveBatch={() => setIsApproveBatchOpen(true)}
                 />
             )}
 
@@ -116,6 +120,16 @@ export default function MantenimientosAprobarPage() {
                     onConfirm={handleConfirmReview}
                     isSubmitting={isSubmitting}
                     currentUser={currentUser}
+                />
+            )}
+
+            {isApproveBatchOpen && (
+                <AprobarBatchDrawer
+                    isOpen={isApproveBatchOpen}
+                    onClose={() => setIsApproveBatchOpen(false)}
+                    tickets={tickets}
+                    onSuccess={loadTickets}
+                    scope="mantenimientos"
                 />
             )}
         </>

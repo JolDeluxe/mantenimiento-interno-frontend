@@ -37,6 +37,9 @@ export const createMantenimientosBatch = (tareas) =>
 export const rescheduleMantenimientosBatch = (payload) =>
     api.patch('/api/tickets/reschedule', payload);
 
+export const approveMantenimientosBatch = (payload) =>
+    api.patch('/api/tickets/approve-batch', payload);
+
 // ── Personal asignable ─────────────────────────────────────────────────────
 
 export const getAsignables = async () => {

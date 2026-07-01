@@ -11,27 +11,39 @@ export const MantenimientosAprobarDesktop = ({
     onViewDetails,
     pagination,
     onPageChange,
-    onRefresh
+    onRefresh,
+    onOpenApproveBatch
 }) => {
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
     return (
         <div className="flex flex-col gap-5 animate-fade-in relative">
-            <div className="w-full">
-                <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
-                    Control de Aprobaciones
-                </h2>
-                <div className="text-sm text-slate-500 mt-0.5">
-                    {isLoading ? (
-                        <Skeleton className="h-4 w-48 mt-1" />
-                    ) : total === 0 ? (
-                        <span>No hay tareas resueltas esperando validación</span>
-                    ) : (
-                        <>
-                            Hay <span className="font-extrabold text-green-800 text-base">{total}</span> tarea{total !== 1 ? 's' : ''} resuelta{total !== 1 ? 's' : ''} pendiente{total !== 1 ? 's' : ''} por aprobar
-                        </>
-                    )}
+            <div className="w-full flex items-center justify-between">
+                <div>
+                    <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
+                        Control de Aprobaciones
+                    </h2>
+                    <div className="text-sm text-slate-500 mt-0.5">
+                        {isLoading ? (
+                            <Skeleton className="h-4 w-48 mt-1" />
+                        ) : total === 0 ? (
+                            <span>No hay tareas resueltas esperando validación</span>
+                        ) : (
+                            <>
+                                Hay <span className="font-extrabold text-green-800 text-base">{total}</span> tarea{total !== 1 ? 's' : ''} resuelta{total !== 1 ? 's' : ''} pendiente{total !== 1 ? 's' : ''} por aprobar
+                            </>
+                        )}
+                    </div>
                 </div>
+                {total > 0 && !isLoading && (
+                    <button
+                        onClick={onOpenApproveBatch}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-sm transition-all cursor-pointer shrink-0"
+                    >
+                        <Icon name="fact_check" size="sm" />
+                        <span>Aprobación Rápida</span>
+                    </button>
+                )}
             </div>
 
             {(total > 0 || isLoading) && (

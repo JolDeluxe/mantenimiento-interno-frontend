@@ -1,5 +1,5 @@
 // src/features/hoy/views/hoy-mantenimientos-mobile.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { GlassFab, Icon, Skeleton, ScrollToTopButton } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { MantenimientosTicketCard } from '../components/hoy-mantenimientos/mantenimientos-ticket-card';
@@ -75,6 +75,10 @@ export const HoyMantenimientosMobile = ({
     onEstadoChange,
     filtroTipo,
     onTipoChange,
+    filtroClasificacion,
+    onClasificacionChange,
+    filtroCriticidad,
+    onCriticidadChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -119,6 +123,8 @@ export const HoyMantenimientosMobile = ({
         query.trim() ||
         (filtroEstado && filtroEstado !== 'TODOS') ||
         filtroTipo ||
+        filtroClasificacion ||
+        filtroCriticidad ||
         filtroPrioridad ||
         filtroCategoria ||
         filtroResponsable ||
@@ -130,6 +136,8 @@ export const HoyMantenimientosMobile = ({
         onSearchChange('');
         onEstadoChange('TODOS');
         onTipoChange('');
+        onClasificacionChange('');
+        onCriticidadChange('');
         onPrioridadChange('');
         onCategoriaChange('');
         onResponsableChange('');
@@ -137,22 +145,6 @@ export const HoyMantenimientosMobile = ({
         if (mostrarRechazadas) onToggleRechazadas();
         if (onClearFilters) onClearFilters();
     };
-
-    const sortedTickets = useMemo(() => {
-        const typeOrder = { TICKET: 1, PLANEADA: 2, EXTRAORDINARIA: 3 };
-        const critOrder = { A: 1, B: 2, C: 3 };
-        return [...tickets].sort((a, b) => {
-            const orderA = typeOrder[a.tipo] || 4;
-            const orderB = typeOrder[b.tipo] || 4;
-            if (orderA !== orderB) return orderA - orderB;
-
-            const critA = a.maquina?.criticidad ? (critOrder[a.maquina.criticidad] || 4) : 4;
-            const critB = b.maquina?.criticidad ? (critOrder[b.maquina.criticidad] || 4) : 4;
-            if (critA !== critB) return critA - critB;
-
-            return b.id - a.id;
-        });
-    }, [tickets]);
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in pb-28">
@@ -172,6 +164,10 @@ export const HoyMantenimientosMobile = ({
                 onEstadoChange={onEstadoChange}
                 filtroTipo={filtroTipo}
                 onTipoChange={onTipoChange}
+                filtroClasificacion={filtroClasificacion}
+                onClasificacionChange={onClasificacionChange}
+                filtroCriticidad={filtroCriticidad}
+                onCriticidadChange={onCriticidadChange}
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
@@ -196,7 +192,7 @@ export const HoyMantenimientosMobile = ({
                         <CardSkeleton key={i} />
                     ))}
                 </div>
-            ) : sortedTickets.length === 0 ? (
+            ) : tickets.length === 0 ? (
                 <div className="mt-10">
                     <TicketsEmptyState
                         isMobile={true}
@@ -210,7 +206,7 @@ export const HoyMantenimientosMobile = ({
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    {sortedTickets.map(ticket => (
+                    {tickets.map(ticket => (
                         <MantenimientosTicketCard
                             key={ticket.id}
                             ticket={ticket}

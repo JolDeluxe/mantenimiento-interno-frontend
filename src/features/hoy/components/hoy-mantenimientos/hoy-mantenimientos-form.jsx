@@ -797,21 +797,46 @@ export const HoyMantenimientosForm = ({ isOpen, onClose, ticketAEditar = null, c
     }, [titulo, descripcion, planta, area, prioridad, clasificacion, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, maquinaId, tecnicoCartId, carrito, modoLista, responsables, esEdicion]);
 
     const clearDraft = () => {
-        localStorage.removeItem('hoy_mantenimientos_titulo');
-        localStorage.removeItem('hoy_mantenimientos_descripcion');
-        localStorage.removeItem('hoy_mantenimientos_maquinaId');
-        localStorage.removeItem('hoy_mantenimientos_carrito');
-        localStorage.removeItem('hoy_mantenimientos_responsables');
+        [
+            'hoy_mantenimientos_titulo',
+            'hoy_mantenimientos_descripcion',
+            'hoy_mantenimientos_planta',
+            'hoy_mantenimientos_area',
+            'hoy_mantenimientos_prioridad',
+            'hoy_mantenimientos_clasificacion',
+            'hoy_mantenimientos_tipo',
+            'hoy_mantenimientos_fechaVencimiento',
+            'hoy_mantenimientos_tiempoEstimado',
+            'hoy_mantenimientos_modoRangoHoras',
+            'hoy_mantenimientos_horaInicio',
+            'hoy_mantenimientos_horaFin',
+            'hoy_mantenimientos_maquinaId',
+            'hoy_mantenimientos_tecnicoCartId',
+            'hoy_mantenimientos_carrito',
+            'hoy_mantenimientos_modoLista',
+            'hoy_mantenimientos_responsables',
+        ].forEach((key) => localStorage.removeItem(key));
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
+        setPlanta('');
+        setArea('');
+        setPrioridad('MEDIA');
+        setClasificacion('PREVENTIVO');
+        setTipo('PLANEADA');
+        setFechaVencimiento(hoyLocal);
         setMaquinaId('');
         setMaquinaInfo(null);
         setTiempoEstimadoMins(0);
+        setModoRangoHoras(false);
         setHoraInicio('');
         setHoraFin('');
+        setTecnicoCartId('');
         setCarrito([]);
+        setModoLista(true);
         setResponsables([]);
+        setSubmitted(false);
+        setIsDropdownOpen(false);
     };
 
     useEffect(() => {

@@ -67,6 +67,13 @@ const ResponsablesCell = ({ lista }) => {
     );
 };
 
+const OverdueStatusBadge = () => (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
+        <Icon name="warning" size="xs" />
+        Atrasada
+    </span>
+);
+
 export const HoyTicketTable = ({
     tickets = [],
     loading = false,
@@ -121,11 +128,6 @@ export const HoyTicketTable = ({
                             <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1">
                                 {row.titulo}
                             </span>
-                            {row.isOverdue && (
-                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                    <Icon name="warning" size="xs" /> ATRASADA
-                                </span>
-                            )}
                             {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" />ENTREGADA CON RETRASO
@@ -258,6 +260,7 @@ export const HoyTicketTable = ({
             headerClassName: 'w-[13%] min-w-[110px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-5 w-20 mx-auto rounded-md" />;
+                if (row.isOverdue) return <OverdueStatusBadge />;
                 return <TicketStatusBadge estado={row.estado} />;
             },
         },
@@ -424,7 +427,6 @@ export const HoyTicketTable = ({
                         CANCELADA: 'border-l-estado-cancelada',
                     }[row.estado] || 'border-l-transparent';
 
-                    // Si es reporte correctivo de maquinaria: aplicar color según criticidad de la máquina
                     if (row.maquina && (row.clasificacion === 'CORRECTIVO' || row.tipo === 'TICKET')) {
                         if (row.maquina.criticidad === 'A') {
                             return `bg-red-50/65 hover:bg-red-100/60 border-l-4 border-l-red-500 font-medium`;
@@ -436,7 +438,6 @@ export const HoyTicketTable = ({
                     }
 
                     if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
-                    if (row.isOverdue) return `bg-red-50/40 hover:bg-red-50/70 border-l-4 ${borderCls}`;
                     return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
                 }}
                 hidePagination={true}

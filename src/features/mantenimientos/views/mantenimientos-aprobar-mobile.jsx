@@ -28,7 +28,8 @@ export const MantenimientosAprobarMobile = ({
     onViewDetails,
     pagination,
     onPageChange,
-    onRefresh
+    onRefresh,
+    onOpenApproveBatch
 }) => {
     const hasContent = !isLoading && tickets && tickets.length > 0;
     const hasPaginator = hasContent && pagination && pagination.totalPages > 1;
@@ -39,13 +40,24 @@ export const MantenimientosAprobarMobile = ({
     return (
         <>
             <div className={cn('flex flex-col px-4 gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
-                <div className="px-1">
-                    <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-1 rounded-md uppercase tracking-wider">
-                        Revisión de Evidencias
-                    </span>
-                    <p className="text-xs text-slate-400 mt-2">
-                        Autoriza la conclusión de las actividades o rebota el ticket con observaciones para su reprocesamiento.
-                    </p>
+                <div className="px-1 flex items-center justify-between">
+                    <div>
+                        <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-1 rounded-md uppercase tracking-wider">
+                            Revisión de Evidencias
+                        </span>
+                        <p className="text-xs text-slate-400 mt-2">
+                            Autoriza la conclusión de las actividades o rebota el ticket con observaciones para su reprocesamiento.
+                        </p>
+                    </div>
+                    {hasContent && (
+                        <button
+                            onClick={onOpenApproveBatch}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 active:scale-95 shadow-md transition-all cursor-pointer shrink-0"
+                        >
+                            <Icon name="fact_check" size="xs" />
+                            <span>Aprobar Lote</span>
+                        </button>
+                    )}
                 </div>
 
                 {isLoading ? (

@@ -20,7 +20,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) =>
             type="text"
             value={localValue}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Buscar tarea, área, ID…"
+            placeholder="Buscar tarea, máquina, área, ID…"
             className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-xl bg-white
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/20
                        focus:border-marca-secundario transition-all placeholder:text-slate-400 h-[38px]"

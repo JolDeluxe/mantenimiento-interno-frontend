@@ -90,6 +90,7 @@ export const HoyActividadesDesktop = ({
     totalAtrasadas,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const totalPeriodo = dateOffset === 0 ? totalHoy : totalManana;
 
     const isFilteringActive = !!(
         query.trim() ||
@@ -121,7 +122,7 @@ export const HoyActividadesDesktop = ({
                 <p className="text-sm text-slate-555 mt-0.5">
                     {loading ? 'Cargando…' : (
                         <>
-                            {tickets.length} actividad{tickets.length !== 1 ? 'es' : ''}
+                            {totalPeriodo} actividad{totalPeriodo !== 1 ? 'es' : ''}
                             {dateOffset === 0 ? ' para hoy' : ' para mañana'}
                             {dateOffset === 0 && totalAtrasadas > 0 && (
                                 <span className="ml-2 font-semibold text-estado-rechazado">· {totalAtrasadas} atrasada{totalAtrasadas !== 1 ? 's' : ''}</span>

@@ -24,7 +24,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
             type="text"
             value={localValue}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Buscar..."
+            placeholder="Buscar tarea o máquina..."
             className="w-full pl-8 pr-7 py-2.5 text-xs bg-transparent relative z-10 text-slate-700
                        focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 rounded-[14px]
                        transition-all placeholder:text-slate-500 h-[38px]"
@@ -171,7 +171,7 @@ export const MobileActividadesFilterBar = ({
 
     return (
         <div className="flex flex-col gap-2.5 w-full">
-            <div className="flex items-center gap-1.5 overflow-x-hidden">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
                 <SearchInput
                     localValue={localValue}
                     onChange={setLocalValue}
@@ -197,20 +197,6 @@ export const MobileActividadesFilterBar = ({
                         </span>
                     )}
                 </button>
-
-                {/* Botón Reprogramar contextual: solo cuando filtro de atrasadas activo y admin */}
-                {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
-                    <button
-                        type="button"
-                        onClick={onOpenDrawerAmnistia}
-                        style={{ ...glassBase('light'), borderRadius: 14, background: '#fefce8', borderColor: '#fcd34d' }}
-                        className="relative overflow-hidden flex items-center gap-1 h-[38px] px-2.5 shrink-0 transition-all duration-200 active:scale-95 text-amber-700 animate-in fade-in slide-in-from-right-2 duration-200"
-                    >
-                        <GlassSheen />
-                        <Icon name="schedule_send" size="sm" className="relative z-10" />
-                        <span className="relative z-10 text-[11px] font-black">Reprogramar</span>
-                    </button>
-                )}
 
                 <button
                     type="button"
@@ -246,6 +232,19 @@ export const MobileActividadesFilterBar = ({
                     )}
                 </button>
             </div>
+
+            {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
+                <button
+                    type="button"
+                    onClick={onOpenDrawerAmnistia}
+                    style={{ ...glassBase('light'), borderRadius: 14, background: '#fefce8', borderColor: '#fcd34d' }}
+                    className="relative overflow-hidden flex items-center justify-center gap-2 h-[38px] w-full transition-all duration-200 active:scale-[0.98] text-amber-700 animate-in fade-in slide-in-from-top-1 duration-200"
+                >
+                    <GlassSheen />
+                    <Icon name="schedule_send" size="sm" className="relative z-10" />
+                    <span className="relative z-10 text-[11px] font-black">Reprogramar atrasadas</span>
+                </button>
+            )}
 
             {showFilters && (
                 <div

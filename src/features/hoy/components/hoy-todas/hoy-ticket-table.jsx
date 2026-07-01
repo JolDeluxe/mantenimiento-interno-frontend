@@ -115,11 +115,6 @@ export const HoyTicketTable = ({
                             <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
                                 {row.titulo}
                             </span>
-                            {row.isOverdue && (
-                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                    <Icon name="warning" size="xs" /> ATRASADA
-                                </span>
-                            )}
                             {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" />ENTREGADA CON RETRASO
@@ -360,7 +355,6 @@ export const HoyTicketTable = ({
                     }[row.estado] || 'border-l-transparent';
 
                     if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
-                    if (row.isOverdue) return `bg-red-50/40 hover:bg-red-50/70 border-l-4 ${borderCls}`;
                     return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
                 }}
                 hidePagination={true}
