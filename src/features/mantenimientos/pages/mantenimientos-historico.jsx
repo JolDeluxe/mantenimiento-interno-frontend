@@ -144,17 +144,96 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         }
     }, [changeStatus, loadTickets]);
 
-    const pagination = useMemo(() => ({
-        total: meta?.totalFiltrado ?? 0,
-        totalPages: meta?.totalPages ?? 1,
-        page,
-        limit: LIMIT,
-    }), [meta, page]);
+    const handleClearFilters = useCallback(() => {
+        setQuery('');
+        setFiltroEstado('TODOS');
+        setFiltroTipo('');
+        setFiltroPrioridad('');
+        setFiltroCategoria('');
+        setFiltroClasificacion('');
+        setFiltroResponsable('');
+        setFiltroPlanta('');
+        setFiltroArea('');
+        setFiltroYear(null);
+        setFiltroMonth(0);
+        setFiltroProgramacion({ type: '', start: '', end: '' });
+        setFiltroConclusion({ type: '', start: '', end: '' });
+        setMostrarAtrasadas(false);
+        setMostrarRechazadas(false);
+        setMostrarPapelera(false);
+    }, []);
+
+    const handleExport = useCallback(() => {
+        if (!tickets || tickets.length === 0) {
+            notify.warn('No hay datos para exportar.');
+            return;
+        }
+        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creación', 'Vencimiento', 'Finalización'];
+        const formatFechaNumerica = (f) => f ? new Date(f).toLocaleDateString('es-MX') : '';
+        const rows = tickets.map(t => [
+            t.id,
+            t.titulo,
+            t.estado,
+            t.prioridad,
+            t.tipo,
+            t.clasificacion,
+            t.planta,
+            t.area,
+            t.responsables?.map(r => r.nombre).join(', ') || 'Sin asignar',
+            formatFechaNumerica(t.createdAt),
+            formatFechaNumerica(t.fechaVencimiento),
+            formatFechaNumerica(t.finalizadoAt) || 'N/A'
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_mantenimientos_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        notify.success('Exportación generada correctamente (CSV).');
+    }, [tickets]);
+
+    const isFiltering = useMemo(() => {
+        return Boolean(
+            query ||
+            filtroEstado !== 'TODOS' ||
+            filtroTipo ||
+            filtroPrioridad ||
+            filtroCategoria ||
+            (forcedClasificacion || filtroClasificacion) ||
+            filtroResponsable ||
+            filtroPlanta ||
+            filtroArea ||
+            mostrarAtrasadas ||
+            mostrarRechazadas ||
+            filtroYear ||
+            filtroMonth > 0 ||
+            filtroProgramacion.start ||
+            filtroConclusion.start
+        );
+    }, [
+        query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, 
+        forcedClasificacion, filtroClasificacion, filtroResponsable, 
+        filtroPlanta, filtroArea, mostrarAtrasadas, mostrarRechazadas, 
+        filtroYear, filtroMonth, filtroProgramacion.start, filtroConclusion.start
+    ]);
 
     const sharedProps = {
         tickets,
         tecnicos,
-        pagination,
+        page,
+        limit: LIMIT,
+        totalPages: meta?.totalPages || 1,
+        totalParaSummary: meta?.totalAbsoluto || 0,
+        totalParaPaginador: meta?.totalFiltrado || 0,
+        conteos: meta?.resumenEstados || {},
+        existenciaGlobal: metricas?.existenciaGlobal || {},
+        totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
         metricas,
         loading,
         submitting,
@@ -163,6 +242,7 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         onSearchChange: setQuery,
         filtroEstado,
         onEstadoChange: setFiltroEstado,
+        onFilterChange: setFiltroEstado,
         filtroTipo,
         onTipoChange: setFiltroTipo,
         filtroPrioridad,
@@ -199,6 +279,9 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         onPageChange: setPage,
         onRefresh: loadTickets,
         disableClasificacionFilter: Boolean(forcedClasificacion),
+        isFiltering,
+        onClearFilters: handleClearFilters,
+        onExport: handleExport,
     };
 
     return (
@@ -217,6 +300,7 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
                     tecnicos={tecnicos}
                     isSubmitting={submitting}
                     onSuccess={handleCreate}
+                    scope="mantenimientos"
                 />
             ) : (
                 <MobileTicketFormModal
@@ -226,6 +310,7 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
                     tecnicos={tecnicos}
                     isSubmitting={submitting}
                     onSuccess={handleCreate}
+                    scope="mantenimientos"
                 />
             )}
         </div>

@@ -1,11 +1,12 @@
 // src/routes/AppRoutes.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { RoleGuard } from './RoleGuard';
 import { MODULES_CONFIG } from '@/config/modules-config';
+import api from '@/lib/axios';
 
 import ProfilePage from '@/features/auth/pages/profile-page';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
@@ -70,6 +71,60 @@ const ROLES = {
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
 };
 
+const ModuleRedirect = ({ scope }) => {
+  const [target, setTarget] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const checkAprobaciones = async () => {
+      try {
+        const res = await api.get('/api/tickets', {
+          params: {
+            estado: 'RESUELTO',
+            scope: scope,
+            limit: 1
+          }
+        });
+        
+        const total = res.data?.pagination?.total ?? 0;
+        
+        if (isMounted) {
+          if (total > 0) {
+            setTarget('aprobar');
+          } else {
+            setTarget('historico');
+          }
+        }
+      } catch (err) {
+        console.error("Error checking approvals for redirect:", err);
+        if (isMounted) {
+          setTarget('historico');
+        }
+      }
+    };
+
+    checkAprobaciones();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [scope]);
+
+  if (!target) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px] w-full">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-marca-primario"></div>
+          <span className="text-xs font-semibold text-slate-400">Cargando sección de tareas...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return <Navigate to={target} replace />;
+};
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -114,7 +169,7 @@ export const AppRoutes = () => {
           {/* Módulo: Tickets */}
           <Route element={<RoleGuard allowedRoles={ROLES.tickets} />}>
             <Route path="/tickets" element={<TicketsPage />}>
-              <Route index element={<Navigate to="aprobar" replace />} />
+              <Route index element={<ModuleRedirect scope="actividades" />} />
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsAprobar} />}>
                 <Route path="aprobar" element={<TicketsAprobarPage />} />
@@ -133,7 +188,7 @@ export const AppRoutes = () => {
           {/* Módulo: Mantenimientos */}
           <Route element={<RoleGuard allowedRoles={ROLES.mantenimientos} />}>
             <Route path="/mantenimientos" element={<MantenimientosPage />}>
-              <Route index element={<Navigate to="aprobar" replace />} />
+              <Route index element={<ModuleRedirect scope="mantenimientos" />} />
 
               <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosAprobar} />}>
                 <Route path="aprobar" element={<MantenimientosAprobarPage />} />

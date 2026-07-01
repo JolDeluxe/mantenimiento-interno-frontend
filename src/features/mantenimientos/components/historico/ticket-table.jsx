@@ -17,6 +17,13 @@ import {
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
+const OverdueStatusBadge = () => (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
+        <Icon name="warning" size="xs" />
+        Atrasada
+    </span>
+);
+
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
 
@@ -123,14 +130,9 @@ export const TicketsTable = ({
                 return (
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
+                            <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1">
                                 {row.titulo}
                             </span>
-                            {row.isOverdue && (
-                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
-                                    <Icon name="warning" size="xs" /> ATRASADA
-                                </span>
-                            )}
                             {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" />ENTREGADA CON RETRASO
@@ -162,9 +164,21 @@ export const TicketsTable = ({
                 );
 
                 const tipoBadge = row.tipo ? (
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 ${getTipoStyle(row.tipo)}`}>
-                        {row.tipo}
-                    </span>
+                    row.tipo === 'TICKET' ? (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 bg-amber-500/10 text-amber-600 border-amber-500/20">
+                            <Icon name="warning" size="10px" className="text-amber-500 shrink-0" />
+                            <span>Reporte</span>
+                        </span>
+                    ) : (
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0 ${
+                            {
+                                PLANEADA: 'bg-blue-50 text-blue-700 border-blue-200/60',
+                                EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
+                            }[row.tipo] || 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                            {row.tipo}
+                        </span>
+                    )
                 ) : null;
 
                 const clasifContent = (row.clasificacion && row.categoria === 'MAQUINARIA') ? (
@@ -236,6 +250,7 @@ export const TicketsTable = ({
             headerClassName: 'w-[13%] min-w-[110px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-5 w-20 mx-auto rounded-md" />;
+                if (row.isOverdue) return <OverdueStatusBadge />;
                 return <TicketStatusBadge estado={row.estado} />;
             },
         },
@@ -368,6 +383,7 @@ export const TicketsTable = ({
                         EN_PAUSA: 'border-l-estado-en-pausa',
                         RESUELTO: 'border-l-estado-resuelto',
                         RECHAZADO: 'border-l-estado-rechazado',
+                        CERRADO: 'border-l-estado-cerrado',
                         CANCELADA: 'border-l-estado-cancelada',
                     }[row.estado] || 'border-l-transparent';
 

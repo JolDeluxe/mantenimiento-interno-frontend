@@ -238,9 +238,9 @@ export default function MantenimientosHoyPage() {
         <div className="max-w-full mx-auto">
             {isDesktop ? <MantenimientosHoyDesktop {...sharedProps} /> : <MantenimientosHoyMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="mantenimientos" />
             ) : (
-                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="mantenimientos" />
             )}
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}

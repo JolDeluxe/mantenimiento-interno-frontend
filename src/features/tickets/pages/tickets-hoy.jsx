@@ -228,9 +228,9 @@ export default function TicketsHoyPage() {
         <div className="max-w-full mx-auto">
             {isDesktop ? <TicketsHoyDesktop {...sharedProps} /> : <TicketsHoyMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <HoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
             ) : (
-                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <MobileHoyFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
             )}
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}
