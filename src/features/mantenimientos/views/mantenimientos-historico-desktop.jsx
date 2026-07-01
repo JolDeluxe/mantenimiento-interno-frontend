@@ -1,13 +1,22 @@
 // src/features/tickets/views/tickets-historico-desktop.jsx
+import { useState } from 'react';
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
 import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
 import { TicketFechas } from '../components/historico/ticket-fechas';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
-import { RefreshFab } from '@/components/ui/z_index';
+import { RefreshFab, InteractiveCalendar, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '../components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { hardReload } from '@/utils/hard-reload';
+import { cn } from '@/utils/cn';
+
+import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { TicketFormModal } from '../components/historico/ticket-form-modal';
+import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
+import { TicketStatusModal } from '../components/historico/ticket-status-modal';
+import { TicketReviewModal } from '../components/historico/ticket-review-modal';
+import { CalendarItemActions } from '../components/historico/calendar-item-actions';
 
 export const MantenimientosHistoricoDesktop = ({
     currentUser,
@@ -64,71 +73,146 @@ export const MantenimientosHistoricoDesktop = ({
     onRefresh,
     onExport,
     isFiltering = false,
-    onClearFilters
+    onClearFilters,
+    // Calendar props
+    viewMode,
+    onViewModeChange,
+    vistaCalendario,
+    calendarItems,
+    calendarDate,
+    onCalendarNavigate,
+    calendarView,
+    onCalendarViewChange,
+    onCalendarDayClick,
+    onCalendarItemClick
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
 
+    const [editTarget, setEditTarget] = useState(null);
+    const [statusTarget, setStatusTarget] = useState(null);
+    const [detailTarget, setDetailTarget] = useState(null);
+    const [assignTarget, setAssignTarget] = useState(null);
+    const [reviewTarget, setReviewTarget] = useState(null);
+    const [cancelTarget, setCancelTarget] = useState(null);
+
     return (
         <div className="flex flex-col gap-4 relative">
+            
+            {/* View Mode Selector */}
+            <div className="flex items-center justify-between w-full bg-white border border-slate-200/80 p-1.5 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                    <button
+                        type="button"
+                        onClick={() => onViewModeChange('cards')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer border-none outline-none",
+                            !vistaCalendario
+                                ? "bg-white text-marca-primario shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                        )}
+                    >
+                        <Icon name="table_rows" size="sm" /> Listado
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onViewModeChange('calendar')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer border-none outline-none",
+                            vistaCalendario
+                                ? "bg-white text-marca-primario shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                        )}
+                    >
+                        <Icon name="calendar_month" size="sm" /> Calendario
+                    </button>
+                </div>
+            </div>
 
-            <TicketFechas
-                year={filtroYear}
-                month={filtroMonth}
-                onYearChange={onYearChange}
-                onMonthChange={onMonthChange}
-                existenciaGlobal={existenciaGlobal}
-            />
+            {!vistaCalendario && (
+                <TicketFechas
+                    year={filtroYear}
+                    month={filtroMonth}
+                    onYearChange={onYearChange}
+                    onMonthChange={onMonthChange}
+                    existenciaGlobal={existenciaGlobal}
+                />
+            )}
 
-            <TicketSummaryBar
-                totalParaSummary={totalParaSummary}
-                conteos={conteos}
-                filtroActual={filtroEstado}
-                onFilterChange={onFilterChange}
-                loading={loading}
-                mostrarPapelera={mostrarPapelera}
-                mostrarRechazadas={mostrarRechazadas}
-            />
-
-
+            {!vistaCalendario && (
+                <TicketSummaryBar
+                    totalParaSummary={totalParaSummary}
+                    conteos={conteos}
+                    filtroActual={filtroEstado}
+                    onFilterChange={onFilterChange}
+                    loading={loading}
+                    mostrarPapelera={mostrarPapelera}
+                    mostrarRechazadas={mostrarRechazadas}
+                />
+            )}
 
             {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 
-            <TicketFilterBar
-                currentUser={currentUser}
-                query={query}
-                onSearchChange={onSearchChange}
-                filtroTipo={filtroTipo}
-                onTipoChange={onTipoChange}
-                filtroPrioridad={filtroPrioridad}
-                onPrioridadChange={onPrioridadChange}
-                filtroCategoria={filtroCategoria}
-                onCategoriaChange={onCategoriaChange}
-                filtroClasificacion={filtroClasificacion}
-                onClasificacionChange={onClasificacionChange}
-                filtroResponsable={filtroResponsable}
-                onResponsableChange={onResponsableChange}
-                opcionesResponsables={tecnicos}
-                filtroPlanta={filtroPlanta}
-                onPlantaChange={onPlantaChange}
-                filtroArea={filtroArea}
-                onAreaChange={onAreaChange}
-                filtroProgramacion={filtroProgramacion}
-                onProgramacionChange={onProgramacionChange}
-                filtroConclusion={filtroConclusion}
-                onConclusionChange={onConclusionChange}
-                mostrarRechazadas={mostrarRechazadas}
-                onToggleRechazadas={onToggleRechazadas}
-                mostrarPapelera={mostrarPapelera}
-                onTogglePapelera={onTogglePapelera}
-                mostrarAtrasadas={mostrarAtrasadas}
-                onToggleAtrasadas={onToggleAtrasadas}
-                existenciaGlobal={existenciaGlobal}
-                totalAtrasadasGlobal={totalAtrasadasGlobal}
-                conteos={conteos}
-                onExport={onExport}
-            />
+            {!vistaCalendario && (
+                <TicketFilterBar
+                    currentUser={currentUser}
+                    query={query}
+                    onSearchChange={onSearchChange}
+                    filtroTipo={filtroTipo}
+                    onTipoChange={onTipoChange}
+                    filtroPrioridad={filtroPrioridad}
+                    onPrioridadChange={onPrioridadChange}
+                    filtroCategoria={filtroCategoria}
+                    onCategoriaChange={onCategoriaChange}
+                    filtroClasificacion={filtroClasificacion}
+                    onClasificacionChange={onClasificacionChange}
+                    filtroResponsable={filtroResponsable}
+                    onResponsableChange={onResponsableChange}
+                    opcionesResponsables={tecnicos}
+                    filtroPlanta={filtroPlanta}
+                    onPlantaChange={onPlantaChange}
+                    filtroArea={filtroArea}
+                    onAreaChange={onAreaChange}
+                    filtroProgramacion={filtroProgramacion}
+                    onProgramacionChange={onProgramacionChange}
+                    filtroConclusion={filtroConclusion}
+                    onConclusionChange={onConclusionChange}
+                    mostrarRechazadas={mostrarRechazadas}
+                    onToggleRechazadas={onToggleRechazadas}
+                    mostrarPapelera={mostrarPapelera}
+                    onTogglePapelera={onTogglePapelera}
+                    mostrarAtrasadas={mostrarAtrasadas}
+                    onToggleAtrasadas={onToggleAtrasadas}
+                    existenciaGlobal={existenciaGlobal}
+                    totalAtrasadasGlobal={totalAtrasadasGlobal}
+                    conteos={conteos}
+                    onExport={onExport}
+                />
+            )}
 
-            {!loading && (!tickets || tickets.length === 0) ? (
+            {vistaCalendario ? (
+                <InteractiveCalendar
+                    items={calendarItems}
+                    view={calendarView}
+                    onViewChange={onCalendarViewChange}
+                    currentDate={calendarDate}
+                    onNavigate={onCalendarNavigate}
+                    onDayClick={onCalendarDayClick}
+                    onItemClick={(item) => setDetailTarget(item.raw)}
+                    isLoading={loading}
+                    isMobile={false}
+                    renderActions={(item) => (
+                        <CalendarItemActions
+                            ticket={item.raw}
+                            currentUser={currentUser}
+                            onEdit={setEditTarget}
+                            onAssign={setAssignTarget}
+                            onChangeStatus={setStatusTarget}
+                            onReview={setReviewTarget}
+                            onCancel={setCancelTarget}
+                        />
+                    )}
+                />
+            ) : !loading && (!tickets || tickets.length === 0) ? (
                 <div className="mt-8">
                     <TicketsEmptyState
                         isFiltering={isFiltering}
@@ -158,6 +242,74 @@ export const MantenimientosHistoricoDesktop = ({
                     onRefresh={onRefresh}
                 />
             )}
+
+            <TicketDetailModal
+                isOpen={Boolean(detailTarget)}
+                onClose={() => setDetailTarget(null)}
+                ticket={detailTarget}
+            />
+
+            <TicketFormModal
+                isOpen={Boolean(editTarget)}
+                onClose={() => setEditTarget(null)}
+                ticketAEditar={editTarget}
+                currentUser={currentUser}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onSuccess={async (payload) => {
+                    await onSave(editTarget.id, payload);
+                    setEditTarget(null);
+                }}
+            />
+
+            <TicketAssignModal
+                isOpen={Boolean(assignTarget)}
+                onClose={() => setAssignTarget(null)}
+                ticket={assignTarget}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onSave(id, payload);
+                    setAssignTarget(null);
+                }}
+            />
+
+            <TicketStatusModal
+                isOpen={Boolean(statusTarget)}
+                onClose={() => setStatusTarget(null)}
+                ticket={statusTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setStatusTarget(null);
+                }}
+            />
+
+            <TicketReviewModal
+                isOpen={Boolean(reviewTarget)}
+                onClose={() => setReviewTarget(null)}
+                ticket={reviewTarget}
+                isSubmitting={submitting}
+                currentUser={currentUser}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setReviewTarget(null);
+                }}
+            />
+
+            <TicketStatusModal
+                isOpen={Boolean(cancelTarget)}
+                onClose={() => setCancelTarget(null)}
+                ticket={cancelTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                forcedEstado="CANCELADA"
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setCancelTarget(null);
+                }}
+            />
         </div>
     );
 };

@@ -15,3 +15,4 @@ export { StarBorder }                                          from './star-bord
 export { SearchableSelect }                                    from './searchable-select';
 export { ScrollToTopButton }                                   from './scroll-to-top-button';
 export { RefreshFab }                                          from './refresh-fab';
+export { InteractiveCalendar }                                  from './interactive-calendar';

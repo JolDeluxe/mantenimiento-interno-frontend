@@ -8,8 +8,43 @@ import { MantenimientosHistoricoDesktop } from '../views/mantenimientos-historic
 import { MantenimientosHistoricoMobile } from '../views/mantenimientos-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
+import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { mapMantenimientosToCalendarItems } from '../utils/mantenimientosCalendarAdapter';
 
 const LIMIT = 50;
+
+const getGridBounds = (date, view) => {
+    if (view === 'week') {
+        const dayOfWeekIndex = date.getDay() - 1 === -1 ? 6 : date.getDay() - 1;
+        const start = new Date(date);
+        start.setDate(date.getDate() - dayOfWeekIndex);
+        
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        
+        return {
+            start: start.toLocaleDateString('en-CA'),
+            end: end.toLocaleDateString('en-CA')
+        };
+    } else {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        let firstDayOfWeekIndex = firstDay.getDay() - 1;
+        if (firstDayOfWeekIndex === -1) firstDayOfWeekIndex = 6;
+        
+        const start = new Date(firstDay);
+        start.setDate(firstDay.getDate() - firstDayOfWeekIndex);
+        
+        const end = new Date(start);
+        end.setDate(start.getDate() + 41);
+        
+        return {
+            start: start.toLocaleDateString('en-CA'),
+            end: end.toLocaleDateString('en-CA')
+        };
+    }
+};
 
 export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     const isDesktop = useIsDesktop();
@@ -45,11 +80,9 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
-    // Filtros Macro Históricos
     const [filtroYear, setFiltroYear] = useState(null);
     const [filtroMonth, setFiltroMonth] = useState(0);
 
-    // Filtros de fecha mejorados
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
     const [filtroConclusion, setFiltroConclusion] = useState({ type: '', start: '', end: '' });
 
@@ -57,7 +90,30 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
+    const [viewMode, setViewMode] = useState(() => {
+        return localStorage.getItem('mantenimientos_vista_historico') || 'cards';
+    });
+    const [calendarDate, setCalendarDate] = useState(() => new Date());
+    const [calendarView, setCalendarView] = useState('week');
+    const [calendarCreateDate, setCalendarCreateDate] = useState(null);
+    const [detailTicket, setDetailTicket] = useState(null);
+
+    const vistaCalendario = viewMode === 'calendar';
+
     const queryPayload = useMemo(() => {
+        if (vistaCalendario) {
+            const bounds = getGridBounds(calendarDate, calendarView);
+            const params = {
+                limit: 200,
+                vencimientoDesde: bounds.start,
+                vencimientoHasta: bounds.end,
+            };
+            if (forcedClasificacion) {
+                params.clasificacion = forcedClasificacion;
+            }
+            return params;
+        }
+
         const params = { page, limit: LIMIT };
         if (query) params.q = query;
 
@@ -73,7 +129,6 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroCategoria) params.categoria = filtroCategoria;
         
-        // Inyectamos la clasificación forzada o el filtro seleccionado
         if (forcedClasificacion) {
             params.clasificacion = forcedClasificacion;
         } else if (filtroClasificacion) {
@@ -98,15 +153,22 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
+    }, [vistaCalendario, calendarDate, calendarView, page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
 
     const loadTickets = useCallback(() => {
-        fetchTickets(queryPayload).catch(() => notify.error('Error al cargar historial.'));
+        return fetchTickets(queryPayload).catch(() => notify.error('Error al cargar historial.'));
     }, [fetchTickets, queryPayload]);
 
     useEffect(() => {
-        loadTickets();
-    }, [loadTickets]);
+        if (vistaCalendario) {
+            const timer = setTimeout(() => {
+                loadTickets();
+            }, 300);
+            return () => clearTimeout(timer);
+        } else {
+            loadTickets();
+        }
+    }, [loadTickets, vistaCalendario]);
 
     useEffect(() => {
         fetchTecnicos();
@@ -118,11 +180,17 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
             await createTicket(formData);
             notify.success('Mantenimiento programado creado con éxito.');
             setShowCreate(false);
+            setCalendarCreateDate(null);
             loadTickets();
         } catch (err) {
             notify.error(err.response?.data?.message || 'Error al crear.');
         }
     }, [createTicket, loadTickets]);
+
+    const handleCloseCreate = useCallback(() => {
+        setShowCreate(false);
+        setCalendarCreateDate(null);
+    }, []);
 
     const handleUpdate = useCallback(async (id, payload) => {
         try {
@@ -145,29 +213,17 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     }, [changeStatus, loadTickets]);
 
     const handleClearFilters = useCallback(() => {
-        setQuery('');
-        setFiltroEstado('TODOS');
-        setFiltroTipo('');
-        setFiltroPrioridad('');
-        setFiltroCategoria('');
-        setFiltroClasificacion('');
-        setFiltroResponsable('');
-        setFiltroPlanta('');
-        setFiltroArea('');
-        setFiltroYear(null);
-        setFiltroMonth(0);
+        setQuery(''); setPage(1); setFiltroEstado('TODOS'); setFiltroTipo('');
+        setFiltroPrioridad(''); setFiltroCategoria(''); setFiltroClasificacion('');
+        setFiltroResponsable(''); setFiltroPlanta(''); setFiltroArea('');
+        setFiltroYear(null); setFiltroMonth(0);
         setFiltroProgramacion({ type: '', start: '', end: '' });
         setFiltroConclusion({ type: '', start: '', end: '' });
-        setMostrarAtrasadas(false);
-        setMostrarRechazadas(false);
-        setMostrarPapelera(false);
+        setMostrarRechazadas(false); setMostrarPapelera(false); setMostrarAtrasadas(false);
     }, []);
 
     const handleExport = useCallback(() => {
-        if (!tickets || tickets.length === 0) {
-            notify.warn('No hay datos para exportar.');
-            return;
-        }
+        if (!tickets || tickets.length === 0) return notify.info('No hay datos para exportar.');
         const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creación', 'Vencimiento', 'Finalización'];
         const formatFechaNumerica = (f) => f ? new Date(f).toLocaleDateString('es-MX') : '';
         const rows = tickets.map(t => [
@@ -199,44 +255,37 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     }, [tickets]);
 
     const isFiltering = useMemo(() => {
-        return Boolean(
-            query ||
-            filtroEstado !== 'TODOS' ||
-            filtroTipo ||
-            filtroPrioridad ||
-            filtroCategoria ||
-            (forcedClasificacion || filtroClasificacion) ||
-            filtroResponsable ||
-            filtroPlanta ||
-            filtroArea ||
-            mostrarAtrasadas ||
-            mostrarRechazadas ||
-            filtroYear ||
-            filtroMonth > 0 ||
-            filtroProgramacion.start ||
-            filtroConclusion.start
-        );
-    }, [
-        query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, 
-        forcedClasificacion, filtroClasificacion, filtroResponsable, 
-        filtroPlanta, filtroArea, mostrarAtrasadas, mostrarRechazadas, 
-        filtroYear, filtroMonth, filtroProgramacion.start, filtroConclusion.start
-    ]);
+        return query !== '' || filtroEstado !== 'TODOS' || filtroTipo !== '' ||
+            filtroPrioridad !== '' || filtroCategoria !== '' || filtroClasificacion !== '' ||
+            filtroResponsable !== '' || filtroPlanta !== '' || filtroArea !== '' ||
+            filtroYear !== null || filtroMonth !== 0 ||
+            filtroProgramacion.type !== '' || filtroConclusion.type !== '' ||
+            mostrarRechazadas || mostrarPapelera || mostrarAtrasadas;
+    }, [query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, filtroYear, filtroMonth, filtroProgramacion, filtroConclusion, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas]);
+
+    const handleViewModeChange = useCallback((mode) => {
+        setViewMode(mode);
+        localStorage.setItem('mantenimientos_vista_historico', mode);
+    }, []);
+
+    const calendarItems = useMemo(() => {
+        return mapMantenimientosToCalendarItems(tickets || []);
+    }, [tickets]);
 
     const sharedProps = {
         tickets,
+        loading,
+        submitting,
         tecnicos,
         page,
         limit: LIMIT,
         totalPages: meta?.totalPages || 1,
+        totalItems: meta?.totalFiltrado || 0,
         totalParaSummary: meta?.totalAbsoluto || 0,
         totalParaPaginador: meta?.totalFiltrado || 0,
-        conteos: meta?.resumenEstados || {},
+        conteos: meta?.resumenEstados || [],
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
-        metricas,
-        loading,
-        submitting,
         currentUser,
         query,
         onSearchChange: setQuery,
@@ -282,6 +331,21 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         isFiltering,
         onClearFilters: handleClearFilters,
         onExport: handleExport,
+        viewMode,
+        onViewModeChange: handleViewModeChange,
+        vistaCalendario,
+        calendarItems,
+        calendarDate,
+        onCalendarNavigate: setCalendarDate,
+        calendarView,
+        onCalendarViewChange: setCalendarView,
+        onCalendarDayClick: (dStr) => {
+            setCalendarCreateDate(dStr);
+            setShowCreate(true);
+        },
+        onCalendarItemClick: (item) => {
+            setDetailTicket(item.raw);
+        }
     };
 
     return (
@@ -295,24 +359,29 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
             {isDesktop ? (
                 <TicketFormModal
                     isOpen={showCreate}
-                    onClose={() => setShowCreate(false)}
+                    onClose={handleCloseCreate}
                     currentUser={currentUser}
                     tecnicos={tecnicos}
                     isSubmitting={submitting}
                     onSuccess={handleCreate}
                     scope="mantenimientos"
+                    defaultDate={calendarCreateDate}
+                    defaultClasificacion="PREVENTIVO"
                 />
             ) : (
                 <MobileTicketFormModal
                     isOpen={showCreate}
-                    onClose={() => setShowCreate(false)}
+                    onClose={handleCloseCreate}
                     currentUser={currentUser}
                     tecnicos={tecnicos}
                     isSubmitting={submitting}
                     onSuccess={handleCreate}
                     scope="mantenimientos"
+                    defaultDate={calendarCreateDate}
+                    defaultClasificacion="PREVENTIVO"
                 />
             )}
+            <TicketDetailModal isOpen={Boolean(detailTicket)} onClose={() => setDetailTicket(null)} ticket={detailTicket} />
         </div>
     );
 }

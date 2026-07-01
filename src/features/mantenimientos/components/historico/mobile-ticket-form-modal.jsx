@@ -118,6 +118,8 @@ export const MobileTicketFormModal = ({
     currentUser,
     tecnicos = [],
     isSubmitting,
+    defaultDate,
+    defaultClasificacion,
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -181,12 +183,12 @@ export const MobileTicketFormModal = ({
             setTitulo(''); setDescripcion(''); setCategoria('');
             setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
-            setClasificacion('PREVENTIVO'); setTipo('PLANEADA');
-            setFechaVencimiento(''); setTiempoEstimadoMins(0); setResponsables([]);
+            setClasificacion(defaultClasificacion || 'PREVENTIVO'); setTipo('PLANEADA');
+            setFechaVencimiento(defaultDate || ''); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
             setMaquinaInfo(null);
         }
-    }, [isOpen, esEdicion, ticketAEditar]);
+    }, [isOpen, esEdicion, ticketAEditar, defaultDate, defaultClasificacion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {

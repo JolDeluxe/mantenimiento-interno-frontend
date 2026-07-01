@@ -7,9 +7,44 @@ import { TicketsHistoricoDesktop } from '../views/tickets-historico-desktop';
 import { TicketsHistoricoMobile } from '../views/tickets-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
+import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { mapTicketsToCalendarItems } from '../utils/ticketsCalendarAdapter';
 import { formatFechaNumerica } from '@/lib/date';
 
 const LIMIT = 50;
+
+const getGridBounds = (date, view) => {
+    if (view === 'week') {
+        const dayOfWeekIndex = date.getDay() - 1 === -1 ? 6 : date.getDay() - 1;
+        const start = new Date(date);
+        start.setDate(date.getDate() - dayOfWeekIndex);
+        
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        
+        return {
+            start: start.toLocaleDateString('en-CA'),
+            end: end.toLocaleDateString('en-CA')
+        };
+    } else {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        let firstDayOfWeekIndex = firstDay.getDay() - 1;
+        if (firstDayOfWeekIndex === -1) firstDayOfWeekIndex = 6;
+        
+        const start = new Date(firstDay);
+        start.setDate(firstDay.getDate() - firstDayOfWeekIndex);
+        
+        const end = new Date(start);
+        end.setDate(start.getDate() + 41);
+        
+        return {
+            start: start.toLocaleDateString('en-CA'),
+            end: end.toLocaleDateString('en-CA')
+        };
+    }
+};
 
 export default function TicketsHistoricoPage() {
     const isDesktop = useIsDesktop();
@@ -46,11 +81,9 @@ export default function TicketsHistoricoPage() {
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
-    // Filtros Macro Históricos
     const [filtroYear, setFiltroYear] = useState(null);
     const [filtroMonth, setFiltroMonth] = useState(0);
 
-    // Filtros de fecha mejorados
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
     const [filtroConclusion, setFiltroConclusion] = useState({ type: '', start: '', end: '' });
 
@@ -58,7 +91,28 @@ export default function TicketsHistoricoPage() {
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
+    const [viewMode, setViewMode] = useState(() => {
+        return localStorage.getItem('tickets_vista_historico') || 'cards';
+    });
+    const [calendarDate, setCalendarDate] = useState(() => new Date());
+    const [calendarView, setCalendarView] = useState('week');
+    const [calendarCreateDate, setCalendarCreateDate] = useState(null);
+    const [detailTicket, setDetailTicket] = useState(null);
+
+    const vistaCalendario = viewMode === 'calendar';
+
     const queryPayload = useMemo(() => {
+        if (vistaCalendario) {
+            const bounds = getGridBounds(calendarDate, calendarView);
+            const params = {
+                limit: 200,
+                scope: 'actividades',
+                vencimientoDesde: bounds.start,
+                vencimientoHasta: bounds.end,
+            };
+            return params;
+        }
+
         const params = { page, limit: LIMIT, scope: 'actividades' };
         if (query) params.q = query;
 
@@ -79,15 +133,12 @@ export default function TicketsHistoricoPage() {
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
 
-        // Inyección de parámetros Macro
         if (filtroYear) params.year = filtroYear;
         if (filtroMonth > 0) params.month = filtroMonth;
 
-        // Filtro Programación (Vencimiento)
         if (filtroProgramacion.start) params.vencimientoDesde = filtroProgramacion.start;
         if (filtroProgramacion.end) params.vencimientoHasta = filtroProgramacion.end;
 
-        // Filtro Conclusión (FinalizadoAt)
         if (filtroConclusion.start) params.finalizadoDesde = filtroConclusion.start;
         if (filtroConclusion.end) params.finalizadoHasta = filtroConclusion.end;
 
@@ -95,14 +146,24 @@ export default function TicketsHistoricoPage() {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
+    }, [vistaCalendario, calendarDate, calendarView, page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
 
     const loadTickets = useCallback(() => {
         fetchMetricas(queryPayload);
         return fetchTickets(queryPayload).catch(() => notify.error('Error al cargar tickets.'));
     }, [fetchTickets, fetchMetricas, queryPayload]);
 
-    useEffect(() => { loadTickets(); }, [loadTickets]);
+    useEffect(() => {
+        if (vistaCalendario) {
+            const timer = setTimeout(() => {
+                loadTickets();
+            }, 300);
+            return () => clearTimeout(timer);
+        } else {
+            loadTickets();
+        }
+    }, [loadTickets, vistaCalendario]);
+
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
     const handleSearchChange = useCallback((q) => { setQuery(q); setPage(1); }, []);
@@ -135,6 +196,11 @@ export default function TicketsHistoricoPage() {
     const handleToggleAtrasadas = useCallback(() => {
         setMostrarAtrasadas((prev) => !prev);
         setMostrarRechazadas(false); setMostrarPapelera(false); setFiltroEstado('TODOS'); setPage(1);
+    }, []);
+
+    const handleViewModeChange = useCallback((mode) => {
+        setViewMode(mode);
+        localStorage.setItem('tickets_vista_historico', mode);
     }, []);
 
     const handleExport = useCallback(() => {
@@ -170,12 +236,12 @@ export default function TicketsHistoricoPage() {
     }, [tickets]);
 
     const handleCreate = async (payloads) => {
-        // Batch mode: array of plain objects from carrito
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 await createBatch(payloads);
                 notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
                 setShowCreate(false);
+                setCalendarCreateDate(null);
                 await loadTickets();
             } catch (err) {
                 notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las tareas.');
@@ -183,18 +249,23 @@ export default function TicketsHistoricoPage() {
             }
             return;
         }
-        // Legacy: single FormData or array of FormData (edit mode)
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
             for (const payload of items) await createTicket(payload);
             notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
             setShowCreate(false);
+            setCalendarCreateDate(null);
             await loadTickets();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la tarea.');
             throw err;
         }
     };
+
+    const handleCloseCreate = useCallback(() => {
+        setShowCreate(false);
+        setCalendarCreateDate(null);
+    }, []);
 
     const handleUpdate = async (id, payload) => {
         try {
@@ -220,6 +291,10 @@ export default function TicketsHistoricoPage() {
 
     const sortedTickets = useMemo(() => tickets || [], [tickets]);
 
+    const calendarItems = useMemo(() => {
+        return mapTicketsToCalendarItems(sortedTickets);
+    }, [sortedTickets]);
+
     const sharedViewProps = {
         tickets: sortedTickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,
         totalPages: meta?.totalPages || 1, totalParaSummary: meta?.totalAbsoluto || 0,
@@ -240,17 +315,33 @@ export default function TicketsHistoricoPage() {
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,
         onSave: handleUpdate, onChangeStatus: handleChangeStatus, onOpenCreate: () => setShowCreate(true),
         onRefresh: loadTickets,
-        onExport: handleExport
+        onExport: handleExport,
+        viewMode,
+        onViewModeChange: handleViewModeChange,
+        vistaCalendario,
+        calendarItems,
+        calendarDate,
+        onCalendarNavigate: setCalendarDate,
+        calendarView,
+        onCalendarViewChange: setCalendarView,
+        onCalendarDayClick: (dStr) => {
+            setCalendarCreateDate(dStr);
+            setShowCreate(true);
+        },
+        onCalendarItemClick: (item) => {
+            setDetailTicket(item.raw);
+        }
     };
 
     return (
         <div className="max-w-full mx-auto">
             {isDesktop ? <TicketsHistoricoDesktop {...sharedViewProps} /> : <TicketsHistoricoMobile {...sharedViewProps} />}
             {isDesktop ? (
-                <TicketFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
+                <TicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" defaultDate={calendarCreateDate} />
             ) : (
-                <MobileTicketFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
+                <MobileTicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" defaultDate={calendarCreateDate} />
             )}
+            <TicketDetailModal isOpen={Boolean(detailTicket)} onClose={() => setDetailTicket(null)} ticket={detailTicket} />
         </div>
     );
 }

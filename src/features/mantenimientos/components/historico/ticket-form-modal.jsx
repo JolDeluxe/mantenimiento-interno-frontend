@@ -628,6 +628,7 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
 export const TicketFormModal = ({
     isOpen, onClose, onSuccess,
     ticketAEditar, currentUser, tecnicos = [], isSubmitting,
+    defaultDate, defaultClasificacion,
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -720,15 +721,15 @@ export const TicketFormModal = ({
             setMostrarDescripcion(false);
             setPlanta(''); setArea('');
             setPrioridad('MEDIA');
-            setClasificacion('CORRECTIVO'); // Configurar clasificacion por defecto en CORRECTIVO
+            setClasificacion(defaultClasificacion || 'CORRECTIVO'); // Configurar clasificacion por defecto
             setTipo('PLANEADA');
-            setFechaVencimiento(hoyLocal);
+            setFechaVencimiento(defaultDate || hoyLocal);
             setTiempoEstimadoMins(0); setResponsables([]);
             setTecnicoCartId('');
             setMaquinaId('');
             setMaquinaInfo(null);
         }
-    }, [isOpen, esEdicion, ticketAEditar]);
+    }, [isOpen, esEdicion, ticketAEditar, defaultDate, defaultClasificacion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {
