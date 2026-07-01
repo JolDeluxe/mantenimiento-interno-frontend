@@ -62,6 +62,7 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
         fetchMetricas,
         fetchTecnicos,
         createMantenimiento: createTicket,
+        createBatch,
         updateMantenimiento: updateTicket,
         changeStatus,
     } = useMantenimientos();
@@ -177,15 +178,21 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
 
     const handleCreate = useCallback(async (formData) => {
         try {
-            await createTicket(formData);
-            notify.success('Mantenimiento programado creado con éxito.');
+            if (Array.isArray(formData)) {
+                await createBatch(formData);
+                notify.success(`${formData.length} mantenimiento${formData.length !== 1 ? 's' : ''} programado${formData.length !== 1 ? 's' : ''} con éxito.`);
+            } else {
+                await createTicket(formData);
+                notify.success('Mantenimiento programado creado con éxito.');
+            }
             setShowCreate(false);
             setCalendarCreateDate(null);
             loadTickets();
         } catch (err) {
-            notify.error(err.response?.data?.message || 'Error al crear.');
+            notify.error(err.response?.data?.error || err.response?.data?.message || 'Error al crear.');
+            throw err;
         }
-    }, [createTicket, loadTickets]);
+    }, [createBatch, createTicket, loadTickets]);
 
     const handleCloseCreate = useCallback(() => {
         setShowCreate(false);

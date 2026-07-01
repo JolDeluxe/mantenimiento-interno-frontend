@@ -906,8 +906,8 @@ export const TicketFormModal = ({
         if (esAdmin) {
             fd.append('tipo', item.tipo);
             if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
-            if (!item.esRutina && item.tiempoEstimadoMins > 0)
-                fd.append('tiempoEstimado', String(item.tiempoEstimadoMins));
+            if (!item.esRutina && item.tiempoEstimado > 0)
+                fd.append('tiempoEstimado', String(item.tiempoEstimado));
             item.responsables.forEach(id => fd.append('responsables', id));
         }
         return fd;

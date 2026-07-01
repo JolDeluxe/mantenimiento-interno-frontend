@@ -161,14 +161,20 @@ export default function MantenimientosHoyPage() {
 
     const handleCreate = useCallback(async (formData) => {
         try {
-            await createTicket(formData);
-            notify.success('Mantenimiento creado exitosamente.');
+            if (Array.isArray(formData)) {
+                await createBatch(formData);
+                notify.success(`${formData.length} mantenimiento${formData.length !== 1 ? 's' : ''} creado${formData.length !== 1 ? 's' : ''} exitosamente.`);
+            } else {
+                await createTicket(formData);
+                notify.success('Mantenimiento creado exitosamente.');
+            }
             setShowCreate(false);
             loadTickets();
         } catch (err) {
-            notify.error(err.response?.data?.message || 'Error al crear el mantenimiento.');
+            notify.error(err.response?.data?.error || err.response?.data?.message || 'Error al crear el mantenimiento.');
+            throw err;
         }
-    }, [createTicket, loadTickets]);
+    }, [createBatch, createTicket, loadTickets]);
 
     const handleUpdate = useCallback(async (id, payload) => {
         try {
