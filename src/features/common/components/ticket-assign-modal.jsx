@@ -1,4 +1,4 @@
-// src/features/tickets/components/historico/ticket-assign-modal.jsx
+// src/features/common/components/ticket-assign-modal.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 
@@ -250,3 +250,5 @@ export const TicketAssignModal = ({
         </Modal>
     );
 };
+
+export { TicketAssignModal as MantenimientosAssignModal };

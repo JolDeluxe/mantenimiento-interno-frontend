@@ -1,3 +1,4 @@
+// src/features/common/components/ticket-detail-modal.jsx
 import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
@@ -8,7 +9,7 @@ import {
     getClasificacionIcon,
     getTipoStyle,
     getCategoriaInfo
-} from '../constants';
+} from '@/features/tickets/components/constants';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
 const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
@@ -677,3 +678,5 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
         </>
     );
 };
+
+export { TicketDetailModal as MantenimientosDetailModal };

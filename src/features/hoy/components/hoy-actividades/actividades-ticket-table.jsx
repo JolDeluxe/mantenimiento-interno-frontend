@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { Icon, Skeleton, Table } from '@/components/ui/z_index';
 import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
 import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
-import { HoyDetailModal } from '../common/hoy-detail-modal';
+import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { HoyFormModal } from '../common/hoy-form-modal';
 import { HoyStatusModal } from '../common/hoy-status-modal';
 
 // Modales de asignación y revisión de ambas features
-import { TicketAssignModal as TicketsAssign } from '@/features/tickets/components/historico/ticket-assign-modal';
-import { TicketAssignModal as MantenimientosAssign } from '@/features/mantenimientos/components/common/mantenimientos-assign-modal';
+import { TicketAssignModal as TicketsAssign, MantenimientosAssignModal as MantenimientosAssign } from '@/features/common/components/ticket-assign-modal';
 import { TicketReviewModal as TicketsReview } from '@/features/tickets/components/historico/ticket-review-modal';
 import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimientos/components/common/mantenimientos-review-modal';
 

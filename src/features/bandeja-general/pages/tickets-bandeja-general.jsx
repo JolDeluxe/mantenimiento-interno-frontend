@@ -7,7 +7,7 @@ import { notify } from '@/components/notification/adaptive-notify';
 import { TicketsBandejaDesktop } from '../views/tickets-bandeja-desktop';
 import { TicketsBandejaMobile } from '../views/tickets-bandeja-mobile';
 import { BandejaAssignModal } from '../components/bandeja-assign-modal';
-import { BandejaDetailModal } from '../components/bandeja-detail-modal';
+import { TicketDetailModal as BandejaDetailModal } from '@/features/common/components/ticket-detail-modal';
 
 const getSortPayload = (order) => {
     switch (order) {

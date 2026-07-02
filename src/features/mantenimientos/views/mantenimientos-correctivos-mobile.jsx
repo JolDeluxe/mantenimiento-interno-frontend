@@ -8,8 +8,8 @@ import { MantenimientosTicketTable as CorrectivosTicketTable } from '../componen
 import { MantenimientosTicketCard as CorrectivosTicketCard } from '../components/common/mantenimientos-ticket-card';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
 import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
-import { MantenimientosDetailModal as TicketDetailModal } from '../components/common/mantenimientos-detail-modal';
-import { MantenimientosAssignModal as TicketAssignModal } from '../components/common/mantenimientos-assign-modal';
+import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
+import { MantenimientosAssignModal as TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { MobileMantenimientosReviewModal as MobileTicketReviewModal } from '../components/common/mobile-mantenimientos-review-modal';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';

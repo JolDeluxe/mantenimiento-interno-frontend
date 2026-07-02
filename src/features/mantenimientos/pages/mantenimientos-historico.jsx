@@ -8,7 +8,7 @@ import { MantenimientosHistoricoDesktop } from '../views/mantenimientos-historic
 import { MantenimientosHistoricoMobile } from '../views/mantenimientos-historico-mobile';
 import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
-import { MantenimientosDetailModal as TicketDetailModal } from '../components/common/mantenimientos-detail-modal';
+import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { mapMantenimientosToCalendarItems } from '../utils/mantenimientosCalendarAdapter';
 
 const LIMIT = 50;

@@ -1,7 +1,7 @@
 // src/features/tickets/views/tickets-historico-desktop.jsx
 import { useState } from 'react';
 import { TicketsTable } from '../components/historico/ticket-table';
-import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
+import { TicketFilterBar } from '@/features/common/components/ticket-filter-bar';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketFechas } from '@/features/common/components/ticket-fechas';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
@@ -11,9 +11,9 @@ import { ROLES_ADMIN } from '../constants';
 import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
-import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
-import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
+import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { CalendarItemActions } from '../components/historico/calendar-item-actions';

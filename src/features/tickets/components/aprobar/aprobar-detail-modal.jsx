@@ -1,1 +1,1 @@
-export { TicketDetailModal as AprobarDetailModal } from '../historico/ticket-detail-modal';
+export { TicketDetailModal as AprobarDetailModal } from '@/features/common/components/ticket-detail-modal';

@@ -1,1 +1,0 @@
-export { TicketDetailModal as BandejaDetailModal } from '@/features/tickets/components/historico/ticket-detail-modal';

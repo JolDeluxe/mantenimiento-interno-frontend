@@ -7,7 +7,7 @@ import { TicketsHistoricoDesktop } from '../views/tickets-historico-desktop';
 import { TicketsHistoricoMobile } from '../views/tickets-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
-import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { mapTicketsToCalendarItems } from '../utils/ticketsCalendarAdapter';
 import { formatFechaNumerica } from '@/lib/date';
 

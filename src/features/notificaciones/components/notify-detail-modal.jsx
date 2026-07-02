@@ -1,2 +1,1 @@
-// notify-detail-modal.jsx
-export { TicketDetailModal as NotifyDetailModal } from '../../tickets/components/historico/ticket-detail-modal';
+export { TicketDetailModal as NotifyDetailModal } from '@/features/common/components/ticket-detail-modal';

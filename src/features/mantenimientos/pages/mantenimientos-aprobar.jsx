@@ -7,7 +7,7 @@ import { useMantenimientos } from '../hooks/use-mantenimientos';
 
 import { MantenimientosAprobarDesktop } from '../views/mantenimientos-aprobar-desktop';
 import { MantenimientosAprobarMobile } from '../views/mantenimientos-aprobar-mobile';
-import { MantenimientosDetailModal as AprobarDetailModal } from '../components/common/mantenimientos-detail-modal';
+import { MantenimientosDetailModal as AprobarDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosReviewModal as AprobarReviewModal } from '../components/common/mantenimientos-review-modal';
 import { AprobarBatchDrawer } from '../components/mantenimientos-aprobar/aprobar-batch-drawer';
 
