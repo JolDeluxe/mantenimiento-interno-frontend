@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Skeleton, Icon, Pagination, Table, Tooltip } from '@/components/ui/z_index';
-import { TicketPriorityBadge } from '@/features/tickets/components/historico/ticket-status-badge';
+import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';

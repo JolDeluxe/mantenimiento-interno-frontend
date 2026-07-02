@@ -4,7 +4,7 @@ import { Icon, GlassFab, GlassPaginationPill, ScrollToTopButton, Skeleton } from
 import { cn } from '@/utils/cn';
 import { BandejaTicketCard } from '../components/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja-filtro';
-import { TicketsEmptyState } from '@/features/tickets/components/tickets-empty-state';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 
 const BandejaMobileSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">

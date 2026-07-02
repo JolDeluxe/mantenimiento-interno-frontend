@@ -1,22 +1,22 @@
 // src/features/tickets/views/tickets-historico-desktop.jsx
 import { useState } from 'react';
-import { TicketsTable } from '../components/historico/ticket-table';
-import { TicketFilterBar } from '../components/historico/ticket-filter-bar';
-import { TicketSummaryBar } from '../components/historico/ticket-summary-bar';
-import { TicketFechas } from '../components/historico/ticket-fechas';
-import { TicketAddButton } from '../components/historico/ticket-add-button';
+import { MantenimientosTicketTable as TicketsTable } from '../components/common/mantenimientos-ticket-table';
+import { MantenimientosFilterBar as TicketFilterBar } from '../components/common/mantenimientos-filter-bar';
+import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
+import { MantenimientosFechas as TicketFechas } from '@/features/common/components/ticket-fechas';
+import { MantenimientosAddButton as TicketAddButton } from '../components/common/mantenimientos-add-button';
 import { RefreshFab, InteractiveCalendar, Icon } from '@/components/ui/z_index';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
 import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
-import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
-import { TicketFormModal } from '../components/historico/ticket-form-modal';
-import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
-import { TicketStatusModal } from '../components/historico/ticket-status-modal';
-import { TicketReviewModal } from '../components/historico/ticket-review-modal';
-import { CalendarItemActions } from '../components/historico/calendar-item-actions';
+import { MantenimientosDetailModal as TicketDetailModal } from '../components/common/mantenimientos-detail-modal';
+import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
+import { MantenimientosAssignModal as TicketAssignModal } from '../components/common/mantenimientos-assign-modal';
+import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
+import { MantenimientosReviewModal as TicketReviewModal } from '../components/common/mantenimientos-review-modal';
+import { MantenimientosCalendarItemActions as CalendarItemActions } from '../components/common/mantenimientos-calendar-item-actions';
 
 export const MantenimientosHistoricoDesktop = ({
     currentUser,

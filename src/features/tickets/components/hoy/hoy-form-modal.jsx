@@ -1,1 +1,0 @@
-export { TicketFormModal as HoyFormModal } from '../historico/ticket-form-modal';

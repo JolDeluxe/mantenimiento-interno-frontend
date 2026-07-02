@@ -5,7 +5,7 @@ import { RefreshFab } from '@/components/ui/z_index';
 import { HoyAddButton } from '../components/common/hoy-add-button';
 import { HoyFilterBar } from '../components/common/hoy-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
-import { TicketsEmptyState } from '../components/common/tickets-empty-state';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { HoyTicketTable } from '../components/common/hoy-ticket-table';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';

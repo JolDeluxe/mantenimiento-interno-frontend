@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Icon, Skeleton, Table } from '@/components/ui/z_index';
-import { TicketPriorityBadge, TicketStatusBadge } from '@/features/tickets/components/historico/ticket-status-badge';
+import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
 import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
 import { HoyDetailModal } from './hoy-detail-modal';
 import { HoyFormModal } from './hoy-form-modal';
@@ -8,9 +8,9 @@ import { HoyStatusModal } from './hoy-status-modal';
 
 // Modales de asignación y revisión de ambas features
 import { TicketAssignModal as TicketsAssign } from '@/features/tickets/components/historico/ticket-assign-modal';
-import { TicketAssignModal as MantenimientosAssign } from '@/features/mantenimientos/components/historico/ticket-assign-modal';
+import { TicketAssignModal as MantenimientosAssign } from '@/features/mantenimientos/components/common/mantenimientos-assign-modal';
 import { TicketReviewModal as TicketsReview } from '@/features/tickets/components/historico/ticket-review-modal';
-import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimientos/components/historico/ticket-review-modal';
+import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimientos/components/common/mantenimientos-review-modal';
 
 import { formatFecha, formatFechaRelativa, isoToLocalMXTime, format12h, formatDurationToDaysHours } from '@/lib/date';
 import { cn } from '@/utils/cn';

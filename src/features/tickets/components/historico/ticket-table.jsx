@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Table, Skeleton, Icon } from '@/components/ui/z_index';
-import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
+import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { TicketFormModal } from './ticket-form-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from './ticket-detail-modal';

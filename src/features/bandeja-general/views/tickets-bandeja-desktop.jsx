@@ -2,7 +2,7 @@
 import React from 'react';
 import { Skeleton, Icon, RefreshFab } from '@/components/ui/z_index';
 import { BandejaFiltro } from '../components/bandeja-filtro';
-import { TicketsEmptyState } from '@/features/tickets/components/tickets-empty-state';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { BandejaTicketTable } from '../components/bandeja-ticket-table';
 
 export const TicketsBandejaDesktop = ({

@@ -1,21 +1,27 @@
-// src/features/hoy/components/hoy-mantenimientos/mantenimientos-ticket-table.jsx
-import React, { useState } from 'react';
-import { Icon, Skeleton, Table } from '@/components/ui/z_index';
-import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
-import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
-import { HoyDetailModal } from '../common/hoy-detail-modal';
-import { HoyFormModal } from '../common/hoy-form-modal';
-import { HoyStatusModal } from '../common/hoy-status-modal';
-
-// Modales de asignación y revisión de ambas features
-import { TicketAssignModal as TicketsAssign } from '@/features/tickets/components/historico/ticket-assign-modal';
-import { TicketAssignModal as MantenimientosAssign } from '@/features/mantenimientos/components/common/mantenimientos-assign-modal';
-import { TicketReviewModal as TicketsReview } from '@/features/tickets/components/historico/ticket-review-modal';
-import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimientos/components/common/mantenimientos-review-modal';
-
-import { formatFecha, formatFechaRelativa, isoToLocalMXTime, format12h, formatDurationToDaysHours } from '@/lib/date';
+import { useState } from 'react';
+import { Table, Skeleton, Icon } from '@/components/ui/z_index';
+import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
+import { TicketFormModal } from './mantenimientos-form-modal';
+import { TicketStatusModal } from './mantenimientos-status-modal';
+import { TicketDetailModal } from './mantenimientos-detail-modal';
+import { TicketAssignModal } from './mantenimientos-assign-modal';
+import { TicketReviewModal } from './mantenimientos-review-modal';
+import { TicketActions } from './mantenimientos-ticket-actions';
+import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import {
+    getClasificacionIcon,
+    getTipoStyle
+} from '../constants';
+
+const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
+
+const OverdueStatusBadge = () => (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
+        <Icon name="warning" size="xs" />
+        Atrasada
+    </span>
+);
 
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
@@ -68,23 +74,22 @@ const ResponsablesCell = ({ lista }) => {
     );
 };
 
-const OverdueStatusBadge = () => (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wide border text-estado-rechazado bg-estado-rechazado/10 border-estado-rechazado/20">
-        <Icon name="warning" size="xs" />
-        Atrasada
-    </span>
-);
-
-export const MantenimientosTicketTable = ({
-    tickets = [],
-    loading = false,
-    submitting = false,
+export const TicketsTable = ({
+    tickets,
+    loading,
     currentUser,
     tecnicos = [],
-    highlightId,
+    page,
+    totalPages,
+    totalItems,
+    sortConfig,
+    onPageChange,
+    onSortChange,
     onSave,
     onChangeStatus,
-    scope = 'mantenimientos',
+    onRefresh,
+    submitting,
+    hidePagination = false,
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -93,28 +98,26 @@ export const MantenimientosTicketTable = ({
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
 
-    const tableData = loading
-        ? Array.from({ length: 6 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
-        : tickets;
-
     const columns = [
         {
             header: 'ID',
             accessorKey: 'id',
-            sortable: false,
+            sortable: true,
             headerClassName: 'w-[5%] min-w-[64px]',
             cell: (row) => {
                 if (row.isSkeleton) return <Skeleton className="h-4 w-12 rounded-md" />;
                 return (
-                    <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
+                    <div className="flex flex-col items-start gap-1">
+                        <span className="text-xs font-mono font-bold text-slate-500">#{row.id}</span>
+                    </div>
                 );
             },
         },
         {
             header: 'Título',
             accessorKey: 'titulo',
-            sortable: false,
-            headerClassName: 'w-[22%] min-w-[160px]',
+            sortable: true,
+            headerClassName: 'w-[26%] min-w-[180px]',
             cell: (row) => {
                 if (row.isSkeleton) return (
                     <div className="flex flex-col gap-2">
@@ -144,33 +147,6 @@ export const MantenimientosTicketTable = ({
                     </div>
                 );
             },
-        },
-        {
-            header: 'Máquina',
-            accessorKey: 'maquina',
-            sortable: false,
-            align: 'center',
-            headerClassName: 'w-[12%] min-w-[120px]',
-            cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md m-auto" />;
-                if (!row.maquina) return <span className="text-xs text-slate-400 italic">No asociada</span>;
-
-                return (
-                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                        <span className="text-xs font-bold text-slate-800 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/50">{row.maquina.codigo}</span>
-                        {row.maquina.criticidad && (
-                            <span className={cn(
-                                "px-2 py-0.5 rounded-full text-[9px] font-black leading-none",
-                                row.maquina.criticidad === 'A' ? 'bg-red-100 text-red-700' :
-                                row.maquina.criticidad === 'B' ? 'bg-amber-100 text-amber-700' :
-                                'bg-slate-200/60 text-slate-700'
-                            )}>
-                                Crit. {row.maquina.criticidad}
-                            </span>
-                        )}
-                    </div>
-                );
-            }
         },
         {
             header: 'Tipo / Clasificación',
@@ -204,26 +180,9 @@ export const MantenimientosTicketTable = ({
                     )
                 ) : null;
 
-                const clasifIcon = {
-                    PREVENTIVO: 'build_circle',
-                    CORRECTIVO: 'report_problem',
-                    INSPECCION: 'search',
-                    RUTINA: 'sync',
-                }[row.clasificacion] || 'label';
-
-                let clasifColorClass = 'text-slate-600';
-                let clasifIconColorClass = 'text-slate-400';
-                if (row.clasificacion === 'CORRECTIVO') {
-                    clasifColorClass = 'text-red-700 font-semibold';
-                    clasifIconColorClass = 'text-red-500';
-                } else if (row.clasificacion === 'PREVENTIVO') {
-                    clasifColorClass = 'text-blue-700 font-semibold';
-                    clasifIconColorClass = 'text-blue-500';
-                }
-
-                const clasifContent = (row.clasificacion && row.categoria === 'MAQUINARIA') ? (
-                    <div className={cn("flex items-center gap-1 font-bold text-xs uppercase", clasifColorClass)}>
-                        <Icon name={clasifIcon} size="xs" className={cn("shrink-0", clasifIconColorClass)} />
+                const clasifContent = row.clasificacion ? (
+                    <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
+                        <Icon name={getClasificacionIcon(row.clasificacion)} size="xs" className="text-slate-400 shrink-0" />
                         <span>{row.clasificacion}</span>
                     </div>
                 ) : (
@@ -238,30 +197,20 @@ export const MantenimientosTicketTable = ({
                 );
             }
         },
-        // {
-        //     header: 'Categoría',
-        //     accessorKey: 'categoria',
-        //     sortable: false,
-        //     align: 'center',
-        //     headerClassName: 'w-[12%] min-w-[100px]',
-        //     cell: (row) => {
-        //         if (row.isSkeleton) return <Skeleton className="h-5 w-18 mx-auto rounded-md" />;
-        //         if (!row.categoria) return <span className="text-xs text-slate-400 italic">-</span>;
-                
-        //         const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === row.categoria) || {
-        //             label: row.categoria,
-        //             icon: 'category',
-        //             colorClass: 'bg-slate-100 text-slate-500 border-slate-200'
-        //         };
-
-        //         return (
-        //             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide whitespace-nowrap`}>
-        //                 <Icon name={catInfo.icon} size="xs" className="shrink-0" />
-        //                 {catInfo.label}
-        //             </span>
-        //         );
-        //     },
-        // },
+        {
+            header: 'Fecha Creación',
+            accessorKey: 'createdAt',
+            sortable: true,
+            headerClassName: 'w-[12%] min-w-[110px]',
+            cell: (row) => {
+                if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
+                return (
+                    <span className="text-xs font-medium text-slate-600">
+                        {formatFecha(row.createdAt)}
+                    </span>
+                );
+            },
+        },
         {
             header: 'Responsable',
             accessorKey: 'responsables',
@@ -275,7 +224,7 @@ export const MantenimientosTicketTable = ({
         {
             header: 'Estado',
             accessorKey: 'estado',
-            sortable: false,
+            sortable: true,
             align: 'center',
             headerClassName: 'w-[13%] min-w-[110px]',
             cell: (row) => {
@@ -287,7 +236,7 @@ export const MantenimientosTicketTable = ({
         {
             header: 'Prioridad',
             accessorKey: 'prioridad',
-            sortable: false,
+            sortable: true,
             align: 'center',
             headerClassName: 'w-[10%] min-w-[90px]',
             cell: (row) => {
@@ -295,51 +244,6 @@ export const MantenimientosTicketTable = ({
                 return <TicketPriorityBadge prioridad={row.prioridad} />;
             },
         },
-        // {
-        //     header: 'Horario / Duración',
-        //     accessorKey: 'horario_duracion',
-        //     sortable: false,
-        //     align: 'center',
-        //     headerClassName: 'w-[12%] min-w-[120px]',
-        //     cell: (row) => {
-        //         if (row.isSkeleton) return <Skeleton className="h-5 w-20 mx-auto rounded-md" />;
-        //         if (row.horaInicioProgramada && row.horaFinProgramada) {
-        //             const startStr = format12h(isoToLocalMXTime(row.horaInicioProgramada));
-        //             const endStr = format12h(isoToLocalMXTime(row.horaFinProgramada));
-                    
-        //             const startMs = new Date(row.horaInicioProgramada).getTime();
-        //             const endMs = new Date(row.horaFinProgramada).getTime();
-        //             let durationStr = '';
-        //             if (!isNaN(startMs) && !isNaN(endMs) && endMs > startMs) {
-        //                 const diffMins = Math.round((endMs - startMs) / 60000);
-        //                 durationStr = formatDurationToDaysHours(diffMins);
-        //             }
-
-        //             return (
-        //                 <div className="flex flex-col items-center gap-0.5">
-        //                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border uppercase tracking-wide whitespace-nowrap bg-marca-secundario/10 text-marca-secundario border-marca-secundario/30">
-        //                         <Icon name="schedule" size="xs" className="shrink-0" />
-        //                         <span>{startStr} — {endStr}</span>
-        //                     </span>
-        //                     {durationStr && (
-        //                         <span className="text-[10px] text-slate-400 font-semibold leading-none mt-0.5">
-        //                             {durationStr}
-        //                         </span>
-        //                     )}
-        //                 </div>
-        //             );
-        //         }
-        //         if (row.tiempoEstimado) {
-        //             return (
-        //                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border uppercase tracking-wide whitespace-nowrap bg-slate-100 text-slate-600 border-slate-200">
-        //                     <Icon name="timer" size="xs" className="shrink-0" />
-        //                     <span>{row.tiempoEstimado} min</span>
-        //                 </span>
-        //             );
-        //         }
-        //         return <span className="text-xs text-slate-400 italic">-</span>;
-        //     }
-        // },
         {
             header: 'Fecha Entrega',
             accessorKey: 'fechaVencimiento',
@@ -420,9 +324,18 @@ export const MantenimientosTicketTable = ({
         },
     ];
 
-    // Selección dinámica de modales según si el ticket actual tiene maquinaId
-    const ActiveAssignModal = assignTarget?.maquinaId ? MantenimientosAssign : TicketsAssign;
-    const ActiveReviewModal = reviewTarget?.maquinaId ? MantenimientosReview : TicketsReview;
+    const tableData = loading
+        ? Array.from({ length: 10 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
+        : tickets;
+
+    const handleConfirmCancel = async () => {
+        if (!cancelTarget) return;
+        const formData = new FormData();
+        formData.append('estado', 'CANCELADA');
+        formData.append('nota', 'Ticket cancelado por el usuario.');
+        await onChangeStatus(cancelTarget.id, formData);
+        setCancelTarget(null);
+    };
 
     return (
         <div className="w-full">
@@ -431,10 +344,15 @@ export const MantenimientosTicketTable = ({
                 data={tableData}
                 keyField="id"
                 loading={false}
-                emptyMessage="No hay mantenimientos que coincidan con los filtros."
+                emptyMessage="No hay tickets que coincidan con los filtros."
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={onPageChange}
+                sortConfig={sortConfig}
+                hidePagination={hidePagination}
                 rowClassName={(row) => {
                     if (row.isSkeleton) return 'bg-white';
-                    if (highlightId === String(row.id)) return 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-l-yellow-400';
                     
                     const borderCls = {
                         PENDIENTE: 'border-l-estado-pendiente',
@@ -444,37 +362,95 @@ export const MantenimientosTicketTable = ({
                         EN_PAUSA: 'border-l-estado-en-pausa',
                         RESUELTO: 'border-l-estado-resuelto',
                         RECHAZADO: 'border-l-estado-rechazado',
+                        CERRADO: 'border-l-estado-cerrado',
                         CANCELADA: 'border-l-estado-cancelada',
                     }[row.estado] || 'border-l-transparent';
 
-                    // Si es reporte de maquinaria (tipo TICKET): aplicar color según criticidad de la máquina
-                    if (row.maquina && row.tipo === 'TICKET') {
-                        if (row.maquina.criticidad === 'A') {
-                            return `bg-red-50/65 hover:bg-red-100/60 border-l-4 border-l-red-500 font-medium`;
-                        } else if (row.maquina.criticidad === 'B') {
-                            return `bg-amber-50/55 hover:bg-amber-100/40 border-l-4 border-l-amber-500`;
-                        } else if (row.maquina.criticidad === 'C') {
-                            return `bg-slate-50/30 hover:bg-slate-100/30 border-l-4 border-l-slate-400`;
-                        }
+                    if (row.estado === 'RECHAZADO') {
+                        return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
                     }
-
-                    if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
+                    if (row.isOverdue) {
+                        return `bg-red-50/40 hover:bg-red-50/70 border-l-4 ${borderCls}`;
+                    }
                     return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
                 }}
-                hidePagination={true}
+                onSortChange={(key) => {
+                    const direction =
+                        sortConfig?.key === key && sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+                    onSortChange(key, direction);
+                }}
             />
 
-            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
-            
-            <HoyFormModal scope={scope} isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
-            
-            <ActiveAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
-            
-            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
-            
-            <ActiveReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
-            
-            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+            <TicketDetailModal
+                isOpen={Boolean(detailTarget)}
+                onClose={() => setDetailTarget(null)}
+                ticket={detailTarget}
+            />
+
+            <TicketFormModal
+                isOpen={Boolean(editTarget)}
+                onClose={() => setEditTarget(null)}
+                ticketAEditar={editTarget}
+                currentUser={currentUser}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onSuccess={async (payload) => {
+                    await onSave(editTarget.id, payload);
+                    setEditTarget(null);
+                }}
+            />
+
+            <TicketAssignModal
+                isOpen={Boolean(assignTarget)}
+                onClose={() => setAssignTarget(null)}
+                ticket={assignTarget}
+                tecnicos={tecnicos}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onSave(id, payload);
+                    setAssignTarget(null);
+                }}
+            />
+
+            <TicketStatusModal
+                isOpen={Boolean(statusTarget)}
+                onClose={() => setStatusTarget(null)}
+                ticket={statusTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setStatusTarget(null);
+                }}
+            />
+
+            <TicketReviewModal
+                isOpen={Boolean(reviewTarget)}
+                onClose={() => setReviewTarget(null)}
+                ticket={reviewTarget}
+                isSubmitting={submitting}
+                currentUser={currentUser}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setReviewTarget(null);
+                }}
+            />
+
+            <TicketStatusModal
+                isOpen={Boolean(cancelTarget)}
+                onClose={() => setCancelTarget(null)}
+                ticket={cancelTarget}
+                currentUser={currentUser}
+                isSubmitting={submitting}
+                forcedEstado="CANCELADA"
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setCancelTarget(null);
+                }}
+            />
         </div>
     );
 };
+
+
+export { TicketsTable as MantenimientosTicketTable };

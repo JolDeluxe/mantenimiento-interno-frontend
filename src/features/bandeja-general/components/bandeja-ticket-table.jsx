@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Skeleton, Icon, Pagination, Table, Tooltip } from '@/components/ui/z_index';
-import { TicketPriorityBadge } from '@/features/tickets/components/historico/ticket-status-badge';
+import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
 

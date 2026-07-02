@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
-import { Icon, Skeleton, Table } from '@/components/ui/z_index';
-import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
-import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
-import { HoyDetailModal } from './hoy-detail-modal';
-import { HoyFormModal } from './hoy-form-modal';
-import { TicketAssignModal } from '@/features/tickets/components/historico/ticket-assign-modal';
-import { HoyStatusModal } from './hoy-status-modal';
-import { TicketReviewModal } from '@/features/tickets/components/historico/ticket-review-modal';
+import { Skeleton, Icon, Pagination, Table, Tooltip } from '@/components/ui/z_index';
+import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
-
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
 
@@ -62,25 +54,16 @@ const ResponsablesCell = ({ lista }) => {
     );
 };
 
-export const HoyTicketTable = ({
-    tickets = [],
-    loading = false,
-    submitting = false,
-    currentUser,
-    tecnicos = [],
-    highlightId,
-    onSave,
-    onChangeStatus
+export const AprobarTicketTable = ({
+    tickets,
+    isLoading,
+    onReviewTicket,
+    onViewDetails,
+    pagination,
+    onPageChange
 }) => {
-    const [detailTarget, setDetailTarget] = useState(null);
-    const [editTarget, setEditTarget] = useState(null);
-    const [statusTarget, setStatusTarget] = useState(null);
-    const [assignTarget, setAssignTarget] = useState(null);
-    const [reviewTarget, setReviewTarget] = useState(null);
-    const [cancelTarget, setCancelTarget] = useState(null);
-
-    const tableData = loading
-        ? Array.from({ length: 6 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
+    const tableData = isLoading
+        ? Array.from({ length: 5 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
         : tickets;
 
     const columns = [
@@ -115,6 +98,11 @@ export const HoyTicketTable = ({
                             <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">
                                 {row.titulo}
                             </span>
+                            {row.isOverdue && (
+                                <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-estado-rechazado bg-estado-rechazado/10 border border-estado-rechazado/20 px-1.5 py-0.5 rounded-md uppercase shrink-0">
+                                    <Icon name="warning" size="xs" /> ATRASADA
+                                </span>
+                            )}
                             {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" />ENTREGADA CON RETRASO
@@ -135,7 +123,6 @@ export const HoyTicketTable = ({
             header: 'Tipo / Clasificación',
             accessorKey: 'tipo_clasificacion',
             sortable: false,
-            align: 'center',
             headerClassName: 'w-[15%] min-w-[130px]',
             cell: (row) => {
                 if (row.isSkeleton) return (
@@ -164,7 +151,7 @@ export const HoyTicketTable = ({
                     RUTINA: 'sync',
                 }[row.clasificacion] || 'label';
 
-                const clasifContent = (row.clasificacion && row.categoria === 'MAQUINARIA') ? (
+                const clasifContent = row.clasificacion ? (
                     <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
                         <Icon name={clasifIcon} size="xs" className="text-slate-400 shrink-0" />
                         <span>{row.clasificacion}</span>
@@ -182,62 +169,13 @@ export const HoyTicketTable = ({
             }
         },
         {
-            header: 'Categoría',
-            accessorKey: 'categoria',
-            sortable: false,
-            align: 'center',
-            headerClassName: 'w-[12%] min-w-[100px]',
-            cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-5 w-18 mx-auto rounded-md" />;
-                if (!row.categoria) return <span className="text-xs text-slate-400 italic">-</span>;
-                
-                const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === row.categoria) || {
-                    label: row.categoria,
-                    icon: 'category',
-                    colorClass: 'bg-slate-100 text-slate-500 border-slate-200'
-                };
-
-                return (
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide whitespace-nowrap`}>
-                        <Icon name={catInfo.icon} size="xs" className="shrink-0" />
-                        {catInfo.label}
-                    </span>
-                );
-            },
-        },
-        // {
-        //     header: 'Fecha Creación',
-        //     accessorKey: 'createdAt',
-        //     sortable: false,
-        //     headerClassName: 'w-[12%] min-w-[110px]',
-        //     cell: (row) => {
-        //         if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
-        //         return (
-        //             <span className="text-xs font-medium text-slate-600">
-        //                 {formatFecha(row.createdAt)}
-        //             </span>
-        //         );
-        //     },
-        // },
-        {
-            header: 'Responsable',
+            header: 'Responsable(s)',
             accessorKey: 'responsables',
             sortable: false,
             headerClassName: 'w-[15%] min-w-[140px]',
             cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-4 w-24 rounded-md" />;
+                if (row.isSkeleton) return <Skeleton className="h-4 w-28 rounded-md" />;
                 return <ResponsablesCell lista={row.responsables} />;
-            },
-        },
-        {
-            header: 'Estado',
-            accessorKey: 'estado',
-            sortable: false,
-            align: 'center',
-            headerClassName: 'w-[13%] min-w-[110px]',
-            cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-5 w-20 mx-auto rounded-md" />;
-                return <TicketStatusBadge estado={row.estado} />;
             },
         },
         {
@@ -308,24 +246,32 @@ export const HoyTicketTable = ({
             header: 'Acciones',
             accessorKey: 'acciones',
             align: 'center',
-            headerClassName: 'w-[20%] min-w-[50px]',
+            headerClassName: 'w-[12%] min-w-[110px]',
             cell: (row) => {
                 if (row.isSkeleton) return (
                     <div className="flex gap-1.5 justify-center">
-                        {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-7 w-7 rounded-md" />)}
+                        <Skeleton className="h-7 w-7 rounded-md" />
+                        <Skeleton className="h-7 w-16 rounded-md" />
                     </div>
                 );
                 return (
-                    <TicketActions
-                        ticket={row}
-                        currentUser={currentUser}
-                        onViewDetail={(r) => setDetailTarget(r)}
-                        onEdit={(r) => setEditTarget(r)}
-                        onAssign={(r) => setAssignTarget(r)}
-                        onChangeStatus={(r) => setStatusTarget(r)}
-                        onReview={(r) => setReviewTarget(r)}
-                        onCancel={(r) => setCancelTarget(r)}
-                    />
+                    <div className="flex items-center gap-2 justify-center">
+                        <Tooltip text="Ver detalle" variant="dark">
+                            <button
+                                onClick={() => onViewDetails?.(row)}
+                                className="flex items-center justify-center p-1.5 rounded-md text-slate-600 hover:bg-slate-600/10 transition-colors cursor-pointer"
+                            >
+                                <Icon name="visibility" size="sm" />
+                            </button>
+                        </Tooltip>
+                        <button
+                            onClick={() => onReviewTicket?.(row)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-estado-resuelto hover:brightness-110 shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+                        >
+                            <Icon name="fact_check" size="xs" />
+                            <span>Revisar</span>
+                        </button>
+                    </div>
                 );
             },
         },
@@ -338,34 +284,17 @@ export const HoyTicketTable = ({
                 data={tableData}
                 keyField="id"
                 loading={false}
-                emptyMessage="No hay tickets que coincidan con los filtros."
+                emptyMessage="No hay tareas pendientes por aprobar en este momento."
+                page={pagination?.page}
+                totalPages={pagination?.totalPages}
+                totalItems={pagination?.total}
+                onPageChange={onPageChange}
                 rowClassName={(row) => {
                     if (row.isSkeleton) return 'bg-white';
-                    if (highlightId === String(row.id)) return 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-l-yellow-400';
-                    
-                    const borderCls = {
-                        PENDIENTE: 'border-l-estado-pendiente',
-                        ASIGNADA: 'border-l-estado-asignada',
-                        EN_PROGRESO: 'border-l-estado-en-progreso',
-                        EN_PROCESO: 'border-l-estado-en-progreso',
-                        EN_PAUSA: 'border-l-estado-en-pausa',
-                        RESUELTO: 'border-l-estado-resuelto',
-                        RECHAZADO: 'border-l-estado-rechazado',
-                        CANCELADA: 'border-l-estado-cancelada',
-                    }[row.estado] || 'border-l-transparent';
-
-                    if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
-                    return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
+                    return 'bg-white hover:bg-slate-50 border-l-4 border-l-transparent';
                 }}
-                hidePagination={true}
+                hidePagination={false}
             />
-
-            <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
-            <HoyFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
-            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
-            <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
-            <TicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
-            <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
         </div>
     );
 };

@@ -1,12 +1,11 @@
-// src/features/tickets/views/tickets-historico-mobile.jsx
 import { useState } from 'react';
-import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton, InteractiveCalendar } from '@/components/ui/z_index';
+import { GlassFab, GlassPaginationPill, GlassViewToggle, InteractiveCalendar, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { MantenimientosFechas as TicketFechas } from '@/features/common/components/ticket-fechas';
-import { MobileMantenimientosFilterBar as MobileTicketFilterBar } from '../components/common/mobile-mantenimientos-filter-bar';
-import { MantenimientosTicketTable as TicketsTable } from '../components/common/mantenimientos-ticket-table';
-import { MantenimientosTicketCard as TicketCard } from '../components/common/mantenimientos-ticket-card';
+import { MobileMantenimientosFilterBar as MobileCorrectivosFilterBar } from '../components/common/mobile-mantenimientos-filter-bar';
+import { MantenimientosTicketTable as CorrectivosTicketTable } from '../components/common/mantenimientos-ticket-table';
+import { MantenimientosTicketCard as CorrectivosTicketCard } from '../components/common/mantenimientos-ticket-card';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
 import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
 import { MantenimientosDetailModal as TicketDetailModal } from '../components/common/mantenimientos-detail-modal';
@@ -46,7 +45,7 @@ const CardSkeleton = () => (
     </div>
 );
 
-export const MantenimientosHistoricoMobile = ({
+export const MantenimientosCorrectivosMobile = ({
     tickets,
     loading,
     submitting,
@@ -101,7 +100,6 @@ export const MantenimientosHistoricoMobile = ({
     onRefresh,
     isFiltering = false,
     onClearFilters,
-    // Calendar props
     viewMode,
     onViewModeChange,
     vistaCalendario,
@@ -111,13 +109,11 @@ export const MantenimientosHistoricoMobile = ({
     calendarView,
     onCalendarViewChange,
     onCalendarDayClick,
-    onCalendarItemClick
+    onCalendarItemClick,
 }) => {
     const [localViewMode, setLocalViewMode] = useState('cards');
     let activeViewMode = viewMode || localViewMode;
-    if (activeViewMode === 'table') {
-        activeViewMode = 'cards';
-    }
+    if (activeViewMode === 'table') activeViewMode = 'cards';
     const handleViewModeChange = onViewModeChange || setLocalViewMode;
 
     const [editTarget, setEditTarget] = useState(null);
@@ -149,7 +145,15 @@ export const MantenimientosHistoricoMobile = ({
             )}
             {!vistaCalendario && (
                 <div className="mb-3">
-                    <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
+                    <TicketSummaryBar
+                        totalParaSummary={totalParaSummary}
+                        conteos={conteos}
+                        filtroActual={filtroEstado}
+                        onFilterChange={onFilterChange}
+                        loading={loading}
+                        mostrarPapelera={mostrarPapelera}
+                        mostrarRechazadas={mostrarRechazadas}
+                    />
                 </div>
             )}
 
@@ -160,12 +164,12 @@ export const MantenimientosHistoricoMobile = ({
                         onChange={handleViewModeChange}
                         options={[
                             { id: 'cards', label: 'Listado', icon: 'table_rows' },
-                            { id: 'calendar', label: 'Calendario', icon: 'calendar_month' }
+                            { id: 'calendar', label: 'Calendario', icon: 'calendar_month' },
                         ]}
                     />
                 </div>
                 {!vistaCalendario && (
-                    <MobileTicketFilterBar
+                    <MobileCorrectivosFilterBar
                         query={query}
                         onSearchChange={onSearchChange}
                         filtroTipo={filtroTipo}
@@ -231,23 +235,32 @@ export const MantenimientosHistoricoMobile = ({
                     {loading
                         ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
                         : tickets.length === 0
-                            ? (
-                                <div className="mt-10">
-                                    <TicketsEmptyState
-                                        isMobile={true}
-                                        isFiltering={isFiltering}
-                                        onClearFilters={onClearFilters}
-                                        onRefresh={onRefresh}
-                                        mensaje="Historial Vacío"
-                                        subtexto="No hay tickets en el historial."
-                                        icon="history"
-                                    />
-                                </div>
+                          ? (
+                              <div className="mt-10">
+                                  <TicketsEmptyState
+                                      isMobile={true}
+                                      isFiltering={isFiltering}
+                                      onClearFilters={onClearFilters}
+                                      onRefresh={onRefresh}
+                                      mensaje="Historial Vacío"
+                                      subtexto="No hay tickets en el historial."
+                                      icon="history"
+                                  />
+                              </div>
                             )
-                            : tickets.map((ticket) => (
-                                <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
-                            ))
-                    }
+                          : tickets.map((ticket) => (
+                              <CorrectivosTicketCard
+                                  key={ticket.id}
+                                  ticket={ticket}
+                                  currentUser={currentUser}
+                                  onViewDetail={setDetailTarget}
+                                  onEdit={setEditTarget}
+                                  onAssign={setAssignTarget}
+                                  onChangeStatus={setStatusTarget}
+                                  onReview={setReviewTarget}
+                                  onCancel={setCancelTarget}
+                              />
+                            ))}
                 </div>
             ) : (
                 <div className={cn('mb-40', hasPaginator && 'mb-52')}>
@@ -263,7 +276,24 @@ export const MantenimientosHistoricoMobile = ({
                             />
                         </div>
                     ) : (
-                        <TicketsTable tickets={tickets} loading={loading} submitting={submitting} currentUser={currentUser} tecnicos={tecnicos} page={page} limit={limit} totalPages={totalPages} totalItems={totalParaPaginador} sortConfig={sortConfig} onPageChange={onPageChange} onSortChange={onSortChange} onSave={onSave} onChangeStatus={onChangeStatus} onRefresh={onRefresh} hidePagination />
+                        <CorrectivosTicketTable
+                            tickets={tickets}
+                            loading={loading}
+                            submitting={submitting}
+                            currentUser={currentUser}
+                            tecnicos={tecnicos}
+                            page={page}
+                            limit={limit}
+                            totalPages={totalPages}
+                            totalItems={totalParaPaginador}
+                            sortConfig={sortConfig}
+                            onPageChange={onPageChange}
+                            onSortChange={onSortChange}
+                            onSave={onSave}
+                            onChangeStatus={onChangeStatus}
+                            onRefresh={onRefresh}
+                            hidePagination
+                        />
                     )}
                 </div>
             )}

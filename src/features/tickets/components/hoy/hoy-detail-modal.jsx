@@ -1,1 +1,0 @@
-export { TicketDetailModal as HoyDetailModal } from '../historico/ticket-detail-modal';

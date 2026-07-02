@@ -23,7 +23,6 @@ import TicketsBandejaGeneralPage from '@/features/bandeja-general/pages/tickets-
 
 import MantenimientosPage from '@/features/mantenimientos/pages/mantenimientos-page';
 import MantenimientosAprobarPage from '@/features/mantenimientos/pages/mantenimientos-aprobar';
-import MantenimientosBandejaPage from '@/features/mantenimientos/pages/mantenimientos-bandeja';
 import MantenimientosCorrectivosPage from '@/features/mantenimientos/pages/mantenimientos-correctivos';
 import MantenimientosPreventivosPage from '@/features/mantenimientos/pages/mantenimientos-preventivos';
 import MantenimientosHistoricoPage from '@/features/mantenimientos/pages/mantenimientos-historico';
@@ -54,7 +53,6 @@ const ROLES = {
   ticketsAprobar: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-aprobar')?.allowedRoles || [],
   ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
   mantenimientos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.allowedRoles || [],
-  mantenimientosBandeja: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-bandeja')?.allowedRoles || [],
   mantenimientosAprobar: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-aprobar')?.allowedRoles || [],
   mantenimientosCorrectivos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-correctivos')?.allowedRoles || [],
   mantenimientosPreventivos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-preventivos')?.allowedRoles || [],
@@ -191,10 +189,6 @@ export const AppRoutes = () => {
 
               <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosAprobar} />}>
                 <Route path="aprobar" element={<MantenimientosAprobarPage />} />
-              </Route>
-
-              <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosBandeja} />}>
-                <Route path="bandeja" element={<MantenimientosBandejaPage />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosCorrectivos} />}>

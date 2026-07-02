@@ -3,8 +3,6 @@ import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
-
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
@@ -125,11 +123,6 @@ export const TicketCard = ({
                                 {ticket.tipo}
                             </span>
                         )}
-                        {ticket.categoria === 'MAQUINARIA' && ticket.clasificacion && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">
-                                {ticket.clasificacion}
-                            </span>
-                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
@@ -176,18 +169,6 @@ export const TicketCard = ({
                             </span>
                         </p>
                     )}
-                    {(() => {
-                        const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === ticket.categoria);
-                        if (!ticket.categoria) return null;
-                        return (
-                            <p className="flex items-center gap-2">
-                                <Icon name={catInfo?.icon || 'label'} size="xs" className="text-slate-300 shrink-0" />
-                                <span className="text-xs text-slate-500">
-                                    {catInfo?.label || ticket.categoria}
-                                </span>
-                            </p>
-                        );
-                    })()}
                     {ticket.creador && (
                         <p className="flex items-center gap-2">
                             <Icon name="person" size="xs" className="text-slate-300 shrink-0" />
@@ -318,3 +299,6 @@ export const TicketCard = ({
         </div>
     );
 };
+
+
+export { TicketCard as MantenimientosTicketCard };

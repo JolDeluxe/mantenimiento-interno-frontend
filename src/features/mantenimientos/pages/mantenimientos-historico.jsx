@@ -6,9 +6,9 @@ import { notify } from '@/components/notification/adaptive-notify';
 import { useMantenimientos } from '../hooks/use-mantenimientos';
 import { MantenimientosHistoricoDesktop } from '../views/mantenimientos-historico-desktop';
 import { MantenimientosHistoricoMobile } from '../views/mantenimientos-historico-mobile';
-import { TicketFormModal } from '../components/historico/ticket-form-modal';
-import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
-import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
+import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
+import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
+import { MantenimientosDetailModal as TicketDetailModal } from '../components/common/mantenimientos-detail-modal';
 import { mapMantenimientosToCalendarItems } from '../utils/mantenimientosCalendarAdapter';
 
 const LIMIT = 50;
@@ -46,7 +46,11 @@ const getGridBounds = (date, view) => {
     }
 };
 
-export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
+export default function MantenimientosHistoricoPage({
+    forcedClasificacion,
+    DesktopView = MantenimientosHistoricoDesktop,
+    MobileView = MantenimientosHistoricoMobile,
+}) {
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
@@ -358,9 +362,9 @@ export default function MantenimientosHistoricoPage({ forcedClasificacion }) {
     return (
         <div className="max-w-full mx-auto">
             {isDesktop ? (
-                <MantenimientosHistoricoDesktop {...sharedProps} />
+                <DesktopView {...sharedProps} />
             ) : (
-                <MantenimientosHistoricoMobile {...sharedProps} />
+                <MobileView {...sharedProps} />
             )}
 
             {isDesktop ? (

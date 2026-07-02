@@ -2,8 +2,8 @@
 import React from 'react';
 import { Icon, GlassFab, GlassPaginationPill, ScrollToTopButton, Skeleton } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
-import { MobileAprobarCard } from '../components/aprobar/mobile-aprobar-cads';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
+import { MobileAprobarCard } from '../components/mantenimientos-aprobar/mobile-aprobar-cads';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { hardReload } from '@/utils/hard-reload';
 
 const MobileSkeleton = () => (

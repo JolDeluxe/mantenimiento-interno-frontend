@@ -1,8 +1,8 @@
 // src/features/tickets/views/tickets-aprobar-desktop.jsx
 import React from 'react';
 import { Skeleton, Icon, RefreshFab } from '@/components/ui/z_index';
-import { TicketsEmptyState } from '../components/tickets-empty-state';
-import { AprobarTicketTable } from '../components/aprobar/aprobar-table';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
+import { AprobarTicketTable } from '../components/mantenimientos-aprobar/aprobar-table';
 
 export const MantenimientosAprobarDesktop = ({
     tickets,

@@ -5,7 +5,7 @@ import { RefreshFab } from '@/components/ui/z_index';
 import { HoyAddButton } from '../components/common/hoy-add-button';
 import { ActividadesFilterBar } from '../components/hoy-actividades/actividades-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
-import { TicketsEmptyState } from '../components/common/tickets-empty-state';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ActividadesTicketTable } from '../components/hoy-actividades/actividades-ticket-table';
 import { ROLES_ADMIN } from '../constants';
 import { cn } from '@/utils/cn';
