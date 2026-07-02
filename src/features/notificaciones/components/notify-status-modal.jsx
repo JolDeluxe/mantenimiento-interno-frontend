@@ -1,2 +1,2 @@
 // notify-status-modal.jsx
-export { TicketStatusModal as NotifyStatusModal } from '../../tickets/components/historico/ticket-status-modal';
+export { TicketStatusModal as NotifyStatusModal } from '@/features/common/components/status-modal';

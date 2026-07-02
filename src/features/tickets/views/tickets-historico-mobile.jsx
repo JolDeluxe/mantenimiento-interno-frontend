@@ -8,7 +8,7 @@ import { MobileTicketFilterBar } from '../components/historico/mobile-ticket-fil
 import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketCard } from '../components/historico/ticket-card';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
-import { TicketStatusModal } from '../components/historico/ticket-status-modal';
+import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';

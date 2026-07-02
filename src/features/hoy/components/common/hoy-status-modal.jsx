@@ -1,2 +1,2 @@
 // src/features/hoy/components/common/hoy-status-modal.jsx
-export { TicketStatusModal as HoyStatusModal } from '@/features/tickets/components/historico/ticket-status-modal';
+export { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';

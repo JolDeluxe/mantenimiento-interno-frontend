@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table, Skeleton, Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from './ticket-status-badge';
 import { TicketFormModal } from './ticket-form-modal';
-import { TicketStatusModal } from './ticket-status-modal';
+import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from './ticket-detail-modal';
 import { TicketAssignModal } from './ticket-assign-modal';
 import { TicketReviewModal } from './ticket-review-modal';

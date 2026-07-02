@@ -14,7 +14,7 @@ import { cn } from '@/utils/cn';
 import { TicketDetailModal } from '../components/historico/ticket-detail-modal';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { TicketAssignModal } from '../components/historico/ticket-assign-modal';
-import { TicketStatusModal } from '../components/historico/ticket-status-modal';
+import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { CalendarItemActions } from '../components/historico/calendar-item-actions';
 

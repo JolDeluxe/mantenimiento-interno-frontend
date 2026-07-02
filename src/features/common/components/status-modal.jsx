@@ -1,16 +1,16 @@
-// src/features/tickets/components/historico/ticket-status-modal.jsx
+// src/features/common/components/status-modal.jsx
 //
 // ORQUESTADOR — Decide qué sub-modal renderizar según el estado y clasificación
 // del ticket. Mantiene el contrato externo: onConfirm(id, formData)
 //
-import { TicketStartModal } from './status-modals/ticket-start-modal';
-import { TicketProgressModal } from './status-modals/ticket-progress-modal';
-import { TicketPausaModal } from './status-modals/ticket-pausa-modal';
-import { TicketCheckModal } from './status-modals/ticket-check-modal';
-import { TicketRechazadoModal } from './status-modals/ticket-rechazado-modal'; // <- NUEVO
+import { TicketStartModal } from '@/features/tickets/components/historico/status-modals/ticket-start-modal';
+import { TicketProgressModal } from '@/features/tickets/components/historico/status-modals/ticket-progress-modal';
+import { TicketPausaModal } from '@/features/tickets/components/historico/status-modals/ticket-pausa-modal';
+import { TicketCheckModal } from '@/features/tickets/components/historico/status-modals/ticket-check-modal';
+import { TicketRechazadoModal } from '@/features/tickets/components/historico/status-modals/ticket-rechazado-modal';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // ── Tipos de modal que puede despachar el orquestador ─────────────────────
 const TIPO = {
@@ -51,8 +51,6 @@ const resolverTipo = (ticket, forcedEstado) => {
 // ── Modal inline: Cancelación ─────────────────────────────────────────────
 const CancelModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
     const [nota, setNota] = useState('');
-
-    useEffect(() => { if (isOpen) setNota(''); }, [isOpen]);
 
     if (!ticket) return null;
 
@@ -181,7 +179,6 @@ export const TicketStatusModal = ({
     isOpen,
     onClose,
     ticket,
-    currentUser,
     isSubmitting,
     onConfirm,
     forcedEstado,
