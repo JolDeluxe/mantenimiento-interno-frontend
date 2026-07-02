@@ -3,11 +3,11 @@
 // ORQUESTADOR — Decide qué sub-modal renderizar según el estado y clasificación
 // del ticket. Mantiene el contrato externo: onConfirm(id, formData)
 //
-import { TicketStartModal } from '@/features/tickets/components/historico/status-modals/ticket-start-modal';
+import { TicketStartModal } from './status-modals/ticket-start-modal';
 import { TicketProgressModal } from '@/features/tickets/components/historico/status-modals/ticket-progress-modal';
-import { TicketPausaModal } from '@/features/tickets/components/historico/status-modals/ticket-pausa-modal';
-import { TicketCheckModal } from '@/features/tickets/components/historico/status-modals/ticket-check-modal';
-import { TicketRechazadoModal } from '@/features/tickets/components/historico/status-modals/ticket-rechazado-modal';
+import { TicketPausaModal } from './status-modals/ticket-pausa-modal';
+import { TicketCheckModal } from './status-modals/ticket-check-modal';
+import { TicketRechazadoModal } from './status-modals/ticket-rechazado-modal';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input } from '@/components/form/z_index';
 import { useState } from 'react';
