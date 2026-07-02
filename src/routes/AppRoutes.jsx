@@ -42,6 +42,8 @@ import DashboardEquipo from '@/features/dashboard/pages/dashboard-equipo';
 import DashboardArea from '@/features/dashboard/pages/dashboard-area';
 import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
 
+import CalendarioPage from '@/features/calendario/pages/calendario-page';
+
 const ROLES = {
   dashboard: MODULES_CONFIG.find(m => m.id === 'dashboard')?.allowedRoles || [],
   hoy: MODULES_CONFIG.find(m => m.id === 'hoy')?.allowedRoles || [],
@@ -66,6 +68,7 @@ const ROLES = {
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
+  calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
 };
 
 const ModuleRedirect = ({ scope }) => {
@@ -203,6 +206,10 @@ export const AppRoutes = () => {
                 <Route path="historico" element={<MantenimientosHistoricoPage />} />
               </Route>
             </Route>
+          </Route>
+
+          <Route element={<RoleGuard allowedRoles={ROLES.calendario} />}>
+            <Route path="/calendario" element={<CalendarioPage />} />
           </Route>
 
           {/* Bandeja de Entrada General */}

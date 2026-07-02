@@ -1,3 +1,4 @@
+// src/features/tickets/pages/tickets-historico.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
@@ -8,43 +9,9 @@ import { TicketsHistoricoMobile } from '../views/tickets-historico-mobile';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
-import { mapTicketsToCalendarItems } from '../utils/ticketsCalendarAdapter';
 import { formatFechaNumerica } from '@/lib/date';
 
 const LIMIT = 50;
-
-const getGridBounds = (date, view) => {
-    if (view === 'week') {
-        const dayOfWeekIndex = date.getDay() - 1 === -1 ? 6 : date.getDay() - 1;
-        const start = new Date(date);
-        start.setDate(date.getDate() - dayOfWeekIndex);
-        
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        
-        return {
-            start: start.toLocaleDateString('en-CA'),
-            end: end.toLocaleDateString('en-CA')
-        };
-    } else {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        const firstDay = new Date(year, month, 1);
-        let firstDayOfWeekIndex = firstDay.getDay() - 1;
-        if (firstDayOfWeekIndex === -1) firstDayOfWeekIndex = 6;
-        
-        const start = new Date(firstDay);
-        start.setDate(firstDay.getDate() - firstDayOfWeekIndex);
-        
-        const end = new Date(start);
-        end.setDate(start.getDate() + 41);
-        
-        return {
-            start: start.toLocaleDateString('en-CA'),
-            end: end.toLocaleDateString('en-CA')
-        };
-    }
-};
 
 export default function TicketsHistoricoPage() {
     const isDesktop = useIsDesktop();
@@ -81,9 +48,6 @@ export default function TicketsHistoricoPage() {
     const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
-    const [filtroYear, setFiltroYear] = useState(null);
-    const [filtroMonth, setFiltroMonth] = useState(0);
-
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
     const [filtroConclusion, setFiltroConclusion] = useState({ type: '', start: '', end: '' });
 
@@ -91,28 +55,9 @@ export default function TicketsHistoricoPage() {
     const [mostrarPapelera, setMostrarPapelera] = useState(false);
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
 
-    const [viewMode, setViewMode] = useState(() => {
-        return localStorage.getItem('tickets_vista_historico') || 'cards';
-    });
-    const [calendarDate, setCalendarDate] = useState(() => new Date());
-    const [calendarView, setCalendarView] = useState('week');
-    const [calendarCreateDate, setCalendarCreateDate] = useState(null);
     const [detailTicket, setDetailTicket] = useState(null);
 
-    const vistaCalendario = viewMode === 'calendar';
-
     const queryPayload = useMemo(() => {
-        if (vistaCalendario) {
-            const bounds = getGridBounds(calendarDate, calendarView);
-            const params = {
-                limit: 200,
-                scope: 'actividades',
-                vencimientoDesde: bounds.start,
-                vencimientoHasta: bounds.end,
-            };
-            return params;
-        }
-
         const params = { page, limit: LIMIT, scope: 'actividades' };
         if (query) params.q = query;
 
@@ -133,9 +78,6 @@ export default function TicketsHistoricoPage() {
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
 
-        if (filtroYear) params.year = filtroYear;
-        if (filtroMonth > 0) params.month = filtroMonth;
-
         if (filtroProgramacion.start) params.vencimientoDesde = filtroProgramacion.start;
         if (filtroProgramacion.end) params.vencimientoHasta = filtroProgramacion.end;
 
@@ -146,7 +88,7 @@ export default function TicketsHistoricoPage() {
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [vistaCalendario, calendarDate, calendarView, page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth]);
+    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
 
     const loadTickets = useCallback(() => {
         fetchMetricas(queryPayload);
@@ -154,15 +96,8 @@ export default function TicketsHistoricoPage() {
     }, [fetchTickets, fetchMetricas, queryPayload]);
 
     useEffect(() => {
-        if (vistaCalendario) {
-            const timer = setTimeout(() => {
-                loadTickets();
-            }, 300);
-            return () => clearTimeout(timer);
-        } else {
-            loadTickets();
-        }
-    }, [loadTickets, vistaCalendario]);
+        loadTickets();
+    }, [loadTickets]);
 
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
@@ -176,9 +111,6 @@ export default function TicketsHistoricoPage() {
     const handleResponsableChange = useCallback((r) => { setFiltroResponsable(r); setPage(1); }, []);
     const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
     const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
-
-    const handleYearChange = useCallback((y) => { setFiltroYear(y); setPage(1); }, []);
-    const handleMonthChange = useCallback((m) => { setFiltroMonth(m); setPage(1); }, []);
 
     const handleProgramacionChange = useCallback((val) => { setFiltroProgramacion(val); setPage(1); }, []);
     const handleConclusionChange = useCallback((val) => { setFiltroConclusion(val); setPage(1); }, []);
@@ -196,11 +128,6 @@ export default function TicketsHistoricoPage() {
     const handleToggleAtrasadas = useCallback(() => {
         setMostrarAtrasadas((prev) => !prev);
         setMostrarRechazadas(false); setMostrarPapelera(false); setFiltroEstado('TODOS'); setPage(1);
-    }, []);
-
-    const handleViewModeChange = useCallback((mode) => {
-        setViewMode(mode);
-        localStorage.setItem('tickets_vista_historico', mode);
     }, []);
 
     const handleExport = useCallback(() => {
@@ -241,7 +168,6 @@ export default function TicketsHistoricoPage() {
                 await createBatch(payloads);
                 notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
                 setShowCreate(false);
-                setCalendarCreateDate(null);
                 await loadTickets();
             } catch (err) {
                 notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las tareas.');
@@ -254,7 +180,6 @@ export default function TicketsHistoricoPage() {
             for (const payload of items) await createTicket(payload);
             notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
             setShowCreate(false);
-            setCalendarCreateDate(null);
             await loadTickets();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la tarea.');
@@ -264,7 +189,6 @@ export default function TicketsHistoricoPage() {
 
     const handleCloseCreate = useCallback(() => {
         setShowCreate(false);
-        setCalendarCreateDate(null);
     }, []);
 
     const handleUpdate = async (id, payload) => {
@@ -291,10 +215,6 @@ export default function TicketsHistoricoPage() {
 
     const sortedTickets = useMemo(() => tickets || [], [tickets]);
 
-    const calendarItems = useMemo(() => {
-        return mapTicketsToCalendarItems(sortedTickets);
-    }, [sortedTickets]);
-
     const sharedViewProps = {
         tickets: sortedTickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,
         totalPages: meta?.totalPages || 1, totalParaSummary: meta?.totalAbsoluto || 0,
@@ -302,44 +222,30 @@ export default function TicketsHistoricoPage() {
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0, sortConfig, query,
         filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable,
-        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion, filtroYear, filtroMonth,
+        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange, onTipoChange: handleTipoChange, onPrioridadChange: handlePrioridadChange,
         onCategoriaChange: handleCategoriaChange,
         onClasificacionChange: handleClasificacionChange, onResponsableChange: handleResponsableChange,
         onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange,
-        onYearChange: handleYearChange, onMonthChange: handleMonthChange,
         onProgramacionChange: handleProgramacionChange, onConclusionChange: handleConclusionChange,
         onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,
         onSave: handleUpdate, onChangeStatus: handleChangeStatus, onOpenCreate: () => setShowCreate(true),
         onRefresh: loadTickets,
-        onExport: handleExport,
-        viewMode,
-        onViewModeChange: handleViewModeChange,
-        vistaCalendario,
-        calendarItems,
-        calendarDate,
-        onCalendarNavigate: setCalendarDate,
-        calendarView,
-        onCalendarViewChange: setCalendarView,
-        onCalendarDayClick: (dStr) => {
-            setCalendarCreateDate(dStr);
-            setShowCreate(true);
-        },
-        onCalendarItemClick: (item) => {
-            setDetailTicket(item.raw);
-        }
+        onExport: handleExport
     };
 
     return (
         <div className="max-w-full mx-auto">
             {isDesktop ? <TicketsHistoricoDesktop {...sharedViewProps} /> : <TicketsHistoricoMobile {...sharedViewProps} />}
-            {isDesktop ? (
-                <TicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" defaultDate={calendarCreateDate} />
-            ) : (
-                <MobileTicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" defaultDate={calendarCreateDate} />
+            {showCreate && (
+                isDesktop ? (
+                    <TicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
+                ) : (
+                    <MobileTicketFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope="actividades" />
+                )
             )}
             <TicketDetailModal isOpen={Boolean(detailTicket)} onClose={() => setDetailTicket(null)} ticket={detailTicket} />
         </div>

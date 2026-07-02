@@ -346,12 +346,13 @@ export const InteractiveCalendar = ({
                                                     key={item.id}
                                                     onClick={() => onItemClick && onItemClick(item)}
                                                     className={cn(
-                                                        'text-[9px] font-bold px-1.5 py-0.5 rounded-r border-l-2 truncate cursor-pointer transition-all leading-normal select-none shadow-sm',
+                                                        'text-[9px] font-bold px-1.5 py-0.5 rounded-r border-l-2 truncate cursor-pointer transition-all leading-normal select-none shadow-sm flex items-center gap-1',
                                                         colorCls
                                                     )}
                                                     title={item.title}
                                                 >
-                                                    {item.title}
+                                                    <Icon name={item.isMantenimiento ? 'settings' : 'format_list_bulleted'} size="xs" className="shrink-0 text-[10px]" />
+                                                    <span className="truncate">{item.title}</span>
                                                 </div>
                                             );
                                         })}
@@ -410,16 +411,19 @@ export const InteractiveCalendar = ({
                                     >
                                         <div 
                                             onClick={() => onItemClick && onItemClick(item)}
-                                            className="flex-1 min-w-0 flex flex-col gap-0.5 cursor-pointer"
+                                            className="flex-1 min-w-0 flex items-start gap-1.5 cursor-pointer"
                                         >
-                                            <span className="text-[11px] font-bold text-slate-800 leading-snug truncate">
-                                                {item.title}
-                                            </span>
-                                            {item.raw?.tipo && (
-                                                <span className="text-[9px] text-slate-400">
-                                                    {item.raw?.tipo} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
+                                            <Icon name={item.isMantenimiento ? 'settings' : 'format_list_bulleted'} size="xs" className="text-slate-450 shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                <span className="text-[11px] font-bold text-slate-800 leading-snug truncate">
+                                                    {item.title}
                                                 </span>
-                                            )}
+                                                {item.raw?.tipo && (
+                                                    <span className="text-[9px] text-slate-400">
+                                                        {item.raw?.tipo} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0 ml-2">
                                             {renderActions && renderActions(item)}

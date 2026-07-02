@@ -1,11 +1,9 @@
-// src/features/tickets/views/tickets-historico-mobile.jsx
+// src/features/mantenimientos/views/mantenimientos-historico-mobile.jsx
 import { useState } from 'react';
-import { GlassFab, GlassPaginationPill, GlassViewToggle, Icon, Skeleton, InteractiveCalendar } from '@/components/ui/z_index';
+import { GlassFab, GlassPaginationPill, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
-import { MantenimientosFechas as TicketFechas } from '@/features/common/components/ticket-fechas';
 import { MobileMantenimientosFilterBar as MobileTicketFilterBar } from '../components/common/mobile-mantenimientos-filter-bar';
-import { MantenimientosTicketTable as TicketsTable } from '../components/common/mantenimientos-ticket-table';
 import { MantenimientosTicketCard as TicketCard } from '../components/common/mantenimientos-ticket-card';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
 import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
@@ -14,9 +12,7 @@ import { MantenimientosAssignModal as TicketAssignModal } from '@/features/commo
 import { MobileMantenimientosReviewModal as MobileTicketReviewModal } from '../components/common/mobile-mantenimientos-review-modal';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
-import { cn } from '@/utils/cn';
 import { hardReload } from '@/utils/hard-reload';
-import { MantenimientosCalendarItemActions as CalendarItemActions } from '../components/common/mantenimientos-calendar-item-actions';
 
 const SKELETON_COUNT = 5;
 
@@ -72,8 +68,6 @@ export const MantenimientosHistoricoMobile = ({
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
-    filtroYear,
-    filtroMonth,
     mostrarPapelera,
     onTogglePapelera,
     mostrarRechazadas,
@@ -93,33 +87,13 @@ export const MantenimientosHistoricoMobile = ({
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
-    onYearChange,
-    onMonthChange,
     onSave,
     onChangeStatus,
     onOpenCreate,
     onRefresh,
     isFiltering = false,
-    onClearFilters,
-    // Calendar props
-    viewMode,
-    onViewModeChange,
-    vistaCalendario,
-    calendarItems,
-    calendarDate,
-    onCalendarNavigate,
-    calendarView,
-    onCalendarViewChange,
-    onCalendarDayClick,
-    onCalendarItemClick
+    onClearFilters
 }) => {
-    const [localViewMode, setLocalViewMode] = useState('cards');
-    let activeViewMode = viewMode || localViewMode;
-    if (activeViewMode === 'table') {
-        activeViewMode = 'cards';
-    }
-    const handleViewModeChange = onViewModeChange || setLocalViewMode;
-
     const [editTarget, setEditTarget] = useState(null);
     const [statusTarget, setStatusTarget] = useState(null);
     const [detailTarget, setDetailTarget] = useState(null);
@@ -136,138 +110,70 @@ export const MantenimientosHistoricoMobile = ({
 
     return (
         <>
-            {!vistaCalendario && (
-                <div className="mb-3">
-                    <TicketFechas
-                        year={filtroYear}
-                        month={filtroMonth}
-                        onYearChange={onYearChange}
-                        onMonthChange={onMonthChange}
-                        existenciaGlobal={existenciaGlobal}
-                    />
-                </div>
-            )}
-            {!vistaCalendario && (
-                <div className="mb-3">
-                    <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
-                </div>
-            )}
-
-            <div className="flex flex-col gap-2.5 mb-3">
-                <div className="flex items-center">
-                    <GlassViewToggle
-                        value={activeViewMode}
-                        onChange={handleViewModeChange}
-                        options={[
-                            { id: 'cards', label: 'Listado', icon: 'table_rows' },
-                            { id: 'calendar', label: 'Calendario', icon: 'calendar_month' }
-                        ]}
-                    />
-                </div>
-                {!vistaCalendario && (
-                    <MobileTicketFilterBar
-                        query={query}
-                        onSearchChange={onSearchChange}
-                        filtroTipo={filtroTipo}
-                        onTipoChange={onTipoChange}
-                        filtroPrioridad={filtroPrioridad}
-                        onPrioridadChange={onPrioridadChange}
-                        filtroCategoria={filtroCategoria}
-                        onCategoriaChange={onCategoriaChange}
-                        filtroClasificacion={filtroClasificacion}
-                        onClasificacionChange={onClasificacionChange}
-                        filtroResponsable={filtroResponsable}
-                        onResponsableChange={onResponsableChange}
-                        opcionesResponsables={tecnicos}
-                        filtroPlanta={filtroPlanta}
-                        onPlantaChange={onPlantaChange}
-                        filtroArea={filtroArea}
-                        onAreaChange={onAreaChange}
-                        filtroProgramacion={filtroProgramacion}
-                        onProgramacionChange={onProgramacionChange}
-                        filtroConclusion={filtroConclusion}
-                        onConclusionChange={onConclusionChange}
-                        mostrarPapelera={mostrarPapelera}
-                        onTogglePapelera={onTogglePapelera}
-                        mostrarRechazadas={mostrarRechazadas}
-                        onToggleRechazadas={onToggleRechazadas}
-                        mostrarAtrasadas={mostrarAtrasadas}
-                        onToggleAtrasadas={onToggleAtrasadas}
-                        conteos={conteos}
-                        existenciaGlobal={existenciaGlobal}
-                        totalAtrasadasGlobal={totalAtrasadasGlobal}
-                        mobileFiltersOnly
-                    />
-                )}
+            <div className="mb-3">
+                <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
             </div>
 
-            {activeViewMode === 'calendar' ? (
-                <div className={cn('mb-40', hasPaginator && 'mb-52')}>
-                    <InteractiveCalendar
-                        items={calendarItems}
-                        view={calendarView}
-                        onViewChange={onCalendarViewChange}
-                        currentDate={calendarDate}
-                        onNavigate={onCalendarNavigate}
-                        onDayClick={onCalendarDayClick}
-                        onItemClick={(item) => setDetailTarget(item.raw)}
-                        isLoading={loading}
-                        isMobile={true}
-                        renderActions={(item) => (
-                            <CalendarItemActions
-                                ticket={item.raw}
-                                currentUser={currentUser}
-                                onEdit={setEditTarget}
-                                onAssign={setAssignTarget}
-                                onChangeStatus={setStatusTarget}
-                                onReview={setReviewTarget}
-                                onCancel={setCancelTarget}
-                            />
-                        )}
-                    />
-                </div>
-            ) : activeViewMode === 'cards' ? (
-                <div className={cn('flex flex-col gap-3 px-1 pt-1', hasPaginator ? 'pb-56' : 'pb-44')}>
-                    {loading
-                        ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
-                        : tickets.length === 0
-                            ? (
-                                <div className="mt-10">
-                                    <TicketsEmptyState
-                                        isMobile={true}
-                                        isFiltering={isFiltering}
-                                        onClearFilters={onClearFilters}
-                                        onRefresh={onRefresh}
-                                        mensaje="Historial Vacío"
-                                        subtexto="No hay tickets en el historial."
-                                        icon="history"
-                                    />
-                                </div>
-                            )
-                            : tickets.map((ticket) => (
-                                <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
-                            ))
-                    }
-                </div>
-            ) : (
-                <div className={cn('mb-40', hasPaginator && 'mb-52')}>
-                    {!loading && (!tickets || tickets.length === 0) ? (
-                        <div className="mt-10 px-4">
-                            <TicketsEmptyState
-                                isFiltering={isFiltering}
-                                onClearFilters={onClearFilters}
-                                onRefresh={onRefresh}
-                                mensaje="Historial Vacío"
-                                subtexto="No hay tareas registradas en el historial para este periodo."
-                                icon="history"
-                            />
-                        </div>
-                    ) : (
-                        <TicketsTable tickets={tickets} loading={loading} submitting={submitting} currentUser={currentUser} tecnicos={tecnicos} page={page} limit={limit} totalPages={totalPages} totalItems={totalParaPaginador} sortConfig={sortConfig} onPageChange={onPageChange} onSortChange={onSortChange} onSave={onSave} onChangeStatus={onChangeStatus} onRefresh={onRefresh} hidePagination />
-                    )}
-                </div>
-            )}
-            {hasPaginator && activeViewMode !== 'calendar' && (
+            <div className="flex flex-col gap-2.5 mb-3">
+                <MobileTicketFilterBar
+                    query={query}
+                    onSearchChange={onSearchChange}
+                    filtroTipo={filtroTipo}
+                    onTipoChange={onTipoChange}
+                    filtroPrioridad={filtroPrioridad}
+                    onPrioridadChange={onPrioridadChange}
+                    filtroCategoria={filtroCategoria}
+                    onCategoriaChange={onCategoriaChange}
+                    filtroClasificacion={filtroClasificacion}
+                    onClasificacionChange={onClasificacionChange}
+                    filtroResponsable={filtroResponsable}
+                    onResponsableChange={onResponsableChange}
+                    opcionesResponsables={tecnicos}
+                    filtroPlanta={filtroPlanta}
+                    onPlantaChange={onPlantaChange}
+                    filtroArea={filtroArea}
+                    onAreaChange={onAreaChange}
+                    filtroProgramacion={filtroProgramacion}
+                    onProgramacionChange={onProgramacionChange}
+                    filtroConclusion={filtroConclusion}
+                    onConclusionChange={onConclusionChange}
+                    mostrarPapelera={mostrarPapelera}
+                    onTogglePapelera={onTogglePapelera}
+                    mostrarRechazadas={mostrarRechazadas}
+                    onToggleRechazadas={onToggleRechazadas}
+                    mostrarAtrasadas={mostrarAtrasadas}
+                    onToggleAtrasadas={onToggleAtrasadas}
+                    conteos={conteos}
+                    existenciaGlobal={existenciaGlobal}
+                    totalAtrasadasGlobal={totalAtrasadasGlobal}
+                    mobileFiltersOnly
+                />
+            </div>
+
+            <div className="flex flex-col gap-3 px-1 pt-1 pb-44">
+                {loading
+                    ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
+                    : tickets.length === 0
+                        ? (
+                            <div className="mt-10">
+                                <TicketsEmptyState
+                                    isMobile={true}
+                                    isFiltering={isFiltering}
+                                    onClearFilters={onClearFilters}
+                                    onRefresh={onRefresh}
+                                    mensaje="Historial Vacío"
+                                    subtexto="No hay mantenimientos en el historial."
+                                    icon="history"
+                                />
+                            </div>
+                        )
+                        : tickets.map((ticket) => (
+                            <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
+                        ))
+                }
+            </div>
+
+            {hasPaginator && (
                 <div className="lg:hidden">
                     <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
                 </div>
@@ -280,7 +186,7 @@ export const MantenimientosHistoricoMobile = ({
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />
             </div>
 
-            <MobileTicketFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} scope="mantenimientos" />
+            <MobileTicketFormModal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
             <TicketStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
             <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
             <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />

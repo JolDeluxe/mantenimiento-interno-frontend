@@ -1,3 +1,4 @@
+// src/features/calendario/components/calendar-item-actions.jsx
 import { Icon } from '@/components/ui/z_index';
 
 const ROLES_ADMIN_LIST = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
@@ -137,6 +138,5 @@ export const CalendarItemActions = ({
         </div>
     );
 };
-
 
 export { CalendarItemActions as MantenimientosCalendarItemActions };

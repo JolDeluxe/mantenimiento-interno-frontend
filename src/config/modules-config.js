@@ -93,6 +93,13 @@ export const MODULES_CONFIG = [
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
+    id: 'calendario',
+    name: 'Calendario',
+    icon: 'calendar_month',
+    route: '/calendario',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+  },
+  {
     id: 'dashboard',
     name: 'Dashboard',
     icon: 'dashboard',
@@ -134,6 +141,7 @@ export const MODULES_CONFIG = [
       }
     ]
   },
+  
   {
     id: 'maquinaria',
     name: 'Maquinaria',
