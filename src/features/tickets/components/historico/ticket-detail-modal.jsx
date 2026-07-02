@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaHora } from '@/lib/date';
-import { TicketTimeline } from './ticket-timeline';
+import { TicketTimeline } from '@/features/common/components/ticket-timeline';
 import { useAuthStore } from '@/stores/auth-store';
 import {
     getClasificacionIcon,

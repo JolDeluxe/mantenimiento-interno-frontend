@@ -1,3 +1,4 @@
+// src/features/common/components/ticket-timeline.jsx
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatFechaHora } from '@/lib/date';
@@ -382,3 +383,5 @@ export const TicketTimeline = ({ historial, responsables = [] }) => {
         </>
     );
 };
+
+export { TicketTimeline as MantenimientosTicketTimeline };
