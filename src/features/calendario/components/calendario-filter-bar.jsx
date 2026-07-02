@@ -1,9 +1,8 @@
 // src/features/calendario/components/calendario-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
-import { Select, Input } from '@/components/form/z_index';
+import { Input } from '@/components/form/z_index';
 import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
-import { cn } from '@/utils/cn';
 
 const SCOPE_OPTIONS = [
     { value: 'general', label: 'Todas las Tareas' },
@@ -43,7 +42,6 @@ export const CalendarioFilterBar = ({
     isFiltering = false
 }) => {
     const [localQuery, setLocalQuery] = useState(query);
-    const [statusOpen, setStatusOpen] = useState(false);
 
     useEffect(() => {
         setLocalQuery(query);
@@ -59,10 +57,8 @@ export const CalendarioFilterBar = ({
     }, [localQuery, query, onSearchChange]);
 
     const activeAreas = filtroPlanta ? (AREAS_POR_PLANTA[filtroPlanta] || []) : AREAS;
-    const isMantenimientoScope = scope === 'mantenimientos';
 
     const ESTADOS = [
-        { value: 'TODOS', label: 'Todos los Estados' },
         { value: 'PENDIENTE', label: 'Pendiente' },
         { value: 'ASIGNADA', label: 'Asignada' },
         { value: 'EN_PROGRESO', label: 'En Progreso / Proceso' },
@@ -73,7 +69,7 @@ export const CalendarioFilterBar = ({
     ];
 
     return (
-        <div className="flex flex-col gap-3 w-full bg-white border border-slate-200/80 p-4 rounded-3xl shadow-sm">
+        <div className="flex flex-col gap-3 w-full pt-2">
             {/* Fila 1: Búsqueda, Selector de Scope, Estado y Botón de Limpiar */}
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                 {/* Caja de Búsqueda */}
@@ -92,11 +88,11 @@ export const CalendarioFilterBar = ({
                 <div className="w-full md:w-56 shrink-0">
                     <SearchableSelect
                         options={SCOPE_OPTIONS}
-                        value={scope}
-                        onChange={onScopeChange}
-                        placeholder="TIPO DE TAREA..."
+                        value={scope === 'general' ? '' : scope}
+                        onChange={(val) => onScopeChange(val || 'general')}
+                        placeholder="Todas las Tareas"
                         icon="assignment"
-                        allOptionText={null}
+                        allOptionText="Todas las Tareas"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
@@ -105,11 +101,11 @@ export const CalendarioFilterBar = ({
                 <div className="w-full md:w-52 shrink-0">
                     <SearchableSelect
                         options={ESTADOS}
-                        value={filtroEstado}
-                        onChange={onFilterChange}
-                        placeholder="ESTADO..."
+                        value={filtroEstado === 'TODOS' ? '' : filtroEstado}
+                        onChange={(val) => onFilterChange(val || 'TODOS')}
+                        placeholder="Todos los Estados"
                         icon="swap_horiz"
-                        allOptionText={null}
+                        allOptionText="Todos los Estados"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
@@ -140,7 +136,7 @@ export const CalendarioFilterBar = ({
                         }}
                         placeholder="PLANTA..."
                         icon="domain"
-                        allOptionText="TODAS LAS PLANTAS"
+                        allOptionText="TODAS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
@@ -153,7 +149,7 @@ export const CalendarioFilterBar = ({
                         onChange={onAreaChange}
                         placeholder="ÁREA..."
                         icon="location_on"
-                        allOptionText="TODAS LAS ÁREAS"
+                        allOptionText="TODAS"
                         disabled={activeAreas.length === 0}
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
@@ -167,7 +163,7 @@ export const CalendarioFilterBar = ({
                         onChange={onPrioridadChange}
                         placeholder="PRIORIDAD..."
                         icon="flag"
-                        allOptionText="TODAS LAS PRIORIDADES"
+                        allOptionText="TODAS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
@@ -180,12 +176,12 @@ export const CalendarioFilterBar = ({
                         onChange={onResponsableChange}
                         placeholder="TÉCNICO..."
                         icon="engineering"
-                        allOptionText="TODOS LOS TÉCNICOS"
+                        allOptionText="TODOS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                {/* Categoría (Ocultar si es mantenimiento puro, ya que es redundante, o mostrar siempre) */}
+                {/* Categoría */}
                 <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={CATEGORIAS_EQUIPO}
@@ -193,12 +189,12 @@ export const CalendarioFilterBar = ({
                         onChange={onCategoriaChange}
                         placeholder="CATEGORÍA..."
                         icon="category"
-                        allOptionText="TODAS LAS CATEGORÍAS"
+                        allOptionText="TODAS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>
 
-                {/* Clasificación (Preventivo/Correctivo/Rutina) */}
+                {/* Clasificación */}
                 <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
                         options={CLASIFICACIONES}
@@ -206,7 +202,7 @@ export const CalendarioFilterBar = ({
                         onChange={onClasificacionChange}
                         placeholder="CLASIFICACIÓN..."
                         icon="build"
-                        allOptionText="TODAS LAS CLASIF."
+                        allOptionText="TODAS"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>

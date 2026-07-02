@@ -235,228 +235,230 @@ export default function CalendarioPage() {
 
     return (
         <div className="max-w-full mx-auto">
-            {/* Ruteo de vistas responsivas */}
-            {isDesktop ? (
-                <CalendarioDesktop {...sharedProps} />
-            ) : (
-                <CalendarioMobile {...sharedProps} />
-            )}
-
-            {/* 1. Modal de Detalle (Común) */}
-            <TicketDetailModal
-                isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
-                ticket={detailTarget}
-            />
-
-            {/* 2. Modal de Asignación (Común) */}
-            <TicketAssignModal
-                isOpen={Boolean(assignTarget)}
-                onClose={() => setAssignTarget(null)}
-                ticket={assignTarget}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onConfirm={handleSave}
-            />
-
-            {/* 3. Modales de Creación (Ruteo Dinámico según Scope) */}
-            {showCreate && (
-                scope === 'mantenimientos' ? (
-                    isDesktop ? (
-                        <MantenimientosFormModal
-                            isOpen={showCreate}
-                            onClose={handleCloseCreate}
-                            ticketAEditar={null}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={handleCreate}
-                            defaultDate={calendarCreateDate}
-                        />
-                    ) : (
-                        <MobileMantenimientosFormModal
-                            isOpen={showCreate}
-                            onClose={handleCloseCreate}
-                            ticketAEditar={null}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={handleCreate}
-                            defaultDate={calendarCreateDate}
-                        />
-                    )
+            <div className="p-1 lg:p-4 flex flex-col h-full">
+                {/* Ruteo de vistas responsivas */}
+                {isDesktop ? (
+                    <CalendarioDesktop {...sharedProps} />
                 ) : (
-                    isDesktop ? (
-                        <TicketFormModal
-                            isOpen={showCreate}
-                            onClose={handleCloseCreate}
-                            ticketAEditar={null}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={handleCreate}
-                            scope="actividades"
-                            defaultDate={calendarCreateDate}
-                        />
+                    <CalendarioMobile {...sharedProps} />
+                )}
+
+                {/* 1. Modal de Detalle (Común) */}
+                <TicketDetailModal
+                    isOpen={Boolean(detailTarget)}
+                    onClose={() => setDetailTarget(null)}
+                    ticket={detailTarget}
+                />
+
+                {/* 2. Modal de Asignación (Común) */}
+                <TicketAssignModal
+                    isOpen={Boolean(assignTarget)}
+                    onClose={() => setAssignTarget(null)}
+                    ticket={assignTarget}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onConfirm={handleSave}
+                />
+
+                {/* 3. Modales de Creación (Ruteo Dinámico según Scope) */}
+                {showCreate && (
+                    scope === 'mantenimientos' ? (
+                        isDesktop ? (
+                            <MantenimientosFormModal
+                                isOpen={showCreate}
+                                onClose={handleCloseCreate}
+                                ticketAEditar={null}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={handleCreate}
+                                defaultDate={calendarCreateDate}
+                            />
+                        ) : (
+                            <MobileMantenimientosFormModal
+                                isOpen={showCreate}
+                                onClose={handleCloseCreate}
+                                ticketAEditar={null}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={handleCreate}
+                                defaultDate={calendarCreateDate}
+                            />
+                        )
                     ) : (
-                        <MobileTicketFormModal
-                            isOpen={showCreate}
-                            onClose={handleCloseCreate}
-                            ticketAEditar={null}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={handleCreate}
-                            scope="actividades"
-                            defaultDate={calendarCreateDate}
-                        />
+                        isDesktop ? (
+                            <TicketFormModal
+                                isOpen={showCreate}
+                                onClose={handleCloseCreate}
+                                ticketAEditar={null}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={handleCreate}
+                                scope="actividades"
+                                defaultDate={calendarCreateDate}
+                            />
+                        ) : (
+                            <MobileTicketFormModal
+                                isOpen={showCreate}
+                                onClose={handleCloseCreate}
+                                ticketAEditar={null}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={handleCreate}
+                                scope="actividades"
+                                defaultDate={calendarCreateDate}
+                            />
+                        )
                     )
-                )
-            )}
+                )}
 
-            {/* 4. Modales de Edición (Ruteo Dinámico según tipo de ítem seleccionado) */}
-            {editTarget && (
-                isEditMantenimiento ? (
-                    isDesktop ? (
-                        <MantenimientosFormModal
-                            isOpen={Boolean(editTarget)}
-                            onClose={() => setEditTarget(null)}
-                            ticketAEditar={editTarget}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={(payload) => handleSave(editTarget.id, payload)}
-                        />
+                {/* 4. Modales de Edición (Ruteo Dinámico según tipo de ítem seleccionado) */}
+                {editTarget && (
+                    isEditMantenimiento ? (
+                        isDesktop ? (
+                            <MantenimientosFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                            />
+                        ) : (
+                            <MobileMantenimientosFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                            />
+                        )
                     ) : (
-                        <MobileMantenimientosFormModal
-                            isOpen={Boolean(editTarget)}
-                            onClose={() => setEditTarget(null)}
-                            ticketAEditar={editTarget}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={(payload) => handleSave(editTarget.id, payload)}
-                        />
+                        isDesktop ? (
+                            <TicketFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                                scope="actividades"
+                            />
+                        ) : (
+                            <MobileTicketFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                                scope="actividades"
+                            />
+                        )
                     )
-                ) : (
-                    isDesktop ? (
-                        <TicketFormModal
-                            isOpen={Boolean(editTarget)}
-                            onClose={() => setEditTarget(null)}
-                            ticketAEditar={editTarget}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={(payload) => handleSave(editTarget.id, payload)}
-                            scope="actividades"
-                        />
-                    ) : (
-                        <MobileTicketFormModal
-                            isOpen={Boolean(editTarget)}
-                            onClose={() => setEditTarget(null)}
-                            ticketAEditar={editTarget}
-                            currentUser={currentUser}
-                            tecnicos={tecnicos}
-                            isSubmitting={submitting}
-                            onSuccess={(payload) => handleSave(editTarget.id, payload)}
-                            scope="actividades"
-                        />
-                    )
-                )
-            )}
+                )}
 
-            {/* 5. Modales de Cambio de Estado (Ruteo Dinámico según item) */}
-            {statusTarget && (
-                isStatusMantenimiento ? (
-                    <MantenimientosStatusModal
-                        isOpen={Boolean(statusTarget)}
-                        onClose={() => setStatusTarget(null)}
-                        ticket={statusTarget}
-                        currentUser={currentUser}
-                        isSubmitting={submitting}
-                        onConfirm={handleChangeStatus}
-                    />
-                ) : (
-                    <TicketStatusModal
-                        isOpen={Boolean(statusTarget)}
-                        onClose={() => setStatusTarget(null)}
-                        ticket={statusTarget}
-                        currentUser={currentUser}
-                        isSubmitting={submitting}
-                        onConfirm={handleChangeStatus}
-                    />
-                )
-            )}
-
-            {/* 6. Modales de Cancelación (Ruteo Dinámico según item) */}
-            {cancelTarget && (
-                isStatusMantenimiento ? (
-                    <MantenimientosStatusModal
-                        isOpen={Boolean(cancelTarget)}
-                        onClose={() => setCancelTarget(null)}
-                        ticket={cancelTarget}
-                        currentUser={currentUser}
-                        isSubmitting={submitting}
-                        forcedEstado="CANCELADA"
-                        onConfirm={handleChangeStatus}
-                    />
-                ) : (
-                    <TicketStatusModal
-                        isOpen={Boolean(cancelTarget)}
-                        onClose={() => setCancelTarget(null)}
-                        ticket={cancelTarget}
-                        currentUser={currentUser}
-                        isSubmitting={submitting}
-                        forcedEstado="CANCELADA"
-                        onConfirm={handleChangeStatus}
-                    />
-                )
-            )}
-
-            {/* 7. Modales de Revisión (Ruteo Dinámico según item) */}
-            {reviewTarget && (
-                isReviewMantenimiento ? (
-                    isDesktop ? (
-                        <MantenimientosReviewModal
-                            isOpen={Boolean(reviewTarget)}
-                            onClose={() => setReviewTarget(null)}
-                            ticket={reviewTarget}
-                            isSubmitting={submitting}
+                {/* 5. Modales de Cambio de Estado (Ruteo Dinámico según item) */}
+                {statusTarget && (
+                    isStatusMantenimiento ? (
+                        <MantenimientosStatusModal
+                            isOpen={Boolean(statusTarget)}
+                            onClose={() => setStatusTarget(null)}
+                            ticket={statusTarget}
                             currentUser={currentUser}
+                            isSubmitting={submitting}
                             onConfirm={handleChangeStatus}
                         />
                     ) : (
-                        <MobileMantenimientosReviewModal
-                            isOpen={Boolean(reviewTarget)}
-                            onClose={() => setReviewTarget(null)}
-                            ticket={reviewTarget}
-                            isSubmitting={submitting}
+                        <TicketStatusModal
+                            isOpen={Boolean(statusTarget)}
+                            onClose={() => setStatusTarget(null)}
+                            ticket={statusTarget}
                             currentUser={currentUser}
+                            isSubmitting={submitting}
                             onConfirm={handleChangeStatus}
                         />
                     )
-                ) : (
-                    isDesktop ? (
-                        <TicketReviewModal
-                            isOpen={Boolean(reviewTarget)}
-                            onClose={() => setReviewTarget(null)}
-                            ticket={reviewTarget}
-                            isSubmitting={submitting}
+                )}
+
+                {/* 6. Modales de Cancelación (Ruteo Dinámico según item) */}
+                {cancelTarget && (
+                    isStatusMantenimiento ? (
+                        <MantenimientosStatusModal
+                            isOpen={Boolean(cancelTarget)}
+                            onClose={() => setCancelTarget(null)}
+                            ticket={cancelTarget}
                             currentUser={currentUser}
+                            isSubmitting={submitting}
+                            forcedEstado="CANCELADA"
                             onConfirm={handleChangeStatus}
                         />
                     ) : (
-                        <MobileTicketReviewModal
-                            isOpen={Boolean(reviewTarget)}
-                            onClose={() => setReviewTarget(null)}
-                            ticket={reviewTarget}
-                            isSubmitting={submitting}
+                        <TicketStatusModal
+                            isOpen={Boolean(cancelTarget)}
+                            onClose={() => setCancelTarget(null)}
+                            ticket={cancelTarget}
                             currentUser={currentUser}
+                            isSubmitting={submitting}
+                            forcedEstado="CANCELADA"
                             onConfirm={handleChangeStatus}
                         />
                     )
-                )
-            )}
+                )}
+
+                {/* 7. Modales de Revisión (Ruteo Dinámico según item) */}
+                {reviewTarget && (
+                    isReviewMantenimiento ? (
+                        isDesktop ? (
+                            <MantenimientosReviewModal
+                                isOpen={Boolean(reviewTarget)}
+                                onClose={() => setReviewTarget(null)}
+                                ticket={reviewTarget}
+                                isSubmitting={submitting}
+                                currentUser={currentUser}
+                                onConfirm={handleChangeStatus}
+                            />
+                        ) : (
+                            <MobileMantenimientosReviewModal
+                                isOpen={Boolean(reviewTarget)}
+                                onClose={() => setReviewTarget(null)}
+                                ticket={reviewTarget}
+                                isSubmitting={submitting}
+                                currentUser={currentUser}
+                                onConfirm={handleChangeStatus}
+                            />
+                        )
+                    ) : (
+                        isDesktop ? (
+                            <TicketReviewModal
+                                isOpen={Boolean(reviewTarget)}
+                                onClose={() => setReviewTarget(null)}
+                                ticket={reviewTarget}
+                                isSubmitting={submitting}
+                                currentUser={currentUser}
+                                onConfirm={handleChangeStatus}
+                            />
+                        ) : (
+                            <MobileTicketReviewModal
+                                isOpen={Boolean(reviewTarget)}
+                                onClose={() => setReviewTarget(null)}
+                                ticket={reviewTarget}
+                                isSubmitting={submitting}
+                                currentUser={currentUser}
+                                onConfirm={handleChangeStatus}
+                            />
+                        )
+                    )
+                )}
+            </div>
         </div>
     );
 }
