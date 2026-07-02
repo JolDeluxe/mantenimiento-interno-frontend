@@ -4,7 +4,7 @@ import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/compon
 import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { HoyFormModal } from './hoy-form-modal';
-import { HoyStatusModal } from './hoy-status-modal';
+import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
 
 // Modales de asignación y revisión de ambas features
 import { TicketAssignModal as TicketsAssign, MantenimientosAssignModal as MantenimientosAssign } from '@/features/common/components/ticket-assign-modal';

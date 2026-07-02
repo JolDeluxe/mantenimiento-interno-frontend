@@ -10,7 +10,7 @@ import { NotifyDesktop } from '../views/notify-desktop';
 import { NotifyMobile } from '../views/notify-mobile';
 import { NotifyDetailModal } from '../components/notify-detail-modal';
 import { NotifyReviewModal } from '../components/notify-review-modal';
-import { NotifyStatusModal } from '../components/notify-status-modal';
+import { TicketStatusModal as NotifyStatusModal } from '@/features/common/components/status-modal';
 import { getTicketById, changeTicketStatus } from '@/features/tickets/api/tickets-api';
 
 const LIMIT = 20;

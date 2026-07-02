@@ -5,7 +5,7 @@ import { TicketActions } from '@/features/tickets/components/historico/ticket-ac
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { HoyFormModal } from './hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
-import { HoyStatusModal } from './hoy-status-modal';
+import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '@/features/tickets/components/historico/ticket-review-modal';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';

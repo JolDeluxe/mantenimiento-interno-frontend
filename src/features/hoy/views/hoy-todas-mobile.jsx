@@ -6,7 +6,7 @@ import { HoyTicketCard } from '../components/common/hoy-ticket-card';
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
-import { HoyStatusModal } from '../components/common/hoy-status-modal';
+import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
 import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
 import { MobileHoyFilterBar } from '../components/common/mobile-hoy-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';

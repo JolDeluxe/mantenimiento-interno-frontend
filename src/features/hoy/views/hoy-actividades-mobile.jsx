@@ -6,7 +6,7 @@ import { ActividadesTicketCard } from '../components/hoy-actividades/actividades
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
-import { HoyStatusModal } from '../components/common/hoy-status-modal';
+import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
 import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
 import { MobileActividadesFilterBar } from '../components/hoy-actividades/mobile-actividades-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
