@@ -17,7 +17,6 @@ import NotFound from '@/pages/not-found';
 import SsoReceiver from '@/pages/sso-receiver';
 
 import TicketsPage from '@/features/tickets/pages/tickets-page';
-import TicketsBandejaPage from '@/features/tickets/pages/tickets-bandeja';
 import TicketsAprobarPage from '@/features/tickets/pages/tickets-aprobar';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
 import TicketsBandejaGeneralPage from '@/features/bandeja-general/pages/tickets-bandeja-general';
@@ -176,7 +175,7 @@ export const AppRoutes = () => {
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsBandeja} />}>
-                <Route path="bandeja" element={<TicketsBandejaPage />} />
+                <Route path="bandeja" element={<TicketsBandejaGeneralPage />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsHistorico} />}>
