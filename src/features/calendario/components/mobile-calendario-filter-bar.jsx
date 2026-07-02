@@ -3,10 +3,8 @@ import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
-import { cn } from '@/utils/cn';
 
 const SCOPE_OPTIONS = [
-    { value: 'general', label: 'Todas las Tareas' },
     { value: 'mantenimientos', label: 'Mantenimientos' },
     { value: 'actividades', label: 'Actividades' }
 ];
@@ -16,21 +14,29 @@ const normalizeOpts = (opts = []) => opts.map(o => {
     return { value: String(o.value ?? o.id), label: String(o.label ?? o.nombre) };
 });
 
-const SearchInput = ({ localValue, onChange, onClear, className }) => (
-    <div className={cn("relative h-[38px] flex-1", className)}>
+const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
+    <div
+        className={`relative overflow-hidden flex items-center ${className}`}
+        style={{ ...glassBase('light'), borderRadius: 14 }}
+    >
+        <GlassSheen />
+        <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none z-10">
+            <Icon name="search" size="sm" className="text-slate-500" />
+        </div>
         <input
             type="text"
             value={localValue}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Buscar tarea..."
-            className="w-full h-full bg-slate-100 text-xs font-semibold px-9 rounded-xl border-none outline-none text-slate-800 focus:bg-slate-200/50 transition-colors"
+            placeholder="Buscar..."
+            className="w-full pl-8 pr-7 py-2.5 text-xs bg-transparent relative z-10 text-slate-700
+                       focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 rounded-[14px]
+                       transition-all placeholder:text-slate-500 h-9.5"
         />
-        <Icon name="search" size="xs" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         {localValue && (
             <button
                 type="button"
                 onClick={onClear}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none p-0 cursor-pointer flex items-center"
+                className="absolute inset-y-0 right-1.5 flex items-center px-2 text-slate-500 cursor-pointer z-10 active:scale-90 transition-transform bg-transparent border-none"
             >
                 <Icon name="close" size="xs" />
             </button>
@@ -38,19 +44,19 @@ const SearchInput = ({ localValue, onChange, onClear, className }) => (
     </div>
 );
 
-const GlassNativeSelect = ({ icon, placeholder, value, onChange, options }) => {
-    const isActive = Boolean(value);
+const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
     const normalized = normalizeOpts(options);
-    const selectedLabel = normalized.find(o => o.value === value)?.label || placeholder;
+    const selected = normalized.find((o) => o.value === String(value));
+    const isActive = Boolean(value);
 
     return (
-        <div className="relative w-full h-[42px]">
+        <div className="relative w-full h-9.5">
             <select
-                value={value}
+                value={value ? String(value) : ''}
                 onChange={(e) => onChange(e.target.value)}
                 className="absolute inset-0 w-full h-full opacity-0 z-20 appearance-none cursor-pointer"
             >
-                <option value="">{placeholder} (TODOS)</option>
+                <option value="">{placeholder}</option>
                 {normalized.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                         {opt.label}
@@ -67,10 +73,21 @@ const GlassNativeSelect = ({ icon, placeholder, value, onChange, options }) => {
             >
                 <GlassSheen />
                 <Icon name={icon} size="xs" className="relative shrink-0 z-10" />
-                <span className="relative flex-1 truncate z-10 uppercase">
-                    {selectedLabel}
+                <span className="relative flex-1 truncate z-10">
+                    {selected?.label ?? placeholder}
                 </span>
-                <Icon name="arrow_drop_down" size="xs" className="relative shrink-0 z-10 opacity-70" />
+
+                {isActive ? (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onChange(''); }}
+                        className="relative z-30 flex items-center justify-center w-5 h-5 -mr-1 rounded-full bg-white/20 hover:bg-white/30 pointer-events-auto shrink-0 active:scale-90 transition-transform bg-transparent border-none"
+                    >
+                        <Icon name="close" size="xs" className="text-white scale-75" />
+                    </button>
+                ) : (
+                    <Icon name="expand_more" size="xs" className="text-slate-500 shrink-0 relative z-10" />
+                )}
             </div>
         </div>
     );
@@ -101,19 +118,17 @@ export const MobileCalendarioFilterBar = ({
     onClearFilters,
     isFiltering = false
 }) => {
-    const [localQuery, setLocalQuery] = useState(query);
-    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [localQuery, setLocalQuery] = useState(query || '');
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
-        setLocalQuery(query);
+        setLocalQuery(query || '');
     }, [query]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (localQuery !== query) {
-                onSearchChange(localQuery);
-            }
-        }, 300);
+            if (localQuery !== query) onSearchChange(localQuery);
+        }, 450);
         return () => clearTimeout(timer);
     }, [localQuery, query, onSearchChange]);
 
@@ -134,178 +149,87 @@ export const MobileCalendarioFilterBar = ({
         { value: 'CANCELADA', label: 'Cancelado' }
     ];
 
+    const hasActiveFilters =
+        scope !== 'general' ||
+        filtroEstado !== 'TODOS' ||
+        filtroTipo !== '' ||
+        filtroPrioridad !== '' ||
+        filtroCategoria !== '' ||
+        filtroClasificacion !== '' ||
+        filtroResponsable !== '' ||
+        filtroPlanta !== '' ||
+        filtroArea !== '';
+
+    const filterElements = [
+        { key: 'scope', el: <GlassNativeSelect icon="assignment" placeholder="Todas las Tareas" options={SCOPE_OPTIONS} value={scope === 'general' ? '' : scope} onChange={(val) => onScopeChange(val || 'general')} />, span2: true },
+        { key: 'estado', el: <GlassNativeSelect icon="swap_horiz" placeholder="Todos los Estados" options={ESTADOS} value={filtroEstado === 'TODOS' ? '' : filtroEstado} onChange={(val) => onFilterChange(val || 'TODOS')} />, span2: true },
+        { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
+        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(areasDisponibles)} value={filtroArea} onChange={onAreaChange} />, span2: false },
+        { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
+        { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(tecnicos)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
+        { key: 'categoria', el: <GlassNativeSelect icon="label" placeholder="Categoría" options={CATEGORIAS_EQUIPO} value={filtroCategoria} onChange={onCategoriaChange} />, span2: false },
+        { key: 'clasificacion', el: <GlassNativeSelect icon="build" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false }
+    ];
+
     return (
-        <div className="w-full flex flex-col gap-2">
-            {/* Barra superior de controles rápidos */}
-            <div className="flex items-center gap-1.5 w-full">
+        <div className="w-full flex flex-col gap-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-hidden">
                 <SearchInput
                     localValue={localQuery}
                     onChange={setLocalQuery}
                     onClear={() => setLocalQuery('')}
-                    className="flex-grow"
+                    className="flex-1 min-w-[90px]"
                 />
 
-                {/* Botón de Filtros */}
                 <button
                     type="button"
-                    onClick={() => setDrawerOpen(true)}
-                    style={isFiltering ? { ...glassBase('primary'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
-                    className={cn(
-                        "relative overflow-hidden flex items-center justify-center w-[38px] h-[38px] shrink-0 transition-all active:scale-95",
-                        isFiltering ? "text-white" : "text-slate-600"
-                    )}
+                    onClick={() => setShowFilters(!showFilters)}
+                    style={showFilters || hasActiveFilters ? { ...glassBase('primary'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
+                    className={`
+                        relative overflow-hidden flex items-center justify-center w-[38px] h-[38px] shrink-0 transition-all duration-200 active:scale-95 border-none
+                        ${showFilters || hasActiveFilters ? 'text-white' : 'text-slate-600'}
+                    `}
                 >
                     <GlassSheen />
                     <Icon name="filter_alt" size="sm" className="relative z-10" />
+                    {hasActiveFilters && !showFilters && (
+                        <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-marca-acento rounded-full border-2 border-white z-20"></span>
+                    )}
                 </button>
             </div>
 
-            {/* Drawer/Cajón de Filtros Detallados */}
-            {drawerOpen && (
-                <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-blur-sm transition-opacity duration-300">
-                    <div 
-                        className="w-full max-h-[85vh] bg-white rounded-t-3xl p-5 shadow-2xl flex flex-col gap-4 animate-slide-up overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Cabecera del Drawer */}
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                            <div className="flex items-center gap-2">
-                                <Icon name="filter_list" size="sm" className="text-slate-700" />
-                                <span className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Filtros de Tarea</span>
+            {showFilters && (
+                <div
+                    className="flex flex-col gap-3 p-3 rounded-[20px] relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                    style={glassBase('light')}
+                >
+                    <GlassSheen />
+                    <div className="grid grid-cols-2 gap-2 relative z-10">
+                        {filterElements.map((item) => (
+                            <div key={item.key} className={item.span2 ? "col-span-2" : "col-span-1"}>
+                                {item.el}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setDrawerOpen(false)}
-                                className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 border-none outline-none cursor-pointer"
-                            >
-                                <Icon name="close" size="xs" />
-                            </button>
-                        </div>
+                        ))}
+                    </div>
 
-                        {/* Listado de Selects */}
-                        <div className="flex flex-col gap-3.5">
-                            {/* Scope Selector */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Tipo de Tarea</span>
-                                <GlassNativeSelect
-                                    icon="assignment"
-                                    placeholder="Seleccionar tipo de tarea"
-                                    options={SCOPE_OPTIONS}
-                                    value={scope}
-                                    onChange={(val) => onScopeChange(val || 'general')}
-                                />
-                            </div>
-
-                            {/* Estado Selector */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Estado de Tarea</span>
-                                <GlassNativeSelect
-                                    icon="swap_horiz"
-                                    placeholder="Estado"
-                                    options={ESTADOS}
-                                    value={filtroEstado === 'TODOS' ? '' : filtroEstado}
-                                    onChange={(val) => onFilterChange(val || 'TODOS')}
-                                />
-                            </div>
-
-                            {/* Planta */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Planta</span>
-                                <GlassNativeSelect
-                                    icon="domain"
-                                    placeholder="Planta"
-                                    options={normalizeOpts(PLANTAS)}
-                                    value={filtroPlanta}
-                                    onChange={handlePlantaChange}
-                                />
-                            </div>
-
-                            {/* Área */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Área</span>
-                                <GlassNativeSelect
-                                    icon="place"
-                                    placeholder="Área"
-                                    options={normalizeOpts(areasDisponibles)}
-                                    value={filtroArea}
-                                    onChange={onAreaChange}
-                                    disabled={areasDisponibles.length === 0}
-                                />
-                            </div>
-
-                            {/* Prioridad */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Prioridad</span>
-                                <GlassNativeSelect
-                                    icon="flag"
-                                    placeholder="Prioridad"
-                                    options={PRIORIDADES}
-                                    value={filtroPrioridad}
-                                    onChange={onPrioridadChange}
-                                />
-                            </div>
-
-                            {/* Técnico Responsable */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Técnico</span>
-                                <GlassNativeSelect
-                                    icon="person"
-                                    placeholder="Técnico"
-                                    options={normalizeOpts(tecnicos)}
-                                    value={filtroResponsable}
-                                    onChange={onResponsableChange}
-                                />
-                            </div>
-
-                            {/* Categoría */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Categoría</span>
-                                <GlassNativeSelect
-                                    icon="category"
-                                    placeholder="Categoría"
-                                    options={CATEGORIAS_EQUIPO}
-                                    value={filtroCategoria}
-                                    onChange={onCategoriaChange}
-                                />
-                            </div>
-
-                            {/* Clasificación */}
-                            <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase pl-1">Clasificación</span>
-                                <GlassNativeSelect
-                                    icon="build"
-                                    placeholder="Clasificación"
-                                    options={CLASIFICACIONES}
-                                    value={filtroClasificacion}
-                                    onChange={onClasificacionChange}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Botones de acción del Drawer */}
-                        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
-                            {isFiltering && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        onClearFilters();
-                                        setDrawerOpen(false);
-                                    }}
-                                    className="flex-1 py-3 text-xs font-bold text-center text-slate-500 rounded-xl bg-slate-100 active:scale-95 transition-all border-none cursor-pointer"
-                                >
-                                    Limpiar
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => setDrawerOpen(false)}
-                                style={glassBase('primary')}
-                                className="flex-grow py-3 text-xs font-bold text-center text-white rounded-xl active:scale-95 transition-all border-none cursor-pointer overflow-hidden relative"
-                            >
-                                <GlassSheen />
-                                <span className="relative z-10">Aplicar Filtros</span>
-                            </button>
-                        </div>
+                    <div className="flex justify-end pt-1 relative z-10">
+                        <button
+                            type="button"
+                            onClick={onClearFilters}
+                            disabled={!hasActiveFilters}
+                            style={hasActiveFilters ? { ...glassBase('light'), borderRadius: 10 } : {}}
+                            className={`
+                                relative overflow-hidden flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 transition-all duration-200 border-none bg-transparent
+                                ${hasActiveFilters
+                                    ? 'text-red-500 active:scale-95'
+                                    : 'text-slate-400 pointer-events-none'
+                                }
+                            `}
+                        >
+                            {hasActiveFilters && <GlassSheen />}
+                            <Icon name="filter_alt_off" size="xs" className="relative z-10" />
+                            <span className="relative z-10">Limpiar filtros</span>
+                        </button>
                     </div>
                 </div>
             )}
