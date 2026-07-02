@@ -1,5 +1,5 @@
 // src/features/mantenimientos/views/mantenimientos-layout-mobile.jsx
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
 import { MODULES_CONFIG } from '@/config/modules-config';
@@ -16,7 +16,6 @@ export default function MantenimientosLayoutMobile() {
     const { moduleInfo, menuOptions } = useMemo(() => {
         const config = MODULES_CONFIG.find(m => m.id === 'mantenimientos');
         const baseMenuOptions = [
-            { configId: 'mantenimientos-aprobar', id: '/mantenimientos/aprobar', label: 'Por Aprobar', icon: 'check' },
             { configId: 'mantenimientos-correctivos', id: '/mantenimientos/correctivos', label: 'Correctivos', icon: 'build' },
             { configId: 'mantenimientos-preventivos', id: '/mantenimientos/preventivos', label: 'Preventivos', icon: 'event_note' },
             { configId: 'mantenimientos-historico', id: '/mantenimientos/historico', label: 'Historial', icon: 'history' }

@@ -87,7 +87,7 @@ export const ActividadesFilterBar = ({
                     className="flex-1 max-w-md min-w-[180px]"
                 />
 
-                {esCoordinador && (
+                {esCoordinador && onVistaEquipoChange && (
                     <div className="flex-none">
                         <HoyTeamToggle 
                              vistaEquipo={vistaEquipo} 

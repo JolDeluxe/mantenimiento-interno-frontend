@@ -1,1 +1,0 @@
-export { TicketDetailModal as AprobarDetailModal } from '@/features/common/components/ticket-detail-modal';

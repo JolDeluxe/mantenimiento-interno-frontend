@@ -9,6 +9,7 @@ import { MantenimientosHistoricoMobile } from '../views/mantenimientos-historico
 import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
+import { MantenimientosFechas } from '@/features/common/components/ticket-fechas';
 
 const LIMIT = 50;
 
@@ -39,6 +40,8 @@ export default function MantenimientosHistoricoPage({
 
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
+    const [year, setYear] = useState(null);
+    const [month, setMonth] = useState(0);
     const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
     const [showCreate, setShowCreate] = useState(false);
 
@@ -63,6 +66,8 @@ export default function MantenimientosHistoricoPage({
     const queryPayload = useMemo(() => {
         const params = { page, limit: LIMIT };
         if (query) params.q = query;
+        if (year) params.year = year;
+        if (year && month > 0) params.month = month;
 
         if (mostrarRechazadas) {
             params.estado = 'RECHAZADO';
@@ -97,7 +102,17 @@ export default function MantenimientosHistoricoPage({
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
+    }, [page, query, year, month, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
+
+    const handleYearChange = useCallback((value) => {
+        setYear(value);
+        setPage(1);
+    }, []);
+
+    const handleMonthChange = useCallback((value) => {
+        setMonth(value);
+        setPage(1);
+    }, []);
 
     const loadTickets = useCallback(() => {
         return fetchTickets(queryPayload).catch(() => notify.error('Error al cargar historial.'));
@@ -214,6 +229,7 @@ export default function MantenimientosHistoricoPage({
         totalParaSummary: meta?.totalAbsoluto || 0,
         totalParaPaginador: meta?.totalFiltrado || 0,
         conteos: meta?.resumenEstados || [],
+        toApproveCount: meta?.resumenEstados?.RESUELTO ?? 0,
         existenciaGlobal: metricas?.existenciaGlobal || {},
         totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
         currentUser,
@@ -260,7 +276,14 @@ export default function MantenimientosHistoricoPage({
     };
 
     return (
-        <div className="max-w-full mx-auto">
+        <div className="max-w-full mx-auto flex flex-col gap-4">
+            <MantenimientosFechas
+                year={year}
+                month={month}
+                onYearChange={handleYearChange}
+                onMonthChange={handleMonthChange}
+                existenciaGlobal={metricas?.existenciaGlobal || {}}
+            />
             {isDesktop ? (
                 <DesktopView {...sharedProps} />
             ) : (

@@ -1,11 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GlassViewToggle } from '@/components/ui/liquid-glass-mobile';
 import { MODULES_CONFIG } from '@/config/modules-config';
 import { useAuthStore } from '@/stores/auth-store';
-import { getTickets } from '../api/tickets-api';
-
-
 
 export default function TicketsLayoutMobile() {
     const navigate = useNavigate();
@@ -15,92 +12,27 @@ export default function TicketsLayoutMobile() {
     const currentUser = user?.data || user;
     const userRole = currentUser?.rol;
 
-    const canAccessBandeja = useMemo(() => {
-        const config = MODULES_CONFIG.find(m => m.id === 'tickets');
-        const childConfig = config?.children?.find(c => c.id === 'tickets-bandeja');
-        return childConfig ? childConfig.allowedRoles.includes(userRole) : false;
-    }, [userRole]);
-
-    const [unassignedCount, setUnassignedCount] = useState(0);
-    const [hasCritical, setHasCritical] = useState(false);
-
-    useEffect(() => {
-        if (!canAccessBandeja) return;
-        let isMounted = true;
-
-        const fetchCount = async () => {
-            try {
-                const response = await getTickets({ tipo: 'TICKET', estado: 'PENDIENTE' });
-                if (isMounted) {
-                    const rawData = response?.data?.data || response?.data;
-                    const ticketsData = Array.isArray(rawData) ? rawData : [];
-                    const unassigned = ticketsData.filter(t => !t.responsables || t.responsables.length === 0);
-                    const isCritical = unassigned.some(t => t.diasEnEspera >= 3);
-                    setUnassignedCount(unassigned.length);
-                    setHasCritical(isCritical);
-                }
-            } catch (error) {
-                console.warn("Error al obtener conteo de bandeja:", error);
-            }
-        };
-
-        fetchCount();
-        const interval = setInterval(fetchCount, 60000);
-
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, [canAccessBandeja]);
-
     const { moduleInfo, menuOptions } = useMemo(() => {
         const config = MODULES_CONFIG.find(m => m.id === 'tickets');
         const baseMenuOptions = [
-            // { configId: 'hoy-actividades', id: '/hoy/actividades', label: 'Mi Día', icon: 'today' },
-            { configId: 'tickets-aprobar', id: '/tickets/aprobar', label: 'Por Aprobar', icon: 'check' },
-            { configId: 'tickets-bandeja', id: '/tickets/bandeja', label: 'Bandeja', icon: 'inbox' },
-            { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' }
+            { configId: 'tickets-reportes', id: '/tickets/reportes', label: 'Reportes', icon: 'assignment_late' },
+            { configId: 'tickets-actividades', id: '/tickets/actividades', label: 'Actividades', icon: 'assignment' },
+
+            { configId: 'tickets-historico', id: '/tickets/historico', label: 'Historial', icon: 'history' },
         ];
 
         const filteredOptions = baseMenuOptions
             .filter(opt => {
-                if (opt.configId === 'hoy-actividades') {
-                    const hoyConfig = MODULES_CONFIG.find(m => m.id === 'hoy');
-                    const childConfig = hoyConfig?.children?.find(c => c.id === 'hoy-actividades');
-                    return childConfig ? childConfig.allowedRoles.includes(userRole) : false;
-                }
                 const childConfig = config?.children?.find(c => c.id === opt.configId);
                 return childConfig ? childConfig.allowedRoles.includes(userRole) : false;
             })
             .map(({ configId, label, icon, ...rest }) => {
-                const isBandeja = configId === 'tickets-bandeja';
-                const hasBadge = isBandeja && unassignedCount > 0;
                 const isActive = location.pathname.includes(rest.id);
-                const showRedAlert = isBandeja && hasCritical && !isActive;
 
                 return {
                     ...rest,
                     icon,
-                    label: hasBadge ? (
-                        <div className={`flex items-center gap-1.5 ${showRedAlert ? '!text-red-500 alert-icon-trigger' : ''}`}>
-                            {showRedAlert && (
-                                <style>{`button:has(.alert-icon-trigger) .material-symbols-rounded { color: #ef4444 !important; transition: color 0.2s; }`}</style>
-                            )}
-                            {isActive && <span>{label}</span>}
-                            <span className={`relative z-10 text-[11px] font-black px-1.5 py-0.5 rounded-md flex items-center leading-none border ${hasCritical ? 'bg-red-100 !text-red-600 border-red-200 animate-pulse' : 'bg-amber-100 !text-amber-700 border-amber-200'}`}>
-                                {unassignedCount > 99 ? '99+' : unassignedCount}
-                            </span>
-                        </div>
-                    ) : (
-                        isActive ? (
-                            <span className={showRedAlert ? '!text-red-500 font-bold alert-icon-trigger' : ''}>
-                                {showRedAlert && (
-                                    <style>{`button:has(.alert-icon-trigger) .material-symbols-rounded { color: #ef4444 !important; transition: color 0.2s; }`}</style>
-                                )}
-                                {label}
-                            </span>
-                        ) : null
-                    )
+                    label: isActive ? <span>{label}</span> : null
                 };
             });
 
@@ -111,11 +43,11 @@ export default function TicketsLayoutMobile() {
             },
             menuOptions: filteredOptions
         };
-    }, [userRole, unassignedCount, hasCritical, location.pathname]);
+    }, [userRole, location.pathname]);
 
     const activePath = menuOptions.find(opt => location.pathname.includes(opt.id))?.id
         || menuOptions[0]?.id
-        || '/hoy/actividades';
+        || '/tickets/actividades';
 
     return (
         <>

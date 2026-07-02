@@ -1,17 +1,16 @@
-// src/features/tickets/pages/tickets-aprobar.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { notify } from '@/components/notification/adaptive-notify';
-import { useTickets } from '../hooks/use-tickets';
+import { useTickets } from '@/features/tickets/hooks/use-tickets';
 
-import { TicketsAprobarDesktop } from '../views/tickets-aprobar-desktop';
-import { TicketsAprobarMobile } from '../views/tickets-aprobar-mobile';
-import { AprobarDetailModal } from '../components/aprobar/aprobar-detail-modal';
-import { AprobarReviewModal } from '../components/aprobar/aprobar-review-modal';
-import { AprobarBatchDrawer } from '../components/aprobar/aprobar-batch-drawer';
+import { AprobarDesktop } from '../views/aprobar-desktop';
+import { AprobarMobile } from '../views/aprobar-mobile';
+import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
+import { TicketReviewModal as AprobarReviewModal } from '@/features/tickets/components/historico/ticket-review-modal';
+import { AprobarBatchDrawer } from '../components/aprobar-batch-drawer';
 
-export default function TicketsAprobarPage() {
+export default function AprobarPage() {
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
     const currentUser = user?.data || user;
@@ -34,7 +33,7 @@ export default function TicketsAprobarPage() {
     const queryPayload = useMemo(() => ({
         estado: 'RESUELTO',
         page,
-        limit: 100, // fetch a larger batch for quick approval
+        limit: 100,
     }), [page]);
 
     const loadTickets = useCallback(() => {
@@ -67,8 +66,8 @@ export default function TicketsAprobarPage() {
             await changeStatus(id, formData);
             notify.success(
                 decision === 'CERRADO' 
-                    ? 'Ticket cerrado y aprobado con éxito' 
-                    : 'Ticket devuelto al técnico con observaciones'
+                    ? 'Tarea cerrada y aprobada con éxito'
+                    : 'Tarea devuelta al técnico con observaciones'
             );
             setIsReviewModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
@@ -81,7 +80,7 @@ export default function TicketsAprobarPage() {
     return (
         <>
             {isDesktop ? (
-                <TicketsAprobarDesktop
+                <AprobarDesktop
                     tickets={tickets}
                     isLoading={isLoading}
                     onReviewTicket={handleOpenReview}
@@ -92,7 +91,7 @@ export default function TicketsAprobarPage() {
                     onOpenApproveBatch={() => setIsApproveBatchOpen(true)}
                 />
             ) : (
-                <TicketsAprobarMobile
+                <AprobarMobile
                     tickets={tickets}
                     isLoading={isLoading}
                     onReviewTicket={handleOpenReview}
@@ -105,7 +104,7 @@ export default function TicketsAprobarPage() {
             )}
 
             {selectedTicket && isDetailModalOpen && (
-                <AprobarDetailModal
+                <TicketDetailModal
                     isOpen={isDetailModalOpen}
                     onClose={() => setIsDetailModalOpen(false)}
                     ticket={selectedTicket}
@@ -129,7 +128,7 @@ export default function TicketsAprobarPage() {
                     onClose={() => setIsApproveBatchOpen(false)}
                     tickets={tickets}
                     onSuccess={loadTickets}
-                    scope="tickets"
+                    scope="general"
                 />
             )}
         </>

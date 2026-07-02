@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
+import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { MobileMantenimientosFilterBar as MobileTicketFilterBar } from '../components/common/mobile-mantenimientos-filter-bar';
 import { MantenimientosTicketCard as TicketCard } from '../components/common/mantenimientos-ticket-card';
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
@@ -91,6 +92,7 @@ export const MantenimientosCorrectivosMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
+    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -112,6 +114,10 @@ export const MantenimientosCorrectivosMobile = ({
         <>
             <div className="mb-3">
                 <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
+            </div>
+
+            <div className="mb-3">
+                <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" isMobile />
             </div>
 
             <div className="flex flex-col gap-2.5 mb-3">

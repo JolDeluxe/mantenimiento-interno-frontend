@@ -39,9 +39,15 @@ export const MODULES_CONFIG = [
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
     children: [
       {
-        id: 'tickets-aprobar',
-        name: 'Por Aprobar',
-        route: '/tickets/aprobar',
+        id: 'tickets-actividades',
+        name: 'Actividades',
+        route: '/tickets/actividades',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+      },
+      {
+        id: 'tickets-reportes',
+        name: 'Reportes',
+        route: '/tickets/reportes',
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
       {
@@ -49,7 +55,7 @@ export const MODULES_CONFIG = [
         name: 'Histórico',
         route: '/tickets/historico',
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
-      }
+      },
     ]
   },
   {
@@ -59,12 +65,6 @@ export const MODULES_CONFIG = [
     route: '/mantenimientos',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
     children: [
-      {
-        id: 'mantenimientos-aprobar',
-        name: 'Por Aprobar',
-        route: '/mantenimientos/aprobar',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
-      },
       {
         id: 'mantenimientos-correctivos',
         name: 'Correctivos',
@@ -98,6 +98,13 @@ export const MODULES_CONFIG = [
     icon: 'calendar_month',
     route: '/calendario',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+  },
+  {
+    id: 'aprobar',
+    name: 'Por Aprobar',
+    icon: 'check',
+    route: '/aprobar',
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'dashboard',

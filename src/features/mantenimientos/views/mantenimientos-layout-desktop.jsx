@@ -14,7 +14,6 @@ export default function MantenimientosLayoutDesktop() {
     const menu = useMemo(() => {
         const maintModule = MODULES_CONFIG.find(m => m.id === 'mantenimientos');
         const baseMenu = [
-            { id: 'mantenimientos-aprobar', label: 'Por Aprobar', path: '/mantenimientos/aprobar', icon: 'check' },
             { id: 'mantenimientos-correctivos', label: 'Correctivos', path: '/mantenimientos/correctivos', icon: 'build' },
             { id: 'mantenimientos-preventivos', label: 'Preventivos', path: '/mantenimientos/preventivos', icon: 'event_note' },
             { id: 'mantenimientos-historico', label: 'Historial', path: '/mantenimientos/historico', icon: 'assignment' },

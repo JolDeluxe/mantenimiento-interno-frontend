@@ -1,8 +1,7 @@
-// src/features/tickets/views/tickets-aprobar-mobile.jsx
 import React from 'react';
 import { Icon, GlassFab, GlassPaginationPill, ScrollToTopButton, Skeleton } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
-import { MobileAprobarCard } from '../components/aprobar/mobile-aprobar-cads';
+import { MobileAprobarCard } from '../components/mobile-aprobar-cads';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { hardReload } from '@/utils/hard-reload';
 
@@ -21,7 +20,7 @@ const MobileSkeleton = () => (
     </div>
 );
 
-export const TicketsAprobarMobile = ({
+export const AprobarMobile = ({
     tickets,
     isLoading,
     onReviewTicket,
@@ -39,9 +38,9 @@ export const TicketsAprobarMobile = ({
 
     return (
         <>
-            <div className={cn('flex flex-col px-4 gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
-                <div className="px-1 flex items-center justify-between">
-                    <div>
+            <div className={cn('flex flex-col gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
+                <div className="px-1 flex flex-col gap-3">
+                    <div className="max-w-sm">
                         <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-1 rounded-md uppercase tracking-wider">
                             Revisión de Evidencias
                         </span>
@@ -52,7 +51,7 @@ export const TicketsAprobarMobile = ({
                     {hasContent && (
                         <button
                             onClick={onOpenApproveBatch}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 active:scale-95 shadow-md transition-all cursor-pointer shrink-0"
+                            className="self-start flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 active:scale-95 shadow-md transition-all cursor-pointer"
                         >
                             <Icon name="fact_check" size="xs" />
                             <span>Aprobar Lote</span>
@@ -73,7 +72,7 @@ export const TicketsAprobarMobile = ({
                             isFiltering={false}
                             onRefresh={onRefresh}
                             mensaje="¡Todo al día!"
-                            subtexto="No hay tickets pendientes por aprobar."
+                            subtexto="No hay tareas pendientes por aprobar."
                             icon="check_circle"
                         />
                     </div>

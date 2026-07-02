@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
+import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { MobileTicketFilterBar } from '../components/historico/mobile-ticket-filter-bar';
 import { TicketCard } from '../components/historico/ticket-card';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
@@ -88,6 +89,9 @@ export const TicketsHistoricoMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
+    allowCreate = true,
+    emptyState = {},
+    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -103,12 +107,17 @@ export const TicketsHistoricoMobile = ({
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const baseBottom = hasPaginator ? 104 : 84;
     const fabAddBottom = `${baseBottom}px`;
-    const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
+    const showCreateFab = allowCreate && puedeCrear;
+    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
 
     return (
         <>
             <div className="mb-3">
                 <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
+            </div>
+
+            <div className="mb-3">
+                <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" isMobile />
             </div>
 
             <div className="flex flex-col gap-2.5 mb-3">
@@ -158,9 +167,9 @@ export const TicketsHistoricoMobile = ({
                                     isFiltering={isFiltering}
                                     onClearFilters={onClearFilters}
                                     onRefresh={onRefresh}
-                                    mensaje="Historial Vacío"
-                                    subtexto="No hay tickets en el historial."
-                                    icon="history"
+                                    mensaje={emptyState.mensaje || 'Historial Vacío'}
+                                    subtexto={emptyState.subtexto || 'No hay tickets en el historial.'}
+                                    icon={emptyState.icon || 'history'}
                                 />
                             </div>
                         )
@@ -177,7 +186,7 @@ export const TicketsHistoricoMobile = ({
             )}
             <div className="lg:hidden">
                 <GlassFab icon="refresh" onClick={hardReload} isLoading={loading} variant="neutral" size={50} bottom={fabRefreshBottom} right="20px" />
-                {puedeCrear && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
+                {showCreateFab && <GlassFab icon="add" onClick={onOpenCreate} variant="primary" size={56} bottom={fabAddBottom} right="20px" />}
             </div>
             <div className="lg:hidden">
                 <ScrollToTopButton bottom={fabAddBottom} left="20px" />

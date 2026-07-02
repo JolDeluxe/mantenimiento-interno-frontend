@@ -1,10 +1,9 @@
-// src/features/tickets/views/tickets-aprobar-desktop.jsx
 import React from 'react';
-import { Skeleton, Icon, RefreshFab } from '@/components/ui/z_index';
+import { Skeleton, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { AprobarTicketTable } from '../components/mantenimientos-aprobar/aprobar-table';
+import { AprobarTicketTable } from '../components/aprobar-table';
 
-export const MantenimientosAprobarDesktop = ({
+export const AprobarDesktop = ({
     tickets,
     isLoading,
     onReviewTicket,
@@ -17,8 +16,8 @@ export const MantenimientosAprobarDesktop = ({
     const total = pagination?.total || (tickets ? tickets.length : 0);
 
     return (
-        <div className="flex flex-col gap-5 animate-fade-in relative">
-            <div className="w-full flex items-center justify-between">
+        <div className="flex flex-col gap-4 animate-fade-in relative px-4 py-3">
+            <div className="w-full sticky top-0 p-2 bg-cuadra-arena border-b border-slate-300/60 pb-2 mb-2 px-1 z-30 flex items-center justify-between">
                 <div>
                     <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
                         Control de Aprobaciones
@@ -62,7 +61,7 @@ export const MantenimientosAprobarDesktop = ({
                         isFiltering={false}
                         onRefresh={onRefresh}
                         mensaje="¡Todo al día!"
-                        subtexto="No hay tickets resueltos esperando tu validación."
+                        subtexto="No hay tareas resueltas esperando tu validación."
                         icon="check_circle"
                     />
                 </div>

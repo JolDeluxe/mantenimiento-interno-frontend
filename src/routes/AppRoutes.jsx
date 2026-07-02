@@ -1,12 +1,11 @@
 // src/routes/AppRoutes.jsx
 
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { RoleGuard } from './RoleGuard';
 import { MODULES_CONFIG } from '@/config/modules-config';
-import api from '@/lib/axios';
 
 import ProfilePage from '@/features/auth/pages/profile-page';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
@@ -17,12 +16,13 @@ import NotFound from '@/pages/not-found';
 import SsoReceiver from '@/pages/sso-receiver';
 
 import TicketsPage from '@/features/tickets/pages/tickets-page';
-import TicketsAprobarPage from '@/features/tickets/pages/tickets-aprobar';
+import TicketsActividadesPage from '@/features/tickets/pages/tickets-actividades';
 import TicketsHistoricoPage from '@/features/tickets/pages/tickets-historico';
+import TicketsReportesPage from '@/features/tickets/pages/tickets-reportes';
 import TicketsBandejaGeneralPage from '@/features/bandeja-general/pages/tickets-bandeja-general';
+import AprobarPage from '@/features/aprobar/pages/aprobar-pages';
 
 import MantenimientosPage from '@/features/mantenimientos/pages/mantenimientos-page';
-import MantenimientosAprobarPage from '@/features/mantenimientos/pages/mantenimientos-aprobar';
 import MantenimientosCorrectivosPage from '@/features/mantenimientos/pages/mantenimientos-correctivos';
 import MantenimientosPreventivosPage from '@/features/mantenimientos/pages/mantenimientos-preventivos';
 import MantenimientosHistoricoPage from '@/features/mantenimientos/pages/mantenimientos-historico';
@@ -51,14 +51,14 @@ const ROLES = {
   hoyActividades: MODULES_CONFIG.find(m => m.id === 'hoy')?.children?.find(c => c.id === 'hoy-actividades')?.allowedRoles || [],
   hoyMantenimientos: MODULES_CONFIG.find(m => m.id === 'hoy')?.children?.find(c => c.id === 'hoy-mantenimientos')?.allowedRoles || [],
   tickets: MODULES_CONFIG.find(m => m.id === 'tickets')?.allowedRoles || [],
-  ticketsBandeja: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-bandeja')?.allowedRoles || [],
-  ticketsAprobar: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-aprobar')?.allowedRoles || [],
+  ticketsActividades: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-actividades')?.allowedRoles || [],
   ticketsHistorico: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-historico')?.allowedRoles || [],
+  ticketsReportes: MODULES_CONFIG.find(m => m.id === 'tickets')?.children?.find(c => c.id === 'tickets-reportes')?.allowedRoles || [],
   mantenimientos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.allowedRoles || [],
-  mantenimientosAprobar: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-aprobar')?.allowedRoles || [],
   mantenimientosCorrectivos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-correctivos')?.allowedRoles || [],
   mantenimientosPreventivos: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-preventivos')?.allowedRoles || [],
   mantenimientosHistorico: MODULES_CONFIG.find(m => m.id === 'mantenimientos')?.children?.find(c => c.id === 'mantenimientos-historico')?.allowedRoles || [],
+  aprobar: MODULES_CONFIG.find(m => m.id === 'aprobar')?.allowedRoles || [],
   bandeja: MODULES_CONFIG.find(m => m.id === 'bandeja')?.allowedRoles || [],
   usuarios: MODULES_CONFIG.find(m => m.id === 'usuarios')?.allowedRoles || [],
   notificaciones: MODULES_CONFIG.find(m => m.id === 'notificaciones')?.allowedRoles || [],
@@ -69,60 +69,6 @@ const ROLES = {
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
-};
-
-const ModuleRedirect = ({ scope }) => {
-  const [target, setTarget] = useState(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkAprobaciones = async () => {
-      try {
-        const res = await api.get('/api/tickets', {
-          params: {
-            estado: 'RESUELTO',
-            scope: scope,
-            limit: 1
-          }
-        });
-        
-        const total = res.data?.pagination?.total ?? 0;
-        
-        if (isMounted) {
-          if (total > 0) {
-            setTarget('aprobar');
-          } else {
-            setTarget('historico');
-          }
-        }
-      } catch (err) {
-        console.error("Error checking approvals for redirect:", err);
-        if (isMounted) {
-          setTarget('historico');
-        }
-      }
-    };
-
-    checkAprobaciones();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [scope]);
-
-  if (!target) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px] w-full">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-marca-primario"></div>
-          <span className="text-xs font-semibold text-slate-400">Cargando sección de tareas...</span>
-        </div>
-      </div>
-    );
-  }
-
-  return <Navigate to={target} replace />;
 };
 
 export const AppRoutes = () => {
@@ -169,14 +115,16 @@ export const AppRoutes = () => {
           {/* Módulo: Tickets */}
           <Route element={<RoleGuard allowedRoles={ROLES.tickets} />}>
             <Route path="/tickets" element={<TicketsPage />}>
-              <Route index element={<ModuleRedirect scope="actividades" />} />
+              <Route index element={<Navigate to="actividades" replace />} />
 
-              <Route element={<RoleGuard allowedRoles={ROLES.ticketsAprobar} />}>
-                <Route path="aprobar" element={<TicketsAprobarPage />} />
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsActividades} />}>
+                <Route path="actividades" element={<TicketsActividadesPage />} />
               </Route>
 
-              <Route element={<RoleGuard allowedRoles={ROLES.ticketsBandeja} />}>
-                <Route path="bandeja" element={<TicketsBandejaGeneralPage />} />
+              <Route path="aprobar" element={<Navigate to="/aprobar" replace />} />
+
+              <Route element={<RoleGuard allowedRoles={ROLES.ticketsReportes} />}>
+                <Route path="reportes" element={<TicketsReportesPage />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={ROLES.ticketsHistorico} />}>
@@ -188,11 +136,8 @@ export const AppRoutes = () => {
           {/* Módulo: Mantenimientos */}
           <Route element={<RoleGuard allowedRoles={ROLES.mantenimientos} />}>
             <Route path="/mantenimientos" element={<MantenimientosPage />}>
-              <Route index element={<ModuleRedirect scope="mantenimientos" />} />
-
-              <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosAprobar} />}>
-                <Route path="aprobar" element={<MantenimientosAprobarPage />} />
-              </Route>
+              <Route index element={<Navigate to="correctivos" replace />} />
+              <Route path="aprobar" element={<Navigate to="/aprobar" replace />} />
 
               <Route element={<RoleGuard allowedRoles={ROLES.mantenimientosCorrectivos} />}>
                 <Route path="correctivos" element={<MantenimientosCorrectivosPage />} />
@@ -210,6 +155,11 @@ export const AppRoutes = () => {
 
           <Route element={<RoleGuard allowedRoles={ROLES.calendario} />}>
             <Route path="/calendario" element={<CalendarioPage />} />
+          </Route>
+
+          {/* Módulo: Por Aprobar Global */}
+          <Route element={<RoleGuard allowedRoles={ROLES.aprobar} />}>
+            <Route path="/aprobar" element={<AprobarPage />} />
           </Route>
 
           {/* Bandeja de Entrada General */}

@@ -4,6 +4,18 @@ import { TicketPriorityBadge } from '@/features/common/components/ticket-status-
 import { formatFechaHora } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
+const getOrigen = (ticket) => {
+    if (ticket.scope === 'mantenimientos' || ticket.maquinaId || ticket.maquina) return 'Mantenimiento';
+    if (ticket.tipo === 'TICKET') return 'Reporte';
+    return 'Actividad';
+};
+
+const ORIGEN_STYLE = {
+    Mantenimiento: 'bg-orange-50 text-orange-700 border-orange-200/70',
+    Reporte: 'bg-rose-50 text-rose-700 border-rose-200/70',
+    Actividad: 'bg-blue-50 text-blue-700 border-blue-200/70',
+};
+
 export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
     const [responsablesExpanded, setResponsablesExpanded] = useState(false);
 
@@ -28,6 +40,9 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
                                 {ticket.tipo}
                             </span>
                         )}
+                        <span className={cn('text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border', ORIGEN_STYLE[getOrigen(ticket)] || ORIGEN_STYLE.Actividad)}>
+                            {getOrigen(ticket)}
+                        </span>
                         {ticket.isLate && (
                             <span className="flex items-center gap-0.5 text-[8px] font-black text-red-700 bg-red-50 border border-red-200 px-1 py-0.5 rounded-md uppercase shrink-0 animate-pulse">
                                 <Icon name="timer_off" size="xs" /> Con Retraso

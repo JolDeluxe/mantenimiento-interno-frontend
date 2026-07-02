@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { MantenimientosTicketTable as TicketsTable } from '../components/common/mantenimientos-ticket-table';
 import { MantenimientosFilterBar as TicketFilterBar } from '@/features/common/components/ticket-filter-bar';
 import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
+import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { MantenimientosAddButton as TicketAddButton } from '../components/common/mantenimientos-add-button';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
@@ -65,6 +66,7 @@ export const MantenimientosHistoricoDesktop = ({
     onOpenCreate,
     onRefresh,
     onExport,
+    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -88,6 +90,8 @@ export const MantenimientosHistoricoDesktop = ({
                 mostrarPapelera={mostrarPapelera}
                 mostrarRechazadas={mostrarRechazadas}
             />
+
+            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" />
 
             {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 

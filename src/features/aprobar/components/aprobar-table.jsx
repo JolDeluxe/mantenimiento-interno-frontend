@@ -3,7 +3,18 @@ import { Skeleton, Icon, Pagination, Table, Tooltip } from '@/components/ui/z_in
 import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+
+const getOrigen = (ticket) => {
+    if (ticket.scope === 'mantenimientos' || ticket.maquinaId || ticket.maquina) return 'Mantenimiento';
+    if (ticket.tipo === 'TICKET') return 'Reporte';
+    return 'Actividad';
+};
+
+const ORIGEN_STYLE = {
+    Mantenimiento: 'bg-orange-50 text-orange-700 border-orange-200/70',
+    Reporte: 'bg-rose-50 text-rose-700 border-rose-200/70',
+    Actividad: 'bg-blue-50 text-blue-700 border-blue-200/70',
+};
 
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
@@ -153,7 +164,7 @@ export const AprobarTicketTable = ({
                     RUTINA: 'sync',
                 }[row.clasificacion] || 'label';
 
-                const clasifContent = (row.clasificacion && row.categoria === 'MAQUINARIA') ? (
+                const clasifContent = row.clasificacion ? (
                     <div className="flex items-center gap-1 text-slate-800 font-bold text-xs uppercase">
                         <Icon name={clasifIcon} size="xs" className="text-slate-400 shrink-0" />
                         <span>{row.clasificacion}</span>
@@ -164,35 +175,14 @@ export const AprobarTicketTable = ({
 
                 return (
                     <div className="flex flex-col items-center gap-1">
+                        <span className={cn('text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0', ORIGEN_STYLE[getOrigen(row)] || ORIGEN_STYLE.Actividad)}>
+                            {getOrigen(row)}
+                        </span>
                         {clasifContent}
                         {tipoBadge}
                     </div>
                 );
             }
-        },
-        {
-            header: 'Categoría',
-            accessorKey: 'categoria',
-            sortable: false,
-            align: 'center',
-            headerClassName: 'w-[12%] min-w-[100px]',
-            cell: (row) => {
-                if (row.isSkeleton) return <Skeleton className="h-5 w-18 mx-auto rounded-md" />;
-                if (!row.categoria) return <span className="text-xs text-slate-400 italic">-</span>;
-                
-                const catInfo = CATEGORIAS_EQUIPO.find(c => c.value === row.categoria) || {
-                    label: row.categoria,
-                    icon: 'category',
-                    colorClass: 'bg-slate-100 text-slate-500 border-slate-200'
-                };
-
-                return (
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide whitespace-nowrap`}>
-                        <Icon name={catInfo.icon} size="xs" className="shrink-0" />
-                        {catInfo.label}
-                    </span>
-                );
-            },
         },
         {
             header: 'Responsable(s)',

@@ -4,6 +4,7 @@ import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '@/features/common/components/ticket-filter-bar';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
+import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
@@ -65,6 +66,9 @@ export const TicketsHistoricoDesktop = ({
     onOpenCreate,
     onRefresh,
     onExport,
+    allowCreate = true,
+    emptyState = {},
+    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -89,7 +93,9 @@ export const TicketsHistoricoDesktop = ({
                 mostrarRechazadas={mostrarRechazadas}
             />
 
-            {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
+            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" />
+
+            {allowCreate && puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 
             <TicketFilterBar
                 currentUser={currentUser}
@@ -132,9 +138,9 @@ export const TicketsHistoricoDesktop = ({
                         isFiltering={isFiltering}
                         onClearFilters={onClearFilters}
                         onRefresh={onRefresh}
-                        mensaje="Historial Vacío"
-                        subtexto="No hay tareas registradas en el historial para este periodo."
-                        icon="history"
+                        mensaje={emptyState.mensaje || 'Historial Vacío'}
+                        subtexto={emptyState.subtexto || 'No hay tareas registradas en el historial para este periodo.'}
+                        icon={emptyState.icon || 'history'}
                     />
                 </div>
             ) : (
