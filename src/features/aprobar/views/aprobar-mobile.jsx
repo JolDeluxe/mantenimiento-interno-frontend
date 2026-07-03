@@ -39,6 +39,15 @@ export const AprobarMobile = ({
     return (
         <>
             <div className={cn('flex flex-col gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
+                <div className="px-1 mb-1">
+                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
+                        Por Aprobar
+                    </h1>
+                    <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+                        Revisa, aprueba o devuelve las tareas resueltas por el equipo.
+                    </p>
+                </div>
+
                 <div className="px-1 flex flex-col gap-3">
                     <div className="max-w-sm">
                         <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-1 rounded-md uppercase tracking-wider">

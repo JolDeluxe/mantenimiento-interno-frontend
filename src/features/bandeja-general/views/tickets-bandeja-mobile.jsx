@@ -42,7 +42,16 @@ export const TicketsBandejaMobile = ({
 
     return (
         <>
-            <div className={cn('flex flex-col px-4 gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
+            <div className={cn('flex flex-col gap-4 animate-fade-in', hasPaginator ? 'pb-36' : 'pb-28')}>
+                <div className="px-1 mb-1">
+                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
+                        Bandeja de Entrada
+                    </h1>
+                    <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+                        Revisa reportes nuevos y asígnalos al equipo responsable.
+                    </p>
+                </div>
+
                 <BandejaFiltro
                     totalTickets={pagination?.total || (tickets?.length || 0)}
                     sortOrder={sortOrder}

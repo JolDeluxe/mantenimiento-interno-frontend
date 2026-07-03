@@ -117,6 +117,9 @@ export const HoyTodasDesktop = ({
 
     return (
         <div className="flex flex-col gap-5 relative">
+
+            <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} />
+
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">Todas las Tareas del Día</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
@@ -131,8 +134,6 @@ export const HoyTodasDesktop = ({
                     )}
                 </p>
             </div>
-
-            <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} />
 
             <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
 

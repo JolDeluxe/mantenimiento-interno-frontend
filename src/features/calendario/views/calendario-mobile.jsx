@@ -47,6 +47,15 @@ export const CalendarioMobile = ({
 }) => {
     return (
         <div className="flex flex-col gap-2 relative">
+            <div className="px-1 mb-2">
+                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
+                    Calendario
+                </h1>
+                <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+                    Consulta la programación de actividades, mantenimientos y entregas del equipo.
+                </p>
+            </div>
+
             <MobileCalendarioFilterBar
                 scope={scope}
                 onScopeChange={onScopeChange}
