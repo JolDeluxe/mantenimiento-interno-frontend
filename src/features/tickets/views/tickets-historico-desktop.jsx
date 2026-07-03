@@ -4,7 +4,6 @@ import { TicketsTable } from '../components/historico/ticket-table';
 import { TicketFilterBar } from '@/features/common/components/ticket-filter-bar';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketAddButton } from '../components/historico/ticket-add-button';
-import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
@@ -92,8 +91,6 @@ export const TicketsHistoricoDesktop = ({
                 mostrarPapelera={mostrarPapelera}
                 mostrarRechazadas={mostrarRechazadas}
             />
-
-            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" />
 
             {allowCreate && puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 

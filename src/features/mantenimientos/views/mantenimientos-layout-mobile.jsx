@@ -56,7 +56,11 @@ export default function MantenimientosLayoutMobile() {
                 <div className="sticky top-0 z-40 mb-3 py-1 flex items-center justify-center transition-all bg-transparent">
                     <div className="overflow-x-auto no-scrollbar w-full flex justify-center">
                         <GlassViewToggle
-                            options={menuOptions}
+                            options={menuOptions.map(opt => ({
+                                id: opt.id,
+                                icon: opt.icon,
+                                label: opt.id === activePath ? opt.label : null
+                            }))}
                             value={activePath}
                             onChange={(newPath) => navigate(newPath)}
                             activeVariant="primary"

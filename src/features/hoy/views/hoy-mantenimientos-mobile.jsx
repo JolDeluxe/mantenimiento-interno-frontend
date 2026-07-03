@@ -148,12 +148,17 @@ export const HoyMantenimientosMobile = ({
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in pb-28">
-            <div className="flex flex-col gap-2">
-                <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
-                <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} />
-            </div>
 
             <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile />
+
+            <div className="flex flex-col gap-2">
+                <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
+                {currentUser?.rol === 'COORDINADOR_MTTO' && (
+                    <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} isMobile />
+                )}
+            </div>
+
+            
 
             <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
 

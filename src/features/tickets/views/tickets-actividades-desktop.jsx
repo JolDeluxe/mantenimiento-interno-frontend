@@ -5,13 +5,12 @@ import { ActividadesFilterBar } from '@/features/hoy/components/hoy-actividades/
 import { ActividadesTicketTable } from '@/features/hoy/components/hoy-actividades/actividades-ticket-table';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { ROLES_ADMIN } from '../constants';
 
 const VIEW_COPY = {
     actividades: {
         title: 'Actividades',
-        description: 'Historial de actividades internas planeadas y extraordinarias.',
+        description: 'Historial de actividades internas planeadas and extraordinarias.',
         emptyMessage: 'Sin actividades',
         emptySubtext: 'No hay actividades internas para los filtros seleccionados.',
         emptyIcon: 'assignment',
@@ -114,8 +113,6 @@ export const TicketsActividadesDesktop = ({
                 onFilterChange={onFilterChange}
                 loading={loading}
             />
-
-            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" />
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400">

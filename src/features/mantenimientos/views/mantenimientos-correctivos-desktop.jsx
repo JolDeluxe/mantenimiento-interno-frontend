@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { MantenimientosTicketTable as CorrectivosTicketTable } from '../components/common/mantenimientos-ticket-table';
 import { MantenimientosFilterBar as CorrectivosFilterBar } from '@/features/common/components/ticket-filter-bar';
 import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
-import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { MantenimientosAddButton as TicketAddButton } from '../components/common/mantenimientos-add-button';
 import { Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
@@ -89,8 +88,6 @@ export const MantenimientosCorrectivosDesktop = ({
                 mostrarPapelera={mostrarPapelera}
                 mostrarRechazadas={mostrarRechazadas}
             />
-
-            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" />
 
             {puedeCrear && <TicketAddButton onClick={onOpenCreate} />}
 

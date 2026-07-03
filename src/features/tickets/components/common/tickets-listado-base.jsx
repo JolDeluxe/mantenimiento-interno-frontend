@@ -16,6 +16,7 @@ import { HoyFormModal } from '@/features/hoy/components/common/hoy-form-modal';
 import { MobileHoyFormModal } from '@/features/hoy/components/common/mobile-hoy-form-modal';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketFechas } from '@/features/common/components/ticket-fechas';
+import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 import { formatFechaNumerica } from '@/lib/date';
 
 const LIMIT = 50;
@@ -317,6 +318,7 @@ export default function TicketsListadoBase({
 
     return (
         <div className="max-w-full mx-auto flex flex-col gap-4">
+            <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile={!isDesktop} />
             <TicketFechas
                 year={year}
                 month={month}

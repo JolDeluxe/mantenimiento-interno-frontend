@@ -10,6 +10,7 @@ import { MantenimientosFormModal as TicketFormModal } from '../components/common
 import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../components/common/mobile-mantenimientos-form-modal';
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosFechas } from '@/features/common/components/ticket-fechas';
+import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 
 const LIMIT = 50;
 
@@ -277,6 +278,7 @@ export default function MantenimientosHistoricoPage({
 
     return (
         <div className="max-w-full mx-auto flex flex-col gap-4">
+            <HoyAprobarPanel toApproveCount={meta?.resumenEstados?.RESUELTO ?? 0} currentUser={currentUser} isMobile={!isDesktop} />
             <MantenimientosFechas
                 year={year}
                 month={month}

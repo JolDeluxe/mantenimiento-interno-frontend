@@ -142,7 +142,9 @@ export const HoyActividadesMobile = ({
         <div className="flex flex-col gap-4 animate-fade-in pb-28">
             <div className="flex flex-col gap-2">
                 <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
-                <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} />
+                {currentUser?.rol === 'COORDINADOR_MTTO' && (
+                    <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} isMobile />
+                )}
             </div>
 
             <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile />

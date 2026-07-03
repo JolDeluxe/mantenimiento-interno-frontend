@@ -5,7 +5,6 @@ import { ActividadesTicketCard } from '@/features/hoy/components/hoy-actividades
 import { MobileActividadesFilterBar } from '@/features/hoy/components/hoy-actividades/mobile-actividades-filter-bar';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MobileHoyFormModal } from '@/features/hoy/components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
@@ -136,8 +135,6 @@ export const TicketsActividadesMobile = ({
                 onFilterChange={onFilterChange}
                 loading={loading}
             />
-
-            <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" isMobile />
 
             <MobileActividadesFilterBar
                 query={query}

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { GlassFab, GlassPaginationPill, Icon, Skeleton } from '@/components/ui/z_index';
 import { ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
-import { ApprovalPanel } from '@/features/common/components/approval-panel';
 import { MobileTicketFilterBar } from '../components/historico/mobile-ticket-filter-bar';
 import { TicketCard } from '../components/historico/ticket-card';
 import { MobileTicketFormModal } from '../components/historico/mobile-ticket-form-modal';
@@ -114,10 +113,6 @@ export const TicketsHistoricoMobile = ({
         <>
             <div className="mb-3">
                 <TicketSummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onFilterChange} loading={loading} mostrarPapelera={mostrarPapelera} mostrarRechazadas={mostrarRechazadas} />
-            </div>
-
-            <div className="mb-3">
-                <ApprovalPanel toApproveCount={toApproveCount} currentUser={currentUser} targetPath="/aprobar" isMobile />
             </div>
 
             <div className="flex flex-col gap-2.5 mb-3">
