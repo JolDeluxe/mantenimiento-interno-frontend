@@ -66,6 +66,7 @@ export const TicketsActividadesMobile = ({
     filtroConclusion,
     mostrarRechazadas,
     onToggleRechazadas,
+    mostrarPapelera,
     mostrarAtrasadas,
     onToggleAtrasadas,
     onPageChange,
@@ -83,7 +84,6 @@ export const TicketsActividadesMobile = ({
     onRefresh,
     allowCreate = true,
     emptyState = {},
-    toApproveCount = 0,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const [detailTarget, setDetailTarget] = useState(null);
@@ -134,6 +134,8 @@ export const TicketsActividadesMobile = ({
                 filtroActual={filtroEstado}
                 onFilterChange={onFilterChange}
                 loading={loading}
+                mostrarRechazadas={mostrarRechazadas}
+                mostrarPapelera={mostrarPapelera}
             />
 
             <MobileActividadesFilterBar

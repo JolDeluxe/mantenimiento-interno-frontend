@@ -16,7 +16,9 @@ const LIMIT = 50;
 
 export default function MantenimientosHistoricoPage({
     forcedClasificacion,
+    // eslint-disable-next-line no-unused-vars
     DesktopView = MantenimientosHistoricoDesktop,
+    // eslint-disable-next-line no-unused-vars
     MobileView = MantenimientosHistoricoMobile,
 }) {
     const isDesktop = useIsDesktop();
@@ -125,8 +127,8 @@ export default function MantenimientosHistoricoPage({
 
     useEffect(() => {
         fetchTecnicos();
-        fetchMetricas({ scope: 'mantenimientos' });
-    }, [fetchTecnicos, fetchMetricas]);
+        fetchMetricas({ scope: 'mantenimientos', clasificacion: forcedClasificacion });
+    }, [fetchTecnicos, fetchMetricas, forcedClasificacion]);
 
     const handleCreate = useCallback(async (formData) => {
         try {
@@ -231,8 +233,11 @@ export default function MantenimientosHistoricoPage({
         totalParaPaginador: meta?.totalFiltrado || 0,
         conteos: meta?.resumenEstados || [],
         toApproveCount: meta?.resumenEstados?.RESUELTO ?? 0,
-        existenciaGlobal: metricas?.existenciaGlobal || {},
-        totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0,
+        existenciaGlobal: {
+            ...metricas?.existenciaGlobal,
+            RECHAZADO: metricas?.totalRechazadas ?? metricas?.existenciaGlobal?.RECHAZADO ?? 0,
+        },
+        totalAtrasadasGlobal: metricas?.totalAtrasadas ?? metricas?.global?.backlogAtrasado ?? 0,
         currentUser,
         query,
         onSearchChange: setQuery,

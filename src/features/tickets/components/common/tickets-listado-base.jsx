@@ -58,7 +58,6 @@ export default function TicketsListadoBase({
         loading,
         submitting,
         fetchTickets,
-        fetchMetricas,
         fetchTecnicos,
         createTicket,
         createBatch,
@@ -136,15 +135,13 @@ export default function TicketsListadoBase({
 
     const loadTickets = useCallback(() => {
         const payload = JSON.parse(queryKey);
-        fetchMetricas(payload);
         return fetchTickets(payload).catch(() => notify.error('Error al cargar tickets.'));
-    }, [fetchTickets, fetchMetricas, queryKey]);
+    }, [fetchTickets, queryKey]);
 
     useEffect(() => {
         const payload = JSON.parse(queryKey);
-        fetchMetricas(payload);
         fetchTickets(payload).catch(() => notify.error('Error al cargar tickets.'));
-    }, [queryKey, fetchTickets, fetchMetricas]);
+    }, [queryKey, fetchTickets]);
 
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
 
@@ -294,8 +291,11 @@ export default function TicketsListadoBase({
         tickets: sortedTickets, loading, submitting, currentUser, tecnicos, page, limit: LIMIT,
         totalPages: meta?.totalPages || 1, totalParaSummary: meta?.totalAbsoluto || 0,
         totalParaPaginador: meta?.totalFiltrado || 0, conteos: meta?.resumenEstados || [],
-        existenciaGlobal: metricas?.existenciaGlobal || {},
-        totalAtrasadasGlobal: metricas?.global?.backlogAtrasado || 0, sortConfig, query,
+        existenciaGlobal: {
+            ...metricas?.existenciaGlobal,
+            RECHAZADO: metricas?.totalRechazadas ?? metricas?.existenciaGlobal?.RECHAZADO ?? 0,
+        },
+        totalAtrasadasGlobal: metricas?.totalAtrasadas ?? metricas?.global?.backlogAtrasado ?? 0, sortConfig, query,
         filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable,
         filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,

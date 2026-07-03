@@ -174,6 +174,19 @@ export default function HoyMantenimientosPage() {
         }
     };
 
+    const handleToggleAtrasadas = useCallback(() => {
+        setMostrarAtrasadas((prev) => !prev);
+        setMostrarRechazadas(false);
+        setFiltroEstado('TODOS');
+    }, []);
+
+    const handleToggleRechazadas = useCallback(() => {
+        setMostrarRechazadas((prev) => !prev);
+        setMostrarAtrasadas(false);
+        setIsDrawerAmnistiaOpen(false);
+        setFiltroEstado('TODOS');
+    }, []);
+
     const toApproveCount = resumenEstados?.RESUELTO ?? 0;
 
     const sharedProps = {
@@ -208,10 +221,10 @@ export default function HoyMantenimientosPage() {
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,
-        onToggleAtrasadas: () => setMostrarAtrasadas(p => !p),
+        onToggleAtrasadas: handleToggleAtrasadas,
         onOpenDrawerAmnistia: () => setIsDrawerAmnistiaOpen(true),
         mostrarRechazadas,
-        onToggleRechazadas: () => setMostrarRechazadas(p => !p),
+        onToggleRechazadas: handleToggleRechazadas,
         vistaEquipo,
         onVistaEquipoChange: setVistaEquipo,
         equipoCount,

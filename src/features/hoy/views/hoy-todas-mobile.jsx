@@ -151,7 +151,7 @@ export const HoyTodasMobile = ({
                 )}
             </div>
 
-            <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
+            <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} mostrarRechazadas={mostrarRechazadas} />
 
             <MobileHoyFilterBar
                 query={query}

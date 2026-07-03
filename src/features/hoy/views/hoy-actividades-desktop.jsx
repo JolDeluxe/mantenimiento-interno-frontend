@@ -117,6 +117,9 @@ export const HoyActividadesDesktop = ({
 
     return (
         <div className="flex flex-col gap-5 relative">
+
+            <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} />
+
             <div>
                 <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">Actividades Generales del Día</h2>
                 <p className="text-sm text-slate-555 mt-0.5">
@@ -132,9 +135,7 @@ export const HoyActividadesDesktop = ({
                 </p>
             </div>
 
-            <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} />
-
-            <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} />
+            <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} mostrarRechazadas={mostrarRechazadas} />
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />

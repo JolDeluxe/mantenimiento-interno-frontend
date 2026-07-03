@@ -21,6 +21,63 @@ const paramsToKey = (params = {}) => {
     return JSON.stringify(sorted);
 };
 
+const responsablesSignature = (responsables = []) => responsables
+    .map((r) => [r.id, r.nombre, r.imagen].join(':'))
+    .join(',');
+
+const ticketSignature = (ticket) => [
+    ticket?.id,
+    ticket?.updatedAt,
+    ticket?.estado,
+    ticket?.titulo,
+    ticket?.tipo,
+    ticket?.clasificacion,
+    ticket?.categoria,
+    ticket?.prioridad,
+    ticket?.planta,
+    ticket?.area,
+    ticket?.folio,
+    ticket?.creadorId,
+    ticket?.creador?.id,
+    ticket?.creador?.nombre,
+    ticket?.createdAt,
+    ticket?.fechaVencimiento,
+    ticket?.finalizadoAt,
+    ticket?.horaInicioProgramada,
+    ticket?.horaFinProgramada,
+    ticket?.tiempoEstimado,
+    ticket?.maquinaId,
+    ticket?.maquina?.id,
+    ticket?.maquina?.codigo,
+    ticket?.maquina?.nombre,
+    ticket?.isOverdue,
+    ticket?.isLate,
+    ticket?.isDueToday,
+    ticket?.isDueTomorrow,
+    responsablesSignature(ticket?.responsables),
+].join('|');
+
+const ticketsSignature = (items = []) => (
+    Array.isArray(items) ? items.map(ticketSignature).join('||') : ''
+);
+
+const stableStringify = (value) => JSON.stringify(value ?? {});
+
+const buildMetaState = (prev, payload) => {
+    const fallbackTotal = Array.isArray(payload?.data) ? payload.data.length : 0;
+    const totalFiltrado = typeof payload?.pagination?.total === 'number'
+        ? payload.pagination.total
+        : fallbackTotal;
+
+    return {
+        ...prev,
+        totalFiltrado,
+        totalPages: typeof payload?.pagination?.totalPages === 'number' ? payload.pagination.totalPages : 1,
+        resumenEstados: payload?.resumenEstados ?? prev.resumenEstados,
+        totalAbsoluto: typeof payload?.totalAbsoluto === 'number' ? payload.totalAbsoluto : (prev.totalAbsoluto || totalFiltrado),
+    };
+};
+
 export const useTickets = () => {
     const [tickets, setTickets] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
@@ -39,6 +96,10 @@ export const useTickets = () => {
     const lastFetchParams = useRef({});
     const lastMetricsParams = useRef({});
     const hasHydratedFromCache = useRef(false);
+    const lastTicketsSignature = useRef('');
+    const lastMetaSignature = useRef('');
+    const lastMetricasSignature = useRef('');
+    const metaRef = useRef(meta);
 
     useEffect(() => {
         const goOffline = () => setIsOffline(true);
@@ -53,6 +114,16 @@ export const useTickets = () => {
         };
     }, []);
 
+    const syncMeta = useCallback((next) => {
+        const signature = stableStringify(next);
+        const currentSignature = stableStringify(metaRef.current);
+        if (signature === currentSignature) return;
+
+        metaRef.current = next;
+        lastMetaSignature.current = signature;
+        setMeta(next);
+    }, []);
+
     const fetchTickets = useCallback(async (params = {}) => {
         setLoading(true);
         lastFetchParams.current = params;
@@ -64,16 +135,22 @@ export const useTickets = () => {
             snapshot = await readSnapshot('tickets', cacheKey);
             if (snapshot?.data) {
                 const cached = snapshot.data;
-                setTickets(Array.isArray(cached.data) ? cached.data : cached);
+                const cachedTickets = Array.isArray(cached.data) ? cached.data : cached;
+                const cachedTicketsSignature = ticketsSignature(cachedTickets);
+                if (cachedTicketsSignature !== lastTicketsSignature.current) {
+                    setTickets(cachedTickets);
+                    lastTicketsSignature.current = cachedTicketsSignature;
+                }
 
                 if (cached.pagination) {
-                    setMeta((prev) => ({
-                        ...prev,
-                        totalFiltrado: cached.pagination.total ?? 0,
-                        totalPages: cached.pagination.totalPages ?? 1,
-                        resumenEstados: cached.resumenEstados ?? prev.resumenEstados,
-                        totalAbsoluto: cached.totalAbsoluto ?? prev.totalAbsoluto,
-                    }));
+                    syncMeta(buildMetaState(metaRef.current, cached));
+                }
+                if (cached.metricas) {
+                    const signature = stableStringify(cached.metricas);
+                    if (signature !== lastMetricasSignature.current) {
+                        setMetricas(cached.metricas);
+                        lastMetricasSignature.current = signature;
+                    }
                 }
                 hasHydratedFromCache.current = true;
             }
@@ -89,28 +166,34 @@ export const useTickets = () => {
         try {
             const res = await getTickets(params);
             if (Array.isArray(res)) {
-                setTickets(res);
-                setMeta((prev) => ({
-                    ...prev,
-                    totalFiltrado: res.length,
-                    totalPages: 1,
-                }));
+                const signature = ticketsSignature(res);
+                if (signature !== lastTicketsSignature.current) {
+                    setTickets(res);
+                    lastTicketsSignature.current = signature;
+                }
+                syncMeta({ ...metaRef.current, totalFiltrado: res.length, totalPages: 1 });
                 await writeSnapshot('tickets', res, cacheKey);
             } else {
                 const pagination = res.pagination ?? {};
                 const data = Array.isArray(res.data) ? res.data : [];
 
-                setTickets(data);
-                setMeta((prev) => ({
-                    ...prev,
-                    totalFiltrado: pagination.total ?? 0,
-                    totalPages: pagination.totalPages ?? 1,
-                    resumenEstados: res.resumenEstados ?? prev.resumenEstados,
-                    totalAbsoluto: res.totalAbsoluto ?? prev.totalAbsoluto,
-                }));
+                const signature = ticketsSignature(data);
+                if (signature !== lastTicketsSignature.current) {
+                    setTickets(data);
+                    lastTicketsSignature.current = signature;
+                }
+                syncMeta(buildMetaState(metaRef.current, { ...res, pagination }));
+                if (res.metricas) {
+                    const metricasSignature = stableStringify(res.metricas);
+                    if (metricasSignature !== lastMetricasSignature.current) {
+                        setMetricas(res.metricas);
+                        lastMetricasSignature.current = metricasSignature;
+                    }
+                    await writeSnapshot('metricas', res.metricas, `metricas_${cacheKey}`);
+                }
                 await writeSnapshot('tickets', res, cacheKey);
             }
-        } catch (error) {
+        } catch {
             console.warn('[useTickets] network error');
             if (!hasHydratedFromCache.current) {
                 console.warn('No cache available → keeping UI empty safely');
@@ -118,7 +201,7 @@ export const useTickets = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [syncMeta]);
 
     const fetchMetricas = useCallback(async (params = {}) => {
         lastMetricsParams.current = params;
@@ -129,7 +212,9 @@ export const useTickets = () => {
             if (snapshot?.data) {
                 setMetricas(snapshot.data);
             }
-        } catch { }
+        } catch {
+            // Cache best-effort: si falla, seguimos con red.
+        }
 
         if (!navigator.onLine) return;
 
@@ -139,7 +224,9 @@ export const useTickets = () => {
                 setMetricas(res.data);
                 await writeSnapshot('metricas', res.data, cacheKey);
             }
-        } catch { }
+        } catch {
+            // Métricas best-effort: no bloquean el listado.
+        }
     }, []);
 
     const fetchTecnicos = useCallback(async () => {
@@ -152,7 +239,9 @@ export const useTickets = () => {
             if (snapshot?.data) {
                 setTecnicos(snapshot.data);
             }
-        } catch { }
+        } catch {
+            // Cache best-effort: si falla, seguimos con red.
+        }
 
         if (!navigator.onLine) return;
 
@@ -161,7 +250,9 @@ export const useTickets = () => {
             const data = Array.isArray(lista) ? lista : [];
             setTecnicos(data);
             await writeSnapshot('tecnicos', data);
-        } catch { }
+        } catch {
+            // Workload best-effort: la UI puede operar sin esta cache.
+        }
     }, []);
 
     const handleCreate = useCallback(async (data) => {
@@ -203,7 +294,12 @@ export const useTickets = () => {
     useEffect(() => {
         const handleSyncComplete = () => {
             fetchTickets(lastFetchParams.current);
-            fetchMetricas(lastMetricsParams.current);
+            if (
+                Object.keys(lastMetricsParams.current).length > 0 &&
+                paramsToKey(lastMetricsParams.current) !== paramsToKey(lastFetchParams.current)
+            ) {
+                fetchMetricas(lastMetricsParams.current);
+            }
         };
         window.addEventListener('cuadra-sync-complete', handleSyncComplete);
         return () => window.removeEventListener('cuadra-sync-complete', handleSyncComplete);

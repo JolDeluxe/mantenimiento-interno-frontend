@@ -6,6 +6,14 @@ import { cn } from '@/utils/cn';
 import { getTickets } from '@/features/tickets/api/tickets-api';
 
 const rolesSupervisor = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+const APPROVAL_COUNT_TTL_MS = 30000;
+let approvalCountCache = { value: 0, fetchedAt: 0, promise: null };
+
+const getCachedApprovalCount = () => (
+    Date.now() - approvalCountCache.fetchedAt < APPROVAL_COUNT_TTL_MS
+        ? approvalCountCache.value
+        : 0
+);
 
 const getTotal = (response) => {
     if (typeof response?.pagination?.total === 'number') return response.pagination.total;
@@ -25,30 +33,49 @@ export const ApprovalPanel = ({
 }) => {
     const navigate = useNavigate();
     const esSupervisor = rolesSupervisor.includes(currentUser?.rol);
-    const [globalCount, setGlobalCount] = useState(0);
+    const localCount = Number(toApproveCount) || 0;
+    const [globalCount, setGlobalCount] = useState(getCachedApprovalCount);
 
     useEffect(() => {
         let cancelled = false;
 
-        if (!esSupervisor) {
-            setGlobalCount(0);
+        if (!esSupervisor || localCount > 0) {
             return undefined;
         }
 
-        getTickets({ estado: 'RESUELTO', page: 1, limit: 1 })
+        const now = Date.now();
+        if (now - approvalCountCache.fetchedAt < APPROVAL_COUNT_TTL_MS) {
+            return undefined;
+        }
+
+        if (!approvalCountCache.promise) {
+            approvalCountCache.promise = getTickets({ estado: 'RESUELTO', page: 1, limit: 1 })
+                .then((response) => {
+                    approvalCountCache.value = getTotal(response);
+                    approvalCountCache.fetchedAt = Date.now();
+                    return approvalCountCache.value;
+                })
+                .catch(() => {
+                    approvalCountCache.value = 0;
+                    approvalCountCache.fetchedAt = Date.now();
+                    return 0;
+                })
+                .finally(() => {
+                    approvalCountCache.promise = null;
+                });
+        }
+
+        approvalCountCache.promise
             .then((response) => {
-                if (!cancelled) setGlobalCount(getTotal(response));
-            })
-            .catch(() => {
-                if (!cancelled) setGlobalCount(0);
+                if (!cancelled) setGlobalCount(response);
             });
 
         return () => {
             cancelled = true;
         };
-    }, [esSupervisor]);
+    }, [esSupervisor, localCount]);
 
-    const count = Math.max(Number(toApproveCount) || 0, globalCount);
+    const count = localCount > 0 ? localCount : globalCount;
 
     if (!esSupervisor || count <= 0) {
         return null;

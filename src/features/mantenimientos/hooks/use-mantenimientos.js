@@ -76,6 +76,9 @@ export const useMantenimientos = () => {
                         totalAbsoluto: cached.totalAbsoluto ?? prev.totalAbsoluto,
                     }));
                 }
+                if (cached.metricas) {
+                    setMetricas(cached.metricas);
+                }
                 hasHydratedFromCache.current = true;
             }
         } catch (err) {
@@ -109,9 +112,12 @@ export const useMantenimientos = () => {
                     resumenEstados: res.resumenEstados ?? prev.resumenEstados,
                     totalAbsoluto: res.totalAbsoluto ?? prev.totalAbsoluto,
                 }));
+                if (res.metricas) {
+                    setMetricas(res.metricas);
+                }
                 await writeSnapshot('tickets', res, `maint_${cacheKey}`);
             }
-        } catch (error) {
+        } catch {
             console.warn('[useMantenimientos] network error');
         } finally {
             setLoading(false);
@@ -127,7 +133,9 @@ export const useMantenimientos = () => {
             if (snapshot?.data) {
                 setMetricas(snapshot.data);
             }
-        } catch { }
+        } catch {
+            // Cache best-effort
+        }
 
         if (!navigator.onLine) return;
 
@@ -137,7 +145,9 @@ export const useMantenimientos = () => {
                 setMetricas(res.data);
                 await writeSnapshot('metricas', res.data, cacheKey);
             }
-        } catch { }
+        } catch {
+            // Metrics best-effort
+        }
     }, []);
 
     const fetchTecnicos = useCallback(async () => {
@@ -150,7 +160,9 @@ export const useMantenimientos = () => {
             if (snapshot?.data) {
                 setTecnicos(snapshot.data);
             }
-        } catch { }
+        } catch {
+            // Cache best-effort
+        }
 
         if (!navigator.onLine) return;
 
@@ -159,7 +171,9 @@ export const useMantenimientos = () => {
             const data = Array.isArray(lista) ? lista : [];
             setTecnicos(data);
             await writeSnapshot('tecnicos', data);
-        } catch { }
+        } catch {
+            // Workload best-effort
+        }
     }, []);
 
     const handleCreate = useCallback(async (data) => {

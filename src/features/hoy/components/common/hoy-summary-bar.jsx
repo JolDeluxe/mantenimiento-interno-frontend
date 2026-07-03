@@ -44,14 +44,31 @@ export const HoySummaryBar = ({
     filtroActual,
     onFilterChange,
     loading,
+    mostrarRechazadas,
 }) => {
     if (loading && totalParaSummary === 0 && Object.keys(conteos).length === 0) {
-        return <SummaryBarSkeleton count={ESTADOS_ACTIVOS.length} />;
+        const count = mostrarRechazadas ? 1 : ESTADOS_ACTIVOS.length;
+        return <SummaryBarSkeleton count={count} />;
     }
+
+    if (mostrarRechazadas) {
+        return (
+            <SummaryBar
+                items={[{ id: 'RECHAZADO', label: 'Total Rechazadas', value: conteos['RECHAZADO'] ?? 0, color: 'rojo' }]}
+                activeId="RECHAZADO"
+                onSelect={() => { }}
+                loading={loading}
+            />
+        );
+    }
+
+    const totalActivo = ESTADOS_ACTIVOS
+        .filter((e) => e.id !== 'TODOS')
+        .reduce((acc, e) => acc + (conteos[e.id] ?? 0), 0);
 
     const items = ESTADOS_ACTIVOS.map((e) => ({
         ...e,
-        value: e.id === 'TODOS' ? totalParaSummary : (conteos[e.id] ?? 0),
+        value: e.id === 'TODOS' ? totalActivo : (conteos[e.id] ?? 0),
     }));
 
     return (

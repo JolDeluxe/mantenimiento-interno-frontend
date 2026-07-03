@@ -48,6 +48,7 @@ export const TicketsActividadesDesktop = ({
     totalAtrasadasGlobal,
     mostrarRechazadas,
     onToggleRechazadas,
+    mostrarPapelera,
     mostrarAtrasadas,
     onToggleAtrasadas,
     onPageChange,
@@ -65,7 +66,6 @@ export const TicketsActividadesDesktop = ({
     onRefresh,
     allowCreate = true,
     emptyState = {},
-    toApproveCount = 0,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const copy = VIEW_COPY[mode] || VIEW_COPY.actividades;
@@ -112,6 +112,8 @@ export const TicketsActividadesDesktop = ({
                 filtroActual={filtroEstado}
                 onFilterChange={onFilterChange}
                 loading={loading}
+                mostrarRechazadas={mostrarRechazadas}
+                mostrarPapelera={mostrarPapelera}
             />
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">

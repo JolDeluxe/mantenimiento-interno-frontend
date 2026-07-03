@@ -5,7 +5,7 @@ export default function TicketsHistoricoPage() {
     return (
         <TicketsListadoBase
             mode="historico"
-            scope="general"
+            scope="actividades"
             allowCreate
         />
     );
