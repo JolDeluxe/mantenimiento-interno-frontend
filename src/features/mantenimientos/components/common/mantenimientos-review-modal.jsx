@@ -5,6 +5,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { Label, Input } from '@/components/form/z_index';
 import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -165,12 +166,12 @@ export const TicketReviewModal = ({
         .filter(Boolean);
 
     const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
-    const isManual = !!matchManual;
+    const isManual = Boolean(resolucion?.esTiempoManual);
     const tiempoManualStr = matchManual ? matchManual[1] : null;
     
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
-    const tiempoAMostrar = isManual ? tiempoManualStr : tiempoSistemaStr;
+    const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
 
     const parseManualMins = (str) => {
         if (!str) return 0;
@@ -185,7 +186,7 @@ export const TicketReviewModal = ({
         return total;
     };
 
-    const finalRealMins = isManual ? parseManualMins(tiempoManualStr) : realMins;
+    const finalRealMins = (isManual && tiempoManualStr) ? parseManualMins(tiempoManualStr) : realMins;
     const estimadoMins = ticket?.tiempoEstimado || 0;
 
     const diferenciaMins = finalRealMins - estimadoMins;
@@ -421,6 +422,8 @@ export const TicketReviewModal = ({
                                 )}
                             </div>
                         )}
+
+                        <TicketRefaccionesCard ticket={ticket} />
 
                         <div className="flex flex-col gap-2">
                             <Label error={!!error}>¿El trabajo fue satisfactorio? *</Label>

@@ -6,6 +6,7 @@ import { Label, Input } from '@/components/form/z_index';
 import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
+import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -179,7 +180,7 @@ export const MobileTicketReviewModal = ({
 
     // Lógica de parsing para el tiempo manual vs sistema
     const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
-    const isManual = !!matchManual || Boolean(resolucion?.esTiempoManual);
+    const isManual = Boolean(resolucion?.esTiempoManual);
     const tiempoManualStr = matchManual ? matchManual[1] : null;
     
     // Parse duration logic:
@@ -352,6 +353,8 @@ export const MobileTicketReviewModal = ({
                                 )}
                             </div>
                         )}
+
+                        <TicketRefaccionesCard ticket={ticket} compact />
 
                         <div className="flex flex-col gap-3">
                             <Label error={!!error}>Decisión de conformidad *</Label>

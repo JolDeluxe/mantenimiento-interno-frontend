@@ -4,6 +4,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/comp
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaHora } from '@/lib/date';
 import { TicketTimeline } from '@/features/common/components/ticket-timeline';
+import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
 import { useAuthStore } from '@/stores/auth-store';
 import {
     getClasificacionIcon,
@@ -566,6 +567,8 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                             </div>
 
                             <ContextualBanner ticket={ticket} onImageExpand={handleImageExpand} />
+
+                            <TicketRefaccionesCard ticket={ticket} />
 
                             {/* Fichas técnicas en grilla de 3 columnas */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

@@ -3,7 +3,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-import { isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
+import { isoToDateInput, fechaInputToISOLocal, localMXTimeToISO } from '@/lib/date';
+import { RefaccionesSection } from '@/features/common/components/status-modals/refacciones-section';
+import { hasValidRefacciones, sanitizeRefacciones } from '@/features/common/components/status-modals/refacciones-utils';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
 const MIN_TECNICO = 5;
@@ -94,8 +96,23 @@ const evaluarTiempo = (mins, ticket) => {
     return { alerta: false };
 };
 
+const addDaysToDateInput = (dateStr, days) => {
+    const date = new Date(`${dateStr}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+};
+
+const buildRangeTimePayload = (dateStr, range, duracionManualMinutos) => {
+    const endDate = range.endTime <= range.startTime ? addDaysToDateInput(dateStr, 1) : dateStr;
+    const inicioManual = localMXTimeToISO(dateStr, range.startTime);
+    const finManual = localMXTimeToISO(endDate, range.endTime);
+
+    if (!inicioManual || !finManual) return { duracionManualMinutos };
+    return { inicioManual, finManual, duracionManualMinutos };
+};
+
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
-const TimePicker = ({ totalMins, onChange }) => {
+const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
     const [mode, setMode] = useState('duration'); // 'duration' | 'range'
     const [startTime, setStartTime] = useState('07:00');
     const [endTime, setEndTime] = useState('08:00');
@@ -110,6 +127,9 @@ const TimePicker = ({ totalMins, onChange }) => {
             let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
             if (diff < 0) diff += 1440; // Cruzó medianoche
             onChange(diff);
+            onRangeChange?.({ mode: 'range', startTime, endTime });
+        } else {
+            onRangeChange?.({ mode: 'duration' });
         }
     }, [startTime, endTime, mode]);
 
@@ -317,23 +337,11 @@ export const TicketProgressModal = ({
     const [evaluacion, setEvaluacion] = useState(null);
     const [timePhase, setTimePhase] = useState('confirmado');
     const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [tiempoManualRange, setTiempoManualRange] = useState(null);
     const [fechaFinManual, setFechaFinManual] = useState('');
     const [errorPausa, setErrorPausa] = useState(false);
+    const [usaRefacciones, setUsaRefacciones] = useState(false);
     const [refacciones, setRefacciones] = useState([]);
-
-    const handleAddRefaccion = () => {
-        setRefacciones((prev) => [...prev, { nombre: '', cantidad: 1, codigo: '' }]);
-    };
-
-    const handleRemoveRefaccion = (index) => {
-        setRefacciones((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const handleRefaccionChange = (index, field, value) => {
-        setRefacciones((prev) =>
-            prev.map((r, i) => (i === index ? { ...r, [field]: value } : r))
-        );
-    };
 
     useEffect(() => {
         return () => {
@@ -351,8 +359,10 @@ export const TicketProgressModal = ({
             setEvaluacion(null);
             setTimePhase('confirmado');
             setTiempoManualMins(0);
+            setTiempoManualRange(null);
             setFechaFinManual('');
             setErrorPausa(false);
+            setUsaRefacciones(false);
             setRefacciones([]);
         }
     }, [isOpen]);
@@ -415,21 +425,25 @@ export const TicketProgressModal = ({
         if (notaResolver.trim()) {
             fd.append('nota', notaResolver.trim());
         }
-        if (refacciones.length > 0) {
-            fd.append('refacciones', JSON.stringify(refacciones));
+        if (usaRefacciones) {
+            fd.append('refacciones', JSON.stringify(sanitizeRefacciones(refacciones)));
         }
 
         // Fix: Construcción segura del payload para Zod
         let timePayload = {};
 
         if (timePhase === 'manual') {
-            timePayload = { duracionManualMinutos: tiempoManualMins };
+            timePayload = tiempoManualRange?.mode === 'range'
+                ? buildRangeTimePayload(isoToDateInput(new Date().toISOString()), tiempoManualRange, tiempoManualMins)
+                : { duracionManualMinutos: tiempoManualMins };
         } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
             const finStr = fechaInputToISOLocal(fechaFinManual);
-            timePayload = {
-                finManual: new Date(finStr).toISOString(),
-                duracionManualMinutos: tiempoManualMins
-            };
+            timePayload = tiempoManualRange?.mode === 'range'
+                ? buildRangeTimePayload(fechaFinManual, tiempoManualRange, tiempoManualMins)
+                : {
+                    finManual: new Date(finStr).toISOString(),
+                    duracionManualMinutos: tiempoManualMins
+                };
         }
 
         if (Object.keys(timePayload).length > 0) {
@@ -465,7 +479,8 @@ export const TicketProgressModal = ({
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
         (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
         (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
-        (esMaquinaria && !notaResolver.trim());
+        (esMaquinaria && !notaResolver.trim()) ||
+        (esMaquinaria && !hasValidRefacciones(usaRefacciones, refacciones));
 
     const isAtrasada = evaluacion?.tipo === 'alto';
 
@@ -653,7 +668,7 @@ export const TicketProgressModal = ({
                                         <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                         <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
                                     </div>
-                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
                                     {tiempoManualMins === 0 && (
                                         <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
                                             <Icon name="warning" size="xs" />
@@ -713,7 +728,7 @@ export const TicketProgressModal = ({
                                             <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                             <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
                                         </div>
-                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
                                         {tiempoManualMins === 0 && (
                                             <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
                                                 <Icon name="warning" size="xs" />
@@ -770,72 +785,13 @@ export const TicketProgressModal = ({
                                     </div>
 
                                     {esMaquinaria && (
-                                        <div className="flex flex-col gap-3 mt-4 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="flex items-center justify-between">
-                                                <Label className="font-bold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
-                                                    <Icon name="construction" size="xs" className="text-slate-500 shrink-0" />
-                                                    Refacciones Utilizadas
-                                                </Label>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    icon="add"
-                                                    onClick={handleAddRefaccion}
-                                                    className="text-marca-secundario border border-marca-secundario/25 bg-marca-secundario/5 hover:bg-marca-secundario/10 font-bold"
-                                                >
-                                                    Agregar Refacción
-                                                </Button>
-                                            </div>
-
-                                            {refacciones.length === 0 ? (
-                                                <p className="text-xs text-slate-400 italic bg-slate-50 border border-slate-200/60 rounded p-2.5 text-center">
-                                                    No se han registrado refacciones en esta reparación.
-                                                </p>
-                                            ) : (
-                                                <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
-                                                    {refacciones.map((ref, idx) => (
-                                                        <div key={idx} className="flex gap-2 items-center bg-slate-50 border border-slate-200/60 p-2 rounded-lg">
-                                                            <div className="flex-1">
-                                                                <input
-                                                                    type="text"
-                                                                    value={ref.nombre}
-                                                                    onChange={(e) => handleRefaccionChange(idx, 'nombre', e.target.value)}
-                                                                    placeholder="Nombre / Repuesto"
-                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
-                                                                />
-                                                            </div>
-                                                            <div className="w-16">
-                                                                <input
-                                                                    type="number"
-                                                                    min={1}
-                                                                    value={ref.cantidad}
-                                                                    onChange={(e) => handleRefaccionChange(idx, 'cantidad', parseInt(e.target.value) || 1)}
-                                                                    placeholder="Cant."
-                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
-                                                                />
-                                                            </div>
-                                                            <div className="w-24">
-                                                                <input
-                                                                    type="text"
-                                                                    value={ref.codigo}
-                                                                    onChange={(e) => handleRefaccionChange(idx, 'codigo', e.target.value)}
-                                                                    placeholder="Código (opc)"
-                                                                    className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
-                                                                />
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleRemoveRefaccion(idx)}
-                                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-all shrink-0 cursor-pointer"
-                                                            >
-                                                                <Icon name="delete" size="xs" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
+                                        <RefaccionesSection
+                                            usaRefacciones={usaRefacciones}
+                                            onUsaRefaccionesChange={setUsaRefacciones}
+                                            refacciones={refacciones}
+                                            onRefaccionesChange={setRefacciones}
+                                            disabled={isSubmitting}
+                                        />
                                     )}
 
                                     <EvidenceSection

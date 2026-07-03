@@ -3,7 +3,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-import { isoToDateInput, fechaInputToISOLocal } from '@/lib/date';
+import { isoToDateInput, fechaInputToISOLocal, localMXTimeToISO } from '@/lib/date';
+import { RefaccionesSection } from '@/features/common/components/status-modals/refacciones-section';
+import { hasValidRefacciones, sanitizeRefacciones } from '@/features/common/components/status-modals/refacciones-utils';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
 const MIN_TECNICO = 5;
@@ -94,8 +96,23 @@ const evaluarTiempo = (mins, ticket) => {
     return { alerta: false };
 };
 
+const addDaysToDateInput = (dateStr, days) => {
+    const date = new Date(`${dateStr}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+};
+
+const buildRangeTimePayload = (dateStr, range, duracionManualMinutos) => {
+    const endDate = range.endTime <= range.startTime ? addDaysToDateInput(dateStr, 1) : dateStr;
+    const inicioManual = localMXTimeToISO(dateStr, range.startTime);
+    const finManual = localMXTimeToISO(endDate, range.endTime);
+
+    if (!inicioManual || !finManual) return { duracionManualMinutos };
+    return { inicioManual, finManual, duracionManualMinutos };
+};
+
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
-const TimePicker = ({ totalMins, onChange }) => {
+const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
     const [mode, setMode] = useState('duration'); // 'duration' | 'range'
     const [startTime, setStartTime] = useState('07:00');
     const [endTime, setEndTime] = useState('08:00');
@@ -110,6 +127,9 @@ const TimePicker = ({ totalMins, onChange }) => {
             let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
             if (diff < 0) diff += 1440; // Cruzó medianoche
             onChange(diff);
+            onRangeChange?.({ mode: 'range', startTime, endTime });
+        } else {
+            onRangeChange?.({ mode: 'duration' });
         }
     }, [startTime, endTime, mode]);
 
@@ -317,8 +337,11 @@ export const TicketProgressModal = ({
     const [evaluacion, setEvaluacion] = useState(null);
     const [timePhase, setTimePhase] = useState('confirmado');
     const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [tiempoManualRange, setTiempoManualRange] = useState(null);
     const [fechaFinManual, setFechaFinManual] = useState('');
     const [errorPausa, setErrorPausa] = useState(false);
+    const [usaRefacciones, setUsaRefacciones] = useState(false);
+    const [refacciones, setRefacciones] = useState([]);
 
     useEffect(() => {
         return () => {
@@ -336,8 +359,11 @@ export const TicketProgressModal = ({
             setEvaluacion(null);
             setTimePhase('confirmado');
             setTiempoManualMins(0);
+            setTiempoManualRange(null);
             setFechaFinManual('');
             setErrorPausa(false);
+            setUsaRefacciones(false);
+            setRefacciones([]);
         }
     }, [isOpen]);
 
@@ -354,9 +380,19 @@ export const TicketProgressModal = ({
         const ev = evaluarTiempo(mins, ticket);
         setEvaluacion(ev);
 
-        // Intercepción Liquid UI: Si es 0 min, saltamos la pregunta y forzamos manual
+        // Intercepción Liquid UI: si el tiempo no se puede registrar automáticamente, forzamos corrección manual.
         if (mins === 0) {
             setTiempoManualMins(60);
+            if (ev?.tipo === 'alto') {
+                setFechaFinManual(isoToDateInput(new Date().toISOString()));
+                setTimePhase('atrasada_fecha');
+            } else {
+                setTimePhase('manual');
+            }
+        } else if (mins > MAX_DURATION_MINS) {
+            const base = ticket.tiempoEstimado || 60;
+            const redondeado = Math.round(base / 5) * 5;
+            setTiempoManualMins(Math.min(Math.max(redondeado, 5), MAX_DURATION_MINS));
             if (ev?.tipo === 'alto') {
                 setFechaFinManual(isoToDateInput(new Date().toISOString()));
                 setTimePhase('atrasada_fecha');
@@ -399,18 +435,25 @@ export const TicketProgressModal = ({
         if (notaResolver.trim()) {
             fd.append('nota', notaResolver.trim());
         }
+        if (usaRefacciones) {
+            fd.append('refacciones', JSON.stringify(sanitizeRefacciones(refacciones)));
+        }
 
         // Fix: Construcción segura del payload para Zod
         let timePayload = {};
 
         if (timePhase === 'manual') {
-            timePayload = { duracionManualMinutos: tiempoManualMins };
+            timePayload = tiempoManualRange?.mode === 'range'
+                ? buildRangeTimePayload(isoToDateInput(new Date().toISOString()), tiempoManualRange, tiempoManualMins)
+                : { duracionManualMinutos: tiempoManualMins };
         } else if (timePhase === 'atrasada_fecha' && isFechaFinValida) {
             const finStr = fechaInputToISOLocal(fechaFinManual);
-            timePayload = {
-                finManual: new Date(finStr).toISOString(),
-                duracionManualMinutos: tiempoManualMins
-            };
+            timePayload = tiempoManualRange?.mode === 'range'
+                ? buildRangeTimePayload(fechaFinManual, tiempoManualRange, tiempoManualMins)
+                : {
+                    finManual: new Date(finStr).toISOString(),
+                    duracionManualMinutos: tiempoManualMins
+                };
         }
 
         if (Object.keys(timePayload).length > 0) {
@@ -443,9 +486,11 @@ export const TicketProgressModal = ({
         timePhase === 'preguntando' ||
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
         (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
-        (timePhase === 'atrasada_fecha' && !isFechaFinValida);
+        (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
+        (ticket?.maquinaId !== null && ticket?.maquinaId !== undefined && !hasValidRefacciones(usaRefacciones, refacciones));
 
     const isAtrasada = evaluacion?.tipo === 'alto';
+    const tiempoExcesivo = elapsedMins > MAX_DURATION_MINS;
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()}>
@@ -625,13 +670,26 @@ export const TicketProgressModal = ({
                                 </div>
                             )}
 
+                            {tiempoExcesivo && timePhase !== 'preguntando' && (
+                                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-left">
+                                    <Icon name="warning" size="sm" className="text-estado-rechazado shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-red-800">Tiempo registrado excesivo</p>
+                                        <p className="text-xs text-red-700 mt-1 leading-relaxed">
+                                            El sistema detectó {formatMins(elapsedMins)}, por encima del máximo automático de {formatMins(MAX_DURATION_MINS)}.
+                                            Selecciona la fecha y el tiempo real trabajado para continuar.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {timePhase === 'manual' && (
                                 <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="flex items-center gap-2">
                                         <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                         <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
                                     </div>
-                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
                                     {tiempoManualMins === 0 && (
                                         <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
                                             <Icon name="warning" size="xs" />
@@ -691,7 +749,7 @@ export const TicketProgressModal = ({
                                             <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                             <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
                                         </div>
-                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
                                         {tiempoManualMins === 0 && (
                                             <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
                                                 <Icon name="warning" size="xs" />
@@ -746,6 +804,16 @@ export const TicketProgressModal = ({
                                         onAgregar={handleAgregar}
                                         onEliminar={handleEliminar}
                                     />
+
+                                    {ticket?.maquinaId !== null && ticket?.maquinaId !== undefined && (
+                                        <RefaccionesSection
+                                            usaRefacciones={usaRefacciones}
+                                            onUsaRefaccionesChange={setUsaRefacciones}
+                                            refacciones={refacciones}
+                                            onRefaccionesChange={setRefacciones}
+                                            disabled={isSubmitting}
+                                        />
+                                    )}
                                 </>
                             )}
                         </div>

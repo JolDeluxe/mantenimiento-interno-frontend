@@ -5,6 +5,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { Label, Input } from '@/components/form/z_index';
 import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -52,14 +53,14 @@ export const TicketReviewModal = ({
 
     // Lógica de parsing para el tiempo manual vs sistema
     const matchManual = notaTecnico.match(/\[TIEMPO_MANUAL:(.+?)\]/);
-    const isManual = !!matchManual;
+    const isManual = Boolean(resolucion?.esTiempoManual);
     const tiempoManualStr = matchManual ? matchManual[1] : null;
     
     // Parse duration logic:
     // realMins: real time spent in minutes
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
-    const tiempoAMostrar = isManual ? tiempoManualStr : tiempoSistemaStr;
+    const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
 
     // Convert manual registration to minutes if possible for difference calculation
     // e.g. "1 h 20 min" or "50 min" or "2 h"
@@ -77,7 +78,7 @@ export const TicketReviewModal = ({
         return total;
     };
 
-    const finalRealMins = isManual ? parseManualMins(tiempoManualStr) : realMins;
+    const finalRealMins = (isManual && tiempoManualStr) ? parseManualMins(tiempoManualStr) : realMins;
     const estimadoMins = ticket?.tiempoEstimado || 0;
 
     // Difference calculation
@@ -304,6 +305,8 @@ export const TicketReviewModal = ({
                                 )}
                             </div>
                         )}
+
+                        <TicketRefaccionesCard ticket={ticket} />
 
                         <div className="flex flex-col gap-2">
                             <Label error={!!error}>¿El trabajo fue satisfactorio? *</Label>
