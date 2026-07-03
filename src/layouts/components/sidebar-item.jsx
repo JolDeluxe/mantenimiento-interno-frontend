@@ -12,6 +12,7 @@ export const SidebarItem = ({ module }) => {
   const [isOpen, setIsOpen] = useState(isActiveChild);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!sidebarExpanded) setIsOpen(false);
     else if (isActiveChild) setIsOpen(true);
   }, [sidebarExpanded, isActiveChild]);
@@ -36,14 +37,14 @@ export const SidebarItem = ({ module }) => {
           to={module.route}
           onClick={handleParentClick}
           className={({ isActive }) => `
-            flex items-center px-4 py-3 rounded-sm transition-all duration-200 relative w-full
+            sidebar-item-link flex items-center px-4 py-3 rounded-sm transition-all duration-200 relative w-full
             ${(isActive && !hasChildren) || isActiveChild
               ? 'bg-marca-acento text-white font-semibold shadow-lg max-lg:border max-lg:border-white/20 max-lg:shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]'
               : 'text-white/80 hover:bg-marca-primario/30 hover:text-white'
             }
           `}
         >
-          <Icon name={module.icon} size="24px" className="shrink-0" />
+          <Icon name={module.icon} size="24px" className="sidebar-item-icon shrink-0" />
 
           <span className={`
             ml-3 text-sm text-left transition-all duration-300 ease-in-out whitespace-nowrap
@@ -71,8 +72,8 @@ export const SidebarItem = ({ module }) => {
             }
           `}
         >
-          <ul className="min-h-0 flex flex-col gap-1 pl-11 pr-2 relative">
-            <div className="absolute left-[23px] top-0 bottom-2 w-[1.5px] bg-white/10 rounded-full" />
+          <ul className="sidebar-child-list min-h-0 flex flex-col gap-1 pl-11 pr-2 relative">
+            <div className="sidebar-child-line absolute left-[23px] top-0 bottom-2 w-[1.5px] bg-white/10 rounded-full" />
 
             {module.children.map(child => (
               <li key={child.id} className="relative">
@@ -80,7 +81,7 @@ export const SidebarItem = ({ module }) => {
                   to={child.route}
                   onClick={() => closeMobileMenu()}
                   className={({ isActive }) => `
-                    flex items-center px-3 py-2 rounded-sm text-sm transition-all duration-200 relative
+                    sidebar-child-link flex items-center px-3 py-2 rounded-sm text-sm transition-all duration-200 relative
                     ${isActive
                       ? 'text-marca-acento font-bold bg-white/10 shadow-[inset_0_0_8px_rgba(255,255,255,0.05)]'
                       : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -88,7 +89,7 @@ export const SidebarItem = ({ module }) => {
                   `}
                 >
                   {location.pathname.includes(child.route) && (
-                    <div className="absolute left-[-21px] w-3 h-[1.5px] bg-marca-acento shadow-[0_0_5px_var(--color-marca-acento)]" />
+                    <div className="sidebar-child-dot absolute left-[-21px] w-3 h-[1.5px] bg-marca-acento shadow-[0_0_5px_var(--color-marca-acento)]" />
                   )}
 
                   <span className="whitespace-nowrap">{child.name}</span>

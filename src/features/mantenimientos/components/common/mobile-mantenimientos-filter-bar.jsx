@@ -215,12 +215,14 @@ export const MobileTicketFilterBar = ({
     mostrarPapelera, onTogglePapelera,
     mostrarRechazadas, onToggleRechazadas,
     existenciaGlobal = {},
-    totalAtrasadasGlobal = 0
+    totalAtrasadasGlobal = 0,
+    showClasificacion = false
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalValue(query || '');
     }, [query]);
 
@@ -283,7 +285,6 @@ export const MobileTicketFilterBar = ({
     const filterElements = [
         { key: 'tipo', el: <GlassNativeSelect icon="category" placeholder="Tipo" options={TIPOS} value={filtroTipo} onChange={onTipoChange} />, span2: false },
         { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
-        { key: 'categoria', el: <GlassNativeSelect icon="label" placeholder="Categoría" options={CATEGORIAS_EQUIPO} value={filtroCategoria} onChange={onCategoriaChange} />, span2: false },
         { key: 'clasificacion', el: <GlassNativeSelect icon="style" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false },
         { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(opcionesResponsables)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
         { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
@@ -291,7 +292,7 @@ export const MobileTicketFilterBar = ({
         { key: 'programacion', el: <GlassDateRangeSelect icon="event_note" placeholder="FECHA DE CONCLUCIÓN" value={filtroProgramacion} onChange={onProgramacionChange} quickOptions={progOptions} />, span2: true },
         { key: 'conclusion', el: <GlassDateRangeSelect icon="task_alt" placeholder="CONCLUIDAS" value={filtroConclusion} onChange={onConclusionChange} quickOptions={concOptions} />, span2: true },
         { key: 'canceladas', el: <GlassFilterToggleBtn icon="delete" label="Canceladas" isActive={mostrarPapelera} count={0} showBadge={false} onClick={onTogglePapelera} />, span2: true }
-    ];
+    ].filter(item => item.key !== 'clasificacion' || showClasificacion);
 
     return (
         <div className="w-full flex flex-col gap-2.5">

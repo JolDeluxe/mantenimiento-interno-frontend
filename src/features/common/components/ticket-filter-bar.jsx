@@ -133,8 +133,6 @@ const DateRangeSelect = ({ label, icon, value, onChange, quickOptions }) => {
     );
 };
 
-const rolesAdmin = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
-
 const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) => (
     <div className={`relative ${className}`}>
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -177,11 +175,14 @@ export const TicketFilterBar = ({
     mostrarRechazadas, onToggleRechazadas,
     existenciaGlobal = {},
     totalAtrasadasGlobal = 0,
+    showClasificacion = false,
+    showCategoria = true,
     onExport
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalValue(query || '');
     }, [query]);
 
@@ -306,29 +307,33 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="min-w-40 flex-1 lg:flex-none">
-                    <SearchableSelect
-                        options={CATEGORIAS_EQUIPO}
-                        value={filtroCategoria}
-                        onChange={onCategoriaChange}
-                        placeholder="CATEGORÍA..."
-                        icon="label"
-                        allOptionText="TODAS"
-                        className="w-full font-bold text-[11px] uppercase tracking-wide"
-                    />
-                </div>
+                {showCategoria && (
+                    <div className="min-w-40 flex-1 lg:flex-none">
+                        <SearchableSelect
+                            options={CATEGORIAS_EQUIPO}
+                            value={filtroCategoria}
+                            onChange={onCategoriaChange}
+                            placeholder="CATEGORÍA..."
+                            icon="label"
+                            allOptionText="TODAS"
+                            className="w-full font-bold text-[11px] uppercase tracking-wide"
+                        />
+                    </div>
+                )}
 
-                <div className="min-w-44 flex-1 lg:flex-none">
-                    <SearchableSelect
-                        options={CLASIFICACIONES}
-                        value={filtroClasificacion}
-                        onChange={onClasificacionChange}
-                        placeholder="CLASIFICACIÓN..."
-                        icon="style"
-                        allOptionText="TODAS"
-                        className="w-full font-bold text-[11px] uppercase tracking-wide"
-                    />
-                </div>
+                {showClasificacion && (
+                    <div className="min-w-44 flex-1 lg:flex-none">
+                        <SearchableSelect
+                            options={CLASIFICACIONES}
+                            value={filtroClasificacion}
+                            onChange={onClasificacionChange}
+                            placeholder="CLASIFICACIÓN..."
+                            icon="style"
+                            allOptionText="TODAS"
+                            className="w-full font-bold text-[11px] uppercase tracking-wide"
+                        />
+                    </div>
+                )}
 
                 <div className="min-w-48 flex-1 lg:flex-none">
                     <SearchableSelect

@@ -7,7 +7,6 @@ import { MantenimientosAddButton as TicketAddButton } from '../components/common
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
-import { cn } from '@/utils/cn';
 
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
@@ -65,7 +64,6 @@ export const MantenimientosHistoricoDesktop = ({
     onOpenCreate,
     onRefresh,
     onExport,
-    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -124,6 +122,8 @@ export const MantenimientosHistoricoDesktop = ({
                 existenciaGlobal={existenciaGlobal}
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 conteos={conteos}
+                showClasificacion={true}
+                showCategoria={false}
                 onExport={onExport}
             />
 

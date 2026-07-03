@@ -49,14 +49,12 @@ export const MantenimientosHistoricoMobile = ({
     currentUser,
     tecnicos,
     page,
-    limit,
     totalPages,
     totalParaSummary,
     totalParaPaginador,
     conteos,
     existenciaGlobal,
     totalAtrasadasGlobal,
-    sortConfig,
     query,
     filtroEstado,
     filtroTipo,
@@ -75,7 +73,6 @@ export const MantenimientosHistoricoMobile = ({
     mostrarAtrasadas,
     onToggleAtrasadas,
     onPageChange,
-    onSortChange,
     onSearchChange,
     onFilterChange,
     onTipoChange,
@@ -91,7 +88,6 @@ export const MantenimientosHistoricoMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -147,6 +143,7 @@ export const MantenimientosHistoricoMobile = ({
                     conteos={conteos}
                     existenciaGlobal={existenciaGlobal}
                     totalAtrasadasGlobal={totalAtrasadasGlobal}
+                    showClasificacion={true}
                     mobileFiltersOnly
                 />
             </div>

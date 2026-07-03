@@ -8,19 +8,19 @@ export const SidebarHeader = () => {
   const tooltipText = sidebarExpanded ? 'Contraer menú' : 'Expandir menú';
 
   return (
-    <div className="relative border-b border-marca-primario/20 py-6 h-20 flex items-center justify-center shrink-0">
+    <div className="sidebar-header relative border-b border-marca-primario/20 py-6 h-20 flex items-center justify-center shrink-0">
       <div className="flex items-center justify-center px-4 w-full h-full">
         {sidebarExpanded ? (
           <img 
             src="/img/01_Cuadra.webp" 
             alt="Cuadra Mantenimiento" 
-            className="h-10 w-auto object-contain animate-in fade-in zoom-in duration-300"
+            className="sidebar-logo h-10 w-auto object-contain animate-in fade-in zoom-in duration-300"
           />
         ) : (
           <img 
             src="/img/02_Cuadra_C_Logo.webp" 
             alt="Cuadra" 
-            className="h-8 w-8 object-contain animate-in fade-in zoom-in duration-300"
+            className="sidebar-logo h-8 w-8 object-contain animate-in fade-in zoom-in duration-300"
           />
         )}
       </div>

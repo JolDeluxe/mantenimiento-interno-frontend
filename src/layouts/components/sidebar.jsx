@@ -25,7 +25,7 @@ export const Sidebar = () => {
     `}>
       <SidebarHeader />
 
-      <nav className="flex-1 overflow-visible py-4 px-2 hover:overflow-y-auto custom-scrollbar">
+      <nav className="sidebar-nav flex-1 overflow-y-auto min-h-0 py-4 px-2 custom-scrollbar">
         <ul className="space-y-1 relative">
           {userModules.map((module) => (
             <React.Fragment key={module.id}>
@@ -43,17 +43,18 @@ export const Sidebar = () => {
       <div className={`
         p-4 border-t border-marca-primario/30 mt-auto flex flex-col items-center
         transition-all duration-300 overflow-hidden
+        sidebar-footer
         ${sidebarExpanded ? 'opacity-100' : 'opacity-0 hidden'}
       `}>
-        <p className="fuente-titulos text-white text-xl tracking-wide whitespace-nowrap">
+        <p className="sidebar-footer-title fuente-titulos text-white text-xl tracking-wide whitespace-nowrap">
           Cuadra Mantenimiento
         </p>
 
-        <p className="font-codigo text-[10px] bg-marca-primario/50 text-cuadra-arena px-2 py-0.5 rounded-sm mt-1 mb-3 whitespace-nowrap shadow-inner">
+        <p className="sidebar-footer-version font-codigo text-[10px] bg-marca-primario/50 text-cuadra-arena px-2 py-0.5 rounded-sm mt-1 mb-3 whitespace-nowrap shadow-inner">
           v.desarrollo
         </p>
 
-        <p className="text-[10px] text-white/50 text-center leading-tight">
+        <p className="sidebar-footer-credit text-[10px] text-white/50 text-center leading-tight">
           Desarrollado por el equipo de <br />
           <span className="font-bold text-white/80">Procesos Tecnológicos</span>
         </p>

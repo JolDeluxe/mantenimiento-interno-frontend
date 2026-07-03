@@ -7,7 +7,6 @@ import { MantenimientosAddButton as TicketAddButton } from '../components/common
 import { Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
-import { cn } from '@/utils/cn';
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
 import { MantenimientosAssignModal as TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
@@ -64,7 +63,6 @@ export const MantenimientosPreventivosDesktop = ({
     onOpenCreate,
     onRefresh,
     onExport,
-    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -123,6 +121,7 @@ export const MantenimientosPreventivosDesktop = ({
                 existenciaGlobal={existenciaGlobal}
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 conteos={conteos}
+                showCategoria={false}
                 onExport={onExport}
             />
 

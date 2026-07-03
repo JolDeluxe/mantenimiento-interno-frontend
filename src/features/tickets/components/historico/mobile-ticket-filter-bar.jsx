@@ -221,6 +221,7 @@ export const MobileTicketFilterBar = ({
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalValue(query || '');
     }, [query]);
 
@@ -284,7 +285,6 @@ export const MobileTicketFilterBar = ({
         { key: 'tipo', el: <GlassNativeSelect icon="category" placeholder="Tipo" options={TIPOS} value={filtroTipo} onChange={onTipoChange} />, span2: false },
         { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
         { key: 'categoria', el: <GlassNativeSelect icon="label" placeholder="Categoría" options={CATEGORIAS_EQUIPO} value={filtroCategoria} onChange={onCategoriaChange} />, span2: false },
-        { key: 'clasificacion', el: <GlassNativeSelect icon="style" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false },
         { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(opcionesResponsables)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
         { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
         { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(areasDisponibles)} value={filtroArea} onChange={onAreaChange} />, span2: false },

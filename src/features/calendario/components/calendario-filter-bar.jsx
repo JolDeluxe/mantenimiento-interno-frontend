@@ -21,8 +21,6 @@ export const CalendarioFilterBar = ({
     onScopeChange,
     filtroEstado,
     onFilterChange,
-    filtroTipo,
-    onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -107,6 +105,7 @@ export const CalendarioFilterBar = ({
                         icon="swap_horiz"
                         allOptionText="Todos los Estados"
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
+                        menuClassName="left-auto right-0 w-72 max-w-[calc(100vw-2rem)] z-[80]"
                     />
                 </div>
 

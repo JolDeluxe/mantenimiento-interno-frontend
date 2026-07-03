@@ -36,13 +36,13 @@ export const MODULES_CONFIG = [
     name: 'Gestión de Actividades',
     icon: 'assignment',
     route: '/tickets',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
     children: [
       {
         id: 'tickets-actividades',
         name: 'Actividades',
         route: '/tickets/actividades',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
       {
         id: 'tickets-reportes',
@@ -54,7 +54,7 @@ export const MODULES_CONFIG = [
         id: 'tickets-historico',
         name: 'Histórico',
         route: '/tickets/historico',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
     ]
   },
@@ -63,25 +63,25 @@ export const MODULES_CONFIG = [
     name: 'Gestión de Mantenimientos',
     icon: 'build_circle',
     route: '/mantenimientos',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
     children: [
       {
         id: 'mantenimientos-correctivos',
         name: 'Correctivos',
         route: '/mantenimientos/correctivos',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
       {
         id: 'mantenimientos-preventivos',
         name: 'Preventivos',
         route: '/mantenimientos/preventivos',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       },
       {
         id: 'mantenimientos-historico',
         name: 'Histórico',
         route: '/mantenimientos/historico',
-        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO', 'CLIENTE_INTERNO'],
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
       }
     ]
   },
@@ -97,7 +97,7 @@ export const MODULES_CONFIG = [
     name: 'Calendario',
     icon: 'calendar_month',
     route: '/calendario',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'aprobar',
@@ -120,7 +120,6 @@ export const MODULES_CONFIG = [
     icon: 'bar_chart',
     route: '/reportes',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
-    divider: true,
     children: [
       {
         id: 'reportes-general',
