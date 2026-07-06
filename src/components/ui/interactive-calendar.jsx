@@ -32,6 +32,20 @@ const DOT_COLOR_MAP = {
     CANCELADA: 'bg-estado-cancelada',
 };
 
+const sortCalendarItems = (items = []) => {
+    return [...items].sort((a, b) => {
+        const aKey = a.sortKey || '';
+        const bKey = b.sortKey || '';
+        if (aKey !== bKey) return aKey.localeCompare(bKey);
+        return String(a.title || '').localeCompare(String(b.title || ''), 'es');
+    });
+};
+
+const formatTipoLabel = (tipo) => {
+    if (!tipo) return 'Registro';
+    return tipo === 'TICKET' ? 'REPORTE' : tipo;
+};
+
 export const InteractiveCalendar = ({
     items = [],
     view: controlledView,
@@ -113,6 +127,9 @@ export const InteractiveCalendar = ({
             const dStr = item.date;
             if (!map[dStr]) map[dStr] = [];
             map[dStr].push(item);
+        });
+        Object.keys(map).forEach((dateKey) => {
+            map[dateKey] = sortCalendarItems(map[dateKey]);
         });
         return map;
     }, [items]);
@@ -352,6 +369,11 @@ export const InteractiveCalendar = ({
                                                     title={item.title}
                                                 >
                                                     <Icon name={item.isMantenimiento ? 'settings' : 'format_list_bulleted'} size="xs" className="shrink-0 text-[10px]" />
+                                                    {item.timeLabel && (
+                                                        <span className="shrink-0 text-[8px] font-black opacity-75">
+                                                            {item.timeLabel}
+                                                        </span>
+                                                    )}
                                                     <span className="truncate">{item.title}</span>
                                                 </div>
                                             );
@@ -418,9 +440,9 @@ export const InteractiveCalendar = ({
                                                 <span className="text-[11px] font-bold text-slate-800 leading-snug truncate">
                                                     {item.title}
                                                 </span>
-                                                {item.raw?.tipo && (
+                                                {(item.timeLabel || item.raw?.tipo) && (
                                                     <span className="text-[9px] text-slate-400">
-                                                        {item.raw?.tipo} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
+                                                        {item.timeLabel ? `${item.timeLabel} · ` : ''}{formatTipoLabel(item.raw?.tipo)} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
                                                     </span>
                                                 )}
                                             </div>
@@ -444,4 +466,3 @@ export const InteractiveCalendar = ({
         </div>
     );
 };
-

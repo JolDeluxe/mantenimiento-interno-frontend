@@ -16,6 +16,13 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
+const formatRangoTrabajo = (inicio, fin) => {
+    if (inicio && fin) return `${formatFechaHora(inicio)} - ${formatFechaHora(fin)}`;
+    if (inicio) return `Inicio: ${formatFechaHora(inicio)}`;
+    if (fin) return `Fin: ${formatFechaHora(fin)}`;
+    return null;
+};
+
 /**
  * Modal de revisión/validación de un ticket RESUELTO.
  * El actor (cliente o supervisor) decide: CERRAR (conforme) o RECHAZAR (no conforme).
@@ -172,6 +179,7 @@ export const TicketReviewModal = ({
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
+    const rangoTrabajoLabel = formatRangoTrabajo(ticket?.fechaInicio, ticket?.finalizadoAt);
 
     const parseManualMins = (str) => {
         if (!str) return 0;
@@ -329,6 +337,20 @@ export const TicketReviewModal = ({
                                             </span>
                                         </div>
                                     </div>
+
+                                    {rangoTrabajoLabel && (
+                                        <div className="flex items-start gap-2 border-t border-slate-100 pt-2.5">
+                                            <Icon name="schedule" size="xs" className="text-slate-400 shrink-0 mt-0.5" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    Rango registrado
+                                                </span>
+                                                <span className="text-[11px] font-bold text-slate-700 leading-snug">
+                                                    {rangoTrabajoLabel}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-0.5">
                                         <div className="flex items-center gap-1.5">

@@ -2,10 +2,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
+import { getMinDateHoy, isoToDateInput, localMXTimeToISO } from '@/lib/date';
 
 const MAX_DURATION_MINS = 540; // 9 horas
 
-const TimePicker = ({ totalMins, onChange }) => {
+const addDaysToDateInput = (dateStr, days) => {
+    const date = new Date(`${dateStr}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+};
+
+const buildRangeTimePayload = (dateStr, range, duracionManualMinutos) => {
+    const endDate = range.endTime <= range.startTime ? addDaysToDateInput(dateStr, 1) : dateStr;
+    const inicioManual = localMXTimeToISO(dateStr, range.startTime);
+    const finManual = localMXTimeToISO(endDate, range.endTime);
+
+    if (!inicioManual || !finManual) return { duracionManualMinutos };
+    return { inicioManual, finManual, duracionManualMinutos };
+};
+
+const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
     const [mode, setMode] = useState('duration'); // 'duration' | 'range'
     const [startTime, setStartTime] = useState('07:00');
     const [endTime, setEndTime] = useState('08:00');
@@ -20,8 +36,11 @@ const TimePicker = ({ totalMins, onChange }) => {
             let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
             if (diff < 0) diff += 1440; // Cruzó medianoche
             onChange(diff);
+            onRangeChange?.({ mode: 'range', startTime, endTime });
+        } else {
+            onRangeChange?.({ mode: 'duration' });
         }
-    }, [startTime, endTime, mode]);
+    }, [startTime, endTime, mode, onChange, onRangeChange]);
 
     const selectCls =
         'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
@@ -133,6 +152,7 @@ export const TicketCheckModal = ({
     const [archivos, setArchivos] = useState([]);
     const [nota, setNota] = useState('');
     const [tiempoManualMins, setTiempoManualMins] = useState(0);
+    const [tiempoManualRange, setTiempoManualRange] = useState({ mode: 'duration' });
     const fileRef = useRef(null);
     const MAX_FOTOS = 3;
 
@@ -142,6 +162,7 @@ export const TicketCheckModal = ({
             setArchivos([]);
             setNota('');
             setTiempoManualMins(0);
+            setTiempoManualRange({ mode: 'duration' });
         }
     }, [isOpen]);
 
@@ -178,7 +199,10 @@ export const TicketCheckModal = ({
         fd.append('estado', 'CERRADO');
         if (nota.trim()) fd.append('nota', nota.trim());
         if (tiempoManualMins > 0) {
-            const timePayload = { duracionManualMinutos: tiempoManualMins };
+            const fechaBase = isoToDateInput(ticket.fechaVencimiento) || getMinDateHoy();
+            const timePayload = tiempoManualRange?.mode === 'range'
+                ? buildRangeTimePayload(fechaBase, tiempoManualRange, tiempoManualMins)
+                : { duracionManualMinutos: tiempoManualMins };
             fd.append('registroTiempoManual', JSON.stringify(timePayload));
         }
         archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
@@ -335,7 +359,7 @@ export const TicketCheckModal = ({
                                 <label className="text-sm font-semibold text-slate-700">
                                     Tiempo invertido <span className="font-normal text-slate-400">(opcional)</span>
                                 </label>
-                                <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} />
+                                <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
                             </div>
                         </div>
                     )}

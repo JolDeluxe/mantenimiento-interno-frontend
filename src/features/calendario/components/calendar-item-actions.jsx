@@ -130,7 +130,7 @@ export const CalendarItemActions = ({
                     type="button"
                     onClick={() => onCancel(ticket)}
                     className="p-1 rounded transition-colors cursor-pointer border-none bg-transparent text-red-700 hover:bg-red-500/10"
-                    title="Cancelar ticket"
+                    title="Cancelar reporte"
                 >
                     <Icon name="cancel" size="xs" />
                 </button>

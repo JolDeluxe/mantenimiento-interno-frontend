@@ -17,6 +17,13 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
+const formatRangoTrabajo = (inicio, fin) => {
+    if (inicio && fin) return `${formatFechaHora(inicio)} - ${formatFechaHora(fin)}`;
+    if (inicio) return `Inicio: ${formatFechaHora(inicio)}`;
+    if (fin) return `Fin: ${formatFechaHora(fin)}`;
+    return null;
+};
+
 const NativeImageStack = ({ images, onExpand, sensitivity = 50 }) => {
     const [stack, setStack] = useState(() => images.map((url, i) => ({ id: i, originalIndex: i, url })));
     const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -187,6 +194,7 @@ export const MobileTicketReviewModal = ({
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
+    const rangoTrabajoLabel = formatRangoTrabajo(ticket?.fechaInicio, ticket?.finalizadoAt);
 
     // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
     const notaLimpia = notaTecnico
@@ -266,7 +274,7 @@ export const MobileTicketReviewModal = ({
                         )}
 
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Detalles del ticket</p>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Detalles del reporte</p>
                             <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
                             {ticket.responsables?.length > 0 && (
                                 <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
@@ -289,7 +297,7 @@ export const MobileTicketReviewModal = ({
                                 </p>
 
                                 {/* Banner Indicador de Tiempo (Manual vs Sistema) Adaptado a Móvil */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm mb-4">
+                                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm mb-4">
                                     <div className="flex items-center gap-2.5">
                                         <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
                                             <Icon name={isManual ? "edit_note" : "timer"} size="sm" className={isManual ? "text-amber-600" : "text-blue-600"} />
@@ -306,6 +314,19 @@ export const MobileTicketReviewModal = ({
                                     <div className={cn("px-2 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider text-center self-start sm:self-auto", isManual ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-600 border border-blue-100")}>
                                         {isManual ? 'Registro Manual' : 'Medido por Sistema'}
                                     </div>
+                                    {rangoTrabajoLabel && (
+                                        <div className="sm:basis-full flex items-start gap-2 border-t border-slate-100 pt-2">
+                                            <Icon name="schedule" size="xs" className="text-slate-400 shrink-0 mt-0.5" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    Rango registrado
+                                                </span>
+                                                <span className="text-[11px] font-bold text-slate-700 leading-snug">
+                                                    {rangoTrabajoLabel}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {notaLimpia && (

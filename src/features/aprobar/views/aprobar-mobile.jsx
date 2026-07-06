@@ -54,7 +54,7 @@ export const AprobarMobile = ({
                             Revisión de Evidencias
                         </span>
                         <p className="text-xs text-slate-400 mt-2">
-                            Autoriza la conclusión de las actividades o rebota el ticket con observaciones para su reprocesamiento.
+                            Autoriza la conclusión de las actividades o devuelve el reporte con observaciones para su reprocesamiento.
                         </p>
                     </div>
                     {hasContent && (

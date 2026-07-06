@@ -1157,7 +1157,7 @@ export const TicketFormModal = ({
                                         error={!!fe.tipo} helperText={fe.tipo}
                                         disabled={isSubmitting || lockBaseFields}>
                                         <option value="" disabled hidden>Selecciona…</option>
-                                        {isTicket && <option value="TICKET">Ticket</option>}
+                                        {isTicket && <option value="TICKET">Reporte</option>}
                                         {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
                                 </div>

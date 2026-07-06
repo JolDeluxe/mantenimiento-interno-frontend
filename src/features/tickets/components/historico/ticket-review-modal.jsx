@@ -16,6 +16,13 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
+const formatRangoTrabajo = (inicio, fin) => {
+    if (inicio && fin) return `${formatFechaHora(inicio)} - ${formatFechaHora(fin)}`;
+    if (inicio) return `Inicio: ${formatFechaHora(inicio)}`;
+    if (fin) return `Fin: ${formatFechaHora(fin)}`;
+    return null;
+};
+
 /**
  * Modal de revisión/validación de un ticket RESUELTO.
  * El actor (cliente o supervisor) decide: CERRAR (conforme) o RECHAZAR (no conforme).
@@ -61,6 +68,7 @@ export const TicketReviewModal = ({
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
+    const rangoTrabajoLabel = formatRangoTrabajo(ticket?.fechaInicio, ticket?.finalizadoAt);
 
     // Convert manual registration to minutes if possible for difference calculation
     // e.g. "1 h 20 min" or "50 min" or "2 h"
@@ -171,7 +179,7 @@ export const TicketReviewModal = ({
                         )}
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Ticket resuelto</p>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Reporte resuelto</p>
                             <p className="text-sm font-semibold text-slate-800 leading-snug">{ticket.titulo}</p>
                             {ticket.responsables?.length > 0 && (
                                 <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
@@ -212,6 +220,20 @@ export const TicketReviewModal = ({
                                             </span>
                                         </div>
                                     </div>
+
+                                    {rangoTrabajoLabel && (
+                                        <div className="flex items-start gap-2 border-t border-slate-100 pt-2.5">
+                                            <Icon name="schedule" size="xs" className="text-slate-400 shrink-0 mt-0.5" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    Rango registrado
+                                                </span>
+                                                <span className="text-[11px] font-bold text-slate-700 leading-snug">
+                                                    {rangoTrabajoLabel}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-0.5">
                                         <div className="flex items-center gap-1.5">
@@ -339,7 +361,7 @@ export const TicketReviewModal = ({
                                 >
                                     <Icon name="check_circle" size="lg" fill={decision === 'CERRADO'} />
                                     <span className="text-sm font-bold">Conforme</span>
-                                    <span className="text-[10px] font-medium opacity-70 text-center">Cerrar ticket como resuelto</span>
+                                    <span className="text-[10px] font-medium opacity-70 text-center">Cerrar reporte como resuelto</span>
                                 </button>
 
                             </div>
@@ -397,7 +419,7 @@ export const TicketReviewModal = ({
                         isLoading={isSubmitting}
                         onClick={handleSubmit}
                     >
-                        {decision === 'RECHAZADO' ? 'Rechazar trabajo' : 'Cerrar ticket'}
+                        {decision === 'RECHAZADO' ? 'Rechazar trabajo' : 'Cerrar reporte'}
                     </Button>
                 </ModalFooter>
             </Modal>

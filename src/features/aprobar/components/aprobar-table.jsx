@@ -16,6 +16,11 @@ const ORIGEN_STYLE = {
     Actividad: 'bg-blue-50 text-blue-700 border-blue-200/70',
 };
 
+const getTipoLabel = (tipo) => {
+    if (tipo === 'TICKET') return 'REPORTE';
+    return tipo;
+};
+
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
 
@@ -153,7 +158,7 @@ export const AprobarTicketTable = ({
                             EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
                         }[row.tipo] || 'bg-slate-100 text-slate-500 border-slate-200'
                     }`}>
-                        {row.tipo}
+                        {getTipoLabel(row.tipo)}
                     </span>
                 ) : null;
 

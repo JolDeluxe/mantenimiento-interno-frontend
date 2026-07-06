@@ -63,7 +63,7 @@ const CancelModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()} className="max-w-md">
-            <ModalHeader title="Cancelar Ticket" onClose={() => !isSubmitting && onClose()} />
+            <ModalHeader title="Cancelar reporte" onClose={() => !isSubmitting && onClose()} />
             <ModalBody>
                 <div className="flex flex-col items-center text-center gap-4 py-2">
                     <div className="w-16 h-16 rounded-full bg-estado-cancelada/15 flex items-center justify-center">
@@ -71,7 +71,7 @@ const CancelModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
                     </div>
                     <div>
                         <p className="text-slate-700 text-sm font-medium">
-                            ¿Confirmas que deseas <strong>CANCELAR</strong> este ticket?
+                            ¿Confirmas que deseas <strong>CANCELAR</strong> este reporte?
                         </p>
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-3">
                             <span className="block font-bold text-slate-900">{ticket.titulo}</span>
@@ -84,7 +84,7 @@ const CancelModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
                             multiline
                             value={nota}
                             onChange={(e) => setNota(e.target.value)}
-                            placeholder="Explica por qué se cancela este ticket…"
+                            placeholder="Explica por qué se cancela este reporte…"
                             disabled={isSubmitting}
                         />
                     </div>
@@ -93,7 +93,7 @@ const CancelModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
             <ModalFooter>
                 <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>Volver</Button>
                 <Button variant="borrar" icon="cancel" isLoading={isSubmitting} onClick={handleSubmit}>
-                    Sí, cancelar ticket
+                    Sí, cancelar reporte
                 </Button>
             </ModalFooter>
         </Modal>
@@ -107,13 +107,13 @@ const ActivarModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
     const handleConfirmar = () => {
         const fd = new FormData();
         fd.append('estado', 'ASIGNADA');
-        fd.append('nota', 'Ticket activado manualmente.');
+        fd.append('nota', 'Reporte activado manualmente.');
         onConfirm(ticket.id, fd);
     };
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()} className="max-w-sm">
-            <ModalHeader title="Activar Ticket" onClose={() => !isSubmitting && onClose()} />
+            <ModalHeader title="Activar reporte" onClose={() => !isSubmitting && onClose()} />
             <ModalBody>
                 <div className="flex flex-col items-center text-center gap-4 py-4">
                     <div className="w-16 h-16 rounded-full bg-estado-asignada/15 flex items-center justify-center">
@@ -122,7 +122,7 @@ const ActivarModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
                     <div className="space-y-2 px-2">
                         <p className="text-sm font-semibold text-slate-800 line-clamp-2">{ticket.titulo}</p>
                         <p className="text-sm text-slate-500">
-                            El ticket pasará a <strong className="text-estado-asignada">Asignado</strong> y
+                            El reporte pasará a <strong className="text-estado-asignada">Asignado</strong> y
                             los técnicos asignados serán notificados.
                         </p>
                     </div>
@@ -131,7 +131,7 @@ const ActivarModal = ({ isOpen, onClose, ticket, isSubmitting, onConfirm }) => {
             <ModalFooter>
                 <Button variant="cancelar" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
                 <Button variant="accion" icon="assignment_turned_in" isLoading={isSubmitting} onClick={handleConfirmar}>
-                    Activar ticket
+                    Activar reporte
                 </Button>
             </ModalFooter>
         </Modal>
@@ -150,7 +150,7 @@ const InmutableModal = ({ isOpen, onClose, ticket }) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-sm">
-            <ModalHeader title="Estado del Ticket" onClose={onClose} />
+            <ModalHeader title="Estado del reporte" onClose={onClose} />
             <ModalBody>
                 <div className="flex flex-col items-center text-center gap-4 py-4">
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
@@ -159,7 +159,7 @@ const InmutableModal = ({ isOpen, onClose, ticket }) => {
                     <div>
                         <p className="text-lg font-extrabold text-slate-800">Estado inmutable</p>
                         <p className="text-sm text-slate-500 mt-1">
-                            {LABEL[ticket.estado] || `Este ticket está ${ticket.estado?.toLowerCase()}.`}
+                            {LABEL[ticket.estado] || `Este reporte está ${ticket.estado?.toLowerCase()}.`}
                         </p>
                         <p className="text-xs text-slate-400 mt-2">
                             No se permiten transiciones de estado desde esta vista.

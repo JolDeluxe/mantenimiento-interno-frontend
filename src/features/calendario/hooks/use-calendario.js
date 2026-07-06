@@ -49,6 +49,60 @@ const getGridBounds = (date, view) => {
     }
 };
 
+const buildCalendarioParams = ({
+    calendarDate,
+    calendarView,
+    scope,
+    filtroEstado,
+    filtroTipo,
+    filtroPrioridad,
+    filtroCategoria,
+    filtroClasificacion,
+    filtroResponsable,
+    filtroPlanta,
+    filtroArea,
+    query,
+}) => {
+    const bounds = getGridBounds(calendarDate, calendarView);
+    const params = {
+        limit: 250,
+        scope,
+        vencimientoDesde: bounds.start,
+        vencimientoHasta: bounds.end,
+    };
+
+    if (filtroEstado !== 'TODOS') params.estado = filtroEstado;
+    if (filtroTipo) params.tipo = filtroTipo;
+    if (filtroPrioridad) params.prioridad = filtroPrioridad;
+    if (filtroCategoria) params.categoria = filtroCategoria;
+    if (filtroClasificacion) params.clasificacion = filtroClasificacion;
+    if (filtroResponsable) params.responsableId = filtroResponsable;
+    if (filtroPlanta) params.planta = filtroPlanta;
+    if (filtroArea) params.area = filtroArea;
+    if (query) params.q = query;
+
+    return params;
+};
+
+const mergeById = (...lists) => {
+    const map = new Map();
+    lists.flat().forEach((item) => {
+        if (!item?.id) return;
+        map.set(String(item.id), { ...(map.get(String(item.id)) || {}), ...item });
+    });
+    return Array.from(map.values());
+};
+
+const getFinalizadosParams = (params, estado) => {
+    const { vencimientoDesde, vencimientoHasta, ...rest } = params;
+    return {
+        ...rest,
+        estado,
+        finalizadoDesde: vencimientoDesde,
+        finalizadoHasta: vencimientoHasta,
+    };
+};
+
 export const useCalendario = () => {
     const [tickets, setTickets] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
@@ -144,8 +198,21 @@ export const useCalendario = () => {
 
         // Carga desde red
         try {
-            const res = await getCalendarioTickets(params);
-            const data = Array.isArray(res.data) ? res.data : [];
+            const requests = [getCalendarioTickets(params)];
+            const shouldFetchFinalizados = !params.estado || ['RESUELTO', 'CERRADO'].includes(params.estado);
+
+            if (shouldFetchFinalizados) {
+                const estadosFinalizados = params.estado ? [params.estado] : ['RESUELTO', 'CERRADO'];
+                estadosFinalizados.forEach((estado) => {
+                    requests.push(getCalendarioTickets(getFinalizadosParams(params, estado)));
+                });
+            }
+
+            const [res, ...finalizadosRes] = await Promise.all(requests);
+            const data = mergeById(
+                Array.isArray(res.data) ? res.data : [],
+                ...finalizadosRes.map((r) => Array.isArray(r.data) ? r.data : [])
+            );
             const pagination = res.pagination ?? {};
 
             setTickets(data);
@@ -157,8 +224,8 @@ export const useCalendario = () => {
                 totalAbsoluto: res.totalAbsoluto ?? prev.totalAbsoluto,
             }));
 
-            // Guardar en IndexedDB
-            await writeSnapshot('tickets', res, cacheKey);
+            // Guardar en IndexedDB con la lista ya fusionada para conservar la vista offline.
+            await writeSnapshot('tickets', { ...res, data }, cacheKey);
         } catch (error) {
             console.warn('[useCalendario] Error de red al cargar tareas:', error);
         } finally {
@@ -197,23 +264,20 @@ export const useCalendario = () => {
 
     // Carga inicial y dependencias de filtros y rango de fechas
     useEffect(() => {
-        const bounds = getGridBounds(calendarDate, calendarView);
-        const params = {
-            limit: 250,
+        const params = buildCalendarioParams({
+            calendarDate,
+            calendarView,
             scope,
-            vencimientoDesde: bounds.start,
-            vencimientoHasta: bounds.end,
-        };
-
-        if (filtroEstado !== 'TODOS') params.estado = filtroEstado;
-        if (filtroTipo) params.tipo = filtroTipo;
-        if (filtroPrioridad) params.prioridad = filtroPrioridad;
-        if (filtroCategoria) params.categoria = filtroCategoria;
-        if (filtroClasificacion) params.clasificacion = filtroClasificacion;
-        if (filtroResponsable) params.responsableId = filtroResponsable;
-        if (filtroPlanta) params.planta = filtroPlanta;
-        if (filtroArea) params.area = filtroArea;
-        if (query) params.q = query;
+            filtroEstado,
+            filtroTipo,
+            filtroPrioridad,
+            filtroCategoria,
+            filtroClasificacion,
+            filtroResponsable,
+            filtroPlanta,
+            filtroArea,
+            query,
+        });
 
         const timer = setTimeout(() => {
             fetchTickets(params);
@@ -292,22 +356,20 @@ export const useCalendario = () => {
         setQuery,
         handleClearFilters,
         refresh: () => {
-            const bounds = getGridBounds(calendarDate, calendarView);
-            const params = {
-                limit: 250,
+            const params = buildCalendarioParams({
+                calendarDate,
+                calendarView,
                 scope,
-                vencimientoDesde: bounds.start,
-                vencimientoHasta: bounds.end,
-            };
-            if (filtroEstado !== 'TODOS') params.estado = filtroEstado;
-            if (filtroTipo) params.tipo = filtroTipo;
-            if (filtroPrioridad) params.prioridad = filtroPrioridad;
-            if (filtroCategoria) params.categoria = filtroCategoria;
-            if (filtroClasificacion) params.clasificacion = filtroClasificacion;
-            if (filtroResponsable) params.responsableId = filtroResponsable;
-            if (filtroPlanta) params.planta = filtroPlanta;
-            if (filtroArea) params.area = filtroArea;
-            if (query) params.q = query;
+                filtroEstado,
+                filtroTipo,
+                filtroPrioridad,
+                filtroCategoria,
+                filtroClasificacion,
+                filtroResponsable,
+                filtroPlanta,
+                filtroArea,
+                query,
+            });
 
             fetchTickets(params);
             fetchMetricas(params);

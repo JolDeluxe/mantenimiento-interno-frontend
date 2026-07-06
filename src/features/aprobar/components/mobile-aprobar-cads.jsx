@@ -16,6 +16,11 @@ const ORIGEN_STYLE = {
     Actividad: 'bg-blue-50 text-blue-700 border-blue-200/70',
 };
 
+const getTipoLabel = (tipo) => {
+    if (tipo === 'TICKET') return 'REPORTE';
+    return tipo;
+};
+
 export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
     const [responsablesExpanded, setResponsablesExpanded] = useState(false);
 
@@ -37,7 +42,7 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
                         </span>
                         {ticket.tipo && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-                                {ticket.tipo}
+                                {getTipoLabel(ticket.tipo)}
                             </span>
                         )}
                         <span className={cn('text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border', ORIGEN_STYLE[getOrigen(ticket)] || ORIGEN_STYLE.Actividad)}>

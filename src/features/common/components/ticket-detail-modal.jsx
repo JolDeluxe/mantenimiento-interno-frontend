@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
-import { formatFecha, formatFechaHora } from '@/lib/date';
+import { formatFecha, formatFechaHora, format12h, formatDurationToDaysHours, isoToLocalMXTime } from '@/lib/date';
 import { TicketTimeline } from '@/features/common/components/ticket-timeline';
 import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
 import { useAuthStore } from '@/stores/auth-store';
@@ -26,6 +26,114 @@ const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = 
         </div>
     </div>
 );
+
+const formatHoraMX = (iso) => {
+    const time = isoToLocalMXTime(iso);
+    return time ? format12h(time) : null;
+};
+
+const formatRangoProgramado = (inicio, fin) => {
+    const inicioStr = formatHoraMX(inicio);
+    const finStr = formatHoraMX(fin);
+    if (inicioStr && finStr) return `${inicioStr} - ${finStr}`;
+    return inicioStr || finStr || null;
+};
+
+const formatMinutos = (mins) => {
+    if (mins === undefined || mins === null || Number.isNaN(Number(mins))) return null;
+    return formatDurationToDaysHours(Number(mins));
+};
+
+const MachineBadge = ({ children, className = '' }) => (
+    <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${className}`}>
+        {children}
+    </span>
+);
+
+const getCriticidadStyle = (criticidad) => {
+    const map = {
+        A: 'bg-red-50 text-red-700 border-red-200',
+        B: 'bg-amber-50 text-amber-700 border-amber-200',
+        C: 'bg-slate-50 text-slate-700 border-slate-200',
+    };
+    return map[criticidad] || 'bg-slate-50 text-slate-600 border-slate-200';
+};
+
+const getEstadoMaquinaStyle = (estado) => {
+    if (estado === 'OPERATIVA') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (estado === 'EN_REPARACION') return 'bg-orange-50 text-orange-700 border-orange-200';
+    if (estado?.includes('BAJA')) return 'bg-slate-100 text-slate-500 border-slate-200';
+    return 'bg-blue-50 text-blue-700 border-blue-200';
+};
+
+const ReportContextCard = ({ ticket }) => {
+    const shouldShow = shouldShowReportContext(ticket);
+    if (!shouldShow) return null;
+
+    const creador = ticket.creador;
+    const mostrarContacto = ticket.tipo === 'TICKET' && creador?.rol === 'CLIENTE_INTERNO';
+    const paroLabel = ['RESUELTO', 'CERRADO'].includes(ticket.estado) ? 'Paro reportado' : 'Paro activo';
+
+    return (
+        <div className={`rounded-xl p-3.5 space-y-2 border ${
+            ticket.paroProduccion
+                ? 'bg-red-50/80 border-red-200 shadow-sm'
+                : 'bg-slate-50 border-slate-200/60'
+        }`}>
+            <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                <Icon name="report_problem" size="xs" className={ticket.paroProduccion ? 'text-red-600' : 'text-slate-500'} />
+                Reporte y Producción
+                {ticket.paroProduccion && (
+                    <span className="ml-auto inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                        <Icon name="priority_high" size="xs" />
+                        {paroLabel}
+                    </span>
+                )}
+            </h4>
+            <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-3">
+                    <DataRow
+                        icon="production_quantity_limits"
+                        label="Paro producción"
+                        value={ticket.paroProduccion ? 'Sí' : 'No'}
+                        colorClass={ticket.paroProduccion ? 'text-red-700 font-extrabold' : 'text-emerald-700 font-extrabold'}
+                    />
+                    <DataRow
+                        icon="timer"
+                        label="Impacto"
+                        value={ticket.impactoProduccion ? formatMinutos(ticket.impactoProduccion) : null}
+                        fallback="Sin impacto registrado"
+                    />
+                </div>
+                {mostrarContacto && (
+                    <div className="pt-2 border-t border-slate-200/60 space-y-2.5">
+                        <DataRow
+                            icon="contact_phone"
+                            label="Contacto reportante"
+                            value={
+                                <span className="flex flex-col gap-0.5">
+                                    <span>{creador.nombre}</span>
+                                    {creador.cargo && <span className="text-[10px] text-slate-500 font-medium">{creador.cargo}</span>}
+                                </span>
+                            }
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                            <DataRow icon="call" label="Teléfono" value={creador.telefono} fallback="Sin teléfono" />
+                            <DataRow icon="mail" label="Correo" value={creador.email} fallback="Sin correo" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const shouldShowReportContext = (ticket) => {
+    if (!ticket) return false;
+    const creador = ticket.creador;
+    const mostrarContacto = ticket.tipo === 'TICKET' && creador?.rol === 'CLIENTE_INTERNO';
+    return Boolean(ticket.paroProduccion || ticket.impactoProduccion || mostrarContacto);
+};
 
 // ── Visor de imagen a pantalla completa (Usando Modal) ──────────────────────
 const ImageViewer = ({ images, index, onClose, onNavigate }) => {
@@ -242,16 +350,23 @@ const ParsedNote = ({ notaRaw, config }) => {
     cleanNota = cleanNota.replace(/^[-:]\s*/, '').trim();
     if (!cleanNota) cleanNota = "Sin observaciones adicionales";
 
-    const isDefault = cleanNota === "Sin observaciones adicionales";
+    const isDefault = cleanNota === "Sin observaciones adicionales" || /^sin observaciones\.?$/i.test(cleanNota);
 
     return (
         <div className="flex flex-col gap-1.5 my-0.5">
-            <div className="bg-white/70 px-3 py-2 rounded-lg border border-black/5 shadow-sm relative overflow-hidden">
-                <div className={`absolute top-0 left-0 w-1 h-full ${config.borderLeftCls}`}></div>
-                <p className={`text-xs font-medium leading-relaxed ${isDefault ? 'text-slate-400 italic font-normal' : config.textCls}`}>
-                    {cleanNota}
+            {isDefault ? (
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 italic">
+                    <Icon name="notes" size="xs" className="text-slate-400" />
+                    Sin observaciones
                 </p>
-            </div>
+            ) : (
+                <div className="bg-white/70 px-3 py-2 rounded-lg border border-black/5 shadow-sm relative overflow-hidden">
+                    <div className={`absolute top-0 left-0 w-1 h-full ${config.borderLeftCls}`}></div>
+                    <p className={`text-xs font-medium leading-relaxed ${config.textCls}`}>
+                        {cleanNota}
+                    </p>
+                </div>
+            )}
 
             <div className="flex flex-wrap gap-1.5 items-center">
                 {timeBadge && (
@@ -365,7 +480,9 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const esTecnico = user?.rol === 'TECNICO';
 
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
-    const fechaFinalizada = entryResuelto?.createdAt;
+    const fechaFinalizada = ticket.finalizadoAt || entryResuelto?.createdAt;
+    const rangoProgramado = formatRangoProgramado(ticket.horaInicioProgramada, ticket.horaFinProgramada);
+    const fechaProgramada = ticket.horaInicioProgramada || ticket.horaFinProgramada;
 
     // Detección de Tiempo Manual
     const esTiempoManual = Boolean(
@@ -374,6 +491,8 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
             /\[TIEMPO_MANUAL:/i.test(h.nota || '')
         )
     );
+    const mostrarReporteContexto = shouldShowReportContext(ticket);
+    const usarLayoutActividadSimple = !ticket.maquina && !ticket.maquinaId && !mostrarReporteContexto;
 
     const handleImageExpand = (images, index) => setVisor({ images, index });
 
@@ -497,6 +616,138 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
         );
     };
 
+    const renderUbicacionCard = () => (
+        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
+            <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                <Icon name="location_on" size="xs" className="text-slate-500" />
+                Ubicación
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+                <DataRow icon="factory" label="Planta" value={ticket.planta} />
+                <DataRow icon="place" label="Área" value={ticket.area} />
+            </div>
+            {ticket.maquina && (
+                <div className="pt-2 border-t border-slate-200/60 space-y-2.5">
+                    <div className="flex flex-col gap-2 rounded-lg bg-white/70 border border-slate-200/60 p-2.5">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                            <DataRow
+                                icon="precision_manufacturing"
+                                label="Maquinaria"
+                                value={`${ticket.maquina.codigo} - ${ticket.maquina.nombre}`}
+                            />
+                            <div className="flex flex-wrap gap-1.5 shrink-0">
+                                <MachineBadge className={getCriticidadStyle(ticket.maquina.criticidad)}>
+                                    Crit. {ticket.maquina.criticidad || 'N/D'}
+                                </MachineBadge>
+                                <MachineBadge className={getEstadoMaquinaStyle(ticket.maquina.estado)}>
+                                    {ticket.maquina.estado || 'Sin estado'}
+                                </MachineBadge>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <DataRow icon="settings" label="Proceso" value={ticket.maquina.proceso} />
+                        <DataRow
+                            icon="engineering"
+                            label="Último servicio"
+                            value={ticket.maquina.fechaUltimoServicio ? formatFecha(ticket.maquina.fechaUltimoServicio) : null}
+                        />
+                    </div>
+                    {(ticket.maquina.ubicacionDetalle || ticket.maquina.descripcion) && (
+                        <div className="grid grid-cols-1 gap-2">
+                            <DataRow icon="location_on" label="Ubicación detalle" value={ticket.maquina.ubicacionDetalle} />
+                            <DataRow icon="notes" label="Observaciones máquina" value={ticket.maquina.descripcion} />
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderTiemposCard = () => (
+        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
+            <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                <Icon name="schedule" size="xs" className="text-slate-500" />
+                Tiempos y Control
+            </h4>
+            <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-3">
+                    <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
+                    <DataRow
+                        icon="event"
+                        label="Vence"
+                        value={
+                            ticket.fechaVencimiento ? (
+                                <span className="inline-flex flex-wrap items-center gap-1.5">
+                                    <span className={esAtrasada ? 'text-red-600 font-extrabold' : ''}>
+                                        {vencFechaStr}
+                                    </span>
+                                    {tieneFechaModificada && (
+                                        <span className="text-[10px] font-normal text-slate-400 shrink-0">
+                                            (Original: {originalFechaStr})
+                                        </span>
+                                    )}
+                                </span>
+                            ) : null
+                        }
+                        fallback="Sin límite"
+                    />
+                </div>
+                {(rangoProgramado || fechaProgramada) && (
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                        <DataRow
+                            icon="schedule"
+                            label="Horario programado"
+                            value={rangoProgramado}
+                            fallback="Sin hora específica"
+                        />
+                        <DataRow
+                            icon="event_available"
+                            label="Fecha programada"
+                            value={fechaProgramada ? formatFecha(fechaProgramada) : null}
+                            fallback="Sin fecha específica"
+                        />
+                    </div>
+                )}
+                {(ticket.fechaInicio || fechaFinalizada) && (
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                        <DataRow
+                            icon="play_circle"
+                            label="Inicio real"
+                            value={ticket.fechaInicio ? formatFechaHora(ticket.fechaInicio) : null}
+                            fallback="Sin inicio registrado"
+                        />
+                        <DataRow
+                            icon="task_alt"
+                            label="Finalizado"
+                            value={fechaFinalizada ? formatFechaHora(fechaFinalizada) : null}
+                            fallback="Sin cierre registrado"
+                        />
+                    </div>
+                )}
+                {renderComparativaTiempos()}
+            </div>
+        </div>
+    );
+
+    const renderPersonalCard = ({ fullWidth = false } = {}) => (
+        <div className={`bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2 ${fullWidth ? 'lg:col-span-2' : ''}`}>
+            <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
+                <Icon name="group" size="xs" className="text-slate-500" />
+                Personal
+            </h4>
+            <div className={`grid gap-3 ${fullWidth ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
+                <DataRow icon="person" label={getCreadorLabel()} value={renderDetalleCreador()} />
+                <DataRow
+                    icon="engineering"
+                    label="Personal Asignado"
+                    value={responsables.length > 0 ? responsables.map(r => r.nombre).join(', ') : null}
+                    fallback="Sin asignar"
+                />
+            </div>
+        </div>
+    );
+
     return (
         <>
             <Modal
@@ -504,7 +755,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                 onClose={onClose}
                 className={`transition-all duration-300 ease-in-out w-full ${mostrarHistorial ? 'md:max-w-5xl lg:max-w-6xl xl:max-w-[1300px]' : 'md:max-w-4xl lg:max-w-5xl'}`}
             >
-                <ModalHeader title={`Ticket #${ticket.id}`} onClose={onClose} />
+                <ModalHeader title={`Reporte #${ticket.id}`} onClose={onClose} />
 
                 <ModalBody className="p-4 md:p-5 overflow-y-auto max-h-[82vh]">
                     <div className="flex flex-col lg:flex-row gap-5 items-start">
@@ -526,7 +777,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo:</span>
                                         <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border leading-none ${getTipoStyle(ticket.tipo)}`}>
-                                            {ticket.tipo}
+                                            {ticket.tipo === 'TICKET' ? 'REPORTE' : ticket.tipo}
                                         </span>
                                     </div>
                                 )}
@@ -570,84 +821,23 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
 
                             <TicketRefaccionesCard ticket={ticket} />
 
-                            {/* Fichas técnicas en grilla de 3 columnas */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                
-                                {/* Tarjeta 1: Ubicación */}
-                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
-                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
-                                        <Icon name="location_on" size="xs" className="text-slate-500" />
-                                        Ubicación
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <DataRow icon="factory" label="Planta" value={ticket.planta} />
-                                        <DataRow icon="place" label="Área" value={ticket.area} />
+                            {/* Fichas técnicas: la actividad simple usa una columna izquierda compacta */}
+                            {usarLayoutActividadSimple ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                                    <div className="flex flex-col gap-4">
+                                        {renderUbicacionCard()}
+                                        {renderPersonalCard()}
                                     </div>
-                                    {ticket.maquina && (
-                                        <div className="pt-2 border-t border-slate-200/60">
-                                            <DataRow 
-                                                icon="precision_manufacturing" 
-                                                label="Maquinaria" 
-                                                value={`${ticket.maquina.codigo} - ${ticket.maquina.nombre}`} 
-                                            />
-                                        </div>
-                                    )}
+                                    {renderTiemposCard()}
                                 </div>
-
-                                {/* Tarjeta 2: Personal */}
-                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
-                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
-                                        <Icon name="group" size="xs" className="text-slate-500" />
-                                        Personal
-                                    </h4>
-                                    <div className="space-y-3">
-                                        <DataRow icon="person" label={getCreadorLabel()} value={renderDetalleCreador()} />
-                                        <DataRow
-                                            icon="engineering"
-                                            label="Personal Asignado"
-                                            value={responsables.length > 0 ? responsables.map(r => r.nombre).join(', ') : null}
-                                            fallback="Sin asignar"
-                                        />
-                                    </div>
+                            ) : (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                                    {renderUbicacionCard()}
+                                    {renderTiemposCard()}
+                                    {renderPersonalCard({ fullWidth: !mostrarReporteContexto })}
+                                    {mostrarReporteContexto && <ReportContextCard ticket={ticket} />}
                                 </div>
-
-                                {/* Tarjeta 3: Tiempos y Control */}
-                                <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-2">
-                                    <h4 className="text-xs font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5">
-                                        <Icon name="schedule" size="xs" className="text-slate-500" />
-                                        Tiempos y Control
-                                    </h4>
-                                    <div className="space-y-2.5">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <DataRow icon="calendar_today" label="Creado" value={formatFechaHora(ticket.createdAt)} />
-                                            <DataRow 
-                                                icon="event" 
-                                                label="Vence" 
-                                                value={
-                                                    ticket.fechaVencimiento ? (
-                                                        <span className="inline-flex flex-wrap items-center gap-1.5">
-                                                            <span className={esAtrasada ? 'text-red-600 font-extrabold' : ''}>
-                                                                {vencFechaStr}
-                                                            </span>
-                                                            {tieneFechaModificada && (
-                                                                <span className="text-[10px] font-normal text-slate-400 shrink-0">
-                                                                    (Original: {originalFechaStr})
-                                                                </span>
-                                                            )}
-                                                        </span>
-                                                    ) : null
-                                                } 
-                                                fallback="Sin límite" 
-                                            />
-                                        </div>
-                                        {fechaFinalizada && (
-                                            <DataRow icon="task_alt" label="Finalizado" value={formatFechaHora(fechaFinalizada)} />
-                                        )}
-                                        {renderComparativaTiempos()}
-                                    </div>
-                                </div>
-
-                            </div>
+                            )}
                         </div>
 
                         {/* Panel de Línea de Tiempo (Historial) - Se inyecta sin doble scrollbars ni constricciones y con espaciador automático */}

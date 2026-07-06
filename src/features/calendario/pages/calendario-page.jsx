@@ -12,7 +12,7 @@ import { CalendarioMobile } from '../views/calendario-mobile';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 
-// ── Modales específicos de Tickets / Actividades ──────────────────────────
+// ── Modales específicos de Reportes / Actividades ─────────────────────────
 import { TicketFormModal } from '@/features/tickets/components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '@/features/tickets/components/historico/mobile-ticket-form-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
