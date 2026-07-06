@@ -61,9 +61,17 @@ const getCriticidadStyle = (criticidad) => {
 
 const getEstadoMaquinaStyle = (estado) => {
     if (estado === 'OPERATIVA') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (estado === 'PARO_PRODUCCION') return 'bg-red-50 text-red-700 border-red-200';
     if (estado === 'EN_REPARACION') return 'bg-orange-50 text-orange-700 border-orange-200';
     if (estado?.includes('BAJA')) return 'bg-slate-100 text-slate-500 border-slate-200';
     return 'bg-blue-50 text-blue-700 border-blue-200';
+};
+
+const formatEstadoMaquina = (estado) => {
+    if (estado === 'PARO_PRODUCCION') return 'PARO PRODUCCIÓN';
+    if (estado === 'EN_REPARACION') return 'EN REPARACIÓN';
+    if (estado === 'BAJA_ERP') return 'BAJA ERP';
+    return estado || 'Sin estado';
 };
 
 const ReportContextCard = ({ ticket }) => {
@@ -72,7 +80,11 @@ const ReportContextCard = ({ ticket }) => {
 
     const creador = ticket.creador;
     const mostrarContacto = ticket.tipo === 'TICKET' && creador?.rol === 'CLIENTE_INTERNO';
-    const paroLabel = ['RESUELTO', 'CERRADO'].includes(ticket.estado) ? 'Paro reportado' : 'Paro activo';
+    const esTerminal = ['RESUELTO', 'CERRADO'].includes(ticket.estado);
+    const paroLabel = esTerminal ? 'Paro resuelto' : 'Paro activo';
+    const paroBadgeClass = esTerminal
+        ? 'bg-emerald-600 text-white'
+        : 'bg-red-600 text-white';
 
     return (
         <div className={`rounded-xl p-3.5 space-y-2 border ${
@@ -84,8 +96,8 @@ const ReportContextCard = ({ ticket }) => {
                 <Icon name="report_problem" size="xs" className={ticket.paroProduccion ? 'text-red-600' : 'text-slate-500'} />
                 Reporte y Producción
                 {ticket.paroProduccion && (
-                    <span className="ml-auto inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
-                        <Icon name="priority_high" size="xs" />
+                    <span className={`ml-auto inline-flex items-center gap-1 rounded px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${paroBadgeClass}`}>
+                        <Icon name={esTerminal ? 'task_alt' : 'priority_high'} size="xs" />
                         {paroLabel}
                     </span>
                 )}
@@ -640,7 +652,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     Crit. {ticket.maquina.criticidad || 'N/D'}
                                 </MachineBadge>
                                 <MachineBadge className={getEstadoMaquinaStyle(ticket.maquina.estado)}>
-                                    {ticket.maquina.estado || 'Sin estado'}
+                                    {formatEstadoMaquina(ticket.maquina.estado)}
                                 </MachineBadge>
                             </div>
                         </div>

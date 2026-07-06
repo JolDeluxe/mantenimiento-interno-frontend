@@ -342,6 +342,7 @@ export const TicketProgressModal = ({
     const [errorPausa, setErrorPausa] = useState(false);
     const [usaRefacciones, setUsaRefacciones] = useState(false);
     const [refacciones, setRefacciones] = useState([]);
+    const [maquinaOperativaAlResolver, setMaquinaOperativaAlResolver] = useState(false);
 
     useEffect(() => {
         return () => {
@@ -364,6 +365,7 @@ export const TicketProgressModal = ({
             setErrorPausa(false);
             setUsaRefacciones(false);
             setRefacciones([]);
+            setMaquinaOperativaAlResolver(false);
         }
     }, [isOpen]);
 
@@ -438,6 +440,9 @@ export const TicketProgressModal = ({
         if (usaRefacciones) {
             fd.append('refacciones', JSON.stringify(sanitizeRefacciones(refacciones)));
         }
+        if (ticket?.paroProduccion && ticket?.maquinaId) {
+            fd.append('maquinaOperativaAlResolver', maquinaOperativaAlResolver ? 'true' : 'false');
+        }
 
         // Fix: Construcción segura del payload para Zod
         let timePayload = {};
@@ -482,11 +487,14 @@ export const TicketProgressModal = ({
     // Se eliminó la variable isInvalidRange que causaba el ReferenceError 
     // y se dejó la lógica robusta con `tiempoManualMins`.
 
+    const requiereConfirmacionOperativa = Boolean(ticket?.paroProduccion && ticket?.maquinaId);
+
     const resolverDisabled =
         timePhase === 'preguntando' ||
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
         (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
         (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
+        (requiereConfirmacionOperativa && !maquinaOperativaAlResolver) ||
         (ticket?.maquinaId !== null && ticket?.maquinaId !== undefined && !hasValidRefacciones(usaRefacciones, refacciones));
 
     const isAtrasada = evaluacion?.tipo === 'alto';
@@ -804,6 +812,33 @@ export const TicketProgressModal = ({
                                         onAgregar={handleAgregar}
                                         onEliminar={handleEliminar}
                                     />
+
+                                    {requiereConfirmacionOperativa && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setMaquinaOperativaAlResolver(prev => !prev)}
+                                            disabled={isSubmitting}
+                                            className={cn(
+                                                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors disabled:opacity-60",
+                                                maquinaOperativaAlResolver
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                                    : "bg-red-50 border-red-200 text-red-800"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0",
+                                                maquinaOperativaAlResolver ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-red-300 text-transparent"
+                                            )}>
+                                                <Icon name="check" size="xs" />
+                                            </span>
+                                            <span className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-black">Confirmo que la máquina ya opera</span>
+                                                <span className="text-xs leading-relaxed">
+                                                    Esta confirmación permite regresar la máquina de PARO PRODUCCIÓN a OPERATIVA al resolver.
+                                                </span>
+                                            </span>
+                                        </button>
+                                    )}
 
                                     {ticket?.maquinaId !== null && ticket?.maquinaId !== undefined && (
                                         <RefaccionesSection

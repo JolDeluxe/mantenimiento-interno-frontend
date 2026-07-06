@@ -142,7 +142,11 @@ export default function MantenimientosHistoricoPage({
             setShowCreate(false);
             loadTickets();
         } catch (err) {
-            notify.error(err.response?.data?.error || err.response?.data?.message || 'Error al crear.');
+            const errStr = err.response?.data?.error || err.response?.data?.message || '';
+            const isConflict = err.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al crear.');
+            }
             throw err;
         }
     }, [createBatch, createTicket, loadTickets]);
@@ -157,7 +161,12 @@ export default function MantenimientosHistoricoPage({
             notify.success('Mantenimiento actualizado con éxito.');
             loadTickets();
         } catch (err) {
-            notify.error(err.response?.data?.message || 'Error al actualizar.');
+            const errStr = err.response?.data?.error || err.response?.data?.message || '';
+            const isConflict = err.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al actualizar.');
+            }
+            throw err;
         }
     }, [updateTicket, loadTickets]);
 
@@ -307,7 +316,7 @@ export default function MantenimientosHistoricoPage({
                         isSubmitting={submitting}
                         onSuccess={handleCreate}
                         scope="mantenimientos"
-                        defaultClasificacion="PREVENTIVO"
+                        defaultClasificacion={forcedClasificacion || "PREVENTIVO"}
                     />
                 ) : (
                     <MobileTicketFormModal
@@ -318,7 +327,7 @@ export default function MantenimientosHistoricoPage({
                         isSubmitting={submitting}
                         onSuccess={handleCreate}
                         scope="mantenimientos"
-                        defaultClasificacion="PREVENTIVO"
+                        defaultClasificacion={forcedClasificacion || "PREVENTIVO"}
                     />
                 )
             )}

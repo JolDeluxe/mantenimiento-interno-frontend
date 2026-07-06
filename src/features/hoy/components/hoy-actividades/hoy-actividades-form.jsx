@@ -737,7 +737,11 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
     const [maquinasRaw, setMaquinasRaw] = useState([]);
 
     const [backendError, setBackendError] = useState('');
+    const [conflictError, setConflictError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    useEffect(() => {
+        setConflictError('');
+    }, [horaInicio, horaFin, fechaVencimiento, responsables]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const modoCarrito = !esEdicion && esAdmin && !isMobile && modoLista;
@@ -960,6 +964,9 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
 
     const getErrors = () => {
         const e = {};
+        if (conflictError) {
+            e.horaInicio = conflictError;
+        }
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
@@ -1124,7 +1131,12 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
                 const data = err?.response?.data;
                 let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
                 if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-                setBackendError(msg);
+                if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                    setSubmitted(true);
+                    setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+                } else {
+                    setBackendError(msg);
+                }
             }
             return;
         }
@@ -1166,7 +1178,12 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
                 const data = err?.response?.data;
                 let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
                 if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-                setBackendError(msg);
+                if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                    setSubmitted(true);
+                    setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+                } else {
+                    setBackendError(msg);
+                }
             }
             return;
         }
@@ -1228,7 +1245,12 @@ export const HoyActividadesForm = ({ isOpen, onClose, ticketAEditar = null, curr
             const data = err?.response?.data;
             let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
             if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-            setBackendError(msg);
+            if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                setSubmitted(true);
+                setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+            } else {
+                setBackendError(msg);
+            }
         }
     };
 

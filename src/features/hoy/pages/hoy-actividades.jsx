@@ -129,7 +129,11 @@ export default function HoyActividadesPage() {
                 setShowCreate(false);
                 loadTickets();
             } catch (err) {
-                notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las actividades.');
+                const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+                const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+                if (!isConflict) {
+                    notify.error(errStr || 'Error al crear las actividades.');
+                }
                 throw err;
             }
             return;
@@ -141,7 +145,11 @@ export default function HoyActividadesPage() {
             setShowCreate(false);
             loadTickets();
         } catch (err) {
-            notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la actividad.');
+            const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+            const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al crear la actividad.');
+            }
             throw err;
         }
     };
@@ -152,7 +160,11 @@ export default function HoyActividadesPage() {
             notify.success('Actividad actualizada correctamente.');
             loadTickets();
         } catch (err) {
-            notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar.');
+            const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+            const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al actualizar.');
+            }
             throw err;
         }
     };

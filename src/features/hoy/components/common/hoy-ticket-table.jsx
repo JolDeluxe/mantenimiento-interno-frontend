@@ -127,6 +127,17 @@ export const HoyTicketTable = ({
                             <span className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1">
                                 {row.titulo}
                             </span>
+                            {row.paroProduccion && (
+                                <span className={cn(
+                                    "inline-flex items-center gap-0.5 text-[9px] font-extrabold border px-1.5 py-0.5 rounded-md uppercase shrink-0 leading-none",
+                                    ['RESUELTO', 'CERRADO'].includes(row.estado)
+                                        ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                                        : "text-red-700 bg-red-50 border-red-300 animate-pulse"
+                                )}>
+                                    <Icon name={['RESUELTO', 'CERRADO'].includes(row.estado) ? "task_alt" : "error"} size="xs" style={{ fontSize: '10px' }} className="shrink-0" />
+                                    <span>{['RESUELTO', 'CERRADO'].includes(row.estado) ? "PARO RESUELTO" : "PARO ACTIVO"}</span>
+                                </span>
+                            )}
                             {row.isLate && (
                                 <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md uppercase shrink-0">
                                     <Icon name="timer_off" size="xs" />ENTREGADA CON RETRASO

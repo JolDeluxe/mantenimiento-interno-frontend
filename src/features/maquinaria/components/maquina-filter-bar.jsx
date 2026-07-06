@@ -4,6 +4,7 @@ import { useQrPrintStore } from '../stores/qr-print-store';
 
 const ESTADOS_MAQUINARIA = [
   { value: 'OPERATIVA', label: 'OPERATIVA' },
+  { value: 'PARO_PRODUCCION', label: 'PARO PRODUCCIÓN' },
   { value: 'EN_REPARACION', label: 'EN REPARACIÓN' },
   { value: 'INACTIVA', label: 'INACTIVA' },
   { value: 'BAJA', label: 'DE BAJA' }

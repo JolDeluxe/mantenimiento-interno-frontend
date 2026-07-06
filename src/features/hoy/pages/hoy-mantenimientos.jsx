@@ -135,7 +135,11 @@ export default function HoyMantenimientosPage() {
                 setShowCreate(false);
                 loadTickets();
             } catch (err) {
-                notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear los mantenimientos.');
+                const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+                const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+                if (!isConflict) {
+                    notify.error(errStr || 'Error al crear los mantenimientos.');
+                }
                 throw err;
             }
             return;
@@ -147,7 +151,11 @@ export default function HoyMantenimientosPage() {
             setShowCreate(false);
             loadTickets();
         } catch (err) {
-            notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear el mantenimiento.');
+            const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+            const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al crear el mantenimiento.');
+            }
             throw err;
         }
     };
@@ -158,7 +166,11 @@ export default function HoyMantenimientosPage() {
             notify.success('Mantenimiento actualizado correctamente.');
             loadTickets();
         } catch (err) {
-            notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar.');
+            const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
+            const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
+            if (!isConflict) {
+                notify.error(errStr || 'Error al actualizar.');
+            }
             throw err;
         }
     };

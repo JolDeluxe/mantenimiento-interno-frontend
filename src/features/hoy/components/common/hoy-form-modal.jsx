@@ -1,6 +1,6 @@
 // src/features/hoy/components/common/hoy-form-modal.jsx
 import { HoyActividadesForm } from '../hoy-actividades/hoy-actividades-form';
-import { HoyMantenimientosForm } from '../hoy-mantenimientos/hoy-mantenimientos-form';
+import { MantenimientosFormModal } from '@/features/mantenimientos/components/common/mantenimientos-form-modal';
 
 export const HoyFormModal = (props) => {
     const { scope, ticketAEditar } = props;
@@ -10,7 +10,7 @@ export const HoyFormModal = (props) => {
         : (scope === 'mantenimientos');
 
     if (esMantenimiento) {
-        return <HoyMantenimientosForm {...props} isMobile={false} />;
+        return <MantenimientosFormModal {...props} scope={scope || "mantenimientos"} />;
     }
     return <HoyActividadesForm {...props} isMobile={false} />;
 };

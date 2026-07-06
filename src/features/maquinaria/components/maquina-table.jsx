@@ -54,6 +54,7 @@ export const MaquinaTable = ({
   const getEstadoStyle = (est) => {
     const map = {
       OPERATIVA: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      PARO_PRODUCCION: 'bg-red-50 text-red-700 border-red-200',
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
       BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
@@ -196,7 +197,11 @@ export const MaquinaTable = ({
       headerClassName: 'w-[10%] min-w-[100px]',
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-5 w-16 mx-auto rounded-md" />;
-        const label = row.estado === 'EN_REPARACION' ? 'REPARACIÓN' : (row.estado === 'BAJA_ERP' ? 'BAJA ERP' : row.estado);
+        const label = row.estado === 'EN_REPARACION'
+          ? 'REPARACIÓN'
+          : row.estado === 'PARO_PRODUCCION'
+            ? 'PARO PRODUCCIÓN'
+            : (row.estado === 'BAJA_ERP' ? 'BAJA ERP' : row.estado);
         return (
           <span className={`inline-flex items-center justify-center font-black text-[10px] px-2.5 py-0.5 rounded border uppercase tracking-wider ${getEstadoStyle(row.estado)}`}>
             {label}

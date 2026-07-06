@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
-import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -31,6 +31,54 @@ const deducirPlantaDeArea = (areaName, plantaActual) => {
 };
 
 
+
+const getSmartDefaultTimeRange = () => {
+    const now = new Date();
+    const hrs = now.getHours();
+    const mins = now.getMinutes();
+    
+    if (hrs < 8 || hrs >= 17) {
+        return { inicio: '08:00', fin: '09:00' };
+    }
+    
+    let roundedMins = Math.ceil(mins / 5) * 5;
+    let startHrs = hrs;
+    if (roundedMins === 60) {
+        roundedMins = 0;
+        startHrs += 1;
+    }
+    
+    if (startHrs > 16 || (startHrs === 16 && roundedMins > 30)) {
+        return { inicio: '16:30', fin: '17:30' };
+    }
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${pad(startHrs)}:${pad(roundedMins)}`;
+    
+    let endHrs = startHrs + 1;
+    let endMins = roundedMins;
+    if (endHrs > 17 || (endHrs === 17 && endMins > 30)) {
+        endHrs = 17;
+        endMins = 30;
+    }
+    const endStr = `${pad(endHrs)}:${pad(endMins)}`;
+    
+    return { inicio: startStr, fin: endStr };
+};
+
+const getDurationLabel = (inicio, fin) => {
+    if (!inicio || !fin) return null;
+    const [h1, m1] = inicio.split(':').map(Number);
+    const [h2, m2] = fin.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff <= 0) return null;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    if (h > 0) {
+        return `${h} h ${m > 0 ? `${m} min` : ''}`;
+    }
+    return `${m} min`;
+};
 
 const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
     const horas = Math.floor((valueMins || 0) / 60);
@@ -517,6 +565,26 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                                 <span className="text-[10px] text-estado-asignada font-bold">{item.fechaVencimiento}</span>
                             </>
                         )}
+                        {item.modoRangoHoras ? (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-estado-asignada font-bold flex items-center gap-0.5">
+                                    <Icon name="schedule" style={{ fontSize: '10px' }} />
+                                    {(() => {
+                                        const startHour = item.horaInicio || (item.horaInicioProgramada ? isoToLocalMXTime(item.horaInicioProgramada) : null);
+                                        const endHour = item.horaFin || (item.horaFinProgramada ? isoToLocalMXTime(item.horaFinProgramada) : null);
+                                        return `${startHour || ''} - ${endHour || ''}`;
+                                    })()}
+                                </span>
+                            </>
+                        ) : (
+                            item.tiempoEstimado > 0 && (
+                                <>
+                                    <span className="text-slate-300 text-[10px]">·</span>
+                                    <span className="text-[10px] text-slate-450 font-semibold">${item.tiempoEstimado} min</span>
+                                </>
+                            )
+                        )}
                     </div>
 
                     {!expanded && tecnicosIds.length > 0 && (
@@ -625,18 +693,31 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
     );
 };
 
-export const TicketFormModal = ({
+export const MantenimientosFormModal = ({
     isOpen, onClose, onSuccess,
     ticketAEditar, currentUser, tecnicos = [], isSubmitting,
+    scope = 'general',
     defaultDate, defaultClasificacion,
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
-    const modoCarrito = !esEdicion && esAdmin;
+
+    const [modoLista, setModoLista] = useState(() => {
+        if (esEdicion) return false;
+        const saved = localStorage.getItem('mantenimientos_modoLista');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    useEffect(() => {
+        if (esEdicion) return;
+        localStorage.setItem('mantenimientos_modoLista', JSON.stringify(modoLista));
+    }, [modoLista, esEdicion]);
+
+    const modoCarrito = !esEdicion && esAdmin && modoLista;
 
     const isSameDepartment = currentUser?.departamentoId === ticketAEditar?.departamentoId;
     const isJefeOwner = currentUser?.rol === 'JEFE_MTTO' && isSameDepartment;
-    const isCoordinador = currentUser?.rol === 'COORDINADOR';
+    const isCoordinador = currentUser?.rol === 'COORDINADOR_MTTO' || currentUser?.rol === 'COORDINADOR';
     const isTicket = esEdicion ? ticketAEditar?.tipo === 'TICKET' : false;
     const lockBaseFields = esEdicion && isTicket && !isJefeOwner && !isCoordinador;
 
@@ -646,7 +727,7 @@ export const TicketFormModal = ({
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
-    const [categoria, setCategoria] = useState('');
+    const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
     const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('');
@@ -654,17 +735,35 @@ export const TicketFormModal = ({
     const [tipo, setTipo] = useState('');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
+    const [modoRangoHoras, setModoRangoHoras] = useState(() => {
+        if (esEdicion) return false;
+        return localStorage.getItem('mantenimientos_modoRangoHoras') === 'true';
+    });
+    const [horaInicio, setHoraInicio] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('mantenimientos_horaInicio') || '';
+    });
+    const [horaFin, setHoraFin] = useState(() => {
+        if (esEdicion) return '';
+        return localStorage.getItem('mantenimientos_horaFin') || '';
+    });
 
     const [responsables, setResponsables] = useState([]);
 
     const [maquinaId, setMaquinaId] = useState('');
     const [maquinaInfo, setMaquinaInfo] = useState(null);
+    const [paroProduccion, setParoProduccion] = useState(false);
+    const [impactoProduccionMins, setImpactoProduccionMins] = useState(0);
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
     const [maquinasRaw, setMaquinasRaw] = useState([]);
 
     const [backendError, setBackendError] = useState('');
+    const [conflictError, setConflictError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    useEffect(() => {
+        setConflictError('');
+    }, [horaInicio, horaFin, fechaVencimiento, responsables]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const esRutina = ticketAEditar ? (ticketAEditar.clasificacion === 'RUTINA' || ticketAEditar.categoria === 'RUTINA') : (categoria === 'RUTINA');
@@ -690,8 +789,59 @@ export const TicketFormModal = ({
         [tecnicos]
     );
 
+    // --- EFECTO PARA ESCRIBIR EL BORRADOR EN LOCALSTORAGE ---
+    useEffect(() => {
+        if (esEdicion) return;
+        localStorage.setItem('mantenimientos_modoRangoHoras', String(modoRangoHoras));
+        localStorage.setItem('mantenimientos_horaInicio', horaInicio);
+        localStorage.setItem('mantenimientos_horaFin', horaFin);
+    }, [modoRangoHoras, horaInicio, horaFin, esEdicion]);
+
+    useEffect(() => {
+        if (isOpen && modoRangoHoras && !esEdicion && (!horaInicio || !horaFin)) {
+            const defaults = getSmartDefaultTimeRange();
+            if (!horaInicio) setHoraInicio(defaults.inicio);
+            if (!horaFin) setHoraFin(defaults.fin);
+        }
+    }, [modoRangoHoras, esEdicion, isOpen, horaInicio, horaFin]);
+
+    const handleHoraInicioChange = (val) => {
+        setHoraInicio(val);
+        if (val) {
+            if (!horaFin || horaFin <= val) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h + 1;
+                let newM = m;
+                if (newH > 17 || (newH === 17 && newM > 30)) {
+                    newH = 17;
+                    newM = 30;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraFin(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
+
+    const handleHoraFinChange = (val) => {
+        setHoraFin(val);
+        if (val) {
+            if (horaInicio && val <= horaInicio) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h - 1;
+                let newM = m;
+                if (newH < 8) {
+                    newH = 8;
+                    newM = 0;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraInicio(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
+
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
+    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
 
     useEffect(() => {
         if (!isOpen) return;
@@ -716,20 +866,34 @@ export const TicketFormModal = ({
             const targetMaquinaId = ticketAEditar.maquinaId ?? ticketAEditar.maquina?.id;
             setMaquinaId(targetMaquinaId ? String(targetMaquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
+            setParoProduccion(Boolean(ticketAEditar.paroProduccion));
+            setImpactoProduccionMins(ticketAEditar.impactoProduccion ?? 0);
         } else {
-            setTitulo(''); setDescripcion(''); setCategoria('');
+            setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
             setPlanta(''); setArea('');
             setPrioridad('MEDIA');
-            setClasificacion(defaultClasificacion || 'CORRECTIVO'); // Configurar clasificacion por defecto
+            setClasificacion(defaultClasificacion || (scope === 'mantenimientos' ? 'PREVENTIVO' : ''));
             setTipo('PLANEADA');
             setFechaVencimiento(defaultDate || hoyLocal);
             setTiempoEstimadoMins(0); setResponsables([]);
             setTecnicoCartId('');
             setMaquinaId('');
             setMaquinaInfo(null);
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
         }
-    }, [isOpen, esEdicion, ticketAEditar, defaultDate, defaultClasificacion]);
+    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+
+    useEffect(() => {
+        if (!puedeReportarParoProduccion) {
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+        }
+    }, [puedeReportarParoProduccion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {
@@ -791,6 +955,9 @@ export const TicketFormModal = ({
 
     const getErrors = () => {
         const e = {};
+        if (conflictError) {
+            e.horaInicio = conflictError;
+        }
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
@@ -799,6 +966,15 @@ export const TicketFormModal = ({
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (maquinaId && !maquinaInfo && !validatingMaquina) {
             e.maquinaId = 'La máquina ingresada no existe.';
+        }
+
+        if (scope === 'mantenimientos') {
+            if (!maquinaId) {
+                e.maquinaId = 'La máquina es obligatoria para mantenimientos.';
+            }
+            if (!clasificacion) {
+                e.clasificacion = 'La clasificación es obligatoria para mantenimientos.';
+            }
         }
 
         if (esAdmin) {
@@ -813,13 +989,30 @@ export const TicketFormModal = ({
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
 
-            // Validación: Tiempo estimado obligatorio para tickets generales, opcional en MAQUINARIA
-            if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
-                e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+            // Validación: Rango horario o tiempo estimado
+            if (modoRangoHoras) {
+                if (!horaInicio) {
+                    e.horaInicio = 'Selecciona la hora de inicio.';
+                } else if (horaInicio < '08:00' || horaInicio > '17:30') {
+                    e.horaInicio = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (!horaFin) {
+                    e.horaFin = 'Selecciona la hora de fin.';
+                } else if (horaFin < '08:00' || horaFin > '17:30') {
+                    e.horaFin = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (horaInicio && horaFin && horaFin <= horaInicio) {
+                    e.horaFin = 'La hora de fin debe ser posterior a la de inicio.';
+                }
+            } else {
+                // Validación: Tiempo estimado obligatorio para tickets generales, opcional en MAQUINARIA
+                if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
+                    e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+                }
             }
 
             // Validación: Responsables obligatorios
-            if (esEdicion) {
+            if (esEdicion || !modoCarrito) {
                 if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
             } else {
                 // En modo creación/carrito, verificamos el técnico principal seleccionado
@@ -833,11 +1026,16 @@ export const TicketFormModal = ({
         setTitulo(''); setDescripcion(''); setCategoria('');
         setMostrarDescripcion(false);
         setPlanta(''); setArea(''); setPrioridad('');
-        setClasificacion(''); setTipo(''); setFechaVencimiento('');
+        setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo(''); setFechaVencimiento('');
         setTiempoEstimadoMins(0); setSubmitted(false);
         setIsDropdownOpen(false);
         setMaquinaId('');
         setMaquinaInfo(null);
+        setParoProduccion(false);
+        setImpactoProduccionMins(0);
+        setModoRangoHoras(false);
+        setHoraInicio('');
+        setHoraFin('');
     };
 
     const handleAgregarAlCarrito = () => {
@@ -849,9 +1047,16 @@ export const TicketFormModal = ({
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
             prioridad, clasificacion, tipo, fechaVencimiento,
-            tiempoEstimado: tiempoEstimadoMins, esRutina,
+            tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
             responsables: tecnicoCartId ? [tecnicoCartId] : [],
             maquinaId: maquinaId ? Number(maquinaId) : null,
+            paroProduccion,
+            impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
+            modoRangoHoras,
+            horaInicio: modoRangoHoras ? horaInicio : null,
+            horaFin: modoRangoHoras ? horaFin : null,
+            horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
         }]);
         
         // Solo reseteamos lo que cambia por tarea. El contexto (planta, área, etc) se mantiene.
@@ -863,6 +1068,11 @@ export const TicketFormModal = ({
         setIsDropdownOpen(false);
         setMaquinaId('');
         setMaquinaInfo(null);
+        setParoProduccion(false);
+        setImpactoProduccionMins(0);
+        setModoRangoHoras(false);
+        setHoraInicio('');
+        setHoraFin('');
     };
 
     const handleQuitarDelCarrito = (_id) => {
@@ -903,11 +1113,18 @@ export const TicketFormModal = ({
         fd.append('area', item.area);
         fd.append('prioridad', item.prioridad);
         if (item.maquinaId) fd.append('maquinaId', String(item.maquinaId));
+        fd.append('paroProduccion', item.paroProduccion ? 'true' : 'false');
+        if (item.paroProduccion && item.impactoProduccion) fd.append('impactoProduccion', String(item.impactoProduccion));
         if (esAdmin) {
             fd.append('tipo', item.tipo);
             if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
-            if (!item.esRutina && item.tiempoEstimado > 0)
-                fd.append('tiempoEstimado', String(item.tiempoEstimado));
+            if (item.modoRangoHoras) {
+                if (item.horaInicioProgramada) fd.append('horaInicioProgramada', item.horaInicioProgramada);
+                if (item.horaFinProgramada) fd.append('horaFinProgramada', item.horaFinProgramada);
+            } else {
+                if (!item.esRutina && item.tiempoEstimado > 0)
+                    fd.append('tiempoEstimado', String(item.tiempoEstimado));
+            }
             item.responsables.forEach(id => fd.append('responsables', id));
         }
         return fd;
@@ -938,11 +1155,20 @@ export const TicketFormModal = ({
             fd.append('area', area);
             fd.append('prioridad', prioridad);
             if (maquinaId) fd.append('maquinaId', maquinaId);
+            fd.append('paroProduccion', paroProduccion ? 'true' : 'false');
+            if (paroProduccion && impactoProduccionMins > 0) fd.append('impactoProduccion', String(impactoProduccionMins));
             if (esAdmin) {
                 fd.append('tipo', tipo);
                 if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-                if (!esRutina && tiempoEstimadoMins > 0)
-                    fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                if (modoRangoHoras) {
+                    const isoInicio = localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio);
+                    const isoFin = localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin);
+                    if (isoInicio) fd.append('horaInicioProgramada', isoInicio);
+                    if (isoFin) fd.append('horaFinProgramada', isoFin);
+                } else {
+                    if (!esRutina && tiempoEstimadoMins > 0)
+                        fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                }
                 responsables.forEach(id => fd.append('responsables', id));
             }
             try {
@@ -952,34 +1178,136 @@ export const TicketFormModal = ({
                 const data = err?.response?.data;
                 let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
                 if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-                setBackendError(msg);
+                if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                    setSubmitted(true);
+                    setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+                } else {
+                    setBackendError(msg);
+                }
             }
             return;
         }
 
-        if (carrito.length === 0) {
-            setBackendError('Agrega al menos una tarea antes de guardar.');
+        if (!modoCarrito) {
+            setSubmitted(true);
+            const errors = getErrors();
+            if (Object.keys(errors).length > 0) return;
+
+            const fd = new FormData();
+            fd.append('titulo', titulo);
+            fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
+            if (categoria) fd.append('categoria', categoria);
+            fd.append('planta', planta);
+            fd.append('area', area);
+            fd.append('prioridad', prioridad);
+            fd.append('clasificacion', clasificacion);
+            if (maquinaId) fd.append('maquinaId', maquinaId);
+            fd.append('paroProduccion', paroProduccion ? 'true' : 'false');
+            if (paroProduccion && impactoProduccionMins > 0) {
+                fd.append('impactoProduccion', String(impactoProduccionMins));
+            }
+            
+            if (esAdmin) {
+                fd.append('tipo', tipo);
+                if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
+                
+                if (modoRangoHoras) {
+                    const isoInicio = localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio);
+                    const isoFin = localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin);
+                    if (isoInicio) fd.append('horaInicioProgramada', isoInicio);
+                    if (isoFin) fd.append('horaFinProgramada', isoFin);
+                } else {
+                    if (tiempoEstimadoMins > 0) fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                }
+                responsables.forEach(id => fd.append('responsables', id));
+            }
+
+            try {
+                await onSuccess(fd);
+                setTecnicoCartId('');
+            } catch (err) {
+                const data = err?.response?.data;
+                let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
+                if (Array.isArray(data?.errors)) msg = data.errors[0].message;
+                if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                    setSubmitted(true);
+                    setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+                } else {
+                    setBackendError(msg);
+                }
+            }
             return;
         }
 
-        const tieneTextoPendiente = (titulo && titulo.trim().length > 0) || (descripcion && descripcion.trim().length > 0);
-        if (tieneTextoPendiente) {
-            setBackendError("Tienes una tarea a medio escribir en el formulario. Agrégala a la lista o limpia los campos antes de guardar.");
+        // Modo Carrito (Guardar en lote)
+        let finalCarrito = [...carrito];
+        if (titulo.trim()) {
+            setSubmitted(true);
+            const errors = getErrors();
+            if (Object.keys(errors).length > 0) {
+                setBackendError("La tarea actual tiene errores. Corrígelos o limpia los campos.");
+                return;
+            }
+
+            finalCarrito.push({
+                _id: `${Date.now()}-${Math.random()}`,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+                prioridad, clasificacion, tipo, fechaVencimiento,
+                tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
+                responsables: tecnicoCartId ? [tecnicoCartId] : [],
+                maquinaId: maquinaId ? Number(maquinaId) : null,
+                paroProduccion,
+                impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
+                modoRangoHoras,
+                horaInicio: modoRangoHoras ? horaInicio : null,
+                horaFin: modoRangoHoras ? horaFin : null,
+                horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
+            });
+        }
+
+        if (finalCarrito.length === 0) {
+            setBackendError('Agrega al menos una tarea a la lista antes de guardar.');
             return;
         }
 
         try {
-            const batchPayloads = carrito.map(item => ({
-                ...item,
-                fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null
-            }));
+            const batchPayloads = finalCarrito.map(item => {
+                const payload = {
+                    titulo: item.titulo,
+                    descripcion: item.descripcion,
+                    clasificacion: item.clasificacion,
+                    categoria: item.categoria,
+                    planta: item.planta,
+                    area: item.area,
+                    prioridad: item.prioridad,
+                    maquinaId: item.maquinaId,
+                    paroProduccion: item.paroProduccion,
+                    impactoProduccion: item.impactoProduccion,
+                    tipo: item.tipo,
+                    fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
+                    responsables: item.responsables.map(Number)
+                };
+                if (item.modoRangoHoras) {
+                    payload.horaInicioProgramada = item.horaInicioProgramada;
+                    payload.horaFinProgramada = item.horaFinProgramada;
+                } else {
+                    payload.tiempoEstimado = item.tiempoEstimado;
+                }
+                return payload;
+            });
             await onSuccess(batchPayloads);
             setTecnicoCartId('');
         } catch (err) {
             const data = err?.response?.data;
             let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
             if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-            setBackendError(msg);
+            if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                setSubmitted(true);
+                setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+            } else {
+                setBackendError(msg);
+            }
         }
     };
 
@@ -1026,6 +1354,36 @@ export const TicketFormModal = ({
                                         Limpiar campos
                                     </button>
                                 )}
+                            </div>
+                        )}
+
+                        {/* ── SWITCH DE MODO LISTA (Crear en lote o guardar individual) ── */}
+                        {esAdmin && !esEdicion && (
+                            <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 shrink-0 select-none">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-700">
+                                        {scope === 'mantenimientos' ? 'Crear varios mantenimientos (Lista)' : 'Crear varias tareas (Lista)'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                        {scope === 'mantenimientos' ? 'Permite registrar múltiples mantenimientos en lote' : 'Permite registrar múltiples tareas en lote'}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setModoLista(!modoLista)}
+                                    disabled={isSubmitting || carrito.length > 0}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-slate-350 transition-colors duration-200 ease-in-out focus:outline-none",
+                                        modoLista ? "bg-marca-primario border-marca-primario" : "bg-slate-200"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out",
+                                            modoLista ? "translate-x-4" : "translate-x-0"
+                                        )}
+                                    />
+                                </button>
                             </div>
                         )}
 
@@ -1132,10 +1490,12 @@ export const TicketFormModal = ({
 
                         {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
                         <div className={cn(
-                            "grid gap-3",
-                            esAdmin 
-                                ? (categoria === 'MAQUINARIA' ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-3")
-                                : (categoria === 'MAQUINARIA' ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2")
+                            "grid gap-3 grid-cols-1",
+                            ((esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 4
+                                ? "md:grid-cols-4"
+                                : ((esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 3
+                                    ? "md:grid-cols-3"
+                                    : "md:grid-cols-2"
                         )}>
 
                             {esAdmin && (
@@ -1145,40 +1505,42 @@ export const TicketFormModal = ({
                                         error={!!fe.tipo} helperText={fe.tipo}
                                         disabled={isSubmitting || lockBaseFields}>
                                         <option value="" disabled hidden>Selecciona…</option>
-                                        {isTicket && <option value="TICKET">Ticket</option>}
+                                        {isTicket && <option value="TICKET">Reporte</option>}
                                         {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
                                 </div>
                             )}
                             
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría de la tarea *</Label>
-                                <Select id="tf-cat" value={categoria} onChange={(e) => {
-                                    const val = e.target.value;
-                                    setCategoria(val);
-                                    if (val === 'RUTINA') {
-                                        setClasificacion('RUTINA');
-                                    } else if (val !== 'MAQUINARIA') {
-                                        setClasificacion('PREVENTIVO');
-                                    }
+                            {scope !== 'mantenimientos' && (
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría de la tarea *</Label>
+                                    <Select id="tf-cat" value={categoria} onChange={(e) => {
+                                        const val = e.target.value;
+                                        setCategoria(val);
+                                        if (val === 'RUTINA') {
+                                            setClasificacion('RUTINA');
+                                        } else if (val !== 'MAQUINARIA') {
+                                            setClasificacion('PREVENTIVO');
+                                        }
 
-                                    // Si no es MAQUINARIA, limpiar toda la maquinaria y ubicaciones para evitar huerfanos (PWA-Proof)
-                                    if (val !== 'MAQUINARIA') {
-                                        setMaquinaId('');
-                                        setMaquinaInfo(null);
-                                        setPlanta('');
-                                        setArea('');
-                                    }
-                                }}
-                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
-                                    <option value="" disabled hidden>Selecciona…</option>
-                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                                </Select>
-                            </div>
+                                        // Si no es MAQUINARIA, limpiar toda la maquinaria y ubicaciones para evitar huerfanos (PWA-Proof)
+                                        if (val !== 'MAQUINARIA') {
+                                            setMaquinaId('');
+                                            setMaquinaInfo(null);
+                                            setPlanta('');
+                                            setArea('');
+                                        }
+                                    }}
+                                        error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting || lockBaseFields}>
+                                        <option value="" disabled hidden>Selecciona…</option>
+                                        {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                    </Select>
+                                </div>
+                            )}
 
-                            {categoria === 'MAQUINARIA' && (
+                            {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
                                 <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>Clasificación *</Label>
+                                    <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
                                         error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
                                         <option value="" disabled hidden>Selecciona…</option>
@@ -1199,10 +1561,10 @@ export const TicketFormModal = ({
                         </div>
 
                         {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
-                        {categoria === 'MAQUINARIA' && (
+                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>Maquinaria Relacionada</Label>
+                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     {validatingMaquina && (
                                         <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
                                             <Icon name="sync" size="xs" className="animate-spin" /> Validando...
@@ -1239,6 +1601,51 @@ export const TicketFormModal = ({
                                     <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
                                         <Icon name="info" size="xs" />
                                         <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {puedeReportarParoProduccion && (
+                            <div className={cn(
+                                "rounded-xl border p-3.5 flex flex-col gap-3 transition-colors animate-in fade-in slide-in-from-top-1 duration-200",
+                                paroProduccion ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"
+                            )}>
+                                <button
+                                    type="button"
+                                    onClick={() => setParoProduccion(prev => !prev)}
+                                    disabled={isSubmitting}
+                                    className="flex items-start gap-3 text-left disabled:opacity-60 cursor-pointer"
+                                >
+                                    <span className={cn(
+                                        "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                        paroProduccion ? "bg-red-600 border-red-600 text-white" : "bg-white border-slate-300 text-transparent"
+                                    )}>
+                                        <Icon name="check" size="xs" />
+                                    </span>
+                                    <span className="flex flex-col gap-0.5">
+                                        <span className={cn("text-sm font-black", paroProduccion ? "text-red-700" : "text-slate-700")}>
+                                            La falla detuvo producción
+                                        </span>
+                                        <span className="text-xs text-slate-500 leading-relaxed">
+                                            Al guardar, la máquina quedará como PARO PRODUCCIÓN hasta que el técnico la atienda y confirme operación.
+                                        </span>
+                                    </span>
+                                </button>
+
+                                {paroProduccion && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label>Tiempo estimado de impacto</Label>
+                                            <DurationPicker
+                                                valueMins={impactoProduccionMins}
+                                                onChange={setImpactoProduccionMins}
+                                                disabled={isSubmitting}
+                                            />
+                                            <p className="text-[10px] text-slate-400 font-semibold">
+                                                Opcional. Sirve para reportes; no afecta el tiempo técnico.
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -1313,9 +1720,90 @@ export const TicketFormModal = ({
                                         disabled={isSubmitting} style={{ minWidth: 0 }} />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
-                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
-                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
+                                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-h-[24px] h-auto">
+                                        <Label error={!!fe.tiempoEstimado || !!fe.horaInicio || !!fe.horaFin}>
+                                            {modoRangoHoras ? 'Rango Horario *' : 'Tiempo estimado *'}
+                                        </Label>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider shrink-0 select-none font-sans">
+                                                <Icon name="schedule" style={{ fontSize: '8px' }} className="shrink-0" /> Rango Horario
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setModoRangoHoras(!modoRangoHoras)}
+                                                disabled={isSubmitting}
+                                                className={cn(
+                                                    "relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border border-slate-355 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-1 focus:ring-marca-secundario/30",
+                                                    modoRangoHoras ? "bg-marca-primario border-marca-primario" : "bg-slate-200"
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-250 ease-in-out",
+                                                        modoRangoHoras ? "translate-x-3.5" : "translate-x-0.5"
+                                                    )}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {modoRangoHoras ? (
+                                        <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inicio</span>
+                                                    <input
+                                                        type="time"
+                                                        value={horaInicio}
+                                                        onChange={(e) => handleHoraInicioChange(e.target.value)}
+                                                        disabled={isSubmitting}
+                                                        min="08:00"
+                                                        max="17:30"
+                                                        step="300"
+                                                        className={cn(
+                                                            "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                            fe.horaInicio ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fin</span>
+                                                    <input
+                                                        type="time"
+                                                        value={horaFin}
+                                                        onChange={(e) => handleHoraFinChange(e.target.value)}
+                                                        disabled={isSubmitting}
+                                                        min="08:00"
+                                                        max="17:30"
+                                                        step="300"
+                                                        className={cn(
+                                                            "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                            fe.horaFin ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {(() => {
+                                                const label = getDurationLabel(horaInicio, horaFin);
+                                                if (!label) return null;
+                                                return (
+                                                    <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 font-bold">
+                                                        <Icon name="timer" size="xs" /> Duración: {label}
+                                                    </p>
+                                                );
+                                            })()}
+                                        </div>
+                                    ) : (
+                                        <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} error={!!fe.tiempoEstimado} />
+                                    )}
+
+                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.tiempoEstimado}</p>}
+                                    {(fe.horaInicio || fe.horaFin) && (
+                                        <p className="text-[10px] text-rose-600 font-bold mt-0.5">
+                                            {fe.horaInicio || fe.horaFin}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1471,5 +1959,4 @@ export const TicketFormModal = ({
     );
 };
 
-
-export { TicketFormModal as MantenimientosFormModal };
+export { MantenimientosFormModal as TicketFormModal };

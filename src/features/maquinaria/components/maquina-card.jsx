@@ -18,6 +18,7 @@ export const MaquinaCard = ({
   const getEstadoStyle = (est) => {
     const map = {
       OPERATIVA: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      PARO_PRODUCCION: 'bg-red-50 text-red-700 border-red-200',
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
       BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
@@ -26,7 +27,11 @@ export const MaquinaCard = ({
     return map[est] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
-  const label = maquina.estado === 'EN_REPARACION' ? 'REPARACIÓN' : (maquina.estado === 'BAJA_ERP' ? 'BAJA ERP' : maquina.estado);
+  const label = maquina.estado === 'EN_REPARACION'
+    ? 'REPARACIÓN'
+    : maquina.estado === 'PARO_PRODUCCION'
+      ? 'PARO PRODUCCIÓN'
+      : (maquina.estado === 'BAJA_ERP' ? 'BAJA ERP' : maquina.estado);
 
   return (
     <div

@@ -329,6 +329,7 @@ export const TicketPausaModal = ({
     const [fechaFinManual, setFechaFinManual] = useState('');
     const [usaRefacciones, setUsaRefacciones] = useState(false);
     const [refacciones, setRefacciones] = useState([]);
+    const [maquinaOperativaAlResolver, setMaquinaOperativaAlResolver] = useState(false);
 
     useEffect(() => {
         return () => {
@@ -349,6 +350,7 @@ export const TicketPausaModal = ({
             setFechaFinManual('');
             setUsaRefacciones(false);
             setRefacciones([]);
+            setMaquinaOperativaAlResolver(false);
         }
     }, [isOpen]);
 
@@ -455,6 +457,9 @@ export const TicketPausaModal = ({
             if (usaRefacciones) {
                 fd.append('refacciones', JSON.stringify(sanitizeRefacciones(refacciones)));
             }
+            if (ticket?.paroProduccion && ticket?.maquinaId) {
+                fd.append('maquinaOperativaAlResolver', maquinaOperativaAlResolver ? 'true' : 'false');
+            }
             archivos.forEach((item) => fd.append('imagenes', item.file, item.file.name));
         }
 
@@ -469,11 +474,13 @@ export const TicketPausaModal = ({
     const isAtrasada = evaluacion?.tipo === 'alto';
     const tiempoExcesivo = elapsedMins > MAX_DURATION_MINS;
     const esMaquinaria = ticket?.maquinaId !== null && ticket?.maquinaId !== undefined;
+    const requiereConfirmacionOperativa = Boolean(ticket?.paroProduccion && ticket?.maquinaId);
     const disableConfirm = !accion || (accion === 'resolver' && (
         timePhase === 'preguntando' ||
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && tiempoManualMins === 0) ||
         (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
         (timePhase === 'confirmado' && elapsedMins === 0) ||
+        (requiereConfirmacionOperativa && !maquinaOperativaAlResolver) ||
         (esMaquinaria && !hasValidRefacciones(usaRefacciones, refacciones))
     ));
 
@@ -677,6 +684,33 @@ export const TicketPausaModal = ({
                                     <textarea rows={3} value={notaResolver} onChange={(e) => setNotaResolver(e.target.value)} placeholder="Acciones realizadas..."
                                         className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:ring-2 focus:ring-marca-secundario/30 outline-none" />
                                     <EvidenceSection archivos={archivos} onAgregar={handleAgregar} onEliminar={handleEliminar} />
+
+                                    {requiereConfirmacionOperativa && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setMaquinaOperativaAlResolver(prev => !prev)}
+                                            disabled={isSubmitting}
+                                            className={cn(
+                                                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors disabled:opacity-60",
+                                                maquinaOperativaAlResolver
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                                    : "bg-red-50 border-red-200 text-red-800"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0",
+                                                maquinaOperativaAlResolver ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-red-300 text-transparent"
+                                            )}>
+                                                <Icon name="check" size="xs" />
+                                            </span>
+                                            <span className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-black">Confirmo que la máquina ya opera</span>
+                                                <span className="text-xs leading-relaxed">
+                                                    Esta confirmación permite regresar la máquina de PARO PRODUCCIÓN a OPERATIVA al resolver.
+                                                </span>
+                                            </span>
+                                        </button>
+                                    )}
 
                                     {esMaquinaria && (
                                         <RefaccionesSection

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
-import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS,
@@ -110,6 +110,54 @@ const TecnicoChip = ({ tecnico, onRemove }) => (
     </span>
 );
 
+const getSmartDefaultTimeRange = () => {
+    const now = new Date();
+    const hrs = now.getHours();
+    const mins = now.getMinutes();
+    
+    if (hrs < 8 || hrs >= 17) {
+        return { inicio: '08:00', fin: '09:00' };
+    }
+    
+    let roundedMins = Math.ceil(mins / 5) * 5;
+    let startHrs = hrs;
+    if (roundedMins === 60) {
+        roundedMins = 0;
+        startHrs += 1;
+    }
+    
+    if (startHrs > 16 || (startHrs === 16 && roundedMins > 30)) {
+        return { inicio: '16:30', fin: '17:30' };
+    }
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${pad(startHrs)}:${pad(roundedMins)}`;
+    
+    let endHrs = startHrs + 1;
+    let endMins = roundedMins;
+    if (endHrs > 17 || (endHrs === 17 && endMins > 30)) {
+        endHrs = 17;
+        endMins = 30;
+    }
+    const endStr = `${pad(endHrs)}:${pad(endMins)}`;
+    
+    return { inicio: startStr, fin: endStr };
+};
+
+const getDurationLabel = (inicio, fin) => {
+    if (!inicio || !fin) return null;
+    const [h1, m1] = inicio.split(':').map(Number);
+    const [h2, m2] = fin.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff <= 0) return null;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    if (h > 0) {
+        return `${h} h ${m > 0 ? `${m} min` : ''}`;
+    }
+    return `${m} min`;
+};
+
 export const MobileTicketFormModal = ({
     isOpen,
     onClose,
@@ -120,6 +168,7 @@ export const MobileTicketFormModal = ({
     isSubmitting,
     defaultDate,
     defaultClasificacion,
+    scope = 'general',
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -127,7 +176,7 @@ export const MobileTicketFormModal = ({
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
-    const [categoria, setCategoria] = useState('');
+    const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
     const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('MEDIA');
@@ -135,14 +184,65 @@ export const MobileTicketFormModal = ({
     const [tipo, setTipo] = useState('PLANEADA');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
+    const [modoRangoHoras, setModoRangoHoras] = useState(false);
+    const [horaInicio, setHoraInicio] = useState('');
+    const [horaFin, setHoraFin] = useState('');
     const [responsables, setResponsables] = useState([]);
     const [maquinaId, setMaquinaId] = useState('');
     const [maquinaInfo, setMaquinaInfo] = useState(null);
+    const [paroProduccion, setParoProduccion] = useState(false);
+    const [impactoProduccionMins, setImpactoProduccionMins] = useState(0);
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
     const [maquinasRaw, setMaquinasRaw] = useState([]);
     const [backendError, setBackendError] = useState('');
+    const [conflictError, setConflictError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    useEffect(() => {
+        setConflictError('');
+    }, [horaInicio, horaFin, fechaVencimiento, responsables]);
+
+    useEffect(() => {
+        if (isOpen && modoRangoHoras && !esEdicion && (!horaInicio || !horaFin)) {
+            const defaults = getSmartDefaultTimeRange();
+            if (!horaInicio) setHoraInicio(defaults.inicio);
+            if (!horaFin) setHoraFin(defaults.fin);
+        }
+    }, [modoRangoHoras, esEdicion, isOpen, horaInicio, horaFin]);
+
+    const handleHoraInicioChange = (val) => {
+        setHoraInicio(val);
+        if (val) {
+            if (!horaFin || horaFin <= val) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h + 1;
+                let newM = m;
+                if (newH > 17 || (newH === 17 && newM > 30)) {
+                    newH = 17;
+                    newM = 30;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraFin(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
+
+    const handleHoraFinChange = (val) => {
+        setHoraFin(val);
+        if (val) {
+            if (horaInicio && val <= horaInicio) {
+                const [h, m] = val.split(':').map(Number);
+                let newH = h - 1;
+                let newM = m;
+                if (newH < 8) {
+                    newH = 8;
+                    newM = 0;
+                }
+                const pad = (n) => String(n).padStart(2, '0');
+                setHoraInicio(`${pad(newH)}:${pad(newM)}`);
+            }
+        }
+    };
 
     const tecnicoMap = useMemo(() =>
         Object.fromEntries(tecnicos.map((t) => [String(t.id), t])),
@@ -179,16 +279,32 @@ export const MobileTicketFormModal = ({
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
             setMaquinaId(ticketAEditar.maquinaId ? String(ticketAEditar.maquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
+            setParoProduccion(Boolean(ticketAEditar.paroProduccion));
+            setImpactoProduccionMins(ticketAEditar.impactoProduccion ?? 0);
         } else {
-            setTitulo(''); setDescripcion(''); setCategoria('');
+            setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || 'PREVENTIVO'); setTipo('PLANEADA');
             setFechaVencimiento(defaultDate || ''); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
             setMaquinaInfo(null);
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
         }
-    }, [isOpen, esEdicion, ticketAEditar, defaultDate, defaultClasificacion]);
+    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+
+    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
+
+    useEffect(() => {
+        if (!puedeReportarParoProduccion) {
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+        }
+    }, [puedeReportarParoProduccion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {
@@ -250,10 +366,35 @@ export const MobileTicketFormModal = ({
 
     const getErrors = () => {
         const e = {};
+        if (conflictError) {
+            e.horaInicio = conflictError;
+        }
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (!planta.trim()) e.planta = 'Selecciona la planta.';
+
+        if (esAdmin) {
+            if (modoRangoHoras) {
+                if (!horaInicio) {
+                    e.horaInicio = 'Selecciona la hora de inicio.';
+                } else if (horaInicio < '08:00' || horaInicio > '17:30') {
+                    e.horaInicio = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (!horaFin) {
+                    e.horaFin = 'Selecciona la hora de fin.';
+                } else if (horaFin < '08:00' || horaFin > '17:30') {
+                    e.horaFin = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                }
+                if (horaInicio && horaFin && horaFin <= horaInicio) {
+                    e.horaFin = 'La hora de fin debe ser posterior a la de inicio.';
+                }
+            } else {
+                if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
+                    e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
+                }
+            }
+        }
         if (!area.trim()) e.area = 'El área es obligatoria.';
         if (maquinaId && !maquinaInfo && !validatingMaquina) {
             e.maquinaId = 'La máquina ingresada no existe.';
@@ -299,6 +440,10 @@ export const MobileTicketFormModal = ({
         if (area) formData.append('area', area);
         formData.append('prioridad', prioridad);
         if (maquinaId) formData.append('maquinaId', maquinaId);
+        formData.append('paroProduccion', paroProduccion ? 'true' : 'false');
+        if (paroProduccion && impactoProduccionMins > 0) {
+            formData.append('impactoProduccion', String(impactoProduccionMins));
+        }
 
         if (esAdmin) {
             formData.append('tipo', tipo);
@@ -313,7 +458,12 @@ export const MobileTicketFormModal = ({
             const data = err?.response?.data;
             let msg = data?.error || data?.message || 'Error al procesar la solicitud.';
             if (Array.isArray(data?.errors)) msg = data.errors[0].message;
-            setBackendError(msg);
+            if (msg.includes('Conflicto') || msg.includes('ya tiene programada')) {
+                setSubmitted(true);
+                setConflictError('Este técnico ya tiene una tarea programada en esa hora y fecha.');
+            } else {
+                setBackendError(msg);
+            }
         }
     };
 
@@ -367,28 +517,30 @@ export const MobileTicketFormModal = ({
                                 {PRIORIDADES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </Select>
                         </div>
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
-                            <Select id="tf-cat" value={categoria} onChange={(e) => {
-                                const val = e.target.value;
-                                setCategoria(val);
-                                if (val === 'RUTINA') {
-                                    setClasificacion('RUTINA');
-                                } else if (val !== 'MAQUINARIA') {
-                                    setClasificacion('PREVENTIVO');
-                                }
-                                if (val !== 'MAQUINARIA') {
-                                    setMaquinaId('');
-                                    setMaquinaInfo(null);
-                                    setPlanta('');
-                                    setArea('');
-                                }
-                            }}
-                                error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting}>
-                                <option value="" disabled hidden>Selecciona…</option>
-                                {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                            </Select>
-                        </div>
+                        {scope !== 'mantenimientos' && (
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
+                                <Select id="tf-cat" value={categoria} onChange={(e) => {
+                                    const val = e.target.value;
+                                    setCategoria(val);
+                                    if (val === 'RUTINA') {
+                                        setClasificacion('RUTINA');
+                                    } else if (val !== 'MAQUINARIA') {
+                                        setClasificacion('PREVENTIVO');
+                                    }
+                                    if (val !== 'MAQUINARIA') {
+                                        setMaquinaId('');
+                                        setMaquinaInfo(null);
+                                        setPlanta('');
+                                        setArea('');
+                                    }
+                                }}
+                                    error={!!fe.categoria} helperText={fe.categoria} disabled={isSubmitting}>
+                                    <option value="" disabled hidden>Selecciona…</option>
+                                    {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                </Select>
+                            </div>
+                        )}
                         {categoria === 'MAQUINARIA' && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
@@ -442,6 +594,48 @@ export const MobileTicketFormModal = ({
                                     <option value="PREVENTIVO">Preventivo</option>
                                     <option value="CORRECTIVO">Correctivo</option>
                                 </Select>
+                            </div>
+                        )}
+                        {puedeReportarParoProduccion && (
+                            <div className={cn(
+                                "sm:col-span-2 rounded-xl border p-3.5 flex flex-col gap-3 transition-colors animate-in fade-in slide-in-from-top-1 duration-200",
+                                paroProduccion ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"
+                            )}>
+                                <button
+                                    type="button"
+                                    onClick={() => setParoProduccion(prev => !prev)}
+                                    disabled={isSubmitting}
+                                    className="flex items-start gap-3 text-left disabled:opacity-60 cursor-pointer"
+                                >
+                                    <span className={cn(
+                                        "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                        paroProduccion ? "bg-red-600 border-red-600 text-white" : "bg-white border-slate-300 text-transparent"
+                                    )}>
+                                        <Icon name="check" size="xs" />
+                                    </span>
+                                    <span className="flex flex-col gap-0.5">
+                                        <span className={cn("text-sm font-black", paroProduccion ? "text-red-700" : "text-slate-700")}>
+                                            La falla detuvo producción
+                                        </span>
+                                        <span className="text-xs text-slate-500 leading-relaxed">
+                                            La máquina quedará como PARO PRODUCCIÓN hasta que mantenimiento confirme operación.
+                                        </span>
+                                    </span>
+                                </button>
+
+                                {paroProduccion && (
+                                    <div className="pl-8 flex flex-col gap-1.5">
+                                        <Label>Tiempo estimado de impacto</Label>
+                                        <DurationPicker
+                                            valueMins={impactoProduccionMins}
+                                            onChange={setImpactoProduccionMins}
+                                            disabled={isSubmitting}
+                                        />
+                                        <p className="text-[10px] text-slate-400 font-semibold">
+                                            Opcional. Sirve para reportes; no afecta el tiempo técnico.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {esAdmin && (
@@ -531,12 +725,90 @@ export const MobileTicketFormModal = ({
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label>Tiempo estimado</Label>
-                                <DurationPicker
-                                    valueMins={tiempoEstimadoMins}
-                                    onChange={setTiempoEstimadoMins}
-                                    disabled={isSubmitting}
-                                />
+                                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-h-[24px] h-auto">
+                                    <Label error={!!fe.tiempoEstimado || !!fe.horaInicio || !!fe.horaFin}>
+                                        {modoRangoHoras ? 'Rango Horario *' : 'Tiempo estimado *'}
+                                    </Label>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider shrink-0 select-none font-sans">
+                                            <Icon name="schedule" style={{ fontSize: '8px' }} className="shrink-0" /> Rango Horario
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setModoRangoHoras(!modoRangoHoras)}
+                                            disabled={isSubmitting}
+                                            className={cn(
+                                                "relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border border-slate-355 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-1 focus:ring-marca-secundario/30",
+                                                modoRangoHoras ? "bg-marca-primario border-marca-primario" : "bg-slate-200"
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-250 ease-in-out",
+                                                    modoRangoHoras ? "translate-x-3.5" : "translate-x-0.5"
+                                                )}
+                                            />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {modoRangoHoras ? (
+                                    <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inicio</span>
+                                                <input
+                                                    type="time"
+                                                    value={horaInicio}
+                                                    onChange={(e) => handleHoraInicioChange(e.target.value)}
+                                                    disabled={isSubmitting}
+                                                    min="08:00"
+                                                    max="17:30"
+                                                    step="300"
+                                                    className={cn(
+                                                        "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                        fe.horaInicio ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fin</span>
+                                                <input
+                                                    type="time"
+                                                    value={horaFin}
+                                                    onChange={(e) => handleHoraFinChange(e.target.value)}
+                                                    disabled={isSubmitting}
+                                                    min="08:00"
+                                                    max="17:30"
+                                                    step="300"
+                                                    className={cn(
+                                                        "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
+                                                        fe.horaFin ? "border-rose-500 focus:ring-rose-200" : "border-slate-300 focus:ring-marca-secundario/30"
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                        {(() => {
+                                            const label = getDurationLabel(horaInicio, horaFin);
+                                            if (!label) return null;
+                                            return (
+                                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 font-bold">
+                                                    <Icon name="timer" size="xs" /> Duración: {label}
+                                                </p>
+                                            );
+                                        })()}
+                                    </div>
+                                ) : (
+                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} error={!!fe.tiempoEstimado} />
+                                )}
+
+                                {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.tiempoEstimado}</p>}
+                                {(fe.horaInicio || fe.horaFin) && (
+                                    <p className="text-[10px] text-rose-600 font-bold mt-0.5">
+                                        {fe.horaInicio || fe.horaFin}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}

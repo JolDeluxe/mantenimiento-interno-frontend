@@ -238,6 +238,7 @@ export const MaquinaDetailModal = ({
   const getEstadoBadge = (est) => {
     const map = {
       OPERATIVA:    { label: 'Operativa',     cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+      PARO_PRODUCCION: { label: 'Paro Producción', cls: 'text-red-700 bg-red-50 border-red-200' },
       EN_REPARACION:{ label: 'En Reparación', cls: 'text-amber-700 bg-amber-50 border-amber-200' },
       INACTIVA:     { label: 'Inactiva',      cls: 'text-slate-700 bg-slate-50 border-slate-200' },
       BAJA:         { label: 'Baja',          cls: 'text-red-700 bg-red-50 border-red-200' }

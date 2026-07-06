@@ -230,6 +230,17 @@ export const MantenimientosTicketCard = ({
                                 </span>
                             )
                         )}
+                        {ticket.paroProduccion && (
+                            <span className={cn(
+                                "inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none shrink-0",
+                                ['RESUELTO', 'CERRADO'].includes(ticket.estado)
+                                    ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                                    : "text-red-700 bg-red-50 border-red-300 animate-pulse"
+                            )}>
+                                <Icon name={['RESUELTO', 'CERRADO'].includes(ticket.estado) ? "task_alt" : "error"} size="xs" style={{ fontSize: '10px' }} className="shrink-0" />
+                                <span>{['RESUELTO', 'CERRADO'].includes(ticket.estado) ? "PARO RESUELTO" : "PARO ACTIVO"}</span>
+                            </span>
+                        )}
                         {ticket.clasificacion && (
                             <span className={cn(
                                 "inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none border",

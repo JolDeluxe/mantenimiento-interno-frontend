@@ -139,6 +139,8 @@ export const MobileTicketFormModal = ({
     const [responsables, setResponsables] = useState([]);
     const [maquinaId, setMaquinaId] = useState('');
     const [maquinaInfo, setMaquinaInfo] = useState(null);
+    const [paroProduccion, setParoProduccion] = useState(false);
+    const [impactoProduccionMins, setImpactoProduccionMins] = useState(0);
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
     const [maquinasRaw, setMaquinasRaw] = useState([]);
@@ -180,6 +182,8 @@ export const MobileTicketFormModal = ({
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
             setMaquinaId(ticketAEditar.maquinaId ? String(ticketAEditar.maquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
+            setParoProduccion(Boolean(ticketAEditar.paroProduccion));
+            setImpactoProduccionMins(ticketAEditar.impactoProduccion ?? 0);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
             setMostrarDescripcion(false);
@@ -188,8 +192,19 @@ export const MobileTicketFormModal = ({
             setFechaVencimiento(defaultDate || ''); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
             setMaquinaInfo(null);
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
         }
     }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+
+    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
+
+    useEffect(() => {
+        if (!puedeReportarParoProduccion) {
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+        }
+    }, [puedeReportarParoProduccion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {
@@ -309,6 +324,10 @@ export const MobileTicketFormModal = ({
         if (area) formData.append('area', area);
         formData.append('prioridad', prioridad);
         if (maquinaId) formData.append('maquinaId', maquinaId);
+        formData.append('paroProduccion', paroProduccion ? 'true' : 'false');
+        if (paroProduccion && impactoProduccionMins > 0) {
+            formData.append('impactoProduccion', String(impactoProduccionMins));
+        }
 
         if (esAdmin) {
             formData.append('tipo', tipo);
@@ -452,6 +471,48 @@ export const MobileTicketFormModal = ({
                                     <option value="PREVENTIVO">Preventivo</option>
                                     <option value="CORRECTIVO">Correctivo</option>
                                 </Select>
+                            </div>
+                        )}
+                        {puedeReportarParoProduccion && (
+                            <div className={cn(
+                                "sm:col-span-2 rounded-xl border p-3.5 flex flex-col gap-3 transition-colors animate-in fade-in slide-in-from-top-1 duration-200",
+                                paroProduccion ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"
+                            )}>
+                                <button
+                                    type="button"
+                                    onClick={() => setParoProduccion(prev => !prev)}
+                                    disabled={isSubmitting}
+                                    className="flex items-start gap-3 text-left disabled:opacity-60 cursor-pointer"
+                                >
+                                    <span className={cn(
+                                        "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                        paroProduccion ? "bg-red-600 border-red-600 text-white" : "bg-white border-slate-300 text-transparent"
+                                    )}>
+                                        <Icon name="check" size="xs" />
+                                    </span>
+                                    <span className="flex flex-col gap-0.5">
+                                        <span className={cn("text-sm font-black", paroProduccion ? "text-red-700" : "text-slate-700")}>
+                                            La falla detuvo producción
+                                        </span>
+                                        <span className="text-xs text-slate-500 leading-relaxed">
+                                            La máquina quedará como PARO PRODUCCIÓN hasta que mantenimiento confirme operación.
+                                        </span>
+                                    </span>
+                                </button>
+
+                                {paroProduccion && (
+                                    <div className="pl-8 flex flex-col gap-1.5">
+                                        <Label>Tiempo estimado de impacto</Label>
+                                        <DurationPicker
+                                            valueMins={impactoProduccionMins}
+                                            onChange={setImpactoProduccionMins}
+                                            disabled={isSubmitting}
+                                        />
+                                        <p className="text-[10px] text-slate-400 font-semibold">
+                                            Opcional. Sirve para reportes; no afecta el tiempo técnico.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {esAdmin && (

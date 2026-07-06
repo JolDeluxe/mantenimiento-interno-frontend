@@ -660,6 +660,8 @@ export const TicketFormModal = ({
 
     const [maquinaId, setMaquinaId] = useState('');
     const [maquinaInfo, setMaquinaInfo] = useState(null);
+    const [paroProduccion, setParoProduccion] = useState(false);
+    const [impactoProduccionMins, setImpactoProduccionMins] = useState(0);
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
     const [maquinasRaw, setMaquinasRaw] = useState([]);
@@ -693,6 +695,7 @@ export const TicketFormModal = ({
 
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
+    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
 
     useEffect(() => {
         if (!isOpen) return;
@@ -717,6 +720,8 @@ export const TicketFormModal = ({
             const targetMaquinaId = ticketAEditar.maquinaId ?? ticketAEditar.maquina?.id;
             setMaquinaId(targetMaquinaId ? String(targetMaquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
+            setParoProduccion(Boolean(ticketAEditar.paroProduccion));
+            setImpactoProduccionMins(ticketAEditar.impactoProduccion ?? 0);
         } else {
             setTitulo(''); setDescripcion(''); setCategoria('');
             setMostrarDescripcion(false);
@@ -729,8 +734,17 @@ export const TicketFormModal = ({
             setTecnicoCartId('');
             setMaquinaId('');
             setMaquinaInfo(null);
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
         }
     }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+
+    useEffect(() => {
+        if (!puedeReportarParoProduccion) {
+            setParoProduccion(false);
+            setImpactoProduccionMins(0);
+        }
+    }, [puedeReportarParoProduccion]);
 
     // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
     useEffect(() => {
@@ -848,6 +862,8 @@ export const TicketFormModal = ({
         setIsDropdownOpen(false);
         setMaquinaId('');
         setMaquinaInfo(null);
+        setParoProduccion(false);
+        setImpactoProduccionMins(0);
     };
 
     const handleAgregarAlCarrito = () => {
@@ -862,6 +878,8 @@ export const TicketFormModal = ({
             tiempoEstimado: tiempoEstimadoMins, esRutina,
             responsables: tecnicoCartId ? [tecnicoCartId] : [],
             maquinaId: maquinaId ? Number(maquinaId) : null,
+            paroProduccion,
+            impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
         }]);
         
         // Solo reseteamos lo que cambia por tarea. El contexto (planta, área, etc) se mantiene.
@@ -873,6 +891,8 @@ export const TicketFormModal = ({
         setIsDropdownOpen(false);
         setMaquinaId('');
         setMaquinaInfo(null);
+        setParoProduccion(false);
+        setImpactoProduccionMins(0);
     };
 
     const handleQuitarDelCarrito = (_id) => {
@@ -913,6 +933,8 @@ export const TicketFormModal = ({
         fd.append('area', item.area);
         fd.append('prioridad', item.prioridad);
         if (item.maquinaId) fd.append('maquinaId', String(item.maquinaId));
+        fd.append('paroProduccion', item.paroProduccion ? 'true' : 'false');
+        if (item.paroProduccion && item.impactoProduccion) fd.append('impactoProduccion', String(item.impactoProduccion));
         if (esAdmin) {
             fd.append('tipo', item.tipo);
             if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
@@ -948,6 +970,8 @@ export const TicketFormModal = ({
             fd.append('area', area);
             fd.append('prioridad', prioridad);
             if (maquinaId) fd.append('maquinaId', maquinaId);
+            fd.append('paroProduccion', paroProduccion ? 'true' : 'false');
+            if (paroProduccion && impactoProduccionMins > 0) fd.append('impactoProduccion', String(impactoProduccionMins));
             if (esAdmin) {
                 fd.append('tipo', tipo);
                 if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
@@ -1251,6 +1275,51 @@ export const TicketFormModal = ({
                                     <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
                                         <Icon name="info" size="xs" />
                                         <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {puedeReportarParoProduccion && (
+                            <div className={cn(
+                                "rounded-xl border p-3.5 flex flex-col gap-3 transition-colors animate-in fade-in slide-in-from-top-1 duration-200",
+                                paroProduccion ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"
+                            )}>
+                                <button
+                                    type="button"
+                                    onClick={() => setParoProduccion(prev => !prev)}
+                                    disabled={isSubmitting}
+                                    className="flex items-start gap-3 text-left disabled:opacity-60 cursor-pointer"
+                                >
+                                    <span className={cn(
+                                        "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                        paroProduccion ? "bg-red-600 border-red-600 text-white" : "bg-white border-slate-300 text-transparent"
+                                    )}>
+                                        <Icon name="check" size="xs" />
+                                    </span>
+                                    <span className="flex flex-col gap-0.5">
+                                        <span className={cn("text-sm font-black", paroProduccion ? "text-red-700" : "text-slate-700")}>
+                                            La falla detuvo producción
+                                        </span>
+                                        <span className="text-xs text-slate-500 leading-relaxed">
+                                            Al guardar, la máquina quedará como PARO PRODUCCIÓN hasta que el técnico la atienda y confirme operación.
+                                        </span>
+                                    </span>
+                                </button>
+
+                                {paroProduccion && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label>Tiempo estimado de impacto</Label>
+                                            <DurationPicker
+                                                valueMins={impactoProduccionMins}
+                                                onChange={setImpactoProduccionMins}
+                                                disabled={isSubmitting}
+                                            />
+                                            <p className="text-[10px] text-slate-400 font-semibold">
+                                                Opcional. Sirve para reportes; no afecta el tiempo técnico.
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>

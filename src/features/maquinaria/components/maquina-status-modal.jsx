@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn';
 
 const ESTADOS = [
   { value: 'OPERATIVA', label: 'Operativa', icon: 'check_circle', desc: 'Máquina en perfectas condiciones de funcionamiento.', cls: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10' },
+  { value: 'PARO_PRODUCCION', label: 'Paro Producción', icon: 'report_problem', desc: 'Detenida por falla reportada con impacto en producción.', cls: 'border-red-500/30 bg-red-500/5 text-red-700 hover:bg-red-500/10' },
   { value: 'EN_REPARACION', label: 'En Reparación', icon: 'build_circle', desc: 'Sometida a mantenimiento correctivo o preventivo.', cls: 'border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10' },
   { value: 'INACTIVA', label: 'Inactiva', icon: 'pause_circle', desc: 'Fuera de uso temporal, pero en condiciones generales correctas.', cls: 'border-slate-500/30 bg-slate-500/5 text-slate-700 hover:bg-slate-500/10' },
   { value: 'BAJA', label: 'De Baja', icon: 'cancel', desc: 'Retirada permanentemente de la operación.', cls: 'border-red-500/30 bg-red-500/5 text-red-700 hover:bg-red-500/10' }
