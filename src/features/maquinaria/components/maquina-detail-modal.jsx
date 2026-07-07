@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Icon, Button, Spinner } from '@/components/ui/z_index';
 import { formatFecha } from '@/lib/date';
 import api from '@/lib/axios';
+import { useAuthStore } from '@/stores/auth-store';
+import { MaquinaRecurrenciaTab } from './maquina-recurrencia-tab';
 
 const limpiarNota = (nota) => {
   if (!nota) return '';
@@ -44,6 +46,15 @@ export const MaquinaDetailModal = ({
   const [totalTickets, setTotalTickets] = useState(0);
   const [expandedTickets, setExpandedTickets] = useState({});
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('expediente'); // 'expediente' | 'recurrencias'
+
+  const user = useAuthStore((state) => state.user);
+  const userRol = user?.rol;
+
+  const rolesPermitidos = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
+  const esAdminOrJefe = rolesPermitidos.includes(userRol);
+  const esTecnico = userRol === 'TECNICO';
+  const mostrarPlanRecurrente = esAdminOrJefe || esTecnico;
 
   const qrUrl = maquina
     ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
@@ -150,7 +161,9 @@ export const MaquinaDetailModal = ({
 
   useEffect(() => {
     if (isOpen && maquina) {
-      setLoading(true);
+      queueMicrotask(() => {
+        setLoading(true);
+      });
       Promise.all([
         getKpis(maquina.id),
         api.get('/api/tickets', { params: { maquinaId: maquina.id, limit } })
@@ -164,11 +177,14 @@ export const MaquinaDetailModal = ({
         setLoading(false);
       });
     } else {
-      setKpis(null);
-      setTickets([]);
-      setTotalTickets(0);
-      setLimit(3);
-      setExpandedTickets({});
+      queueMicrotask(() => {
+        setKpis(null);
+        setTickets([]);
+        setTotalTickets(0);
+        setLimit(3);
+        setExpandedTickets({});
+        setActiveTab('expediente');
+      });
     }
   }, [isOpen, maquina, getKpis, limit]);
 
@@ -300,6 +316,35 @@ export const MaquinaDetailModal = ({
             </div>
           ) : (
             <div className="flex flex-col gap-6">
+              {mostrarPlanRecurrente && (
+                <div className="flex border-b border-slate-200/80 -mx-6 px-6 pb-px mb-1 gap-6">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('expediente')}
+                    className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                      activeTab === 'expediente'
+                        ? 'border-marca-primario text-marca-primario font-black'
+                        : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Expediente Técnico
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('recurrencias')}
+                    className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                      activeTab === 'recurrencias'
+                        ? 'border-marca-primario text-marca-primario font-black'
+                        : 'border-transparent text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    Plan Recurrente
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'expediente' ? (
+                <>
               
               {/* Sección 1: Indicadores */}
               <div className="space-y-3">
@@ -626,6 +671,11 @@ export const MaquinaDetailModal = ({
                   )}
                 </div>
               </div>
+
+                </>
+              ) : (
+                <MaquinaRecurrenciaTab maquinaId={maquina.id} isAdminOrJefe={esAdminOrJefe} />
+              )}
 
             </div>
           )}
