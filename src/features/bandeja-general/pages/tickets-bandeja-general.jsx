@@ -87,6 +87,7 @@ export default function TicketsBandejaGeneralPage() {
             });
             notify.success('Ticket asignado y configurado correctamente');
             loadTickets();
+            window.dispatchEvent(new Event('refrescar-conteos'));
             setIsAssignModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
         } catch (error) {

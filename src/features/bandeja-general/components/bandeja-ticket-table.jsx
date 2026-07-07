@@ -90,7 +90,7 @@ export const BandejaTicketTable = ({
                             )}
                             {(row.tipo || (row.clasificacion && row.categoria === 'MAQUINARIA')) && (
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    {row.tipo && (
+                                    {row.tipo && row.tipo !== 'TICKET' && (
                                         <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none ${
                                             {
                                                 TICKET: 'bg-slate-100 text-slate-600 border-slate-200/60',

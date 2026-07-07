@@ -19,6 +19,7 @@ export const CalendarioDesktop = ({
     setEditTarget,
     setAssignTarget,
     setStatusTarget,
+    setAdminCloseTarget,
     setReviewTarget,
     setCancelTarget,
     // Filtros
@@ -90,6 +91,7 @@ export const CalendarioDesktop = ({
                         onEdit={setEditTarget}
                         onAssign={setAssignTarget}
                         onChangeStatus={setStatusTarget}
+                        onAdminClose={setAdminCloseTarget}
                         onReview={setReviewTarget}
                         onCancel={setCancelTarget}
                     />

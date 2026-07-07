@@ -6,6 +6,8 @@ export const useUIStore = create(
     (set, get) => ({
       sidebarExpanded: true,
       mobileMenuOpen: false,
+      badgeCounts: { bandeja: 0, hasOldTickets: false, aprobar: 0 },
+      mobileMenuOpen: false,
 
       toggleSidebar: () => set((state) => ({ 
         sidebarExpanded: !state.sidebarExpanded 
@@ -20,6 +22,8 @@ export const useUIStore = create(
       toggleMobileMenu: () => set((state) => ({ 
         mobileMenuOpen: !state.mobileMenuOpen 
       })),
+
+      setBadgeCounts: (counts) => set({ badgeCounts: counts }),
     }),
     {
       name: 'ui-storage',

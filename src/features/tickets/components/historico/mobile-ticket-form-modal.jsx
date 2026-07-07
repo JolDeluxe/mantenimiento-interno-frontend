@@ -347,7 +347,7 @@ export const MobileTicketFormModal = ({
     };
 
     const fe = submitted ? getErrors() : {};
-    const hoyLocal = getMinDateHoy();
+    const hoyLocal = getMinDateHoy(); 
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
@@ -357,7 +357,7 @@ export const MobileTicketFormModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
-                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nueva tarea' : 'Reportar problema'}
+                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nuevo Mantnimiento' : 'Reportar problema'}
                 onClose={onClose}
             />
             <ModalBody>

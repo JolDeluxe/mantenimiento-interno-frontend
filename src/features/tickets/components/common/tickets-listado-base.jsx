@@ -65,6 +65,13 @@ export default function TicketsListadoBase({
         changeStatus,
     } = useTickets();
 
+    const sortedTickets = useMemo(() => {
+        if (!tickets) return [];
+        const active = tickets.filter(t => t.estado !== 'CERRADO');
+        const closed = tickets.filter(t => t.estado === 'CERRADO');
+        return [...active, ...closed];
+    }, [tickets]);
+
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [year, setYear] = useState(null);
@@ -186,10 +193,10 @@ export default function TicketsListadoBase({
     }, []);
 
     const handleExport = useCallback(() => {
-        if (!tickets || tickets.length === 0) return notify.info('No hay datos para exportar.');
+        if (!sortedTickets || sortedTickets.length === 0) return notify.info('No hay datos para exportar.');
 
         const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creado', 'Vencimiento', 'Finalizado'];
-        const rows = tickets.map(t => [
+        const rows = sortedTickets.map(t => [
             t.id,
             t.titulo,
             t.estado,
@@ -215,7 +222,7 @@ export default function TicketsListadoBase({
         link.click();
         document.body.removeChild(link);
         notify.success('Exportación generada correctamente (CSV).');
-    }, [mode, tickets]);
+    }, [mode, sortedTickets]);
 
     const handleCreate = async (payloads) => {
         if (!allowCreate) return;
@@ -269,7 +276,6 @@ export default function TicketsListadoBase({
         }
     };
 
-    const sortedTickets = useMemo(() => tickets || [], [tickets]);
     const emptyState = EMPTY_STATE_BY_MODE[mode] || EMPTY_STATE_BY_MODE.historico;
     const toApproveCount = meta?.resumenEstados?.RESUELTO ?? 0;
     const CreateFormModal = mode === 'actividades' ? HoyFormModal : TicketFormModal;

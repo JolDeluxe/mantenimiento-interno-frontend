@@ -4,6 +4,7 @@ import { GlassFab, Icon, Skeleton, ScrollToTopButton } from '@/components/ui/z_i
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { ActividadesTicketCard } from '../components/hoy-actividades/actividades-ticket-card';
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
+import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
@@ -114,6 +115,7 @@ export const HoyActividadesMobile = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [adminCloseTarget, setAdminCloseTarget] = useState(null);
 
     const isFilteringActive = !!(
         query.trim() ||
@@ -211,6 +213,7 @@ export const HoyActividadesMobile = ({
                             onViewDetail={setDetailTarget}
                             onEdit={setEditTarget}
                             onAssign={setAssignTarget}
+                            onAdminClose={setAdminCloseTarget}
                             onReview={setReviewTarget}
                             onCancel={setCancelTarget}
                         />
@@ -232,6 +235,7 @@ export const HoyActividadesMobile = ({
             <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
             <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
             <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+            <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
         </div>
     );
 };

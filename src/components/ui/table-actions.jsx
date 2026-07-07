@@ -59,6 +59,12 @@ const ACTION_CONFIG = {
         variant: "error",
         className: "text-red-700 hover:bg-red-500/10",
     },
+    cerrar_administrativo: {
+        icon: "rule",
+        tooltip: "Cerrar administrativo",
+        variant: "dark",
+        className: "text-slate-700 hover:bg-slate-700/10",
+    },
 };
 
 export const TableActions = ({ row, actions = [] }) => {

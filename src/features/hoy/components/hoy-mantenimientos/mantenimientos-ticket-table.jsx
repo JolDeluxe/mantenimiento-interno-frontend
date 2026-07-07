@@ -4,6 +4,7 @@ import { Icon, Skeleton, Table } from '@/components/ui/z_index';
 import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
 import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
+import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 import { HoyFormModal } from '../common/hoy-form-modal';
 import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
 
@@ -91,6 +92,7 @@ export const MantenimientosTicketTable = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [adminCloseTarget, setAdminCloseTarget] = useState(null);
 
     const tableData = loading
         ? Array.from({ length: 6 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
@@ -422,6 +424,7 @@ export const MantenimientosTicketTable = ({
                         onEdit={(r) => setEditTarget(r)}
                         onAssign={(r) => setAssignTarget(r)}
                         onChangeStatus={(r) => setStatusTarget(r)}
+                        onAdminClose={(r) => setAdminCloseTarget(r)}
                         onReview={(r) => setReviewTarget(r)}
                         onCancel={(r) => setCancelTarget(r)}
                     />
@@ -485,6 +488,7 @@ export const MantenimientosTicketTable = ({
             <ActiveReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
             
             <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+            <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
         </div>
     );
 };

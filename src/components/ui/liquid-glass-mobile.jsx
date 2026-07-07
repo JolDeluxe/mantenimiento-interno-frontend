@@ -326,7 +326,7 @@ export const GlassBottomNav = ({ children }) => {
     );
 };
 
-export const GlassBottomNavItem = ({ icon, label, isActive, onClick }) => {
+export const GlassBottomNavItem = ({ icon, label, isActive, onClick, badge, isBlinking }) => {
     return (
         <button
             onClick={onClick}
@@ -351,6 +351,17 @@ export const GlassBottomNavItem = ({ icon, label, isActive, onClick }) => {
                     weight={isActive ? 600 : 400}
                 />
             </div>
+
+            {/* Badge */}
+            {badge > 0 && (
+                <span className={cn(
+                    "absolute top-0.5 right-[calc(50%-26px)] flex items-center justify-center rounded-full text-[8.5px] font-extrabold leading-none pb-[1px] text-white border z-20 shadow-sm",
+                    badge > 9 ? 'px-1 h-[16px] min-w-[16px]' : 'h-[16px] w-[16px]',
+                    isBlinking ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-marca-primario border-white/20'
+                )}>
+                    {badge}
+                </span>
+            )}
 
             {/* Texto descriptivo */}
             <span

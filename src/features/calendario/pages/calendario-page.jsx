@@ -11,6 +11,7 @@ import { CalendarioMobile } from '../views/calendario-mobile';
 // ── Modales Comunes y Detalle ──────────────────────────────────────────────
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
+import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 
 // ── Modales específicos de Reportes / Actividades ─────────────────────────
 import { TicketFormModal } from '@/features/tickets/components/historico/ticket-form-modal';
@@ -84,6 +85,7 @@ export default function CalendarioPage() {
     const [statusTarget, setStatusTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [adminCloseTarget, setAdminCloseTarget] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
     const [calendarCreateDate, setCalendarCreateDate] = useState(null);
 
@@ -158,7 +160,7 @@ export default function CalendarioPage() {
 
     const handleChangeStatus = async (id, payload) => {
         setSubmitting(true);
-        const isMtto = checkIsMantenimiento(statusTarget || reviewTarget || cancelTarget);
+        const isMtto = checkIsMantenimiento(statusTarget || reviewTarget || cancelTarget || adminCloseTarget);
         try {
             if (isMtto) {
                 await changeMantenimientoStatus(id, payload);
@@ -169,6 +171,7 @@ export default function CalendarioPage() {
             setStatusTarget(null);
             setReviewTarget(null);
             setCancelTarget(null);
+            setAdminCloseTarget(null);
             refresh();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado.');
@@ -202,6 +205,7 @@ export default function CalendarioPage() {
         setEditTarget,
         setAssignTarget,
         setStatusTarget,
+        setAdminCloseTarget,
         setReviewTarget,
         setCancelTarget,
         scope,
@@ -458,6 +462,14 @@ export default function CalendarioPage() {
                         )
                     )
                 )}
+
+                <AdminCloseModal
+                    isOpen={Boolean(adminCloseTarget)}
+                    onClose={() => setAdminCloseTarget(null)}
+                    ticket={adminCloseTarget}
+                    isSubmitting={submitting}
+                    onConfirm={handleChangeStatus}
+                />
             </div>
         </div>
     );

@@ -5,6 +5,10 @@ import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/compon
 import { formatFechaHora, formatDurationToDaysHours, isoToLocalMXTime, format12h } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import {
+    puedeCerrarAdministrativamente,
+    puedeOperarComoTecnico,
+} from '@/features/common/utils/ticket-permissions';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
@@ -120,6 +124,7 @@ export const MantenimientosTicketCard = ({
     onEdit,
     onAssign,
     onChangeStatus,
+    onAdminClose,
     onReview,
     onCancel,
     isHighlighted = false,
@@ -165,10 +170,8 @@ export const MantenimientosTicketCard = ({
         esAdmin &&
         !['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado);
 
-    const puedeCambiarEstado =
-        tieneResponsables &&
-        !['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado) &&
-        (esAdmin || (esTecnico && esResponsable));
+    const puedeCambiarEstado = puedeOperarComoTecnico(currentUser, ticket);
+    const puedeCerrarAdmin = puedeCerrarAdministrativamente(currentUser, ticket);
 
     const puedeRevisar =
         ticket.estado === 'RESUELTO' &&
@@ -452,6 +455,17 @@ export const MantenimientosTicketCard = ({
                         <Icon name="visibility" size="sm" />
                     </button>
                 </Tooltip>
+
+                {puedeCerrarAdmin && (
+                    <Tooltip text="Cerrar administrativo" variant="dark">
+                        <button
+                            onClick={() => onAdminClose?.(ticket)}
+                            className="flex items-center justify-center p-1.5 rounded-md text-slate-700 hover:bg-slate-700/10 transition-colors cursor-pointer"
+                        >
+                            <Icon name="rule" size="sm" />
+                        </button>
+                    </Tooltip>
+                )}
 
                 <div className="flex-1 min-w-[8px]" />
 

@@ -19,6 +19,7 @@ export const CalendarioMobile = ({
     setEditTarget,
     setAssignTarget,
     setStatusTarget,
+    setAdminCloseTarget,
     setReviewTarget,
     setCancelTarget,
     // Filtros
@@ -99,6 +100,7 @@ export const CalendarioMobile = ({
                         onEdit={setEditTarget}
                         onAssign={setAssignTarget}
                         onChangeStatus={setStatusTarget}
+                        onAdminClose={setAdminCloseTarget}
                         onReview={setReviewTarget}
                         onCancel={setCancelTarget}
                     />

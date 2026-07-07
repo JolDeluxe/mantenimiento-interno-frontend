@@ -3,6 +3,10 @@ import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import {
+    puedeCerrarAdministrativamente,
+    puedeOperarComoTecnico,
+} from '@/features/common/utils/ticket-permissions';
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
 const ESTADOS_FINALES = ['CERRADO', 'CANCELADA'];
@@ -59,6 +63,7 @@ export const TicketCard = ({
     onEdit,
     onAssign,
     onChangeStatus,
+    onAdminClose,
     onReview,
     onCancel,
 }) => {
@@ -81,10 +86,8 @@ export const TicketCard = ({
         esAdmin &&
         !['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado);
 
-    const puedeCambiarEstado =
-        tieneResponsables &&
-        !['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado) &&
-        (esAdmin || (esTecnico && esResponsable));
+    const puedeCambiarEstado = puedeOperarComoTecnico(currentUser, ticket);
+    const puedeCerrarAdmin = puedeCerrarAdministrativamente(currentUser, ticket);
 
     const puedeRevisar =
         ticket.estado === 'RESUELTO' &&
@@ -252,6 +255,16 @@ export const TicketCard = ({
                 >
                     <Icon name="visibility" size="sm" />
                 </button>
+
+                {puedeCerrarAdmin && (
+                    <button
+                        onClick={() => onAdminClose?.(ticket)}
+                        className="flex items-center justify-center p-1.5 rounded-md text-slate-700 hover:bg-slate-700/10 transition-colors"
+                        title="Cerrar administrativo"
+                    >
+                        <Icon name="rule" size="sm" />
+                    </button>
+                )}
 
                 <div className="flex-1 min-w-[8px]"></div>
 

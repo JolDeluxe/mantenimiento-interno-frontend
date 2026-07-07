@@ -5,6 +5,7 @@ import { TicketFormModal } from './ticket-form-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
+import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 import { TicketReviewModal } from './ticket-review-modal';
 import { TicketActions } from './ticket-actions';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
@@ -98,6 +99,7 @@ export const TicketsTable = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [adminCloseTarget, setAdminCloseTarget] = useState(null);
 
     const columns = [
         {
@@ -326,6 +328,7 @@ export const TicketsTable = ({
                         onEdit={(r) => setEditTarget(r)}
                         onAssign={(r) => setAssignTarget(r)}
                         onChangeStatus={(r) => setStatusTarget(r)}
+                        onAdminClose={(r) => setAdminCloseTarget(r)}
                         onReview={(r) => setReviewTarget(r)}
                         onCancel={(r) => setCancelTarget(r)}
                     />
@@ -456,6 +459,17 @@ export const TicketsTable = ({
                 onConfirm={async (id, payload) => {
                     await onChangeStatus(id, payload);
                     setCancelTarget(null);
+                }}
+            />
+
+            <AdminCloseModal
+                isOpen={Boolean(adminCloseTarget)}
+                onClose={() => setAdminCloseTarget(null)}
+                ticket={adminCloseTarget}
+                isSubmitting={submitting}
+                onConfirm={async (id, payload) => {
+                    await onChangeStatus(id, payload);
+                    setAdminCloseTarget(null);
                 }}
             />
         </div>

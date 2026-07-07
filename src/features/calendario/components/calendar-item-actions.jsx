@@ -1,5 +1,9 @@
 // src/features/calendario/components/calendar-item-actions.jsx
 import { Icon } from '@/components/ui/z_index';
+import {
+    puedeCerrarAdministrativamente,
+    puedeOperarComoTecnico,
+} from '@/features/common/utils/ticket-permissions';
 
 const ROLES_ADMIN_LIST = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR_LIST = ['SUPER_ADMIN', 'JEFE_MTTO'];
@@ -47,6 +51,7 @@ export const CalendarItemActions = ({
     onEdit,
     onAssign,
     onChangeStatus,
+    onAdminClose,
     onReview,
     onCancel
 }) => {
@@ -68,10 +73,8 @@ export const CalendarItemActions = ({
         esAdmin &&
         !['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES_LIST].includes(ticket.estado);
 
-    const puedeCambiarEstado =
-        tieneResponsables &&
-        !['RESUELTO', ...ESTADOS_FINALES_LIST].includes(ticket.estado) &&
-        (esAdmin || (esTecnico && esResponsable));
+    const puedeCambiarEstado = puedeOperarComoTecnico(currentUser, ticket);
+    const puedeCerrarAdmin = puedeCerrarAdministrativamente(currentUser, ticket);
 
     const puedeRevisar =
         ticket.estado === 'RESUELTO' &&
@@ -103,6 +106,16 @@ export const CalendarItemActions = ({
                     title={statusConfig.title}
                 >
                     <Icon name={statusConfig.icon} size="xs" />
+                </button>
+            )}
+            {puedeCerrarAdmin && (
+                <button
+                    type="button"
+                    onClick={() => onAdminClose(ticket)}
+                    className="p-1 rounded transition-colors cursor-pointer border-none bg-transparent text-slate-700 hover:bg-slate-700/10"
+                    title="Cerrar administrativo"
+                >
+                    <Icon name="rule" size="xs" />
                 </button>
             )}
             {puedeRevisar && (

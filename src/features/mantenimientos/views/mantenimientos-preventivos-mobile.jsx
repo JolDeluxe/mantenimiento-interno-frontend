@@ -9,6 +9,7 @@ import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../compo
 import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosAssignModal as TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
+import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 import { MobileMantenimientosReviewModal as MobileTicketReviewModal } from '../components/common/mobile-mantenimientos-review-modal';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
@@ -101,6 +102,7 @@ export const MantenimientosPreventivosMobile = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [adminCloseTarget, setAdminCloseTarget] = useState(null);
 
     const hasContent = !loading && tickets.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
@@ -169,7 +171,7 @@ export const MantenimientosPreventivosMobile = ({
                             </div>
                         )
                         : tickets.map((ticket) => (
-                            <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
+                            <TicketCard key={ticket.id} ticket={ticket} currentUser={currentUser} onViewDetail={setDetailTarget} onEdit={setEditTarget} onAssign={setAssignTarget} onChangeStatus={setStatusTarget} onAdminClose={setAdminCloseTarget} onReview={setReviewTarget} onCancel={setCancelTarget} />
                         ))
                 }
             </div>
@@ -192,6 +194,7 @@ export const MantenimientosPreventivosMobile = ({
             <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
             <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
             <TicketStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+            <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
             <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
         </>
     );

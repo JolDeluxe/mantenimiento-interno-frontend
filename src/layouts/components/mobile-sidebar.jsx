@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn';
 
 // Recibe userModules directamente desde el Layout
 export const MobileSidebar = ({ userModules = [] }) => {
-  const { mobileMenuOpen, closeMobileMenu } = useUIStore();
+  const { mobileMenuOpen, closeMobileMenu, badgeCounts } = useUIStore();
 
   if (!mobileMenuOpen) return null;
 
@@ -50,19 +50,32 @@ export const MobileSidebar = ({ userModules = [] }) => {
                         : { borderRadius: '14px', background: 'transparent' }
                     )}
                   >
-                    {({ isActive }) => (
-                      <>
-                        {isActive && <GlassSheen />}
-                        <Icon
-                          name={module.icon}
-                          size="md"
-                          className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
-                        />
-                        <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
-                          {module.name}
-                        </span>
-                      </>
-                    )}
+                    {({ isActive }) => {
+                      const count = module.id === 'bandeja' ? badgeCounts?.bandeja : (module.id === 'aprobar' ? badgeCounts?.aprobar : 0);
+                      const isBlinking = module.id === 'bandeja' && badgeCounts?.hasOldTickets;
+                      return (
+                        <>
+                          {isActive && <GlassSheen />}
+                          <Icon
+                            name={module.icon}
+                            size="md"
+                            className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
+                          />
+                          <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
+                            {module.name}
+                          </span>
+                          {count > 0 && (
+                            <span className={cn(
+                              "ml-auto flex items-center justify-center rounded-full text-[10px] font-extrabold leading-none pb-[1px] text-white border relative z-10 shadow-sm transition-all",
+                              count > 9 ? 'px-1.5 h-5 min-w-[20px]' : 'h-5 w-5',
+                              isBlinking ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-marca-primario text-white border-marca-primario/20'
+                            )}>
+                              {count}
+                            </span>
+                          )}
+                        </>
+                      );
+                    }}
                   </NavLink>
                 </li>
               </React.Fragment>

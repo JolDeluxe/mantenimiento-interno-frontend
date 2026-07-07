@@ -9,6 +9,10 @@
  * cancelar_ticket   → admin | cliente si es creador y estado PENDIENTE
  */
 import { TableActions } from '@/components/ui/z_index';
+import {
+    puedeCerrarAdministrativamente,
+    puedeOperarComoTecnico,
+} from '@/features/common/utils/ticket-permissions';
 
 const ROLES_ADMIN = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
 const ROLES_SUPERVISOR = ['SUPER_ADMIN', 'JEFE_MTTO'];
@@ -30,18 +34,6 @@ const puedeAsignar = ({ rol }, ticket) => {
     if (['EN_PROGRESO', 'EN_PROCESO', 'RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
 
     return true;
-};
-
-const puedeCambiarEstado = ({ rol, id }, ticket) => {
-    // Bloqueo universal: No hay transición de estado manual posible sin un técnico responsable
-    if (!ticket.responsables || ticket.responsables.length === 0) return false;
-
-    // Bloqueo universal: Si está RESUELTO o en estado FINAL, se bloquea el cambio manual
-    if (['RESUELTO', ...ESTADOS_FINALES].includes(ticket.estado)) return false;
-
-    if (ROLES_ADMIN.includes(rol)) return true;
-    if (rol === 'TECNICO') return ticket.responsables.some((r) => r.id === id);
-    return false;
 };
 
 /**
@@ -77,6 +69,7 @@ export const TicketActions = ({
     onEdit,
     onAssign,
     onChangeStatus,
+    onAdminClose,
     onReview,
     onCancel,
 }) => {
@@ -92,7 +85,8 @@ export const TicketActions = ({
                 { key: 'revisar_ticket', enabled: puedeRevisar(currentUser, ticket), onClick: onReview },
                 { key: 'editar', enabled: puedeEditar(currentUser, ticket), onClick: onEdit },
                 { key: 'asignar_tecnico', enabled: puedeAsignar(currentUser, ticket), onClick: onAssign },
-                { key: 'cambiar_estado', enabled: puedeCambiarEstado(currentUser, ticket), onClick: onChangeStatus },
+                { key: 'cambiar_estado', enabled: puedeOperarComoTecnico(currentUser, ticket), onClick: onChangeStatus },
+                { key: 'cerrar_administrativo', enabled: puedeCerrarAdministrativamente(currentUser, ticket), onClick: onAdminClose },
                 { key: 'cancelar_ticket', enabled: puedeCancelar(currentUser, ticket), onClick: onCancel },
             ]}
         />

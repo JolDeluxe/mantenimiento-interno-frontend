@@ -381,7 +381,6 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         if (!fechaProgramada) e.fechaProgramada = 'La fecha es obligatoria.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
         if (seleccionados.length === 0) e.seleccionados = 'Debes seleccionar al menos un responsable.';
-        if (!tiempoEstimadoMins || tiempoEstimadoMins <= 0) e.tiempoEstimadoMins = 'El tiempo planeado es obligatorio.';
         return e;
     };
 
@@ -533,7 +532,7 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label error={!!fe.tiempoEstimadoMins}>Tiempo planeado *</Label>
+                            <Label error={!!fe.tiempoEstimadoMins}>Tiempo planeado</Label>
                             <DurationPicker
                                 valueMins={tiempoEstimadoMins}
                                 onChange={setTiempoEstimadoMins}

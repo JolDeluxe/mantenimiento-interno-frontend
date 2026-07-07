@@ -837,8 +837,8 @@ export const TicketFormModal = ({
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
             }
 
-            // Validación: Tiempo estimado obligatorio para tickets generales, opcional en MAQUINARIA
-            if (categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
+            // Validación: Tiempo estimado obligatorio para tickets planeados generales, opcional en MAQUINARIA o TICKET
+            if (tipo !== 'TICKET' && categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
                 e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
             }
 
@@ -1394,7 +1394,7 @@ export const TicketFormModal = ({
                                         disabled={isSubmitting} style={{ minWidth: 0 }} />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label error={!!fe.tiempoEstimado}>Tiempo estimado *</Label>
+                                    <Label error={!!fe.tiempoEstimado}>{`Tiempo estimado ${tipo === 'TICKET' ? '' : '*'}`}</Label>
                                     <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
                                     {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
                                 </div>

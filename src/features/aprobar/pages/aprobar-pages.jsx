@@ -72,6 +72,7 @@ export default function AprobarPage() {
             setIsReviewModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
             loadTickets();
+            window.dispatchEvent(new Event('refrescar-conteos'));
         } catch (error) {
             notify.error(error.response?.data?.error || error.response?.data?.message || 'Error al procesar la revisión');
         }

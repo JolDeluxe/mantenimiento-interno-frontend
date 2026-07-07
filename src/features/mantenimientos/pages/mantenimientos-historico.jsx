@@ -41,6 +41,13 @@ export default function MantenimientosHistoricoPage({
         changeStatus,
     } = useMantenimientos();
 
+    const sortedTickets = useMemo(() => {
+        if (!tickets) return [];
+        const active = tickets.filter(t => t.estado !== 'CERRADO');
+        const closed = tickets.filter(t => t.estado === 'CERRADO');
+        return [...active, ...closed];
+    }, [tickets]);
+
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [year, setYear] = useState(null);
@@ -190,10 +197,10 @@ export default function MantenimientosHistoricoPage({
     }, []);
 
     const handleExport = useCallback(() => {
-        if (!tickets || tickets.length === 0) return notify.info('No hay datos para exportar.');
+        if (!sortedTickets || sortedTickets.length === 0) return notify.info('No hay datos para exportar.');
         const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creación', 'Vencimiento', 'Finalización'];
         const formatFechaNumerica = (f) => f ? new Date(f).toLocaleDateString('es-MX') : '';
-        const rows = tickets.map(t => [
+        const rows = sortedTickets.map(t => [
             t.id,
             t.titulo,
             t.estado,
@@ -219,7 +226,7 @@ export default function MantenimientosHistoricoPage({
         link.click();
         document.body.removeChild(link);
         notify.success('Exportación generada correctamente (CSV).');
-    }, [tickets]);
+    }, [sortedTickets]);
 
     const isFiltering = useMemo(() => {
         return query !== '' || filtroEstado !== 'TODOS' || filtroTipo !== '' ||
@@ -230,7 +237,7 @@ export default function MantenimientosHistoricoPage({
     }, [query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas]);
 
     const sharedProps = {
-        tickets,
+        tickets: sortedTickets,
         loading,
         submitting,
         tecnicos,
