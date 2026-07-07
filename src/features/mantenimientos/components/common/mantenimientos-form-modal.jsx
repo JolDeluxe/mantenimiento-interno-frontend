@@ -6,6 +6,7 @@ import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, 
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
+import api from '@/lib/axios';
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
     PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
@@ -274,7 +275,9 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
         if (isOpen) {
             setTimeout(() => searchRef.current?.focus(), 50);
         } else {
-            setBusqueda('');
+            queueMicrotask(() => {
+                setBusqueda('');
+            });
         }
     }, [isOpen]);
 
@@ -765,6 +768,11 @@ export const MantenimientosFormModal = ({
         setConflictError('');
     }, [horaInicio, horaFin, fechaVencimiento, responsables]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    
+    // Estados para Mantenimiento Recurrente
+    const [esRecurrente, setEsRecurrente] = useState(false);
+    const [frecuencia, setFrecuencia] = useState('MENSUAL');
+    const [intervaloDias, setIntervaloDias] = useState('');
 
     const esRutina = ticketAEditar ? (ticketAEditar.clasificacion === 'RUTINA' || ticketAEditar.categoria === 'RUTINA') : (categoria === 'RUTINA');
     const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
@@ -885,6 +893,10 @@ export const MantenimientosFormModal = ({
             setModoRangoHoras(false);
             setHoraInicio('');
             setHoraFin('');
+            
+            setEsRecurrente(false);
+            setFrecuencia('MENSUAL');
+            setIntervaloDias('');
         }
     }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
 
@@ -958,6 +970,31 @@ export const MantenimientosFormModal = ({
         if (conflictError) {
             e.horaInicio = conflictError;
         }
+
+        if (esRecurrente) {
+            if (!maquinaId) e.maquinaId = 'La máquina es obligatoria para mantenimiento recurrente.';
+            if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
+            if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
+            if (!planta) e.planta = 'Selecciona la planta.';
+            if (!area) e.area = 'Selecciona el área.';
+            if (!frecuencia) e.frecuencia = 'Selecciona la frecuencia.';
+            if (frecuencia === 'PERSONALIZADA_DIAS') {
+                const diasNum = parseInt(intervaloDias, 10);
+                if (isNaN(diasNum) || diasNum <= 0) {
+                    e.intervaloDias = 'El intervalo de días debe ser mayor que 0.';
+                }
+            }
+            if (!fechaVencimiento) {
+                e.fechaVencimiento = 'La fecha de inicio es obligatoria.';
+            } else if (fechaVencimiento < hoyLocal) {
+                e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+            }
+            if (responsables.length === 0 && !tecnicoCartId) {
+                e.responsables = 'Debes asignar al menos un técnico responsable.';
+            }
+            return e;
+        }
+
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
@@ -1103,32 +1140,7 @@ export const MantenimientosFormModal = ({
         ));
     };
 
-    const buildFormData = (item) => {
-        const fd = new FormData();
-        fd.append('titulo', item.titulo);
-        fd.append('descripcion', item.descripcion);
-        fd.append('clasificacion', item.clasificacion);
-        if (item.categoria) fd.append('categoria', item.categoria);
-        fd.append('planta', item.planta);
-        fd.append('area', item.area);
-        fd.append('prioridad', item.prioridad);
-        if (item.maquinaId) fd.append('maquinaId', String(item.maquinaId));
-        fd.append('paroProduccion', item.paroProduccion ? 'true' : 'false');
-        if (item.paroProduccion && item.impactoProduccion) fd.append('impactoProduccion', String(item.impactoProduccion));
-        if (esAdmin) {
-            fd.append('tipo', item.tipo);
-            if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
-            if (item.modoRangoHoras) {
-                if (item.horaInicioProgramada) fd.append('horaInicioProgramada', item.horaInicioProgramada);
-                if (item.horaFinProgramada) fd.append('horaFinProgramada', item.horaFinProgramada);
-            } else {
-                if (!item.esRutina && item.tiempoEstimado > 0)
-                    fd.append('tiempoEstimado', String(item.tiempoEstimado));
-            }
-            item.responsables.forEach(id => fd.append('responsables', id));
-        }
-        return fd;
-    };
+
 
     const handleAddTecnicoEdit = (idStr) => {
         if (!idStr || responsables.includes(idStr)) return;
@@ -1192,6 +1204,32 @@ export const MantenimientosFormModal = ({
             setSubmitted(true);
             const errors = getErrors();
             if (Object.keys(errors).length > 0) return;
+
+            if (esRecurrente) {
+                try {
+                    const payload = {
+                        maquinaId: Number(maquinaId),
+                        titulo: titulo.trim(),
+                        descripcion: descripcion.trim() || 'Sin descripción.',
+                        frecuencia,
+                        intervaloDias: frecuencia === 'PERSONALIZADA_DIAS' ? parseInt(intervaloDias, 10) : null,
+                        tecnicoResponsableId: parseInt(responsables[0] || tecnicoCartId, 10),
+                        proximaFechaEjecucion: new Date(`${fechaVencimiento}T00:00:00.000Z`).toISOString(),
+                        prioridad,
+                        tiempoEstimado: tiempoEstimadoMins > 0 ? tiempoEstimadoMins : null,
+                        categoria: categoria || 'MAQUINARIA'
+                    };
+                    await api.post('/api/recurrencias', payload);
+                    await onSuccess(null);
+                    setTecnicoCartId('');
+                    onClose();
+                } catch (err) {
+                    const data = err?.response?.data;
+                    let msg = data?.error || data?.message || 'Error al guardar el mantenimiento recurrente.';
+                    setBackendError(msg);
+                }
+                return;
+            }
 
             const fd = new FormData();
             fd.append('titulo', titulo);
@@ -1318,7 +1356,6 @@ export const MantenimientosFormModal = ({
     const isManana = fechaVencimiento === mananaLocal;
 
     const fe = submitted ? getErrors() : {};
-    const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
 
     return (
         <Modal
@@ -1601,6 +1638,79 @@ export const MantenimientosFormModal = ({
                                     <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
                                         <Icon name="info" size="xs" />
                                         <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── INTERRUPTOR DE MANTENIMIENTO RECURRENTE ── */}
+                        {!esEdicion && !modoCarrito && clasificacion === 'PREVENTIVO' && (
+                            <div className="border border-slate-200/80 rounded-2xl p-4 bg-white space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex flex-col flex-1">
+                                        <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                            <Icon name="event_repeat" className="text-marca-primario" size="sm" />
+                                            Mantenimiento recurrente
+                                        </span>
+                                        <span className="text-[10px] font-medium text-slate-500 mt-1 leading-normal">
+                                            {maquinaId 
+                                                ? "Actívalo si este preventivo debe repetirse automáticamente por frecuencia."
+                                                : "Selecciona una máquina para activar recurrencia."}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        disabled={!maquinaId || isSubmitting}
+                                        onClick={() => setEsRecurrente(prev => !prev)}
+                                        className={cn(
+                                            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-marca-primario focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                            esRecurrente ? "bg-marca-primario" : "bg-slate-200"
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                                esRecurrente ? "translate-x-5" : "translate-x-0"
+                                            )}
+                                        />
+                                    </button>
+                                </div>
+
+                                {esRecurrente && maquinaId && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label htmlFor="rec-frecuencia" error={!!fe.frecuencia}>Frecuencia del mantenimiento *</Label>
+                                            <Select
+                                                id="rec-frecuencia"
+                                                value={frecuencia}
+                                                onChange={(e) => setFrecuencia(e.target.value)}
+                                                error={!!fe.frecuencia}
+                                                helperText={fe.frecuencia}
+                                                disabled={isSubmitting}
+                                            >
+                                                <option value="SEMANAL">Semanal</option>
+                                                <option value="QUINCENAL">Quincenal</option>
+                                                <option value="MENSUAL">Mensual</option>
+                                                <option value="PERSONALIZADA_DIAS">Personalizada por días</option>
+                                            </Select>
+                                        </div>
+
+                                        {frecuencia === 'PERSONALIZADA_DIAS' && (
+                                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                <Label htmlFor="rec-intervaloDias" error={!!fe.intervaloDias}>Intervalo de días *</Label>
+                                                <Input
+                                                    id="rec-intervaloDias"
+                                                    type="number"
+                                                    min="1"
+                                                    value={intervaloDias}
+                                                    onChange={(e) => setIntervaloDias(e.target.value)}
+                                                    error={!!fe.intervaloDias}
+                                                    helperText={fe.intervaloDias}
+                                                    placeholder="Ej. 45"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

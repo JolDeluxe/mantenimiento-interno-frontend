@@ -40,8 +40,8 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
 
     const handleToggleActivo = async (regla) => {
         const confirmMessage = regla.activo
-            ? `¿Está seguro de que desea desactivar esta regla? Los ciclos futuros dejarán de materializarse automáticamente.`
-            : `¿Desea activar esta regla de recurrencia?`;
+            ? `¿Está seguro de que desea desactivar este mantenimiento recurrente? Los ciclos futuros dejarán de materializarse automáticamente.`
+            : `¿Desea activar este mantenimiento recurrente?`;
             
         if (window.confirm(confirmMessage)) {
             if (regla.activo) {
@@ -97,7 +97,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                         Planificación Recurrente
                     </h4>
                     <span className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-none">
-                        Define las reglas de mantenimiento preventivo automático.
+                        Define la programación de mantenimientos preventivos automáticos.
                     </span>
                 </div>
 
@@ -110,7 +110,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                         onClick={openCreateForm}
                         disabled={loading || submitting}
                     >
-                        Crear regla
+                        Crear mantenimiento recurrente
                     </Button>
                 )}
             </div>
@@ -126,7 +126,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                     <Spinner size="sm" className="text-marca-primario" />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Cargando plan de recurrencia...
+                        Cargando mantenimientos recurrentes...
                     </span>
                 </div>
             ) : recurrencias.length > 0 ? (
@@ -187,7 +187,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                                                 onClick={() => openEditForm(r)}
                                                 disabled={submitting}
                                                 className="inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors shadow-sm cursor-pointer"
-                                                title="Editar regla"
+                                                title="Editar mantenimiento recurrente"
                                             >
                                                 <Icon name="edit" size="14px" />
                                             </button>
@@ -200,7 +200,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                                                         ? 'border-red-100 bg-white hover:bg-red-50 text-red-600'
                                                         : 'border-emerald-100 bg-white hover:bg-emerald-50 text-emerald-600'
                                                 }`}
-                                                title={r.activo ? 'Desactivar regla' : 'Activar regla'}
+                                                title={r.activo ? 'Desactivar mantenimiento' : 'Activar mantenimiento'}
                                             >
                                                 <Icon name={r.activo ? 'toggle_off' : 'toggle_on'} size="14px" />
                                             </button>
@@ -243,7 +243,7 @@ export const MaquinaRecurrenciaTab = ({ maquinaId, isAdminOrJefe = false }) => {
                             onClick={openCreateForm}
                             disabled={submitting}
                         >
-                            Configurar regla
+                            Configurar mantenimiento recurrente
                         </Button>
                     )}
                 </div>

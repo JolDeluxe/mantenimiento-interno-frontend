@@ -124,7 +124,7 @@ export const MaquinaRecurrenciaFormModal = ({
                 <div className="flex items-center gap-2">
                     <Icon name="event_repeat" className="text-marca-primario" />
                     <span className="font-bold text-slate-800">
-                        {regla ? 'Editar Regla Recurrente' : 'Nueva Regla Recurrente'}
+                        {regla ? 'Editar Mantenimiento Recurrente' : 'Nuevo Mantenimiento Recurrente'}
                     </span>
                 </div>
             </ModalHeader>
