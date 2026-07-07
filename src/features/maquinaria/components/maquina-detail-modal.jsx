@@ -49,7 +49,12 @@ export const MaquinaDetailModal = ({
   const [activeTab, setActiveTab] = useState('expediente'); // 'expediente' | 'recurrencias'
 
   const user = useAuthStore((state) => state.user);
-  const userRol = user?.rol;
+  const currentUser = user?.data || user;
+  const userRol = currentUser?.rol || currentUser?.role;
+
+  console.log('[DEBUG RECURRENCIAS] user raw:', user);
+  console.log('[DEBUG RECURRENCIAS] currentUser:', currentUser);
+  console.log('[DEBUG RECURRENCIAS] userRol:', userRol);
 
   const rolesPermitidos = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
   const esAdminOrJefe = rolesPermitidos.includes(userRol);
