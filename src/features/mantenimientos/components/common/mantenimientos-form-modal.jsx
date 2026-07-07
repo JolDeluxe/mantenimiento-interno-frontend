@@ -884,7 +884,7 @@ export const MantenimientosFormModal = ({
             setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || (scope === 'mantenimientos' ? 'PREVENTIVO' : ''));
             setTipo('PLANEADA');
-            setFechaVencimiento(defaultDate || hoyLocal);
+            setFechaVencimiento((defaultDate && defaultDate >= hoyLocal) ? defaultDate : hoyLocal);
             setTiempoEstimadoMins(0); setResponsables([]);
             setTecnicoCartId('');
             setMaquinaId('');

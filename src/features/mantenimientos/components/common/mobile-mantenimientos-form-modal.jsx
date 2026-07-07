@@ -293,7 +293,7 @@ export const MobileTicketFormModal = ({
             setMostrarDescripcion(false);
             setPlanta(''); setArea(''); setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || 'PREVENTIVO'); setTipo('PLANEADA');
-            setFechaVencimiento(defaultDate || ''); setTiempoEstimadoMins(0); setResponsables([]);
+            setFechaVencimiento((defaultDate && defaultDate >= hoyLocal) ? defaultDate : hoyLocal); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
             setMaquinaInfo(null);
             setParoProduccion(false);

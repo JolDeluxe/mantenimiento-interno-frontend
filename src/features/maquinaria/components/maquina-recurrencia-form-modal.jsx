@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, Spinner } from '@/components/ui/z_index';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
+import { getMinDateHoy } from '@/lib/date';
 
 export const MaquinaRecurrenciaFormModal = ({
     isOpen,
@@ -98,6 +99,15 @@ export const MaquinaRecurrenciaFormModal = ({
         if (!proximaFechaEjecucion) {
             setFormError('Debe ingresar la fecha inicial del ciclo.');
             return;
+        }
+
+        const hoyLocal = getMinDateHoy();
+        if (proximaFechaEjecucion < hoyLocal) {
+            const fechaOriginal = regla?.proximaFechaEjecucion ? regla.proximaFechaEjecucion.split('T')[0] : '';
+            if (!regla || proximaFechaEjecucion !== fechaOriginal) {
+                setFormError('No se permiten fechas iniciales anteriores a hoy.');
+                return;
+            }
         }
 
         const payload = {
@@ -242,11 +252,16 @@ export const MaquinaRecurrenciaFormModal = ({
                         </div>
 
                         <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Próxima Fecha Lógica *</label>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha de inicio del mantenimiento recurrente *</label>
                             <input
                                 type="date"
                                 value={proximaFechaEjecucion}
-                                onChange={(e) => setProximaFechaEjecucion(e.target.value)}
+                                min={getMinDateHoy()}
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    const hoyLocal = getMinDateHoy();
+                                    setProximaFechaEjecucion(v && v < hoyLocal ? hoyLocal : v);
+                                }}
                                 className="text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl px-3 py-2 w-full focus:outline-none focus:border-marca-primario"
                                 required
                             />
