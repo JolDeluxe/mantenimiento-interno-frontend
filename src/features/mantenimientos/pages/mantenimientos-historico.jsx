@@ -139,7 +139,10 @@ export default function MantenimientosHistoricoPage({
 
     const handleCreate = useCallback(async (formData) => {
         try {
-            if (Array.isArray(formData)) {
+            if (formData === null) {
+                // Es un mantenimiento recurrente que ya fue guardado en el formulario
+                notify.success('Mantenimiento recurrente creado con éxito.');
+            } else if (Array.isArray(formData)) {
                 await createBatch(formData);
                 notify.success(`${formData.length} mantenimiento${formData.length !== 1 ? 's' : ''} programado${formData.length !== 1 ? 's' : ''} con éxito.`);
             } else {

@@ -76,6 +76,7 @@ export default function HoyMantenimientosPage() {
         } else if (dateOffset === 1) {
             params.venceManana = true;
         } else {
+            // eslint-disable-next-line react-hooks/purity
             const targetDate = new Date(Date.now() + dateOffset * 86400000);
             const fechaStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
             params.vencimientoDesde = fechaStr;
@@ -128,6 +129,13 @@ export default function HoyMantenimientosPage() {
     const totalParaSummary = metricas?.totalResumen ?? 0;
 
     const handleCreate = async (payloads) => {
+        if (payloads === null) {
+            // Es un mantenimiento recurrente que ya fue guardado en el formulario
+            notify.success('Mantenimiento recurrente creado con éxito.');
+            setShowCreate(false);
+            loadTickets();
+            return;
+        }
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 await createTicketsBatch(payloads);
