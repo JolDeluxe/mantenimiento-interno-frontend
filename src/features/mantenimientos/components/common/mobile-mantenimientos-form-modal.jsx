@@ -15,6 +15,7 @@ import {
     AREAS,
     CATEGORIAS_EQUIPO
 } from '../../constants';
+import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 import { cn } from '@/utils/cn';
 
 const MAX_TITULO = 255;
@@ -667,9 +668,11 @@ export const MobileTicketFormModal = ({
                                             Mantenimiento recurrente
                                         </span>
                                         <span className="text-[10px] font-medium text-slate-500 mt-1 leading-normal">
-                                            {maquinaId 
-                                                ? "Actívalo si este preventivo debe repetirse automáticamente por frecuencia."
-                                                : "Selecciona una máquina para activar recurrencia."}
+                                            {esRecurrente
+                                                ? "Este formulario creará una programación recurrente, no un ticket único."
+                                                : maquinaId 
+                                                    ? "Actívalo si este preventivo debe repetirse automáticamente."
+                                                    : "Selecciona una máquina para activar recurrencia."}
                                         </span>
                                     </div>
                                     <button
@@ -677,7 +680,7 @@ export const MobileTicketFormModal = ({
                                         disabled={!maquinaId || isSubmitting}
                                         onClick={() => setEsRecurrente(prev => !prev)}
                                         className={cn(
-                                            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-marca-primario focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                                            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-marca-primario focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 animate-all",
                                             esRecurrente ? "bg-marca-primario" : "bg-slate-200"
                                         )}
                                     >
@@ -691,41 +694,66 @@ export const MobileTicketFormModal = ({
                                 </div>
 
                                 {esRecurrente && maquinaId && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label htmlFor="rec-frecuencia" error={!!fe.frecuencia}>Frecuencia del mantenimiento *</Label>
-                                            <Select
-                                                id="rec-frecuencia"
-                                                value={frecuencia}
-                                                onChange={(e) => setFrecuencia(e.target.value)}
-                                                error={!!fe.frecuencia}
-                                                helperText={fe.frecuencia}
-                                                disabled={isSubmitting}
-                                            >
-                                                <option value="SEMANAL">Semanal</option>
-                                                <option value="QUINCENAL">Quincenal</option>
-                                                <option value="MENSUAL">Mensual</option>
-                                                <option value="PERSONALIZADA_DIAS">Personalizada por días</option>
-                                            </Select>
+                                    <>
+                                        <div className="text-[10px] font-bold text-marca-primario bg-marca-primario/[0.04] px-3 py-2 rounded-xl border border-marca-primario/10 flex items-center gap-1.5 mt-2 animate-in fade-in duration-200">
+                                            <Icon name="info" size="xs" />
+                                            <span>
+                                                {isTodayYYYYMMDD(fechaVencimiento)
+                                                    ? "Como la fecha inicial es hoy, el sistema también generará el primer ticket."
+                                                    : "El primer ticket se generará automáticamente cuando llegue la fecha o al materializarlo manualmente."}
+                                            </span>
                                         </div>
 
-                                        {frecuencia === 'PERSONALIZADA_DIAS' && (
-                                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                                                <Label htmlFor="rec-intervaloDias" error={!!fe.intervaloDias}>Intervalo de días *</Label>
-                                                <Input
-                                                    id="rec-intervaloDias"
-                                                    type="number"
-                                                    min="1"
-                                                    value={intervaloDias}
-                                                    onChange={(e) => setIntervaloDias(e.target.value)}
-                                                    error={!!fe.intervaloDias}
-                                                    helperText={fe.intervaloDias}
-                                                    placeholder="Ej. 45"
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label htmlFor="rec-frecuencia" error={!!fe.frecuencia}>Frecuencia del mantenimiento *</Label>
+                                                <Select
+                                                    id="rec-frecuencia"
+                                                    value={frecuencia}
+                                                    onChange={(e) => setFrecuencia(e.target.value)}
+                                                    error={!!fe.frecuencia}
+                                                    helperText={fe.frecuencia}
                                                     disabled={isSubmitting}
-                                                />
+                                                >
+                                                    <option value="SEMANAL">Semanal</option>
+                                                    <option value="QUINCENAL">Quincenal</option>
+                                                    <option value="MENSUAL">Mensual</option>
+                                                    <option value="PERSONALIZADA_DIAS">Personalizada por días</option>
+                                                </Select>
                                             </div>
-                                        )}
-                                    </div>
+
+                                            {frecuencia === 'PERSONALIZADA_DIAS' && (
+                                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                    <Label htmlFor="rec-intervaloDias" error={!!fe.intervaloDias}>Intervalo de días *</Label>
+                                                    <Input
+                                                        id="rec-intervaloDias"
+                                                        type="number"
+                                                        min="1"
+                                                        value={intervaloDias}
+                                                        onChange={(e) => setIntervaloDias(e.target.value)}
+                                                        error={!!fe.intervaloDias}
+                                                        helperText={fe.intervaloDias}
+                                                        placeholder="Ej. 45"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 mt-3 text-xs font-semibold text-slate-600 flex items-start gap-2.5 animate-in fade-in duration-200">
+                                            <Icon name="info" className="text-slate-400 shrink-0 mt-0.5" size="16px" />
+                                            <div className="flex-1">
+                                                <p className="text-[10px] uppercase tracking-wider font-black text-slate-500 mb-0.5">Resumen de programación</p>
+                                                <span className="text-slate-700 leading-normal font-bold">
+                                                    {getRecurrenceSummary({
+                                                        fechaStr: fechaVencimiento,
+                                                        frecuencia,
+                                                        intervaloDias
+                                                    })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -827,7 +855,9 @@ export const MobileTicketFormModal = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5 overflow-hidden">
                                 <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento</Label>
+                                    <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>
+                                        {esRecurrente ? 'Fecha de inicio del mantenimiento recurrente' : 'Fecha de vencimiento'}
+                                    </Label>
                                     <div className="flex items-center gap-1.5">
                                         <button type="button" onClick={setToday} disabled={isSubmitting}
                                             className={cn("text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
@@ -855,6 +885,11 @@ export const MobileTicketFormModal = ({
                                     disabled={isSubmitting}
                                     style={{ minWidth: 0 }}
                                 />
+                                {esRecurrente && (
+                                    <span className="text-[10px] text-slate-500 font-semibold leading-relaxed mt-1 block">
+                                        Esta fecha define cuándo inicia la recurrencia. Si eliges hoy, se generará el primer mantenimiento inmediatamente. Si eliges una fecha futura, solo se guardará la programación.
+                                    </span>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-1.5">
