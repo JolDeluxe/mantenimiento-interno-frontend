@@ -28,116 +28,7 @@ const formatRangoTrabajo = (inicio, fin) => {
  * El actor (cliente o supervisor) decide: CERRAR (conforme) o RECHAZAR (no conforme).
  * Muestra la evidencia y notas dejadas por el técnico al resolver con galería inmersiva.
  */
-import { useRef } from 'react';
 
-const SignaturePad = ({ onSave, onClear, isSubmitting }) => {
-    const canvasRef = useRef(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [isEmpty, setIsEmpty] = useState(true);
-
-    const getCoordinates = (e) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-            x: (clientX - rect.left) * (canvas.width / rect.width),
-            y: (clientY - rect.top) * (canvas.height / rect.height)
-        };
-    };
-
-    const startDrawing = (e) => {
-        e.preventDefault();
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const { x, y } = getCoordinates(e);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        setIsDrawing(true);
-    };
-
-    const draw = (e) => {
-        if (!isDrawing) return;
-        e.preventDefault();
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const { x, y } = getCoordinates(e);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        setIsEmpty(false);
-    };
-
-    const stopDrawing = () => {
-        if (!isDrawing) return;
-        setIsDrawing(false);
-        saveSignature();
-    };
-
-    const saveSignature = () => {
-        const canvas = canvasRef.current;
-        if (!canvas || isEmpty) return;
-        canvas.toBlob((blob) => {
-            onSave(blob);
-        }, 'image/png');
-    };
-
-    const clear = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setIsEmpty(true);
-        onClear();
-    };
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-    }, []);
-
-    return (
-        <div className="flex flex-col gap-2 w-full">
-            <div className="relative border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden h-40 w-full shadow-inner">
-                <canvas
-                    ref={canvasRef}
-                    width={400}
-                    height={160}
-                    className="absolute inset-0 w-full h-full cursor-crosshair touch-none bg-white"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                />
-                {isEmpty && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-xs font-semibold select-none">
-                        Firma del cliente aquí
-                    </div>
-                )}
-            </div>
-            <div className="flex justify-end">
-                <button
-                    type="button"
-                    onClick={clear}
-                    disabled={isSubmitting || isEmpty}
-                    className="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                    Limpiar Lienzo
-                </button>
-            </div>
-        </div>
-    );
-};
 
 export const TicketReviewModal = ({
     isOpen,
@@ -153,11 +44,8 @@ export const TicketReviewModal = ({
     const [previewIndex, setPreviewIndex] = useState(null);
     const [nuevaFechaVencimiento, setNuevaFechaVencimiento] = useState('');
     const [errorFecha, setErrorFecha] = useState('');
-    const [signatureBlob, setSignatureBlob] = useState(null);
-    const [errorFirma, setErrorFirma] = useState('');
 
     const esSupervisor = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'].includes(currentUser?.rol);
-    const esMaquinaria = ticket?.maquinaId !== null && ticket?.maquinaId !== undefined;
 
     const resolucion = ticket?.historial?.find(h => h.estadoNuevo === 'RESUELTO');
     const notaTecnico = resolucion?.nota || '';
@@ -208,14 +96,13 @@ export const TicketReviewModal = ({
 
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setNota('');
             setDecision(null);
             setError(null);
             setPreviewIndex(null);
             setNuevaFechaVencimiento('');
             setErrorFecha('');
-            setSignatureBlob(null);
-            setErrorFirma('');
         }
     }, [isOpen]);
 
@@ -223,6 +110,7 @@ export const TicketReviewModal = ({
         if (decision === 'RECHAZADO' && esSupervisor && !nuevaFechaVencimiento) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString()));
         }
     }, [decision, esSupervisor, nuevaFechaVencimiento]);
@@ -261,20 +149,11 @@ export const TicketReviewModal = ({
                 return;
             }
         }
-        if (decision === 'CERRADO' && esMaquinaria) {
-            if (!signatureBlob) {
-                setErrorFirma('La firma de conformidad del cliente es obligatoria.');
-                return;
-            }
-        }
         const formData = new FormData();
         formData.append('estado', decision);
         if (nota.trim()) formData.append('nota', nota.trim());
         if (decision === 'RECHAZADO' && esSupervisor && nuevaFechaVencimiento) {
             formData.append('fechaVencimiento', fechaInputToISOLocal(nuevaFechaVencimiento));
-        }
-        if (signatureBlob) {
-            formData.append('imagenes', signatureBlob, 'firma_conformidad.png');
         }
         onConfirm(ticket.id, formData);
     };
@@ -525,21 +404,6 @@ export const TicketReviewModal = ({
                                 disabled={isSubmitting}
                             />
                         </div>
-
-                        {decision === 'CERRADO' && esMaquinaria && (
-                            <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <Label error={!!errorFirma} className="font-bold flex items-center gap-1.5 text-xs sm:text-sm">
-                                    <Icon name="gesture" size="xs" className="text-marca-secundario shrink-0" />
-                                    Firma de Conformidad del Cliente *
-                                </Label>
-                                <SignaturePad
-                                    onSave={(blob) => { setSignatureBlob(blob); setErrorFirma(''); }}
-                                    onClear={() => setSignatureBlob(null)}
-                                    isSubmitting={isSubmitting}
-                                />
-                                {errorFirma && <p className="text-xs text-estado-rechazado font-bold mt-0.5">{errorFirma}</p>}
-                            </div>
-                        )}
 
                     </div>
                 </ModalBody>
