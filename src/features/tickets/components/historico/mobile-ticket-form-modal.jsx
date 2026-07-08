@@ -6,6 +6,7 @@ import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/ta
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
 import { ResponsablesMobileSection } from '@/features/common/forms/tareas/responsables';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
+import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
 import {
     PLANTAS,
     CLASIFICACIONES_CLIENTE,
@@ -124,7 +125,7 @@ export const MobileTicketFormModal = ({
         }
     }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
 
-    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
+    const puedeReportarParoProduccion = canReportProductionHalt({ categoria, scope, maquinaId, clasificacion });
 
     useEffect(() => {
         if (!puedeReportarParoProduccion) {
@@ -169,13 +170,15 @@ export const MobileTicketFormModal = ({
                 if (response?.data?.status === 'success' && response?.data?.data) {
                     const maq = response.data.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else if (response?.data && !response.data.status) {
                     const maq = response.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else {
                     setMaquinaInfo(null);
                 }
@@ -337,7 +340,7 @@ export const MobileTicketFormModal = ({
                                 {CATEGORIAS_EQUIPO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                             </Select>
                         </div>
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
+                        {shouldShowMachineryBlock({ categoria, scope }) && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
                                     <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
@@ -362,8 +365,9 @@ export const MobileTicketFormModal = ({
                                         const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
                                         if (maq) {
                                             setMaquinaInfo(maq);
-                                            setPlanta(maq.planta || '');
-                                            setArea(maq.area || '');
+                                            const loc = deriveLocationFromMachine(maq);
+                                            setPlanta(loc.planta);
+                                            setArea(loc.area);
                                         }
                                     }}
                                     placeholder="Seleccionar máquina por código o nombre..."
@@ -381,7 +385,7 @@ export const MobileTicketFormModal = ({
                                 )}
                             </div>
                         )}
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
+                        {shouldShowMachineryBlock({ categoria, scope }) && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                 <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
@@ -460,7 +464,7 @@ export const MobileTicketFormModal = ({
                                 setPlanta(val); 
                                 const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
                                 setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
-                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || !!maquinaInfo}>
+                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}>
                                 <option value="" disabled hidden>Selecciona…</option>
                                 {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
                             </Select>
@@ -482,7 +486,7 @@ export const MobileTicketFormModal = ({
                                 }}
                                 error={!!fe.area}
                                 helperText={fe.area}
-                                disabled={isSubmitting || !!maquinaInfo}
+                                disabled={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
                             >
                                 <option value="" disabled hidden>Selecciona área…</option>
                                 {areasOptions.map((opt) => (

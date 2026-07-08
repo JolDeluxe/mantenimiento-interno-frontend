@@ -8,6 +8,7 @@ import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, D
 import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/forms/tareas/responsables';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
+import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
@@ -270,7 +271,7 @@ export const TicketFormModal = ({
 
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
-    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
+    const puedeReportarParoProduccion = canReportProductionHalt({ categoria, scope, maquinaId, clasificacion });
 
     useEffect(() => {
         if (!isOpen) return;
@@ -357,13 +358,15 @@ export const TicketFormModal = ({
                 if (response?.data?.status === 'success' && response?.data?.data) {
                     const maq = response.data.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else if (response?.data && !response.data.status) {
                     const maq = response.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else {
                     setMaquinaInfo(null);
                 }
@@ -668,9 +671,9 @@ export const TicketFormModal = ({
                         {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
                         <div className={cn(
                             "grid gap-3 grid-cols-1",
-                            (esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) === 4
+                            (esAdmin ? 3 : 2) + (shouldShowMachineryBlock({ categoria, scope }) ? 1 : 0) === 4
                                 ? "md:grid-cols-4"
-                                : (esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) === 3
+                                : (esAdmin ? 3 : 2) + (shouldShowMachineryBlock({ categoria, scope }) ? 1 : 0) === 3
                                     ? "md:grid-cols-3"
                                     : "md:grid-cols-2"
                         )}>
@@ -713,7 +716,7 @@ export const TicketFormModal = ({
                                 </Select>
                             </div>
 
-                             {categoria === 'MAQUINARIA' && scope !== 'actividades' && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
+                             {shouldShowMachineryBlock({ categoria, scope }) && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
                                  <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
@@ -738,7 +741,7 @@ export const TicketFormModal = ({
                         </div>
 
                         {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
+                        {shouldShowMachineryBlock({ categoria, scope }) && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
                                     <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
@@ -837,7 +840,7 @@ export const TicketFormModal = ({
                                     setPlanta(val);
                                     const posibles = AREAS_POR_PLANTA[val] || AREAS;
                                     setArea(posibles.length === 1 ? posibles[0] : '');
-                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || lockBaseFields || !!maquinaInfo}>
+                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}>
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {PLANTAS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </Select>
@@ -859,7 +862,7 @@ export const TicketFormModal = ({
                                     }}
                                     error={!!fe.area}
                                     helperText={fe.area}
-                                    disabled={isSubmitting || lockBaseFields || !!maquinaInfo}
+                                    disabled={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}
                                 >
                                     <option value="" disabled hidden>Selecciona área…</option>
                                     {areasOptions.map((opt) => (

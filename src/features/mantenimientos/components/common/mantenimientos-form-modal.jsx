@@ -5,9 +5,10 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSel
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
-import { WorkloadBadge, TecnicoDropdown, TecnicoCartSelector } from '@/features/common/forms/tareas/responsables';
+import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/forms/tareas/responsables';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
+import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
@@ -424,7 +425,7 @@ export const MantenimientosFormModal = ({
 
     const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
-    const puedeReportarParoProduccion = categoria === 'MAQUINARIA' && scope !== 'actividades' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
+    const puedeReportarParoProduccion = canReportProductionHalt({ categoria, scope, maquinaId, clasificacion });
 
     useEffect(() => {
         if (!isOpen) return;
@@ -518,13 +519,15 @@ export const MantenimientosFormModal = ({
                 if (response?.data?.status === 'success' && response?.data?.data) {
                     const maq = response.data.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else if (response?.data && !response.data.status) {
                     const maq = response.data;
                     setMaquinaInfo(maq);
-                    setPlanta(maq.planta || '');
-                    setArea(maq.area || '');
+                    const loc = deriveLocationFromMachine(maq);
+                    setPlanta(loc.planta);
+                    setArea(loc.area);
                 } else {
                     setMaquinaInfo(null);
                 }
@@ -1052,9 +1055,9 @@ export const MantenimientosFormModal = ({
                         {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
                         <div className={cn(
                             "grid gap-3 grid-cols-1",
-                            ((esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 4
+                            ((esAdmin ? 3 : 2) + (shouldShowMachineryBlock({ categoria, scope }) ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 4
                                 ? "md:grid-cols-4"
-                                : ((esAdmin ? 3 : 2) + (categoria === 'MAQUINARIA' && scope !== 'actividades' ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 3
+                                : ((esAdmin ? 3 : 2) + (shouldShowMachineryBlock({ categoria, scope }) ? 1 : 0) - (scope === 'mantenimientos' ? 1 : 0)) === 3
                                     ? "md:grid-cols-3"
                                     : "md:grid-cols-2"
                         )}>
@@ -1099,7 +1102,7 @@ export const MantenimientosFormModal = ({
                                 </div>
                             )}
 
-                            {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
+                            {shouldShowMachineryBlock({ categoria, scope }) && (
                                 <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
@@ -1124,7 +1127,7 @@ export const MantenimientosFormModal = ({
                         </div>
 
                         {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
+                        {shouldShowMachineryBlock({ categoria, scope }) && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div className="flex justify-between items-center">
                                     <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
@@ -1149,8 +1152,9 @@ export const MantenimientosFormModal = ({
                                         const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
                                         if (maq) {
                                             setMaquinaInfo(maq);
-                                            setPlanta(maq.planta || '');
-                                            setArea(maq.area || '');
+                                            const loc = deriveLocationFromMachine(maq);
+                                            setPlanta(loc.planta);
+                                            setArea(loc.area);
                                         }
                                     }}
                                     placeholder="Seleccionar máquina por código o nombre..."
@@ -1323,7 +1327,7 @@ export const MantenimientosFormModal = ({
                                     setPlanta(val);
                                     const posibles = AREAS_POR_PLANTA[val] || AREAS;
                                     setArea(posibles.length === 1 ? posibles[0] : '');
-                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || lockBaseFields || !!maquinaInfo}>
+                                }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}>
                                     <option value="" disabled hidden>Selecciona…</option>
                                     {PLANTAS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </Select>
@@ -1345,7 +1349,7 @@ export const MantenimientosFormModal = ({
                                     }}
                                     error={!!fe.area}
                                     helperText={fe.area}
-                                    disabled={isSubmitting || lockBaseFields || !!maquinaInfo}
+                                    disabled={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}
                                 >
                                     <option value="" disabled hidden>Selecciona área…</option>
                                     {areasOptions.map((opt) => (
