@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
-import { MaquinaSelectField } from '@/features/common/forms/tareas/fields';
+import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
@@ -439,46 +439,32 @@ export const MobileTicketFormModal = ({
                         )}
                     </div>
 
-                    {/* ── FILA 2: Planta | Área ── */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-planta" error={!!fe.planta}>Planta *</Label>
-                            <Select id="tf-planta" value={planta} onChange={(e) => { 
-                                const val = e.target.value;
-                                setPlanta(val); 
-                                const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
-                                setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
-                            }} error={!!fe.planta} helperText={fe.planta} disabled={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}>
-                                <option value="" disabled hidden>Selecciona…</option>
-                                {PLANTAS.map((p) => <option key={p} value={p}>{p}</option>)}
-                            </Select>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-area" error={!!fe.area}>Área / Línea *</Label>
-                            <Select
-                                id="tf-area"
-                                value={area || ''}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setArea(val);
-                                    if (val) {
-                                        const plantaDeducida = deducirPlantaDeArea(val, planta);
-                                        if (plantaDeducida) {
-                                            setPlanta(plantaDeducida);
-                                        }
-                                    }
-                                }}
-                                error={!!fe.area}
-                                helperText={fe.area}
-                                disabled={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
-                            >
-                                <option value="" disabled hidden>Selecciona área…</option>
-                                {areasOptions.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </Select>
-                        </div>
-                    </div>
+                    {/* ── UBICACIÓN (Planta/Área) con PlantaAreaFields ── */}
+                    <PlantaAreaFields
+                        planta={planta}
+                        area={area}
+                        plantas={PLANTAS}
+                        areasOptions={areasOptions}
+                        errorPlanta={fe.planta}
+                        errorArea={fe.area}
+                        disabledPlanta={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
+                        disabledArea={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
+                        layoutClassName="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                        onPlantaChange={(val) => {
+                            setPlanta(val);
+                            const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
+                            setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
+                        }}
+                        onAreaChange={(val) => {
+                            setArea(val);
+                            if (val) {
+                                const plantaDeducida = deducirPlantaDeArea(val, planta);
+                                if (plantaDeducida) {
+                                    setPlanta(plantaDeducida);
+                                }
+                            }
+                        }}
+                    />
 
                     {/* ── FILA 3: Fecha | Tiempo Estimado (Solo Admin) ── */}
                     {esAdmin && (
