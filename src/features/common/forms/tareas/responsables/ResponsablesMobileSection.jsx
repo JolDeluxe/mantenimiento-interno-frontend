@@ -50,7 +50,7 @@ export const ResponsablesMobileSection = ({
         </Select>
 
         {responsables.length > 0 ? (
-            <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-lg bg-slate-50 border border-slate-200 min-h-12">
+            <div className="flex flex-wrap gap-2 mt-1 p-3 rounded-xl bg-slate-50 border border-slate-200/80 min-h-12">
                 {responsables.map((id) => (
                     <MobileTecnicoChip
                         key={id}
@@ -60,7 +60,7 @@ export const ResponsablesMobileSection = ({
                 ))}
             </div>
         ) : (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-dashed border-slate-300 text-slate-400 text-xs italic min-h-12">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-dashed border-slate-250 text-slate-400 text-xs italic min-h-12">
                 <Icon name="engineering" size="sm" />
                 Sin técnicos asignados (la tarea quedará PENDIENTE)
             </div>
