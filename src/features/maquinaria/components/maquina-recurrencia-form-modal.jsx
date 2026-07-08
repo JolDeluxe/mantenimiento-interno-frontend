@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, Spinner } from '@/components/ui/z_index';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
 import { getMinDateHoy } from '@/lib/date';
+import {
+    validateFechaEdicionNoPasadaSiCambio,
+    validateFechaRequerida,
+} from '@/features/common/forms/tareas/validation';
 
 export const MaquinaRecurrenciaFormModal = ({
     isOpen,
@@ -96,18 +100,22 @@ export const MaquinaRecurrenciaFormModal = ({
             setFormError('Debe asignar un técnico responsable.');
             return;
         }
-        if (!proximaFechaEjecucion) {
-            setFormError('Debe ingresar la fecha inicial del ciclo.');
+        const fechaRequeridaError = validateFechaRequerida(
+            proximaFechaEjecucion,
+            'Debe ingresar la fecha inicial del ciclo.'
+        );
+        if (fechaRequeridaError) {
+            setFormError(fechaRequeridaError);
             return;
         }
 
-        const hoyLocal = getMinDateHoy();
-        if (proximaFechaEjecucion < hoyLocal) {
-            const fechaOriginal = regla?.proximaFechaEjecucion ? regla.proximaFechaEjecucion.split('T')[0] : '';
-            if (!regla || proximaFechaEjecucion !== fechaOriginal) {
-                setFormError('No se permiten fechas iniciales anteriores a hoy.');
-                return;
-            }
+        const fechaOriginal = regla?.proximaFechaEjecucion ? regla.proximaFechaEjecucion.split('T')[0] : '';
+        const fechaError = validateFechaEdicionNoPasadaSiCambio(proximaFechaEjecucion, fechaOriginal, {
+            mensaje: 'No se permiten fechas iniciales anteriores a hoy.',
+        });
+        if (fechaError) {
+            setFormError(fechaError);
+            return;
         }
 
         const payload = {

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS,
@@ -285,12 +286,12 @@ export const MobileTicketFormModal = ({
         }
 
         if (esAdmin && fechaVencimiento) {
-            const hoy = getMinDateHoy();
-            if (fechaVencimiento < hoy) {
-                const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
-                if (!esEdicion || fechaVencimiento !== fechaOriginal) {
-                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
-                }
+            const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
+            const fechaError = validateFechaEdicionNoPasadaSiCambio(fechaVencimiento, fechaOriginal, {
+                mensaje: 'No se permiten fechas anteriores a hoy.',
+            });
+            if (fechaError) {
+                e.fechaVencimiento = fechaError;
             }
         }
         return e;
