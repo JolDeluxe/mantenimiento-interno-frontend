@@ -28,12 +28,12 @@ El proceso de migración de responsables se compone de los siguientes commits co
 | Componente/Helper | Archivo | Tipo | Usado por | Observaciones |
 | :--- | :--- | :--- | :--- | :--- |
 | **`WorkloadBadge`** | `WorkloadBadge.jsx` | Componente UI | `TecnicoRow`, modales padres | Muestra visualmente las tareas activas de un técnico. |
-| **`TecnicoRow`** | `TecnicoRow.jsx` | Componente UI | `TecnicoDropdown`, modales móviles | Renderiza un técnico con avatar, nombre y su indicador de carga de trabajo. |
-| **`buildOptionLabel`** | `helpers.js` | Helper | dropdowns de responsables | Helper de formato para búsquedas y selectores. |
-| **`ResponsablesMobileSection`** | `ResponsablesMobileSection.jsx` | Sección UI | Modales móviles de tareas | Orquesta el bloque de asignación móvil. Contiene un chip mobile privado. |
-| **`TecnicoDropdown`** | `TecnicoDropdown.jsx` | Componente UI | Secciones desktop y mobile | Desplegable de técnicos para el modo de edición normal. |
-| **`TecnicoCartSelector`** | `TecnicoCartSelector.jsx` | Componente UI | Secciones desktop y mobile | Selector del técnico principal para el modo carrito. |
-| **`ResponsablesDesktopSection`** | `ResponsablesDesktopSection.jsx` | Sección UI | Modales desktop de tareas | Orquesta el bloque de asignación desktop. Contiene un chip desktop privado. |
+| **`TecnicoRow`** | `TecnicoRow.jsx` | Componente UI | `TecnicoCartSelector` | Renderiza un técnico con avatar, nombre y su indicador de carga de trabajo. |
+| **`buildOptionLabel`** | `helpers.js` | Helper | `ResponsablesMobileSection` | Helper de formato para búsquedas y selectores móviles. |
+| **`ResponsablesMobileSection`** | `ResponsablesMobileSection.jsx` | Sección UI | Modales móviles de tareas | Orquesta el bloque de asignación móvil. Usa select nativo, `buildOptionLabel` y chip mobile privado. |
+| **`TecnicoDropdown`** | `TecnicoDropdown.jsx` | Componente UI | `ResponsablesDesktopSection` | Desplegable de técnicos para el modo de edición normal. Conserva su fila interna propia y NO usa `TecnicoRow` para evitar cambios visuales. |
+| **`TecnicoCartSelector`** | `TecnicoCartSelector.jsx` | Componente UI | `ResponsablesDesktopSection` | Selector del técnico principal para el modo carrito. Internamente usa `TecnicoRow` para listar los técnicos en el selector. |
+| **`ResponsablesDesktopSection`** | `ResponsablesDesktopSection.jsx` | Sección UI | Modales desktop de tareas | Orquesta el bloque de asignación desktop. Usa `TecnicoDropdown`, `TecnicoCartSelector` y chip desktop privado. |
 
 ---
 
@@ -52,7 +52,7 @@ El proceso de migración de responsables se compone de los siguientes commits co
 
 *   **Chips Privados por Entorno:** No se extrajo `TecnicoChip` de manera global porque el entorno desktop y mobile presentaban diferencias estéticas significativas (bordes, avatares e interacciones). `ResponsablesMobileSection` y `ResponsablesDesktopSection` implementan chips de técnico internos y privados (`MobileTecnicoChip` y `DesktopTecnicoChip` respectivamente) para salvaguardar la fidelidad visual.
 *   **Encapsulamiento Limpio de Dropdown:** El componente `TecnicoDropdown` conserva su fila de renderizado interna propia y no consume `TecnicoRow` para prevenir desalineaciones visuales en los márgenes de los dropdowns desktop.
-*   **Preservación de `deferClearSearch`:** `TecnicoCartSelector` expone la propiedad de limpieza diferida de búsquedas (`deferCartClearSearch`) únicamente para mantenimientos recurrentes, tal como estaba implementado previamente.
+*   **Preservación de `deferClearSearch`:** `TecnicoCartSelector` expone la propiedad `deferClearSearch`, y `ResponsablesDesktopSection` recibe la prop `deferCartClearSearch` para preservar el comportamiento diferenciado que ya existía en `MantenimientosFormModal`.
 *   **Handlers en Formularios Padres:** Toda la lógica de mutación de arreglos y estados (como la inyección al carrito de preventivos en lote) se mantiene en el componente raíz del modal para no trasladar la lógica pesada a las secciones comunes.
 *   **No afectación de Permisos:** No se alteraron los guardias `esAdmin` ni validaciones funcionales.
 
