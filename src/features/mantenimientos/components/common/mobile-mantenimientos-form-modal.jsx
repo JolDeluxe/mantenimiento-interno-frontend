@@ -7,7 +7,7 @@ import {
     validateFechaInicioRecurrencia,
     validateFechaRequerida,
 } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
@@ -40,62 +40,6 @@ const deducirPlantaDeArea = (areaName, plantaActual) => {
         }
     }
     return '';
-};
-
-// ── Duration Picker (mobile — selects nativos en grid 2 cols) ─────────────
-const HORAS_OPTIONS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-
-const DurationPicker = ({ valueMins, onChange, disabled }) => {
-    const horas = Math.floor((valueMins || 0) / 60);
-    const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
-
-    const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
-
-    return (
-        <div className="flex flex-col gap-1.5">
-            <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                    <select
-                        value={horas}
-                        onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
-                        disabled={disabled}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
-                    >
-                        {HORAS_OPTIONS.map((h) => (
-                            <option key={h} value={h}>{h} h</option>
-                        ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                        <Icon name="expand_more" size="sm" />
-                    </div>
-                </div>
-
-                <div className="relative">
-                    <select
-                        value={minutos}
-                        onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
-                        disabled={disabled}
-                        className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
-                    >
-                        {MINUTOS_OPTIONS.map((m) => (
-                            <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>
-                        ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                        <Icon name="expand_more" size="sm" />
-                    </div>
-                </div>
-            </div>
-
-            {totalLabel && (
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <Icon name="timer" size="xs" />
-                    {totalLabel}
-                </p>
-            )}
-        </div>
-    );
 };
 
 const TecnicoChip = ({ tecnico, onRemove }) => (
@@ -797,6 +741,13 @@ export const MobileTicketFormModal = ({
                                             valueMins={impactoProduccionMins}
                                             onChange={setImpactoProduccionMins}
                                             disabled={isSubmitting}
+                                            hoursCount={24}
+                                            selectBaseClassName="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                                            selectNormalClassName=""
+                                            iconBaseClassName="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400"
+                                            iconNormalClassName=""
+                                            totalLabelBaseClassName="text-[11px] text-slate-400 flex items-center gap-1"
+                                            totalLabelNormalClassName=""
                                         />
                                         <p className="text-[10px] text-slate-400 font-semibold">
                                             Opcional. Sirve para reportes; no afecta el tiempo técnico.
@@ -954,7 +905,18 @@ export const MobileTicketFormModal = ({
                                         })()}
                                     </div>
                                 ) : (
-                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} error={!!fe.tiempoEstimado} />
+                                    <DurationPicker
+                                        valueMins={tiempoEstimadoMins}
+                                        onChange={setTiempoEstimadoMins}
+                                        disabled={isSubmitting}
+                                        hoursCount={24}
+                                        selectBaseClassName="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                                        selectNormalClassName=""
+                                        iconBaseClassName="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400"
+                                        iconNormalClassName=""
+                                        totalLabelBaseClassName="text-[11px] text-slate-400 flex items-center gap-1"
+                                        totalLabelNormalClassName=""
+                                    />
                                 )}
 
                                 {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.tiempoEstimado}</p>}

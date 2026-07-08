@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -17,9 +17,6 @@ import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 
 const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
-
-const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
-const MINUTOS_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 const deducirPlantaDeArea = (areaName, plantaActual) => {
     if (!areaName) return '';
@@ -82,72 +79,6 @@ const getDurationLabel = (inicio, fin) => {
         return `${h} h ${m > 0 ? `${m} min` : ''}`;
     }
     return `${m} min`;
-};
-
-const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
-    const horas = Math.floor((valueMins || 0) / 60);
-    const minutos = Math.round(((valueMins || 0) % 60) / 5) * 5 % 60;
-    const totalLabel = valueMins > 0 ? `${valueMins} min en total` : null;
-
-    return (
-        <div className="flex flex-col gap-1.5">
-            <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-
-                    <select
-                        value={horas}
-                        onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
-                        disabled={disabled}
-                        className={cn(
-                            "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
-                            error
-                                ? "border-rose-500 focus:ring-rose-200"
-                                : "border-slate-300 focus:ring-marca-secundario/30"
-                        )}
-                    >
-                        {HORAS_OPTIONS.map(h => <option key={h} value={h}>{h} h</option>)}
-                    </select>
-                    <div className={cn(
-                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
-                        error ? "text-rose-400" : "text-slate-400"
-                    )}>
-                        <Icon name="expand_more" size="sm" />
-                    </div>
-                </div>
-
-                <div className="relative">
-                    <select
-                        value={minutos}
-                        onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
-                        disabled={disabled}
-                        className={cn(
-                            "w-full border rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8 transition-colors",
-                            error
-                                ? "border-rose-500 focus:ring-rose-200"
-                                : "border-slate-300 focus:ring-marca-secundario/30"
-                        )}
-                    >
-                        {MINUTOS_OPTIONS.map(m => <option key={m} value={m}>{String(m).padStart(2, '0')} min</option>)}
-                    </select>
-                    <div className={cn(
-                        "pointer-events-none absolute inset-y-0 right-0 flex items-center px-2",
-                        error ? "text-rose-400" : "text-slate-400"
-                    )}>
-                        <Icon name="expand_more" size="sm" />
-                    </div>
-                </div>
-            </div>
-
-            {totalLabel && (
-                <p className={cn(
-                    "text-[11px] flex items-center gap-1 transition-colors",
-                    error ? "text-rose-600 font-bold" : "text-slate-400"
-                )}>
-                    <Icon name="timer" size="xs" /> {totalLabel}
-                </p>
-            )}
-        </div>
-    );
 };
 
 const WorkloadBadge = ({ label, count, colorClass }) => (
