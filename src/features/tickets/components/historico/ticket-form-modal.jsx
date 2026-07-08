@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -830,12 +831,13 @@ export const TicketFormModal = ({
             if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
 
             // Validación: Fecha de vencimiento obligatoria
-            if (!fechaVencimiento) {
-                e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
-            } else if (fechaVencimiento < hoyLocal) {
+            const errReq = validateFechaRequerida(fechaVencimiento, 'La fecha de vencimiento es obligatoria.');
+            if (errReq) {
+                e.fechaVencimiento = errReq;
+            } else {
                 const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
-                if (!esEdicion || fechaVencimiento !== fechaOriginal)
-                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                const errVal = validateFechaEdicionNoPasadaSiCambio(fechaVencimiento, fechaOriginal);
+                if (errVal) e.fechaVencimiento = errVal;
             }
 
             // Validación: Tiempo estimado obligatorio para tickets planeados generales, opcional en MAQUINARIA o TICKET

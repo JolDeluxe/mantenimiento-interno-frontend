@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
+import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -985,10 +986,12 @@ export const MantenimientosFormModal = ({
                     e.intervaloDias = 'El intervalo de días debe ser mayor que 0.';
                 }
             }
-            if (!fechaVencimiento) {
-                e.fechaVencimiento = 'La fecha de inicio es obligatoria.';
-            } else if (fechaVencimiento < hoyLocal) {
-                e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+            const errRecReq = validateFechaRequerida(fechaVencimiento, 'La fecha de inicio es obligatoria.');
+            if (errRecReq) {
+                e.fechaVencimiento = errRecReq;
+            } else {
+                const errRecVal = validateFechaInicioRecurrencia(fechaVencimiento, { mensaje: 'No se permiten fechas anteriores a hoy.' });
+                if (errRecVal) e.fechaVencimiento = errRecVal;
             }
             if (responsables.length === 0 && !tecnicoCartId) {
                 e.responsables = 'Debes asignar al menos un técnico responsable.';
@@ -1019,12 +1022,13 @@ export const MantenimientosFormModal = ({
             if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
 
             // Validación: Fecha de vencimiento obligatoria
-            if (!fechaVencimiento) {
-                e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
-            } else if (fechaVencimiento < hoyLocal) {
+            const errReq = validateFechaRequerida(fechaVencimiento, 'La fecha de vencimiento es obligatoria.');
+            if (errReq) {
+                e.fechaVencimiento = errReq;
+            } else {
                 const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
-                if (!esEdicion || fechaVencimiento !== fechaOriginal)
-                    e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                const errVal = validateFechaEdicionNoPasadaSiCambio(fechaVencimiento, fechaOriginal);
+                if (errVal) e.fechaVencimiento = errVal;
             }
 
             // Validación: Rango horario o tiempo estimado
