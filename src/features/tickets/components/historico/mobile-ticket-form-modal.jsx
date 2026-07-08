@@ -3,6 +3,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSel
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
+import { PrioridadField } from '@/features/common/forms/tareas/fields';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS,
@@ -391,12 +392,14 @@ export const MobileTicketFormModal = ({
 
                     {/* ── FILA 1: Prioridad | Categoría | Tipo ── */}
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="tf-prioridad">Prioridad *</Label>
-                            <Select id="tf-prioridad" value={prioridad} onChange={(e) => setPrioridad(e.target.value)} disabled={isSubmitting}>
-                                {PRIORIDADES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                            </Select>
-                        </div>
+                        <PrioridadField
+                            id="tf-prioridad"
+                            value={prioridad}
+                            onChange={setPrioridad}
+                            options={PRIORIDADES}
+                            disabled={isSubmitting}
+                            required
+                        />
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tf-cat" error={!!fe.categoria}>Categoría del equipo *</Label>
                             <Select id="tf-cat" value={categoria} onChange={(e) => {
