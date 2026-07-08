@@ -324,6 +324,14 @@ const ParsedNote = ({ notaRaw, config }) => {
     let isRutina = false;
     let isInspeccion = false;
 
+    // 0. Limpieza de marcadores de metadatos de sistema (ej. ||[META:CIERRE_ADMINISTRATIVO]||)
+    const esCierreAdmin = cleanNota.includes('||[META:CIERRE_ADMINISTRATIVO]||');
+    const metaRegex = /\|\|\[META:[^\]]+\]\|\|/g;
+    cleanNota = cleanNota.replace(metaRegex, '').trim();
+    if (esCierreAdmin) {
+        cleanNota = cleanNota ? `${cleanNota} (Cerrado manualmente por administrador)` : "(Cerrado manualmente por administrador)";
+    }
+
     // 1. Limpieza de cambios de estado técnicos
     const stateChangeRegex = /Cambio de estado:\s*[A-Z_]+\s*→\s*[A-Z_]+:?\s*/i;
     cleanNota = cleanNota.replace(stateChangeRegex, '').trim();

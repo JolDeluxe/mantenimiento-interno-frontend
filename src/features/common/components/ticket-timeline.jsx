@@ -118,6 +118,15 @@ const TimelineEntry = ({ h, isActual, isInicio, isLast, onExpand, responsables }
 
     // Limpieza agresiva de metadatos y strings crudos de auditoría del backend
     let cleanNota = h.nota || '';
+
+    // 0. Limpieza de marcadores de metadatos de sistema (ej. ||[META:CIERRE_ADMINISTRATIVO]||)
+    const esCierreAdmin = cleanNota.includes('||[META:CIERRE_ADMINISTRATIVO]||');
+    const metaRegex = /\|\|\[META:[^\]]+\]\|\|/g;
+    cleanNota = cleanNota.replace(metaRegex, '').trim();
+    if (esCierreAdmin) {
+        cleanNota = cleanNota ? `${cleanNota} (Cerrado manualmente por administrador)` : "(Cerrado manualmente por administrador)";
+    }
+
     let timeBadge = null;
     let isRutina = false;
     let isInspeccion = false;

@@ -8,7 +8,7 @@ import { AdminCloseModal } from '@/features/common/components/admin-close-modal'
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
-import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
+import { MobileMantenimientosReviewModal } from '@/features/mantenimientos/components/common/mobile-mantenimientos-review-modal';
 import { MobileMantenimientosFilterBar } from '../components/hoy-mantenimientos/mobile-mantenimientos-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
 import { HoyTeamToggle } from '../components/common/hoy-team-toggle';
@@ -245,7 +245,7 @@ export const HoyMantenimientosMobile = ({
             <MobileHoyFormModal scope="mantenimientos" isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
             <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
             <HoyStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
-            <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+            <MobileMantenimientosReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
             <HoyStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
             <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
         </div>

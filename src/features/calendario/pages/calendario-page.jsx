@@ -48,8 +48,6 @@ export default function CalendarioPage() {
         loading,
         submitting,
         setSubmitting,
-        metricas,
-        isOffline,
         calendarDate,
         setCalendarDate,
         calendarView,
@@ -119,6 +117,13 @@ export default function CalendarioPage() {
     // ── Handlers de Escritura / Mutaciones ────────────────────────────────
     
     const handleCreate = async (payload) => {
+        if (payload === null) {
+            notify.success('Mantenimiento recurrente creado con éxito.');
+            setShowCreate(false);
+            setCalendarCreateDate(null);
+            refresh();
+            return;
+        }
         setSubmitting(true);
         try {
             // Evaluamos el scope del filtro activo para decidir qué tipo de tarea crear
