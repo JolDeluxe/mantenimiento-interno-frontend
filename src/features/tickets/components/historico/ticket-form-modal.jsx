@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
-import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
+import { MaquinaSelectField, PlantaAreaFields, TiempoHorarioSection } from '@/features/common/forms/tareas/fields';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
@@ -843,30 +843,28 @@ export const TicketFormModal = ({
                             }}
                         />
 
-                        {/* ── FILA 3: Fecha vencimiento | Tiempo estimado ── */}
+                        {/* ── SECCIÓN TIEMPO Y PROGRAMACIÓN con TiempoHorarioSection ── */}
                         {esAdmin && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <FechaVencimientoField
-                                    id="tf-fecha"
-                                    value={fechaVencimiento}
-                                    onChange={(v) => {
-                                        setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
-                                    }}
-                                    min={hoyLocal}
-                                    label="Fecha vencimiento *"
-                                    error={fe.fechaVencimiento}
-                                    disabled={isSubmitting}
-                                    onSetToday={setToday}
-                                    onSetTomorrow={setTomorrow}
-                                    isToday={isHoy}
-                                    isTomorrow={isManana}
-                                />
-                                <div className="flex flex-col gap-1.5">
-                                    <Label error={!!fe.tiempoEstimado}>{`Tiempo estimado ${tipo === 'TICKET' ? '' : '*'}`}</Label>
-                                    <DurationPicker valueMins={tiempoEstimadoMins} onChange={setTiempoEstimadoMins} disabled={isSubmitting} />
-                                    {fe.tiempoEstimado && <p className="text-[10px] text-rose-600 font-bold">{fe.tiempoEstimado}</p>}
-                                </div>
-                            </div>
+                            <TiempoHorarioSection
+                                fechaVencimiento={fechaVencimiento}
+                                onFechaVencimientoChange={(v) => {
+                                    setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
+                                }}
+                                fechaMin={hoyLocal}
+                                fechaLabel="Fecha vencimiento *"
+                                fechaError={fe.fechaVencimiento}
+                                fechaDisabled={isSubmitting}
+                                isToday={isHoy}
+                                isTomorrow={isManana}
+                                onSetToday={setToday}
+                                onSetTomorrow={setTomorrow}
+                                tiempoEstimadoMins={tiempoEstimadoMins}
+                                onTiempoEstimadoChange={setTiempoEstimadoMins}
+                                tiempoLabel={`Tiempo estimado ${tipo === 'TICKET' ? '' : '*'}`}
+                                tiempoError={fe.tiempoEstimado}
+                                tiempoDisabled={isSubmitting}
+                                layoutClassName="grid grid-cols-1 md:grid-cols-2 gap-3"
+                            />
                         )}
 
                         {/* ── DESCRIPCIÓN ── */}

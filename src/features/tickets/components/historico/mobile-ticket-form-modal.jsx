@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
-import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
+import { MaquinaSelectField, PlantaAreaFields, TiempoHorarioSection } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
@@ -466,43 +466,32 @@ export const MobileTicketFormModal = ({
                         }}
                     />
 
-                    {/* ── FILA 3: Fecha | Tiempo Estimado (Solo Admin) ── */}
+                    {/* ── SECCIÓN TIEMPO Y PROGRAMACIÓN con TiempoHorarioSection ── */}
                     {esAdmin && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FechaVencimientoField
-                                id="tf-fecha"
-                                value={fechaVencimiento}
-                                onChange={(v) => {
-                                    setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
-                                }}
-                                min={hoyLocal}
-                                label="Fecha vencimiento"
-                                error={fe.fechaVencimiento}
-                                disabled={isSubmitting}
-                                onSetToday={setToday}
-                                onSetTomorrow={setTomorrow}
-                                isToday={isHoy}
-                                isTomorrow={isManana}
-                                quickButtonBaseClassName="text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer"
-                                quickButtonInactiveClassName="text-marca-primario bg-marca-primario/10"
-                            />
-
-                            <div className="flex flex-col gap-1.5">
-                                <Label>Tiempo estimado</Label>
-                                <DurationPicker
-                                    valueMins={tiempoEstimadoMins}
-                                    onChange={setTiempoEstimadoMins}
-                                    disabled={isSubmitting}
-                                    hoursCount={24}
-                                    selectBaseClassName="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
-                                    selectNormalClassName=""
-                                    iconBaseClassName="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400"
-                                    iconNormalClassName=""
-                                    totalLabelBaseClassName="text-[11px] text-slate-400 flex items-center gap-1"
-                                    totalLabelNormalClassName=""
-                                />
-                            </div>
-                        </div>
+                        <TiempoHorarioSection
+                            fechaVencimiento={fechaVencimiento}
+                            onFechaVencimientoChange={(v) => {
+                                setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
+                            }}
+                            fechaMin={hoyLocal}
+                            fechaLabel="Fecha vencimiento"
+                            fechaError={fe.fechaVencimiento}
+                            fechaDisabled={isSubmitting}
+                            isToday={isHoy}
+                            isTomorrow={isManana}
+                            onSetToday={setToday}
+                            onSetTomorrow={setTomorrow}
+                            quickButtonBaseClassName="text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer"
+                            quickButtonInactiveClassName="text-marca-primario bg-marca-primario/10"
+                            tiempoEstimadoMins={tiempoEstimadoMins}
+                            onTiempoEstimadoChange={setTiempoEstimadoMins}
+                            tiempoLabel="Tiempo estimado"
+                            tiempoError={fe.tiempoEstimado}
+                            tiempoDisabled={isSubmitting}
+                            durationHoursCount={24}
+                            durationSelectBaseClassName="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed pr-8"
+                            layoutClassName="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                        />
                     )}
 
                     {/* ── ASIGNACIÓN DE TÉCNICOS (Admin) ── */}
