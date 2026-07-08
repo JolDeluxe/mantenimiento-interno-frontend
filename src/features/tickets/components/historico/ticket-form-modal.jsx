@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
+import { PrioridadField } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -1206,14 +1207,16 @@ export const TicketFormModal = ({
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="tf-pri" error={!!fe.prioridad}>Prioridad *</Label>
-                                <Select id="tf-pri" value={prioridad} onChange={(e) => setPrioridad(e.target.value)}
-                                    error={!!fe.prioridad} helperText={fe.prioridad} disabled={isSubmitting}>
-                                    <option value="" disabled hidden>Selecciona…</option>
-                                    {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                </Select>
-                            </div>
+                            <PrioridadField
+                                id="tf-pri"
+                                value={prioridad}
+                                onChange={setPrioridad}
+                                options={PRIORIDADES}
+                                error={fe.prioridad}
+                                disabled={isSubmitting}
+                                required
+                                placeholder="Selecciona…"
+                            />
                         </div>
 
                         {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
