@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -1838,37 +1838,22 @@ export const MantenimientosFormModal = ({
                         {/* ── FILA 3: Fecha vencimiento | Tiempo estimado ── */}
                         {esAdmin && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className="flex flex-col gap-1.5 overflow-hidden">
-                                    <div className="flex justify-between items-center">
-                                        <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>
-                                            {esRecurrente ? 'Fecha de inicio del mantenimiento recurrente *' : 'Fecha de vencimiento *'}
-                                        </Label>
-                                        <div className="flex items-center gap-1.5">
-                                            <button type="button" onClick={setToday} disabled={isSubmitting}
-                                                className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
-                                                    isHoy ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20")}>
-                                                Hoy
-                                            </button>
-                                            <button type="button" onClick={setTomorrow} disabled={isSubmitting}
-                                                className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
-                                                    isManana ? "bg-marca-primario text-white" : "text-marca-primario bg-marca-primario/10 hover:bg-marca-primario/20")}>
-                                                Mañana
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <Input id="tf-fecha" type="date" value={fechaVencimiento} min={hoyLocal}
-                                        onChange={(e) => {
-                                            const v = e.target.value;
-                                            setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
-                                        }}
-                                        error={!!fe.fechaVencimiento} helperText={fe.fechaVencimiento}
-                                        disabled={isSubmitting} style={{ minWidth: 0 }} />
-                                    {esRecurrente && (
-                                        <span className="text-[10px] text-slate-500 font-semibold leading-relaxed mt-1 block">
-                                            Esta fecha define cuándo inicia la recurrencia. Si eliges hoy, se generará el primer mantenimiento inmediatamente. Si eliges una fecha futura, solo se guardará la programación.
-                                        </span>
-                                    )}
-                                </div>
+                                <FechaVencimientoField
+                                    id="tf-fecha"
+                                    value={fechaVencimiento}
+                                    onChange={(v) => {
+                                        setFechaVencimiento(v && v < hoyLocal ? hoyLocal : v);
+                                    }}
+                                    min={hoyLocal}
+                                    label={esRecurrente ? 'Fecha de inicio del mantenimiento recurrente *' : 'Fecha de vencimiento *'}
+                                    error={fe.fechaVencimiento}
+                                    disabled={isSubmitting}
+                                    onSetToday={setToday}
+                                    onSetTomorrow={setTomorrow}
+                                    isToday={isHoy}
+                                    isTomorrow={isManana}
+                                    description={esRecurrente ? 'Esta fecha define cuándo inicia la recurrencia. Si eliges hoy, se generará el primer mantenimiento inmediatamente. Si eliges una fecha futura, solo se guardará la programación.' : undefined}
+                                />
                                 <div className="flex flex-col gap-1.5">
                                     <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-h-[24px] h-auto">
                                         <Label error={!!fe.tiempoEstimado || !!fe.horaInicio || !!fe.horaFin}>
