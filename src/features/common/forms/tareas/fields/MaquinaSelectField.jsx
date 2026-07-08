@@ -50,9 +50,18 @@ export function MaquinaSelectField({
       />
       {error && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{error}</p>}
       {maquinaInfo && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
-          <Icon name="info" size="xs" />
-          <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
+        <div className="flex items-start gap-2.5 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-850 font-semibold mt-1 animate-in fade-in duration-200">
+          <Icon name="check_circle" size="xs" className="text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex-1 leading-tight">
+            <p className="text-emerald-800">
+              Máquina validada: <strong className="font-bold">{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})
+            </p>
+            {(maquinaInfo.planta || maquinaInfo.area) && (
+              <p className="text-[10px] text-emerald-600 font-normal mt-0.5">
+                Ubicación: {[maquinaInfo.planta, maquinaInfo.area].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

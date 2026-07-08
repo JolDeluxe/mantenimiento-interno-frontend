@@ -284,7 +284,7 @@ export const MobileTicketFormModal = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
             <ModalHeader
-                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nuevo Mantnimiento' : 'Reportar problema'}
+                title={esEdicion ? 'Editar tarea' : esAdmin ? 'Nuevo mantenimiento' : 'Reportar problema'}
                 onClose={onClose}
             />
             <ModalBody>
