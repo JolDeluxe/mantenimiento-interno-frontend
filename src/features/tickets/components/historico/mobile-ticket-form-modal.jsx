@@ -404,7 +404,7 @@ export const MobileTicketFormModal = ({
                                 if (val === 'RUTINA') {
                                     setClasificacion('RUTINA');
                                 } else if (val !== 'MAQUINARIA') {
-                                    setClasificacion('PREVENTIVO');
+                                    setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : '');
                                 }
                                 if (val !== 'MAQUINARIA') {
                                     setMaquinaId('');
@@ -462,7 +462,7 @@ export const MobileTicketFormModal = ({
                                 )}
                             </div>
                         )}
-                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
+                        {categoria === 'MAQUINARIA' && scope !== 'actividades' && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
                             <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                 <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                 <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}

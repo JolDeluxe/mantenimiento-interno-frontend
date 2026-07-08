@@ -226,6 +226,7 @@ const TecnicoCartSelector = ({ tecnicos, value, onChange, disabled, placeholder 
         if (isOpen) {
             setTimeout(() => searchRef.current?.focus(), 50);
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setBusqueda('');
         }
     }, [isOpen]);
@@ -923,27 +924,6 @@ export const TicketFormModal = ({
         ));
     };
 
-    const buildFormData = (item) => {
-        const fd = new FormData();
-        fd.append('titulo', item.titulo);
-        fd.append('descripcion', item.descripcion);
-        fd.append('clasificacion', item.clasificacion);
-        if (item.categoria) fd.append('categoria', item.categoria);
-        fd.append('planta', item.planta);
-        fd.append('area', item.area);
-        fd.append('prioridad', item.prioridad);
-        if (item.maquinaId) fd.append('maquinaId', String(item.maquinaId));
-        fd.append('paroProduccion', item.paroProduccion ? 'true' : 'false');
-        if (item.paroProduccion && item.impactoProduccion) fd.append('impactoProduccion', String(item.impactoProduccion));
-        if (esAdmin) {
-            fd.append('tipo', item.tipo);
-            if (item.fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(item.fechaVencimiento));
-            if (!item.esRutina && item.tiempoEstimadoMins > 0)
-                fd.append('tiempoEstimado', String(item.tiempoEstimadoMins));
-            item.responsables.forEach(id => fd.append('responsables', id));
-        }
-        return fd;
-    };
 
     const handleAddTecnicoEdit = (idStr) => {
         if (!idStr || responsables.includes(idStr)) return;
@@ -1024,7 +1004,7 @@ export const TicketFormModal = ({
     const isManana = fechaVencimiento === mananaLocal;
 
     const fe = submitted ? getErrors() : {};
-    const clasificacionesOpts = esAdmin ? CLASIFICACIONES_ADMIN : CLASIFICACIONES_CLIENTE;
+
 
     return (
         <Modal
@@ -1194,9 +1174,9 @@ export const TicketFormModal = ({
                                     setCategoria(val);
                                     if (val === 'RUTINA') {
                                         setClasificacion('RUTINA');
-                                    } else if (val !== 'MAQUINARIA') {
-                                        setClasificacion('PREVENTIVO');
-                                    }
+                                     } else if (val !== 'MAQUINARIA') {
+                                         setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : '');
+                                     }
 
                                     // Si no es MAQUINARIA, limpiar toda la maquinaria y ubicaciones para evitar huerfanos (PWA-Proof)
                                     if (val !== 'MAQUINARIA') {
@@ -1212,8 +1192,8 @@ export const TicketFormModal = ({
                                 </Select>
                             </div>
 
-                            {categoria === 'MAQUINARIA' && scope !== 'actividades' && (
-                                <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                             {categoria === 'MAQUINARIA' && scope !== 'actividades' && (scope === 'mantenimientos' || (esEdicion && (ticketAEditar?.clasificacion === 'PREVENTIVO' || ticketAEditar?.clasificacion === 'CORRECTIVO'))) && (
+                                 <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <Label htmlFor="tf-clasificacion" error={!!fe.clasificacion}>{`Clasificación ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
                                     <Select id="tf-clasificacion" value={clasificacion} onChange={(e) => setClasificacion(e.target.value)}
                                         error={!!fe.clasificacion} helperText={fe.clasificacion} disabled={isSubmitting}>
