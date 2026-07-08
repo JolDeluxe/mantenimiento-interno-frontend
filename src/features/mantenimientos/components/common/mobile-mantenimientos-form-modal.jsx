@@ -8,6 +8,7 @@ import {
     validateFechaRequerida,
 } from '@/features/common/forms/tareas/validation';
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
+import { buildOptionLabel } from '@/features/common/forms/tareas/responsables';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
@@ -409,10 +410,6 @@ export const MobileTicketFormModal = ({
 
     const handleRemoveTecnico = (idStr) => {
         setResponsables((prev) => prev.filter((x) => x !== idStr));
-    };
-
-    const buildOptionLabel = (t) => {
-        return t.nombre;
     };
 
     const handleSubmit = async () => {
