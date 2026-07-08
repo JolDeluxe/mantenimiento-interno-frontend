@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
+import { MaquinaSelectField } from '@/features/common/forms/tareas/fields';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
@@ -740,51 +741,34 @@ export const TicketFormModal = ({
                             />
                         </div>
 
-                        {/* ── MÁQUINA (maquinaId) con SearchableSelect condicional ── */}
+                        {/* ── MÁQUINA (maquinaId) con MaquinaSelectField ── */}
                         {shouldShowMachineryBlock({ categoria, scope }) && (
-                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-maquinaId" error={!!fe.maquinaId}>{`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}</Label>
-                                    {validatingMaquina && (
-                                        <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 animate-pulse">
-                                            <Icon name="sync" size="xs" className="animate-spin" /> Validando...
-                                        </span>
-                                    )}
-                                </div>
-                                <SearchableSelect
-                                    options={opcionesMaquinas}
-                                    value={maquinaId}
-                                    onChange={(selectedId) => {
-                                        if (!selectedId) {
-                                            setMaquinaId('');
-                                            setMaquinaInfo(null);
-                                            setPlanta('');
-                                            setArea('');
-                                            return;
-                                        }
-                                        setMaquinaId(selectedId);
-                                        const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
-                                        if (maq) {
-                                            setMaquinaInfo(maq);
-                                            const loc = deriveLocationFromMachine(maq);
-                                            setPlanta(loc.planta);
-                                            setArea(loc.area);
-                                        }
-                                    }}
-                                    placeholder="Seleccionar máquina por código o nombre..."
-                                    searchPlaceholder="Buscar por MBCxxxx o nombre..."
-                                    allOptionText={null}
-                                    disabled={isSubmitting || lockBaseFields}
-                                    icon="precision_manufacturing"
-                                />
-                                {fe.maquinaId && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{fe.maquinaId}</p>}
-                                {maquinaInfo && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-marca-primario/[0.04] border border-marca-primario/10 rounded-xl text-xs text-marca-primario font-semibold mt-1">
-                                        <Icon name="info" size="xs" />
-                                        <span>Máquina validada: <strong>{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})</span>
-                                    </div>
-                                )}
-                            </div>
+                            <MaquinaSelectField
+                                label={`Maquinaria Relacionada ${scope === 'mantenimientos' ? '*' : ''}`}
+                                value={maquinaId}
+                                options={opcionesMaquinas}
+                                error={fe.maquinaId}
+                                disabled={isSubmitting || lockBaseFields}
+                                validating={validatingMaquina}
+                                maquinaInfo={maquinaInfo}
+                                onChange={(selectedId) => {
+                                    if (!selectedId) {
+                                        setMaquinaId('');
+                                        setMaquinaInfo(null);
+                                        setPlanta('');
+                                        setArea('');
+                                        return;
+                                    }
+                                    setMaquinaId(selectedId);
+                                    const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
+                                    if (maq) {
+                                        setMaquinaInfo(maq);
+                                        const loc = deriveLocationFromMachine(maq);
+                                        setPlanta(loc.planta);
+                                        setArea(loc.area);
+                                    }
+                                }}
+                            />
                         )}
 
                         {puedeReportarParoProduccion && (
