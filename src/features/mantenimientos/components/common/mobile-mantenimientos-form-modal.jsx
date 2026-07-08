@@ -7,7 +7,7 @@ import {
     validateFechaInicioRecurrencia,
     validateFechaRequerida,
 } from '@/features/common/forms/tareas/validation';
-import { PrioridadField } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
@@ -562,23 +562,17 @@ export const MobileTicketFormModal = ({
                     )}
 
                     {/* ── TÍTULO ── */}
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex justify-between items-center">
-                            <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
-                            <span className={`text-[10px] font-bold ${titulo.length >= MAX_TITULO ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                {titulo.length}/{MAX_TITULO}
-                            </span>
-                        </div>
-                        <Input
-                            id="tf-titulo"
-                            value={titulo}
-                            onChange={(e) => setTitulo(e.target.value.slice(0, MAX_TITULO))}
-                            error={!!fe.titulo}
-                            helperText={fe.titulo}
-                            placeholder="Ej. Fuga de aire en compresor"
-                            disabled={isSubmitting}
-                        />
-                    </div>
+                    <TituloField
+                        id="tf-titulo"
+                        value={titulo}
+                        onChange={setTitulo}
+                        error={fe.titulo}
+                        disabled={isSubmitting}
+                        required
+                        maxLength={MAX_TITULO}
+                        label="Título"
+                        placeholder="Ej. Fuga de aire en compresor"
+                    />
 
                     {/* ── FILA 1: Prioridad | Categoría | Tipo ── */}
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -1046,38 +1040,22 @@ export const MobileTicketFormModal = ({
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div className="flex justify-between items-center">
-                                <Label htmlFor="tf-desc" error={!!fe.descripcion}>Detalles adicionales / Descripción</Label>
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                        {descripcion.length}/{MAX_DESCRIPCION}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setDescripcion('');
-                                            setMostrarDescripcion(false);
-                                        }}
-                                        disabled={isSubmitting}
-                                        className="text-[10px] text-rose-600 hover:text-rose-800 font-bold bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-                                    >
-                                        Quitar
-                                    </button>
-                                </div>
-                            </div>
-                            <Input
-                                id="tf-desc"
-                                multiline
-                                rows={3}
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
-                                error={!!fe.descripcion}
-                                helperText={fe.descripcion}
-                                placeholder="Describe el problema o tarea con el mayor detalle posible…"
-                                disabled={isSubmitting}
-                            />
-                        </div>
+                        <DescripcionField
+                            id="tf-desc"
+                            value={descripcion}
+                            onChange={setDescripcion}
+                            onRemove={() => {
+                                setDescripcion('');
+                                setMostrarDescripcion(false);
+                            }}
+                            error={fe.descripcion}
+                            disabled={isSubmitting}
+                            maxLength={MAX_DESCRIPCION}
+                            label="Detalles adicionales / Descripción"
+                            placeholder="Describe el problema o tarea con el mayor detalle posible…"
+                            rows={3}
+                            className="animate-in fade-in slide-in-from-top-2 duration-200"
+                        />
                     )}
 
                 </div>

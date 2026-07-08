@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
-import { PrioridadField } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
@@ -1517,19 +1517,17 @@ export const MantenimientosFormModal = ({
 
 
                         {/* ── TÍTULO ── */}
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between items-center">
-                                <Label htmlFor="tf-titulo" error={!!fe.titulo}>Título *</Label>
-                                <span className={`text-[10px] font-bold ${titulo.length >= MAX_TITULO ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                    {titulo.length}/{MAX_TITULO}
-                                </span>
-                            </div>
-                            <Input id="tf-titulo" value={titulo}
-                                onChange={(e) => setTitulo(e.target.value.slice(0, MAX_TITULO))}
-                                error={!!fe.titulo} helperText={fe.titulo}
-                                placeholder="Ej. Fuga de aire en compresor principal"
-                                disabled={isSubmitting || lockBaseFields} />
-                        </div>
+                        <TituloField
+                            id="tf-titulo"
+                            value={titulo}
+                            onChange={setTitulo}
+                            error={fe.titulo}
+                            disabled={isSubmitting || lockBaseFields}
+                            required
+                            maxLength={MAX_TITULO}
+                            label="Título"
+                            placeholder="Ej. Fuga de aire en compresor principal"
+                        />
 
                         {/* ── FILA 1: Clasificación | Prioridad | Categoría | Tipo ── */}
                         <div className={cn(
@@ -1973,32 +1971,22 @@ export const MantenimientosFormModal = ({
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex justify-between items-center">
-                                    <Label htmlFor="tf-desc" error={!!fe.descripcion}>Detalles adicionales / Descripción</Label>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[10px] font-bold ${descripcion.length >= MAX_DESCRIPCION ? 'text-estado-rechazado' : 'text-slate-400'}`}>
-                                            {descripcion.length}/{MAX_DESCRIPCION}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setDescripcion('');
-                                                setMostrarDescripcion(false);
-                                            }}
-                                            disabled={isSubmitting || lockBaseFields}
-                                            className="text-[10px] text-rose-600 hover:text-rose-800 font-bold bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-                                        >
-                                            Quitar
-                                        </button>
-                                    </div>
-                                </div>
-                                <Input id="tf-desc" multiline rows={modoCarrito ? 2 : 3} value={descripcion}
-                                    onChange={(e) => setDescripcion(e.target.value.slice(0, MAX_DESCRIPCION))}
-                                    error={!!fe.descripcion} helperText={fe.descripcion}
-                                    placeholder="Describe el problema o tarea con el mayor detalle posible…"
-                                    disabled={isSubmitting || lockBaseFields} />
-                            </div>
+                            <DescripcionField
+                                id="tf-desc"
+                                value={descripcion}
+                                onChange={setDescripcion}
+                                onRemove={() => {
+                                    setDescripcion('');
+                                    setMostrarDescripcion(false);
+                                }}
+                                error={fe.descripcion}
+                                disabled={isSubmitting || lockBaseFields}
+                                maxLength={MAX_DESCRIPCION}
+                                label="Detalles adicionales / Descripción"
+                                placeholder="Describe el problema o tarea con el mayor detalle posible…"
+                                rows={modoCarrito ? 2 : 3}
+                                className="animate-in fade-in slide-in-from-top-2 duration-200"
+                            />
                         )}
                         </div>
 
