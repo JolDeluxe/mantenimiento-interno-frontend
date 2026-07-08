@@ -766,8 +766,9 @@ export const TicketFormModal = ({
                                         const maq = maquinasRaw.find(m => String(m.id) === String(selectedId));
                                         if (maq) {
                                             setMaquinaInfo(maq);
-                                            setPlanta(maq.planta || '');
-                                            setArea(maq.area || '');
+                                            const loc = deriveLocationFromMachine(maq);
+                                            setPlanta(loc.planta);
+                                            setArea(loc.area);
                                         }
                                     }}
                                     placeholder="Seleccionar máquina por código o nombre..."
