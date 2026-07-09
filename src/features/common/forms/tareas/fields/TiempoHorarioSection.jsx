@@ -7,9 +7,8 @@ import { DurationPicker } from './DurationPicker';
 /**
  * TiempoHorarioSection — componente común controlado y visual.
  *
- * Agrupa la fecha de vencimiento, el selector de duración estimada y la
- * sección de rango horario programado (inicio/fin) si aplica.
- * Toda la lógica de mutación de estado y dependencias permanece en el padre.
+ * Agrupa de forma integrada el campo de fecha de vencimiento límite y
+ * el selector de duración estimada de la tarea en una card elegante.
  */
 export function TiempoHorarioSection({
     // Props de Fecha Vencimiento
@@ -35,19 +34,11 @@ export function TiempoHorarioSection({
     durationHoursCount,
     durationSelectBaseClassName,
 
-    // Props de Rango Horario (mantenimientos)
-    showHorario = false,
-    horaInicio,
-    horaFin,
-    onHoraInicioChange,
-    onHoraFinChange,
-    horarioDisabled = false,
-
     // Props de Layout y Estilo
     layoutClassName = 'grid grid-cols-1 md:grid-cols-2 gap-3',
     durationColSpanClassName = '',
     sectionTitle = 'Tiempo y Programación',
-    sectionDescription = 'Define la fecha límite, la duración estimada y las ventanas de atención.',
+    sectionDescription = 'Define la fecha límite y la duración estimada de la tarea.',
     showSectionHeader = true,
 }) {
     return (
@@ -84,36 +75,6 @@ export function TiempoHorarioSection({
                     quickButtonBaseClassName={quickButtonBaseClassName}
                     quickButtonInactiveClassName={quickButtonInactiveClassName}
                 />
-
-                {showHorario && (
-                    <div className="border border-slate-200/80 rounded-2xl p-3 bg-white flex flex-col gap-3 animate-in fade-in slide-in-from-top-1 duration-200 col-span-2">
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
-                            <Icon name="alarm" size="14px" className="text-slate-400" /> Rango Horario Programado (Opcional)
-                        </span>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inicio</span>
-                                <input
-                                    type="time"
-                                    value={horaInicio}
-                                    onChange={(e) => onHoraInicioChange(e.target.value)}
-                                    disabled={horarioDisabled}
-                                    className="w-full border border-slate-200 rounded-xl px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fin</span>
-                                <input
-                                    type="time"
-                                    value={horaFin}
-                                    onChange={(e) => onHoraFinChange(e.target.value)}
-                                    disabled={horarioDisabled}
-                                    className="w-full border border-slate-200 rounded-xl px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 <div className={`flex flex-col gap-1.5 ${durationColSpanClassName}`}>
                     <Label error={!!tiempoError}>{tiempoLabel}</Label>

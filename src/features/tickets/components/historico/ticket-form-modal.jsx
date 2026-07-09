@@ -5,7 +5,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSel
 import { MaquinaSelectField, PlantaAreaFields, TiempoHorarioSection } from '@/features/common/forms/tareas/fields';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
 import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/forms/tareas/responsables';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';

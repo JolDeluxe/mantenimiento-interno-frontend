@@ -4,7 +4,7 @@ import { MaquinaSelectField, PlantaAreaFields, TiempoHorarioSection } from '@/fe
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
 import { ResponsablesMobileSection } from '@/features/common/forms/tareas/responsables';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
