@@ -14,6 +14,7 @@ import { TicketFormModal } from '../components/historico/ticket-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
+import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 
 export const TicketsHistoricoDesktop = ({
     currentUser,
@@ -166,18 +167,35 @@ export const TicketsHistoricoDesktop = ({
                 ticket={detailTarget}
             />
 
-            <TicketFormModal
-                isOpen={Boolean(editTarget)}
-                onClose={() => setEditTarget(null)}
-                ticketAEditar={editTarget}
-                currentUser={currentUser}
-                tecnicos={tecnicos}
-                isSubmitting={submitting}
-                onSuccess={async (payload) => {
-                    await onSave(editTarget.id, payload);
-                    setEditTarget(null);
-                }}
-            />
+            {editTarget && ['PLANEADA', 'EXTRAORDINARIA'].includes(editTarget?.tipo) ? (
+                <TicketActividadFormModal
+                    isOpen={Boolean(editTarget)}
+                    onClose={() => setEditTarget(null)}
+                    ticketAEditar={editTarget}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={async (payload) => {
+                        await onSave(editTarget.id, payload);
+                        setEditTarget(null);
+                    }}
+                    scope="actividades"
+                    isMobile={false}
+                />
+            ) : (
+                <TicketFormModal
+                    isOpen={Boolean(editTarget)}
+                    onClose={() => setEditTarget(null)}
+                    ticketAEditar={editTarget}
+                    currentUser={currentUser}
+                    tecnicos={tecnicos}
+                    isSubmitting={submitting}
+                    onSuccess={async (payload) => {
+                        await onSave(editTarget.id, payload);
+                        setEditTarget(null);
+                    }}
+                />
+            )}
 
             <TicketAssignModal
                 isOpen={Boolean(assignTarget)}

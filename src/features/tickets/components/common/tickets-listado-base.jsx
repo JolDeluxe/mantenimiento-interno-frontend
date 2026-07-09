@@ -12,8 +12,7 @@ import { TicketsReportesDesktop } from '../../views/tickets-reportes-desktop';
 import { TicketsReportesMobile } from '../../views/tickets-reportes-mobile';
 import { TicketFormModal } from '../historico/ticket-form-modal';
 import { MobileTicketFormModal } from '../historico/mobile-ticket-form-modal';
-import { HoyFormModal } from '@/features/hoy/components/common/hoy-form-modal';
-import { MobileHoyFormModal } from '@/features/hoy/components/common/mobile-hoy-form-modal';
+import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
@@ -278,8 +277,8 @@ export default function TicketsListadoBase({
 
     const emptyState = EMPTY_STATE_BY_MODE[mode] || EMPTY_STATE_BY_MODE.historico;
     const toApproveCount = meta?.resumenEstados?.RESUELTO ?? 0;
-    const CreateFormModal = mode === 'actividades' ? HoyFormModal : TicketFormModal;
-    const MobileCreateFormModal = mode === 'actividades' ? MobileHoyFormModal : MobileTicketFormModal;
+    const CreateFormModal = mode === 'actividades' ? TicketActividadFormModal : TicketFormModal;
+    const MobileCreateFormModal = mode === 'actividades' ? TicketActividadFormModal : MobileTicketFormModal;
 
     const DesktopView = {
         actividades: TicketsActividadesDesktop,
@@ -335,9 +334,9 @@ export default function TicketsListadoBase({
             {isDesktop ? <DesktopView {...sharedViewProps} /> : <MobileView {...sharedViewProps} />}
             {allowCreate && showCreate && (
                 isDesktop ? (
-                    <CreateFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope={scope} />
+                    <CreateFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope={scope} isMobile={false} />
                 ) : (
-                    <MobileCreateFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope={scope} />
+                    <MobileCreateFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope={scope} isMobile />
                 )
             )}
             <TicketDetailModal isOpen={Boolean(detailTicket)} onClose={() => setDetailTicket(null)} ticket={detailTicket} />

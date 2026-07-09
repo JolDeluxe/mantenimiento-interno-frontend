@@ -354,11 +354,15 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
     );
 };
 
-export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, currentUser, tecnicos = [], isSubmitting = false, onSuccess, isMobile = false, defaultModoLista = undefined }) => {
+export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, currentUser, tecnicos = [], isSubmitting = false, onSuccess, isMobile = false, defaultModoLista = undefined, rules }) => {
     const esEdicion = !!ticketAEditar;
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
     const isJefeOwner = currentUser?.rol === 'JEFE_MTTO';
     const isCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
+    const storagePrefix = rules?.localStoragePrefix || 'hoy_actividades';
+    const storageKey = (key) => `${storagePrefix}_${key}`;
+    const defaultTipo = rules?.defaultTipo || 'PLANEADA';
+    const allowedTipos = rules?.allowedTipos || ['PLANEADA', 'EXTRAORDINARIA'];
 
     const isTicket = esEdicion ? ticketAEditar?.tipo === 'TICKET' : false;
     const lockBaseFields = esEdicion && isTicket && !isJefeOwner && !isCoordinador;
@@ -367,7 +371,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     const [carrito, setCarrito] = useState(() => {
         if (esEdicion) return [];
         try {
-            const saved = localStorage.getItem('hoy_actividades_carrito');
+            const saved = localStorage.getItem(storageKey('carrito'));
             return saved ? JSON.parse(saved) : [];
         } catch { return []; }
     });
@@ -375,81 +379,81 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     const [modoLista, setModoLista] = useState(() => {
         if (esEdicion) return false;
         if (defaultModoLista !== undefined) return defaultModoLista;
-        const saved = localStorage.getItem('hoy_actividades_modoLista');
+        const saved = localStorage.getItem(storageKey('modoLista'));
         return saved !== null ? JSON.parse(saved) : true; // Actividades: ON por defecto
     });
 
     const [titulo, setTitulo] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_titulo') || '';
+        return localStorage.getItem(storageKey('titulo')) || '';
     });
 
     const [descripcion, setDescripcion] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_descripcion') || '';
+        return localStorage.getItem(storageKey('descripcion')) || '';
     });
 
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
     const [categoria, setCategoria] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_categoria') || '';
+        return localStorage.getItem(storageKey('categoria')) || '';
     });
 
     const [planta, setPlanta] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_planta') || '';
+        return localStorage.getItem(storageKey('planta')) || '';
     });
 
     const [area, setArea] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_area') || '';
+        return localStorage.getItem(storageKey('area')) || '';
     });
 
     const [prioridad, setPrioridad] = useState(() => {
         if (esEdicion) return 'MEDIA';
-        return localStorage.getItem('hoy_actividades_prioridad') || 'MEDIA';
+        return localStorage.getItem(storageKey('prioridad')) || 'MEDIA';
     });
     const [tipo, setTipo] = useState(() => {
-        if (esEdicion) return 'PLANEADA';
-        return localStorage.getItem('hoy_actividades_tipo') || 'PLANEADA';
+        if (esEdicion) return defaultTipo;
+        return localStorage.getItem(storageKey('tipo')) || defaultTipo;
     });
 
     const [fechaVencimiento, setFechaVencimiento] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_fechaVencimiento') || '';
+        return localStorage.getItem(storageKey('fechaVencimiento')) || '';
     });
 
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(() => {
         if (esEdicion) return 0;
-        return Number(localStorage.getItem('hoy_actividades_tiempoEstimado')) || 0;
+        return Number(localStorage.getItem(storageKey('tiempoEstimado'))) || 0;
     });
 
     const [modoRangoHoras, setModoRangoHoras] = useState(() => {
         if (esEdicion) return false;
-        return localStorage.getItem('hoy_actividades_modoRangoHoras') === 'true';
+        return localStorage.getItem(storageKey('modoRangoHoras')) === 'true';
     });
 
     const [horaInicio, setHoraInicio] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_horaInicio') || '';
+        return localStorage.getItem(storageKey('horaInicio')) || '';
     });
 
     const [horaFin, setHoraFin] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_horaFin') || '';
+        return localStorage.getItem(storageKey('horaFin')) || '';
     });
 
     const [responsables, setResponsables] = useState(() => {
         if (esEdicion) return [];
         try {
-            const saved = localStorage.getItem('hoy_actividades_responsables');
+            const saved = localStorage.getItem(storageKey('responsables'));
             return saved ? JSON.parse(saved) : [];
         } catch { return []; }
     });
 
     const [tecnicoCartId, setTecnicoCartId] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem('hoy_actividades_tecnicoCartId') || '';
+        return localStorage.getItem(storageKey('tecnicoCartId')) || '';
     });
 
     const [backendError, setBackendError] = useState('');
@@ -488,43 +492,43 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     // --- EFECTO PARA ESCRIBIR EL BORRADOR EN LOCALSTORAGE ---
     useEffect(() => {
         if (esEdicion) return;
-        localStorage.setItem('hoy_actividades_titulo', titulo);
-        localStorage.setItem('hoy_actividades_descripcion', descripcion);
-        localStorage.setItem('hoy_actividades_categoria', categoria);
-        localStorage.setItem('hoy_actividades_planta', planta);
-        localStorage.setItem('hoy_actividades_area', area);
-        localStorage.setItem('hoy_actividades_prioridad', prioridad);
-        localStorage.setItem('hoy_actividades_tipo', tipo);
-        localStorage.setItem('hoy_actividades_fechaVencimiento', fechaVencimiento);
-        localStorage.setItem('hoy_actividades_tiempoEstimado', String(tiempoEstimadoMins));
-        localStorage.setItem('hoy_actividades_modoRangoHoras', String(modoRangoHoras));
-        localStorage.setItem('hoy_actividades_horaInicio', horaInicio);
-        localStorage.setItem('hoy_actividades_horaFin', horaFin);
-        localStorage.setItem('hoy_actividades_tecnicoCartId', tecnicoCartId);
-        localStorage.setItem('hoy_actividades_carrito', JSON.stringify(carrito));
-        localStorage.setItem('hoy_actividades_modoLista', JSON.stringify(modoLista));
-        localStorage.setItem('hoy_actividades_responsables', JSON.stringify(responsables));
-    }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion]);
+        localStorage.setItem(storageKey('titulo'), titulo);
+        localStorage.setItem(storageKey('descripcion'), descripcion);
+        localStorage.setItem(storageKey('categoria'), categoria);
+        localStorage.setItem(storageKey('planta'), planta);
+        localStorage.setItem(storageKey('area'), area);
+        localStorage.setItem(storageKey('prioridad'), prioridad);
+        localStorage.setItem(storageKey('tipo'), tipo);
+        localStorage.setItem(storageKey('fechaVencimiento'), fechaVencimiento);
+        localStorage.setItem(storageKey('tiempoEstimado'), String(tiempoEstimadoMins));
+        localStorage.setItem(storageKey('modoRangoHoras'), String(modoRangoHoras));
+        localStorage.setItem(storageKey('horaInicio'), horaInicio);
+        localStorage.setItem(storageKey('horaFin'), horaFin);
+        localStorage.setItem(storageKey('tecnicoCartId'), tecnicoCartId);
+        localStorage.setItem(storageKey('carrito'), JSON.stringify(carrito));
+        localStorage.setItem(storageKey('modoLista'), JSON.stringify(modoLista));
+        localStorage.setItem(storageKey('responsables'), JSON.stringify(responsables));
+    }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storagePrefix]);
 
     const clearDraft = () => {
         [
-            'hoy_actividades_titulo',
-            'hoy_actividades_descripcion',
-            'hoy_actividades_categoria',
-            'hoy_actividades_planta',
-            'hoy_actividades_area',
-            'hoy_actividades_prioridad',
-            'hoy_actividades_tipo',
-            'hoy_actividades_fechaVencimiento',
-            'hoy_actividades_tiempoEstimado',
-            'hoy_actividades_modoRangoHoras',
-            'hoy_actividades_horaInicio',
-            'hoy_actividades_horaFin',
-            'hoy_actividades_tecnicoCartId',
-            'hoy_actividades_carrito',
-            'hoy_actividades_modoLista',
-            'hoy_actividades_responsables',
-        ].forEach((key) => localStorage.removeItem(key));
+            'titulo',
+            'descripcion',
+            'categoria',
+            'planta',
+            'area',
+            'prioridad',
+            'tipo',
+            'fechaVencimiento',
+            'tiempoEstimado',
+            'modoRangoHoras',
+            'horaInicio',
+            'horaFin',
+            'tecnicoCartId',
+            'carrito',
+            'modoLista',
+            'responsables',
+        ].forEach((key) => localStorage.removeItem(storageKey(key)));
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
@@ -532,7 +536,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setPlanta('');
         setArea('');
         setPrioridad('MEDIA');
-        setTipo('PLANEADA');
+        setTipo(defaultTipo);
         setFechaVencimiento(hoyLocal);
         setTiempoEstimadoMins(0);
         setModoRangoHoras(false);
@@ -560,7 +564,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             setPlanta(ticketAEditar.planta ?? '');
             setArea(ticketAEditar.area ?? '');
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
-            setTipo(ticketAEditar.tipo ?? 'PLANEADA');
+            setTipo(ticketAEditar.tipo ?? defaultTipo);
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
 
@@ -1013,7 +1017,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                     >
                                         <option value="" disabled hidden>Selecciona…</option>
                                         {isTicket && <option value="TICKET">Ticket</option>}
-                                        {TIPOS_ADMIN.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                        {TIPOS_ADMIN.filter(t => allowedTipos.includes(t.value)).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </Select>
                                 </div>
                             )}

@@ -7,7 +7,7 @@ import { TicketSummaryBar } from '@/features/common/components/ticket-summary-ba
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
-import { MobileHoyFormModal } from '@/features/hoy/components/common/mobile-hoy-form-modal';
+import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
@@ -216,7 +216,7 @@ export const TicketsActividadesMobile = ({
             <ScrollToTopButton bottom={addBottom} />
 
             <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
-            <MobileHoyFormModal scope="actividades" isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+            <TicketActividadFormModal scope="actividades" isMobile isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
             <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
             <TicketStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
             <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />

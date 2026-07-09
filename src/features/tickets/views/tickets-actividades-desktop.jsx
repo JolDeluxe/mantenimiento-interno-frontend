@@ -1,6 +1,7 @@
 // src/features/tickets/views/tickets-actividades-desktop.jsx
 import { Pagination } from '@/components/ui/z_index';
 import { HoyAddButton } from '@/features/hoy/components/common/hoy-add-button';
+import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { ActividadesFilterBar } from '@/features/hoy/components/hoy-actividades/actividades-filter-bar';
 import { ActividadesTicketTable } from '@/features/hoy/components/hoy-actividades/actividades-ticket-table';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
@@ -172,6 +173,7 @@ export const TicketsActividadesDesktop = ({
                         onSave={onSave}
                         onChangeStatus={onChangeStatus}
                         scope="actividades"
+                        FormModalComponent={TicketActividadFormModal}
                     />
                     {totalPages > 1 && (
                         <Pagination
