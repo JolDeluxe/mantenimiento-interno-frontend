@@ -7,7 +7,7 @@ import { TicketAddButton } from '../components/historico/ticket-add-button';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '../constants';
-import { cn } from '@/utils/cn';
+// import { cn } from '@/utils/cn';
 
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketFormModal } from '../components/historico/ticket-form-modal';
@@ -68,7 +68,7 @@ export const TicketsHistoricoDesktop = ({
     onExport,
     allowCreate = true,
     emptyState = {},
-    toApproveCount = 0,
+    // toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
