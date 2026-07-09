@@ -934,8 +934,9 @@ export const MantenimientosFormModal = ({
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
 
-    const isHoy = fechaVencimiento === hoyLocal;
-    const isManana = fechaVencimiento === mananaLocal;
+    const isCalendarCreateDate = !esEdicion && Boolean(defaultDate);
+    const isHoy = !isCalendarCreateDate && fechaVencimiento === hoyLocal;
+    const isManana = !isCalendarCreateDate && fechaVencimiento === mananaLocal;
 
     const fe = submitted ? getErrors() : {};
 

@@ -333,6 +333,7 @@ export default function CalendarioPage() {
                         tecnicos={tecnicos}
                         isSubmitting={submitting}
                         onSuccess={handleCreate}
+                        defaultDate={calendarCreateDate}
                     />
                 )}
 

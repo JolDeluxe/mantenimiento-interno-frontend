@@ -55,6 +55,14 @@ Al editar no se pregunta. Calendario detecta el item real y abre el formulario c
 - Al editar mantenimiento se conserva `ticketAEditar.clasificacion`; si viene vacía, se usa fallback `PREVENTIVO`.
 - Se replica el patrón usado por las vistas reales de mantenimientos.
 
+## Ajuste fecha desde Calendario
+
+- Al hacer click en un día del Calendario, la fecha seleccionada se pasa al formulario.
+- Actividad recibe `defaultDate` en `CalendarioActividadFormModal`.
+- Mantenimiento ya recibía `defaultDate`; se conserva.
+- Cuando la fecha viene desde Calendario, los botones rápidos `Hoy` y `Mañana` no quedan visualmente seleccionados.
+- El input de fecha queda con el día elegido en Calendario, salvo que sea anterior a hoy; en ese caso se conserva el clamp existente a hoy.
+
 ## Validaciones
 
 - `npm run build`

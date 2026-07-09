@@ -354,7 +354,7 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
     );
 };
 
-export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, currentUser, tecnicos = [], isSubmitting = false, onSuccess, isMobile = false, defaultModoLista = undefined, rules }) => {
+export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, currentUser, tecnicos = [], isSubmitting = false, onSuccess, isMobile = false, defaultModoLista = undefined, defaultDate, rules }) => {
     const esEdicion = !!ticketAEditar;
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
     const isJefeOwner = currentUser?.rol === 'JEFE_MTTO';
@@ -585,12 +585,14 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             }
         } else {
             setMostrarDescripcion(Boolean(descripcion && descripcion.trim() !== ''));
-            if (!fechaVencimiento) {
+            if (defaultDate) {
+                setFechaVencimiento(defaultDate >= hoyLocal ? defaultDate : hoyLocal);
+            } else if (!fechaVencimiento) {
                 setFechaVencimiento(hoyLocal);
             }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, esEdicion, ticketAEditar]);
+    }, [isOpen, esEdicion, ticketAEditar, defaultDate]);
 
     useEffect(() => {
         if (isOpen && modoRangoHoras && !esEdicion && (!horaInicio || !horaFin)) {
@@ -922,12 +924,13 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setFechaVencimiento(d.toISOString().split('T')[0]);
     };
 
-    const isHoy = fechaVencimiento === hoyLocal;
+    const isCalendarCreateDate = !esEdicion && Boolean(defaultDate);
+    const isHoy = !isCalendarCreateDate && fechaVencimiento === hoyLocal;
     const isManana = useMemo(() => {
         const d = new Date();
         d.setDate(d.getDate() + 1);
-        return fechaVencimiento === d.toISOString().split('T')[0];
-    }, [fechaVencimiento]);
+        return !isCalendarCreateDate && fechaVencimiento === d.toISOString().split('T')[0];
+    }, [fechaVencimiento, isCalendarCreateDate]);
 
     const fe = submitted ? getErrors() : {};
 

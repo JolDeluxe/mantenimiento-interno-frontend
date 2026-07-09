@@ -468,8 +468,9 @@ export const MobileTicketFormModal = ({
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
-    const isHoy = fechaVencimiento === hoyLocal;
-    const isManana = fechaVencimiento === mananaLocal;
+    const isCalendarCreateDate = !esEdicion && Boolean(defaultDate);
+    const isHoy = !isCalendarCreateDate && fechaVencimiento === hoyLocal;
+    const isManana = !isCalendarCreateDate && fechaVencimiento === mananaLocal;
     
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full h-full m-0 rounded-none sm:rounded-xl sm:h-auto">
