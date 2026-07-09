@@ -1,6 +1,6 @@
 // src/features/common/forms/tareas/actividades/ActividadFormModal.jsx
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime, format12h } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
@@ -360,7 +360,10 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     const isJefeOwner = currentUser?.rol === 'JEFE_MTTO';
     const isCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
     const storagePrefix = rules?.localStoragePrefix || 'hoy_actividades';
-    const storageKey = (key) => `${storagePrefix}_${key}`;
+    const storageKey = useCallback(
+        (key) => `${storagePrefix}_${key}`,
+        [storagePrefix]
+    );
     const defaultTipo = rules?.defaultTipo || 'PLANEADA';
     const allowedTipos = rules?.allowedTipos || ['PLANEADA', 'EXTRAORDINARIA'];
 
@@ -508,8 +511,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         localStorage.setItem(storageKey('carrito'), JSON.stringify(carrito));
         localStorage.setItem(storageKey('modoLista'), JSON.stringify(modoLista));
         localStorage.setItem(storageKey('responsables'), JSON.stringify(responsables));
-    }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storagePrefix]);
-
+    }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storageKey]);
     const clearDraft = () => {
         [
             'titulo',
