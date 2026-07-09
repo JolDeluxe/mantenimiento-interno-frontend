@@ -74,9 +74,9 @@ export const SearchableSelect = ({
                     className
                 )}
             >
-                <span className="flex items-center whitespace-nowrap">
+                <span className="flex items-center min-w-0 flex-1">
                     {icon && <Icon name={icon} size="sm" className="mr-2 opacity-70 flex-shrink-0" />}
-                    <span>
+                    <span className="truncate min-w-0 overflow-hidden">
                         {value ? selectedOption?.label : placeholder}
                     </span>
                 </span>
@@ -108,7 +108,7 @@ export const SearchableSelect = ({
             </button>
 
             {isOpen && !disabled && (
-                <div className={cn("absolute top-full left-0 mt-1 min-w-full w-max max-w-sm bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in", menuClassName)}>
+                <div className={cn("absolute top-full left-0 mt-1 w-full max-w-full bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in", menuClassName)}>
 
                     {/* Buscador Interno */}
                     <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
@@ -131,11 +131,11 @@ export const SearchableSelect = ({
                             <button
                                 onClick={() => handleSelect("")}
                                 className={cn(
-                                    "w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap",
+                                    "w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors cursor-pointer",
                                     !value ? "bg-slate-50 font-bold text-slate-900" : "text-slate-600"
                                 )}
                             >
-                                {allOptionText}
+                                <span className="block truncate">{allOptionText}</span>
                             </button>
                         )}
 
@@ -147,11 +147,11 @@ export const SearchableSelect = ({
                                         key={valStr || opt.label}
                                         onClick={() => handleSelect(valStr)}
                                         className={cn(
-                                            "w-full text-left px-4 py-2.5 text-sm hover:bg-marca-primario/5 transition-colors border-t border-slate-50 cursor-pointer whitespace-nowrap",
+                                            "w-full text-left px-4 py-2.5 text-sm hover:bg-marca-primario/5 transition-colors border-t border-slate-50 cursor-pointer",
                                             String(value ?? '') === valStr ? "bg-marca-primario/5 font-bold text-marca-primario" : "text-slate-600"
                                         )}
                                     >
-                                        {opt.label}
+                                        <span className="block truncate min-w-0">{opt.label}</span>
                                     </button>
                                 );
                             })

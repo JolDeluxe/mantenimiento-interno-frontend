@@ -243,7 +243,7 @@ export default function HoyActividadesPage() {
         <>
             {isDesktop ? <HoyActividadesDesktop {...sharedProps} /> : <HoyActividadesMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <HoyFormModal defaultModoLista={true} scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             ) : (
                 <MobileHoyFormModal scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
