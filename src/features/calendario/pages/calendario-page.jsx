@@ -88,6 +88,7 @@ export default function CalendarioPage() {
     const [adminCloseTarget, setAdminCloseTarget] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
     const [createType, setCreateType] = useState(null);
+    const [createClasificacion, setCreateClasificacion] = useState(null);
     const [calendarCreateDate, setCalendarCreateDate] = useState(null);
 
     // Mapear los datos de API a items compatibles con el calendario
@@ -145,6 +146,7 @@ export default function CalendarioPage() {
             notify.success('Tarea creada correctamente.');
             setShowCreate(false);
             setCreateType(null);
+            setCreateClasificacion(null);
             setCalendarCreateDate(null);
             refresh();
         } catch (err) {
@@ -199,6 +201,7 @@ export default function CalendarioPage() {
     const handleCloseCreate = useCallback(() => {
         setShowCreate(false);
         setCreateType(null);
+        setCreateClasificacion(null);
         setCalendarCreateDate(null);
     }, []);
 
@@ -333,7 +336,42 @@ export default function CalendarioPage() {
                     />
                 )}
 
-                {showCreate && createType === 'mantenimiento' && (
+                <Modal isOpen={showCreate && createType === 'mantenimiento' && !createClasificacion} onClose={handleCloseCreate} className="max-w-md">
+                    <ModalHeader title="Tipo de mantenimiento" onClose={handleCloseCreate} />
+                    <ModalBody className="space-y-3">
+                        <button
+                            type="button"
+                            onClick={() => setCreateClasificacion('PREVENTIVO')}
+                            className="w-full flex items-center gap-3 rounded-lg border border-slate-200 p-4 text-left hover:border-marca-primario hover:bg-slate-50 transition-colors"
+                        >
+                            <span className="h-10 w-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                                <Icon name="build_circle" size="24px" />
+                            </span>
+                            <span>
+                                <span className="block font-bold text-slate-900">Preventivo</span>
+                                <span className="block text-sm text-slate-500">Mantenimiento programado.</span>
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCreateClasificacion('CORRECTIVO')}
+                            className="w-full flex items-center gap-3 rounded-lg border border-slate-200 p-4 text-left hover:border-marca-primario hover:bg-slate-50 transition-colors"
+                        >
+                            <span className="h-10 w-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                                <Icon name="report_problem" size="24px" />
+                            </span>
+                            <span>
+                                <span className="block font-bold text-slate-900">Correctivo</span>
+                                <span className="block text-sm text-slate-500">Mantenimiento por falla o atención.</span>
+                            </span>
+                        </button>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="cancelar" onClick={() => setCreateType(null)}>Volver</Button>
+                    </ModalFooter>
+                </Modal>
+
+                {showCreate && createType === 'mantenimiento' && createClasificacion && (
                         isDesktop ? (
                             <MantenimientosFormModal
                                 isOpen={showCreate}
@@ -343,6 +381,8 @@ export default function CalendarioPage() {
                                 tecnicos={tecnicos}
                                 isSubmitting={submitting}
                                 onSuccess={handleCreate}
+                                scope="mantenimientos"
+                                defaultClasificacion={createClasificacion}
                                 defaultDate={calendarCreateDate}
                             />
                         ) : (
@@ -354,6 +394,8 @@ export default function CalendarioPage() {
                                 tecnicos={tecnicos}
                                 isSubmitting={submitting}
                                 onSuccess={handleCreate}
+                                scope="mantenimientos"
+                                defaultClasificacion={createClasificacion}
                                 defaultDate={calendarCreateDate}
                             />
                         )
@@ -370,6 +412,8 @@ export default function CalendarioPage() {
                                 currentUser={currentUser}
                                 tecnicos={tecnicos}
                                 isSubmitting={submitting}
+                                scope="mantenimientos"
+                                defaultClasificacion={editTarget?.clasificacion || 'PREVENTIVO'}
                                 onSuccess={(payload) => handleSave(editTarget.id, payload)}
                             />
                         ) : (
@@ -380,6 +424,8 @@ export default function CalendarioPage() {
                                 currentUser={currentUser}
                                 tecnicos={tecnicos}
                                 isSubmitting={submitting}
+                                scope="mantenimientos"
+                                defaultClasificacion={editTarget?.clasificacion || 'PREVENTIVO'}
                                 onSuccess={(payload) => handleSave(editTarget.id, payload)}
                             />
                         )

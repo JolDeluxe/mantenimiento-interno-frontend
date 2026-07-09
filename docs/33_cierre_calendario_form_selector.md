@@ -44,10 +44,22 @@ Al editar no se pregunta. Calendario detecta el item real y abre el formulario c
 - `PREVENTIVO` y `CORRECTIVO` siguen siendo clasificación de mantenimiento, no tipo de actividad.
 - Mantenimientos conservan su flujo con maquinaria, clasificación y recurrencia existente.
 
+## Ajuste mantenimiento
+
+- Calendario no muestra Categoría al crear/editar mantenimiento porque abre los modales con `scope="mantenimientos"`.
+- Categoría queda fija como `MAQUINARIA`.
+- Al crear mantenimiento desde Calendario se elige primero la clasificación:
+  - `PREVENTIVO`
+  - `CORRECTIVO`
+- Esa clasificación se pasa como `defaultClasificacion` al modal de mantenimientos.
+- Al editar mantenimiento se conserva `ticketAEditar.clasificacion`; si viene vacía, se usa fallback `PREVENTIVO`.
+- Se replica el patrón usado por las vistas reales de mantenimientos.
+
 ## Validaciones
 
 - `npm run build`
 - ESLint sobre `calendario-page.jsx` y archivos de actividades common.
+- ESLint sobre modales de mantenimientos.
 
 ## QA manual pendiente
 
