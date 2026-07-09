@@ -7,6 +7,8 @@ import { useCalendario } from '../hooks/use-calendario';
 import { mapTicketsToCalendarItems } from '../utils/calendarioAdapter';
 import { CalendarioDesktop } from '../views/calendario-desktop';
 import { CalendarioMobile } from '../views/calendario-mobile';
+import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/z_index';
+import { CalendarioActividadFormModal } from '@/features/common/forms/tareas/actividades';
 
 // ── Modales Comunes y Detalle ──────────────────────────────────────────────
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
@@ -85,6 +87,7 @@ export default function CalendarioPage() {
     const [cancelTarget, setCancelTarget] = useState(null);
     const [adminCloseTarget, setAdminCloseTarget] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
+    const [createType, setCreateType] = useState(null);
     const [calendarCreateDate, setCalendarCreateDate] = useState(null);
 
     // Mapear los datos de API a items compatibles con el calendario
@@ -96,6 +99,14 @@ export default function CalendarioPage() {
     const checkIsMantenimiento = useCallback((item) => {
         if (!item) return false;
         return Boolean(item.maquinaId || item.maquina || item.scope === 'mantenimientos' || item.scope === 'mantenimiento');
+    }, []);
+
+    const isActividadTipo = useCallback((item) => {
+        return ['PLANEADA', 'EXTRAORDINARIA'].includes(item?.tipo);
+    }, []);
+
+    const isTicketTipo = useCallback((item) => {
+        return item?.tipo === 'TICKET';
     }, []);
 
     // Determina si hay algún filtro activo
@@ -126,14 +137,14 @@ export default function CalendarioPage() {
         }
         setSubmitting(true);
         try {
-            // Evaluamos el scope del filtro activo para decidir qué tipo de tarea crear
-            if (scope === 'mantenimientos') {
+            if (createType === 'mantenimiento') {
                 await createMantenimiento(payload);
             } else {
                 await createTicket(payload);
             }
             notify.success('Tarea creada correctamente.');
             setShowCreate(false);
+            setCreateType(null);
             setCalendarCreateDate(null);
             refresh();
         } catch (err) {
@@ -187,6 +198,7 @@ export default function CalendarioPage() {
 
     const handleCloseCreate = useCallback(() => {
         setShowCreate(false);
+        setCreateType(null);
         setCalendarCreateDate(null);
     }, []);
 
@@ -239,6 +251,8 @@ export default function CalendarioPage() {
 
     // Banderas de decisión para renderizado inteligente de modales específicos
     const isEditMantenimiento = checkIsMantenimiento(editTarget);
+    const isEditActividad = isActividadTipo(editTarget);
+    const isEditTicket = isTicketTipo(editTarget);
     const isStatusMantenimiento = checkIsMantenimiento(statusTarget || cancelTarget);
     const isReviewMantenimiento = checkIsMantenimiento(reviewTarget);
 
@@ -269,9 +283,57 @@ export default function CalendarioPage() {
                     onConfirm={handleSave}
                 />
 
-                {/* 3. Modales de Creación (Ruteo Dinámico según Scope) */}
-                {showCreate && (
-                    scope === 'mantenimientos' ? (
+                {/* 3. Selector y modales de creación */}
+                <Modal isOpen={showCreate && !createType} onClose={handleCloseCreate} className="max-w-md">
+                    <ModalHeader title="¿Qué quieres crear?" onClose={handleCloseCreate} />
+                    <ModalBody className="space-y-3">
+                        <button
+                            type="button"
+                            onClick={() => setCreateType('actividad')}
+                            className="w-full flex items-center gap-3 rounded-lg border border-slate-200 p-4 text-left hover:border-marca-primario hover:bg-slate-50 transition-colors"
+                        >
+                            <span className="h-10 w-10 rounded-lg bg-marca-primario/10 text-marca-primario flex items-center justify-center">
+                                <Icon name="event_note" size="24px" />
+                            </span>
+                            <span>
+                                <span className="block font-bold text-slate-900">Actividad</span>
+                                <span className="block text-sm text-slate-500">Tarea planeada o extraordinaria.</span>
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCreateType('mantenimiento')}
+                            className="w-full flex items-center gap-3 rounded-lg border border-slate-200 p-4 text-left hover:border-marca-primario hover:bg-slate-50 transition-colors"
+                        >
+                            <span className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                <Icon name="precision_manufacturing" size="24px" />
+                            </span>
+                            <span>
+                                <span className="block font-bold text-slate-900">Mantenimiento</span>
+                                <span className="block text-sm text-slate-500">Mantenimiento ligado a maquinaria.</span>
+                            </span>
+                        </button>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="cancelar" onClick={handleCloseCreate}>Cancelar</Button>
+                    </ModalFooter>
+                </Modal>
+
+                {showCreate && createType === 'actividad' && (
+                    <CalendarioActividadFormModal
+                        scope="actividades"
+                        isMobile={!isDesktop}
+                        isOpen={showCreate}
+                        onClose={handleCloseCreate}
+                        ticketAEditar={null}
+                        currentUser={currentUser}
+                        tecnicos={tecnicos}
+                        isSubmitting={submitting}
+                        onSuccess={handleCreate}
+                    />
+                )}
+
+                {showCreate && createType === 'mantenimiento' && (
                         isDesktop ? (
                             <MantenimientosFormModal
                                 isOpen={showCreate}
@@ -295,33 +357,6 @@ export default function CalendarioPage() {
                                 defaultDate={calendarCreateDate}
                             />
                         )
-                    ) : (
-                        isDesktop ? (
-                            <TicketFormModal
-                                isOpen={showCreate}
-                                onClose={handleCloseCreate}
-                                ticketAEditar={null}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                isSubmitting={submitting}
-                                onSuccess={handleCreate}
-                                scope="actividades"
-                                defaultDate={calendarCreateDate}
-                            />
-                        ) : (
-                            <MobileTicketFormModal
-                                isOpen={showCreate}
-                                onClose={handleCloseCreate}
-                                ticketAEditar={null}
-                                currentUser={currentUser}
-                                tecnicos={tecnicos}
-                                isSubmitting={submitting}
-                                onSuccess={handleCreate}
-                                scope="actividades"
-                                defaultDate={calendarCreateDate}
-                            />
-                        )
-                    )
                 )}
 
                 {/* 4. Modales de Edición (Ruteo Dinámico según tipo de ítem seleccionado) */}
@@ -348,6 +383,45 @@ export default function CalendarioPage() {
                                 onSuccess={(payload) => handleSave(editTarget.id, payload)}
                             />
                         )
+                    ) : isEditActividad ? (
+                        <CalendarioActividadFormModal
+                            scope="actividades"
+                            isMobile={!isDesktop}
+                            isOpen={Boolean(editTarget)}
+                            onClose={() => setEditTarget(null)}
+                            ticketAEditar={editTarget}
+                            currentUser={currentUser}
+                            tecnicos={tecnicos}
+                            isSubmitting={submitting}
+                            onSuccess={async (payload) => {
+                                await handleSave(editTarget.id, payload);
+                                setEditTarget(null);
+                            }}
+                        />
+                    ) : isEditTicket ? (
+                        isDesktop ? (
+                            <TicketFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                                scope="actividades"
+                            />
+                        ) : (
+                            <MobileTicketFormModal
+                                isOpen={Boolean(editTarget)}
+                                onClose={() => setEditTarget(null)}
+                                ticketAEditar={editTarget}
+                                currentUser={currentUser}
+                                tecnicos={tecnicos}
+                                isSubmitting={submitting}
+                                onSuccess={(payload) => handleSave(editTarget.id, payload)}
+                                scope="actividades"
+                            />
+                        )
                     ) : (
                         isDesktop ? (
                             <TicketFormModal
@@ -372,8 +446,7 @@ export default function CalendarioPage() {
                                 scope="actividades"
                             />
                         )
-                    )
-                )}
+                ))}
 
                 {/* 5. Modales de Cambio de Estado (Ruteo Dinámico según item) */}
                 {statusTarget && (
