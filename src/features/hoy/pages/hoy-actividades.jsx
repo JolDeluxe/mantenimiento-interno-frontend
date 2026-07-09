@@ -72,6 +72,7 @@ export default function HoyActividadesPage() {
         } else if (dateOffset === 1) {
             params.venceManana = true;
         } else {
+            // eslint-disable-next-line react-hooks/purity
             const targetDate = new Date(Date.now() + dateOffset * 86400000);
             const fechaStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
             params.vencimientoDesde = fechaStr;
