@@ -27,7 +27,7 @@ export default function MantenimientosLayoutDesktop() {
     if (menu.length === 0) return null;
 
     return (
-        <div className="flex gap-3 sticky top-0 p-2 bg-cuadra-arena border-b border-slate-300/60 pb-2 mb-2 px-1 z-30 w-full">
+        <div className="sticky top-0 z-40 flex w-full shrink-0 gap-3 border-b border-slate-300/60 bg-cuadra-arena p-2 px-1 pb-2 mb-2">
             {menu.map(item => {
                 const isActive = location.pathname.includes(item.path);
 

@@ -301,7 +301,7 @@ export default function MantenimientosHistoricoPage({
     };
 
     return (
-        <div className="max-w-full mx-auto flex flex-col gap-4">
+        <div className="w-full max-w-full mx-auto flex flex-col gap-4">
             <HoyAprobarPanel toApproveCount={meta?.resumenEstados?.RESUELTO ?? 0} currentUser={currentUser} isMobile={!isDesktop} />
             <MantenimientosFechas
                 year={year}

@@ -76,7 +76,7 @@ export const MantenimientosPreventivosDesktop = ({
     const [cancelTarget, setCancelTarget] = useState(null);
 
     return (
-        <div className="flex flex-col gap-4 relative">
+        <div className="flex w-full min-w-0 flex-col gap-4 relative">
             <TicketSummaryBar
                 totalParaSummary={totalParaSummary}
                 conteos={conteos}

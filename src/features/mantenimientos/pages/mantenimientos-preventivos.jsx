@@ -19,11 +19,13 @@ import { RecurrenteFormModal } from '../components/recurrentes/recurrente-form-m
 import { RecurrenteDetailModal } from '../components/recurrentes/recurrente-detail-modal';
 
 const TicketsPreventivos = () => (
-    <MantenimientosHistoricoPage
-        forcedClasificacion="PREVENTIVO"
-        DesktopView={MantenimientosPreventivosDesktop}
-        MobileView={MantenimientosPreventivosMobile}
-    />
+    <div className="w-full min-w-0">
+        <MantenimientosHistoricoPage
+            forcedClasificacion="PREVENTIVO"
+            DesktopView={MantenimientosPreventivosDesktop}
+            MobileView={MantenimientosPreventivosMobile}
+        />
+    </div>
 );
 
 const MatrizAnual = ({ canManage }) => {
@@ -156,7 +158,7 @@ export default function MantenimientosPreventivosPage() {
     };
 
     return (
-        <div className="max-w-full mx-auto flex flex-col gap-4">
+        <div className="w-full max-w-full mx-auto flex flex-col gap-4">
             <RecurrentesTabs activeTab={activeTab} onChange={setActiveTab} />
 
             {activeTab === 'tickets' && <TicketsPreventivos />}

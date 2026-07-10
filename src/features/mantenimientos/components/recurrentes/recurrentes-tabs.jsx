@@ -1,13 +1,13 @@
 import { Icon } from '@/components/ui/z_index';
 
 const TABS = [
-    { id: 'tickets', label: 'Tickets preventivos', icon: 'build_circle' },
+    { id: 'tickets', label: 'Historial preventivos', icon: 'build_circle' },
     { id: 'plan', label: 'Plan recurrente', icon: 'event_repeat' },
-    { id: 'matriz', label: 'Matriz anual', icon: 'calendar_month' },
+    { id: 'matriz', label: 'Matriz', icon: 'calendar_month' },
 ];
 
 export const RecurrentesTabs = ({ activeTab, onChange }) => (
-    <div className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="sticky top-[58px] z-30 flex flex-nowrap gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
         {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
