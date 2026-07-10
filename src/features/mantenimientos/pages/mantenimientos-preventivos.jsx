@@ -8,10 +8,13 @@ import { MantenimientosPreventivosDesktop } from '../views/mantenimientos-preven
 import { MantenimientosPreventivosMobile } from '../views/mantenimientos-preventivos-mobile';
 import { ROLES_ADMIN } from '../constants';
 import { useRecurrencias } from '../hooks/use-recurrencias';
+import { useRecurrenciasMatriz } from '../hooks/use-recurrencias-matriz';
 import { RecurrentesTabs } from '../components/recurrentes/recurrentes-tabs';
 import { RecurrentesToolbar } from '../components/recurrentes/recurrentes-toolbar';
 import { RecurrentesListado } from '../components/recurrentes/recurrentes-listado';
 import { RecurrentesListadoMobile } from '../components/recurrentes/recurrentes-listado-mobile';
+import { RecurrentesMatrizDesktop } from '../components/recurrentes/recurrentes-matriz-desktop';
+import { RecurrentesMatrizMobile } from '../components/recurrentes/recurrentes-matriz-mobile';
 import { RecurrenteFormModal } from '../components/recurrentes/recurrente-form-modal';
 import { RecurrenteDetailModal } from '../components/recurrentes/recurrente-detail-modal';
 
@@ -23,14 +26,53 @@ const TicketsPreventivos = () => (
     />
 );
 
-const MatrizPlaceholder = () => (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
-        <div className="text-sm font-black uppercase tracking-wide text-slate-800">Matriz anual</div>
-        <p className="mt-1 text-xs font-semibold text-slate-500">
-            Matriz anual estara disponible en Fase 4.
-        </p>
-    </div>
-);
+const MatrizAnual = ({ canManage }) => {
+    const isDesktop = useIsDesktop();
+    const {
+        year,
+        setYear,
+        filteredRows,
+        total,
+        loading,
+        submitting,
+        error,
+        filters,
+        responsables,
+        setFilters,
+        refresh,
+        materializeFromCell,
+    } = useRecurrenciasMatriz();
+
+    const MatrixComponent = isDesktop ? RecurrentesMatrizDesktop : RecurrentesMatrizMobile;
+
+    const handleGenerate = async (row) => {
+        if (!window.confirm('Generar ciclo actual o vencido?')) return;
+        try {
+            const res = await materializeFromCell(row);
+            notify.success(res?.mensaje || 'Ciclo generado.');
+        } catch (err) {
+            notify.error(err?.message || 'No se pudo generar ciclo.');
+        }
+    };
+
+    return (
+        <MatrixComponent
+            year={year}
+            setYear={setYear}
+            rows={filteredRows}
+            total={total}
+            loading={loading}
+            submitting={submitting}
+            error={error}
+            filters={filters}
+            responsables={responsables}
+            setFilters={setFilters}
+            refresh={refresh}
+            canManage={canManage}
+            onGenerate={handleGenerate}
+        />
+    );
+};
 
 export default function MantenimientosPreventivosPage() {
     const [activeTab, setActiveTab] = useState('tickets');
@@ -147,7 +189,7 @@ export default function MantenimientosPreventivosPage() {
                     />
                 </div>
             )}
-            {activeTab === 'matriz' && <MatrizPlaceholder />}
+            {activeTab === 'matriz' && <MatrizAnual canManage={canManage} />}
 
             {showForm && (
                 <RecurrenteFormModal
