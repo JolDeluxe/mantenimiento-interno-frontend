@@ -54,6 +54,7 @@ export const executionStatusClass = (estado = '') => {
     if (value === 'REALIZADO_EN_MES') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     if (value === 'REALIZADO_FUERA_DEL_MES') return 'border-orange-200 bg-orange-50 text-orange-700';
     if (value === 'PENDIENTE_DEL_MES') return 'border-amber-200 bg-amber-50 text-amber-700';
+    if (value === 'SIN_MANTENIMIENTO_REGISTRADO') return 'border-slate-200 bg-slate-100 text-slate-700';
     if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'border-sky-200 bg-sky-50 text-sky-700';
     if (value === 'ASIGNADA') return 'border-blue-200 bg-blue-50 text-blue-700';
     if (value === 'EN_PROGRESO') return 'border-violet-200 bg-violet-50 text-violet-700';
@@ -70,6 +71,7 @@ export const executionStatusLabel = (estado = '') => {
     if (value === 'REALIZADO_EN_MES') return 'Realizado en el mes';
     if (value === 'REALIZADO_FUERA_DEL_MES') return 'Realizado fuera del mes';
     if (value === 'PENDIENTE_DEL_MES') return 'Pendiente del mes';
+    if (value === 'SIN_MANTENIMIENTO_REGISTRADO') return 'Sin mantenimiento registrado';
     if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'Programado por recurrencia';
     if (value === 'ASIGNADA') return 'Asignada';
     if (value === 'EN_PROGRESO') return 'En progreso';

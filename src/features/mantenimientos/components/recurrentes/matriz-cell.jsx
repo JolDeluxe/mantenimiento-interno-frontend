@@ -49,6 +49,7 @@ export const MatrizCell = ({
 
             {visibleItems.map((item, index) => {
                 const pendiente = item.pendienteMaterializar && !item.ticketId;
+                const esHistoricoSinRegistro = item.estado === 'SIN_MANTENIMIENTO_REGISTRADO';
                 return (
                     <div key={`${item.fechaInicio}-${item.ticketId || index}`} className={`rounded-lg border px-2 py-1.5 ${executionStatusClass(item.estado)}`}>
                         <div className="flex items-center justify-between gap-1">
@@ -62,6 +63,9 @@ export const MatrizCell = ({
                             </span>
                             {pendiente && (
                                 <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-amber-700">Pendiente de generar</span>
+                            )}
+                            {esHistoricoSinRegistro && (
+                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-slate-700">Observacion mensual</span>
                             )}
                             {item.fechaTerminacion && <span>Termino {formatDDMM(item.fechaTerminacion)}</span>}
                             {!item.fechaTerminacion && item.fechaFin && <span>Limite {formatDDMM(item.fechaFin)}</span>}
@@ -88,6 +92,11 @@ export const MatrizCell = ({
                                     <Icon name="bolt" size="10px" />
                                     Generar mantenimiento
                                 </button>
+                            ) : esHistoricoSinRegistro ? (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-white/60 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-700">
+                                    <Icon name="warning" size="10px" />
+                                    Sin registro del mes
+                                </span>
                             ) : null}
                         </div>
                     </div>

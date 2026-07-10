@@ -6,9 +6,25 @@ import { Button, Icon, Spinner } from '@/components/ui/z_index';
 import { getMaquinas } from '../api/maquinaria-api';
 import { notify } from '@/components/notification/adaptive-notify';
 
+const QR_POR_HOJA = 4;
+
+const chunkArray = (arr, size) => {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+};
+
 export default function QrBatchPrintPage() {
   const navigate = useNavigate();
-  const { selectedMaquinas, clearSelection } = useQrPrintStore();
+  const {
+    selectedMaquinas,
+    clearSelection,
+    loadedQrIds,
+    markQrLoaded,
+    resetLoadedQr
+  } = useQrPrintStore();
   const [maquinas, setMaquinas] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +45,18 @@ export default function QrBatchPrintPage() {
 
   const selectedList = maquinas.filter((m) => selectedMaquinas.includes(m.id));
 
+  // Cada vez que cambia el conjunto de máquinas seleccionadas, reinicia el contador
+  // de QR cargados para volver a esperar a que todos generen su imagen.
+  useEffect(() => {
+    resetLoadedQr();
+  }, [selectedMaquinas.join(','), resetLoadedQr]);
+
+  const totalQr = selectedList.length;
+  const cargados = loadedQrIds.filter((id) => selectedMaquinas.includes(id)).length;
+  const qrListos = totalQr > 0 && cargados >= totalQr;
+
   const handlePrint = () => {
+    if (!qrListos) return;
     window.print();
   };
 
@@ -48,6 +75,8 @@ export default function QrBatchPrintPage() {
       </div>
     );
   }
+
+  const grupos = chunkArray(selectedList, QR_POR_HOJA);
 
   return (
     <div className="w-full space-y-6">
@@ -70,12 +99,18 @@ export default function QrBatchPrintPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-2.5 items-center">
+            {totalQr > 0 && !qrListos && (
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <Spinner size="xs" />
+                Generando QR ({cargados}/{totalQr})...
+              </span>
+            )}
             <Button
               variant="primario"
               size="sm"
               icon="print"
-              disabled={selectedList.length === 0}
+              disabled={selectedList.length === 0 || !qrListos}
               onClick={handlePrint}
             >
               Imprimir Lote
@@ -115,12 +150,29 @@ export default function QrBatchPrintPage() {
 
       {/* Contenedor del área imprimible (El CSS de index.css asegura que solo esto sea visible en la impresión física) */}
       {selectedList.length > 0 && (
-        <div id="printable-area" className="p-4 bg-white print:p-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 print:grid-cols-4 print:gap-8">
-            {selectedList.map((maquina) => (
-              <QrCodeCard key={maquina.id} maquina={maquina} />
-            ))}
-          </div>
+        <div
+          id="printable-area"
+          className="p-4 bg-white print:p-0 print:absolute print:left-0 print:top-0 print:m-0 print:w-full"
+        >
+          {grupos.map((grupo, idx) => {
+            const esUltima = idx === grupos.length - 1;
+            return (
+              <div
+                key={idx}
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-6 print:grid-cols-2 print:grid-rows-2 print:gap-8 print:h-[100vh] print:w-full print:place-items-center mb-6 print:mb-0 ${
+                  esUltima ? '' : 'print:break-after-page'
+                }`}
+              >
+                {grupo.map((maquina) => (
+                  <QrCodeCard
+                    key={maquina.id}
+                    maquina={maquina}
+                    onLoad={markQrLoaded}
+                  />
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
