@@ -98,7 +98,7 @@ export const RecurrentesToolbar = ({
                 </div>
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                     <Icon name="event_repeat" size="16px" className="text-marca-primario" />
-                    Reglas preventivas por maquina. No son tickets; generan ciclos.
+                    Programaciones preventivas por maquina. Generan mantenimientos cuando corresponde.
                 </div>
             </div>
         </div>

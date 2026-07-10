@@ -67,13 +67,13 @@ export const executionStatusLabel = (estado = '') => {
     if (value === 'EN_PROGRESO') return 'En progreso';
     if (value === 'EN_PAUSA') return 'Pausada';
     if (value === 'PENDIENTE') return 'Pendiente';
-    if (value === 'ATRASADO') return 'Atrasado';
+    if (value === 'ATRASADO') return 'Pendiente';
     if (value === 'IMPRESO') return 'Impreso';
     return value || 'Sin estado';
 };
 
 export const originLabel = (origen = '') => (
-    String(origen).toLowerCase() === 'ticket' ? 'Real' : 'Proyeccion'
+    String(origen).toLowerCase() === 'ticket' ? 'Mantenimiento existente' : 'Programado por recurrencia'
 );
 
 export const summarizeExecutions = (ejecuciones = []) => {

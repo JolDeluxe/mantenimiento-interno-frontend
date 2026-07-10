@@ -20,7 +20,7 @@ export const RecurrentesListadoMobile = ({
         return (
             <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-12 text-slate-500">
                 <Spinner size="sm" className="mr-2" />
-                <span className="text-xs font-black uppercase tracking-wide">Cargando reglas...</span>
+                <span className="text-xs font-black uppercase tracking-wide">Cargando programaciones...</span>
             </div>
         );
     }
@@ -30,7 +30,7 @@ export const RecurrentesListadoMobile = ({
             <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-white py-12 text-center">
                 <Icon name="event_repeat" size="md" className="text-slate-400" />
                 <div>
-                    <div className="text-sm font-black text-slate-700">Sin reglas recurrentes</div>
+                    <div className="text-sm font-black text-slate-700">Sin programaciones recurrentes</div>
                     <p className="text-xs font-medium text-slate-500">Aun no hay plan preventivo recurrente.</p>
                 </div>
             </div>

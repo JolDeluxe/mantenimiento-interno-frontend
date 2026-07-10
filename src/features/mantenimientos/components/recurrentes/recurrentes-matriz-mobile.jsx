@@ -76,7 +76,7 @@ export const RecurrentesMatrizMobile = ({
                             <Icon name="calendar_month" className="text-marca-primario" />
                             Matriz anual
                         </div>
-                        <p className="text-xs font-medium text-slate-500">{total} reglas desde backend.</p>
+                        <p className="text-xs font-medium text-slate-500">{total} programaciones preventivas.</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <button
@@ -161,9 +161,9 @@ export const RecurrentesMatrizMobile = ({
                 )}
 
                 <div className="relative z-10 mt-3 grid grid-cols-2 gap-1.5 text-[10px] font-black uppercase tracking-wide">
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Real = ticket</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Proyeccion</span>
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente generar</span>
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado</span>
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada</span>
                 </div>
             </div>
@@ -216,8 +216,8 @@ export const RecurrentesMatrizMobile = ({
                                     </div>
                                 </div>
                                 <div className="mb-2 grid grid-cols-3 gap-1 text-center text-[9px] font-black uppercase">
-                                    <div className="rounded-lg bg-emerald-50 px-1.5 py-1 text-emerald-700">{summary.reales} reales</div>
-                                    <div className="rounded-lg bg-sky-50 px-1.5 py-1 text-sky-700">{summary.proyecciones} proy.</div>
+                                    <div className="rounded-lg bg-emerald-50 px-1.5 py-1 text-emerald-700">{summary.reales} realizados</div>
+                                    <div className="rounded-lg bg-sky-50 px-1.5 py-1 text-sky-700">{summary.proyecciones} programados</div>
                                     <div className="rounded-lg bg-amber-50 px-1.5 py-1 text-amber-700">{summary.pendientesGenerar} generar</div>
                                 </div>
                                 <MatrizCell

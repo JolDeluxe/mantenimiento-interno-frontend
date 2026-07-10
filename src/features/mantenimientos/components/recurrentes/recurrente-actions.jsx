@@ -49,7 +49,7 @@ export const RecurrenteActions = ({
                         onClick={() => onMaterialize(regla)}
                         disabled={submitting}
                         className="inline-flex rounded-md p-1.5 text-estado-asignada transition-colors hover:bg-estado-asignada/10 disabled:opacity-50"
-                        title="Materializar ciclo actual o vencido"
+                        title="Generar mantenimiento"
                     >
                         <Icon name="bolt" size="sm" />
                     </button>

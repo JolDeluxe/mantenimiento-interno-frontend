@@ -61,7 +61,7 @@ export const RecurrentesMatrizDesktop = ({
                             Matriz anual
                         </div>
                         <p className="mt-0.5 text-xs font-medium text-slate-500">
-                            {total} regla{total === 1 ? '' : 's'} desde backend. {rangeLabel}.
+                            {total} programacion{total === 1 ? '' : 'es'} preventiva{total === 1 ? '' : 's'}. {rangeLabel}.
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
@@ -161,9 +161,10 @@ export const RecurrentesMatrizDesktop = ({
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide">
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Real = ticket existente</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Proyeccion = fecha backend</span>
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente generar = ciclo actual/vencido</span>
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado = mantenimiento cerrado/resuelto</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado = viene de recurrencia</span>
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar = aun no se ha creado el mantenimiento</span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Sin mantenimiento este mes = observacion mensual</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = regla detenida</span>
                     <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-1 text-cyan-700">Impreso = etiqueta derivada</span>
                 </div>
@@ -181,7 +182,7 @@ export const RecurrentesMatrizDesktop = ({
             ) : rows.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
                     <div className="text-sm font-black text-slate-700">Sin datos de matriz</div>
-                    <p className="text-xs font-medium text-slate-500">Backend no devolvio reglas para este año/filtro.</p>
+                    <p className="text-xs font-medium text-slate-500">No hay programaciones para este año/filtro.</p>
                 </div>
             ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

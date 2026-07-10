@@ -49,12 +49,12 @@ const MatrizAnual = ({ canManage }) => {
     const MatrixComponent = isDesktop ? RecurrentesMatrizDesktop : RecurrentesMatrizMobile;
 
     const handleGenerate = async (row) => {
-        if (!window.confirm('Generar ciclo actual o vencido?')) return;
+        if (!window.confirm('Generar mantenimiento de este periodo?')) return;
         try {
             const res = await materializeFromCell(row);
-            notify.success(res?.mensaje || 'Ciclo generado.');
+            notify.success(res?.mensaje || 'Mantenimiento generado.');
         } catch (err) {
-            notify.error(err?.message || 'No se pudo generar ciclo.');
+            notify.error(err?.message || 'No se pudo generar mantenimiento.');
         }
     };
 
@@ -138,7 +138,7 @@ export default function MantenimientosPreventivosPage() {
 
     const handleToggleActivo = async (regla) => {
         const msg = regla.activo
-            ? 'Pausar regla recurrente. No cancela tickets vivos ya creados.'
+            ? 'Pausar programacion recurrente. No cancela mantenimientos ya creados.'
             : 'Activar regla recurrente.';
         if (!window.confirm(msg)) return;
         try {
@@ -150,12 +150,12 @@ export default function MantenimientosPreventivosPage() {
     };
 
     const handleMaterialize = async (regla) => {
-        if (!window.confirm('Generar ticket para ciclo actual o vencido?')) return;
+        if (!window.confirm('Generar mantenimiento de este periodo?')) return;
         try {
             const res = await materializeRegla(regla);
-            notify.success(res?.mensaje || 'Ciclo materializado.');
+            notify.success(res?.mensaje || 'Mantenimiento generado.');
         } catch (err) {
-            notify.error(err?.message || 'Error al materializar ciclo.');
+            notify.error(err?.message || 'Error al generar mantenimiento.');
         }
     };
 

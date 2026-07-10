@@ -19,8 +19,9 @@ export const MatrizCell = ({
 
     if (!ejecuciones.length) {
         return (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-2 py-3 text-[10px] font-bold text-slate-400">
-                Sin programar
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-2 py-3">
+                <div className="text-[10px] font-black uppercase text-slate-500">Sin mantenimiento este mes</div>
+                <div className="mt-1 text-[9px] font-semibold text-slate-400">Observación: sin registro de mantenimiento realizado este mes.</div>
             </div>
         );
     }
@@ -33,7 +34,7 @@ export const MatrizCell = ({
         <div className="flex min-w-[170px] flex-col gap-2">
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2 text-[10px] font-black uppercase text-slate-700">
-                    <span>{summary.total} ejec.</span>
+                    <span>{summary.total} fecha{summary.total === 1 ? '' : 's'}</span>
                     {summary.pendientesGenerar > 0 && (
                         <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] text-amber-700">
                             {summary.pendientesGenerar} por generar
@@ -41,8 +42,8 @@ export const MatrizCell = ({
                     )}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1 text-[9px] font-bold uppercase text-slate-500">
-                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-emerald-700">{summary.reales} reales</span>
-                    <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-sky-700">{summary.proyecciones} proy.</span>
+                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-emerald-700">{summary.reales} realizados</span>
+                    <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-sky-700">{summary.proyecciones} programados</span>
                 </div>
             </div>
 
@@ -60,7 +61,7 @@ export const MatrizCell = ({
                                 {originLabel(item.origen)}
                             </span>
                             {pendiente && (
-                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-amber-700">Pendiente generar</span>
+                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-amber-700">Pendiente de generar</span>
                             )}
                             {item.fechaFin && <span>Fin {formatDDMM(item.fechaFin)}</span>}
                         </div>
@@ -70,10 +71,10 @@ export const MatrizCell = ({
                                     type="button"
                                     disabled
                                     className="inline-flex items-center gap-1 rounded-md bg-white/60 px-1.5 py-0.5 text-[9px] font-black uppercase opacity-60"
-                                    title="Ver ticket pendiente de integrar"
+                                    title="Ver mantenimiento pendiente de integrar"
                                 >
                                     <Icon name="visibility" size="10px" />
-                                    Ver ticket
+                                    Ver mantenimiento
                                 </button>
                             ) : pendiente && canManage ? (
                                 <button
@@ -81,10 +82,10 @@ export const MatrizCell = ({
                                     onClick={() => onGenerate(row, item)}
                                     disabled={submitting}
                                     className="inline-flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-0.5 text-[9px] font-black uppercase text-marca-primario disabled:opacity-50"
-                                    title="Generar ciclo actual o vencido"
+                                    title="Generar mantenimiento de este periodo"
                                 >
                                     <Icon name="bolt" size="10px" />
-                                    Generar
+                                    Generar mantenimiento
                                 </button>
                             ) : null}
                         </div>

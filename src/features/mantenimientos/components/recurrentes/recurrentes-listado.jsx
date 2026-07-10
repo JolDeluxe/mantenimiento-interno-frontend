@@ -20,7 +20,7 @@ export const RecurrentesListado = ({
         return (
             <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 text-slate-500">
                 <Spinner size="sm" className="mr-2" />
-                <span className="text-xs font-black uppercase tracking-wide">Cargando reglas...</span>
+                <span className="text-xs font-black uppercase tracking-wide">Cargando programaciones...</span>
             </div>
         );
     }
@@ -32,8 +32,8 @@ export const RecurrentesListado = ({
                     <Icon name="event_repeat" size="md" />
                 </div>
                 <div>
-                    <div className="text-sm font-black text-slate-700">Sin reglas recurrentes</div>
-                    <p className="text-xs font-medium text-slate-500">Crea reglas preventivas para generar ciclos automaticamente.</p>
+                    <div className="text-sm font-black text-slate-700">Sin programaciones recurrentes</div>
+                    <p className="text-xs font-medium text-slate-500">Crea programaciones preventivas para generar mantenimientos cuando corresponda.</p>
                 </div>
             </div>
         );
@@ -53,7 +53,7 @@ export const RecurrentesListado = ({
                             <th className="px-3 py-3">Proxima ejecucion</th>
                             <th className="px-3 py-3">Tiempo estimado</th>
                             <th className="px-3 py-3">Estado regla</th>
-                            <th className="px-3 py-3">Ticket pendiente actual</th>
+                            <th className="px-3 py-3">Mantenimiento pendiente</th>
                             <th className="px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
@@ -79,7 +79,7 @@ export const RecurrentesListado = ({
                                 <td className="px-3 py-3">
                                     <RecurrenteStatusBadge activo={regla.activo} />
                                 </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-400">No disponible</td>
+                                <td className="px-3 py-3 text-xs font-semibold text-slate-400">Sin mantenimiento pendiente</td>
                                 <td className="px-3 py-3">
                                     <RecurrenteActions
                                         regla={regla}
