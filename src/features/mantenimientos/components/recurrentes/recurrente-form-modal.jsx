@@ -95,7 +95,7 @@ export const RecurrenteFormModal = ({
         if (!maquinaId) return setFormError('Selecciona una maquina.');
         if (titulo.trim().length < 3) return setFormError('El titulo debe tener al menos 3 caracteres.');
         if (!tecnicoResponsableId) return setFormError('Selecciona responsable tecnico.');
-        if (!proximaFechaEjecucion) return setFormError('Selecciona proxima fecha de ejecucion.');
+        if (!proximaFechaEjecucion) return setFormError('Selecciona fecha inicial programada.');
         if (proximaFechaEjecucion < getMinDateHoy()) return setFormError('No se permiten fechas anteriores a hoy.');
         if (frecuencia === 'PERSONALIZADA_DIAS' && (!intervaloDias || Number(intervaloDias) <= 0)) {
             return setFormError('Indica intervalo de dias mayor a 0.');
@@ -119,7 +119,7 @@ export const RecurrenteFormModal = ({
             await onSubmit(payload);
             onClose();
         } catch (err) {
-            setFormError(err?.message || 'Error al guardar regla recurrente.');
+            setFormError(err?.message || 'Error al guardar programacion preventiva.');
         }
     };
 
@@ -129,7 +129,7 @@ export const RecurrenteFormModal = ({
                 <div className="flex items-center gap-2">
                     <Icon name="event_repeat" className="text-marca-primario" />
                     <span className="font-bold text-slate-800">
-                        {regla ? 'Editar regla recurrente' : 'Nueva regla recurrente'}
+                        {regla ? 'Editar programacion preventiva' : 'Nueva programacion preventiva'}
                     </span>
                 </div>
             </ModalHeader>
@@ -138,6 +138,9 @@ export const RecurrenteFormModal = ({
                 <ModalBody className="max-h-[74vh] space-y-4 overflow-y-auto p-5">
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-emerald-700">
                         Mantenimiento preventivo recurrente · MAQUINARIA / PREVENTIVO / PLANEADA
+                    </div>
+                    <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
+                        El sistema generara el mantenimiento del periodo y usara fin de mes como fecha limite mensual.
                     </div>
 
                     {formError && (
@@ -226,7 +229,7 @@ export const RecurrenteFormModal = ({
                         )}
 
                         <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Proxima ejecucion *</label>
+                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Fecha inicial programada *</label>
                             <input
                                 type="date"
                                 min={getMinDateHoy()}

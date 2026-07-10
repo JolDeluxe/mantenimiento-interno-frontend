@@ -50,10 +50,10 @@ export const RecurrentesListado = ({
                             <th className="px-3 py-3">Area/ubicacion</th>
                             <th className="px-3 py-3">Responsable</th>
                             <th className="px-3 py-3">Frecuencia</th>
-                            <th className="px-3 py-3">Proxima ejecucion</th>
+                            <th className="px-3 py-3">Proxima programacion</th>
                             <th className="px-3 py-3">Tiempo estimado</th>
-                            <th className="px-3 py-3">Estado regla</th>
-                            <th className="px-3 py-3">Mantenimiento pendiente</th>
+                            <th className="px-3 py-3">Estado programacion</th>
+                            <th className="px-3 py-3">Observacion mensual</th>
                             <th className="px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
@@ -79,7 +79,7 @@ export const RecurrentesListado = ({
                                 <td className="px-3 py-3">
                                     <RecurrenteStatusBadge activo={regla.activo} />
                                 </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-400">Sin mantenimiento pendiente</td>
+                                <td className="px-3 py-3 text-xs font-semibold text-slate-400">Generacion mensual automatica</td>
                                 <td className="px-3 py-3">
                                     <RecurrenteActions
                                         regla={regla}

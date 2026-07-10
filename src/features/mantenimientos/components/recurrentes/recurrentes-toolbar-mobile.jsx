@@ -67,6 +67,8 @@ export const RecurrentesToolbarMobile = ({
     onQueryChange,
     activo,
     onActivoChange,
+    mostrarBajaDesuso,
+    onToggleBajaDesuso,
     onRefresh,
     onCreate,
     canManage,
@@ -87,7 +89,7 @@ export const RecurrentesToolbarMobile = ({
         return () => clearTimeout(timer);
     }, [localValue, onQueryChange, query]);
 
-    const hasFilters = activo !== 'true';
+    const hasFilters = activo !== 'true' || mostrarBajaDesuso;
 
     return (
         <div className="flex w-full flex-col gap-2.5">
@@ -132,7 +134,7 @@ export const RecurrentesToolbarMobile = ({
                     <div className="relative z-10 grid grid-cols-1 gap-2">
                         <GlassNativeSelect
                             icon="settings"
-                            placeholder="Estado regla"
+                            placeholder="Estado programacion"
                             options={ESTADO_OPTIONS}
                             value={activo === 'true' ? 'true' : (activo || 'all')}
                             onChange={(value) => onActivoChange(value === 'all' ? '' : value || 'true')}
@@ -140,8 +142,23 @@ export const RecurrentesToolbarMobile = ({
                         />
                         <button
                             type="button"
+                            onClick={onToggleBajaDesuso}
+                            style={mostrarBajaDesuso ? { ...glassBase('dark'), borderRadius: 12 } : { ...glassBase('light'), borderRadius: 12 }}
+                            className={`relative h-[38px] overflow-hidden text-xs font-bold ${mostrarBajaDesuso ? 'text-white' : 'text-slate-600'}`}
+                        >
+                            <GlassSheen />
+                            <span className="relative z-10 inline-flex items-center gap-1.5">
+                                <Icon name={mostrarBajaDesuso ? 'close' : 'hide_source'} size="xs" />
+                                Mostrar baja/desuso
+                            </span>
+                        </button>
+                        <button
+                            type="button"
                             disabled={!hasFilters}
-                            onClick={() => onActivoChange('true')}
+                            onClick={() => {
+                                onActivoChange('true');
+                                if (mostrarBajaDesuso) onToggleBajaDesuso();
+                            }}
                             className={`justify-self-end px-3 py-1.5 text-xs font-bold ${hasFilters ? 'text-red-500' : 'text-slate-400'}`}
                         >
                             <Icon name="filter_alt_off" size="xs" />

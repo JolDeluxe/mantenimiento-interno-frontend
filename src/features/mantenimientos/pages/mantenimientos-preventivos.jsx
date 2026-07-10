@@ -36,6 +36,7 @@ const MatrizAnual = ({ canManage }) => {
         setYear,
         filteredRows,
         total,
+        cobertura,
         loading,
         submitting,
         error,
@@ -64,6 +65,7 @@ const MatrizAnual = ({ canManage }) => {
             setYear={setYear}
             rows={filteredRows}
             total={total}
+            cobertura={cobertura}
             loading={loading}
             submitting={submitting}
             error={error}
@@ -81,6 +83,7 @@ export default function MantenimientosPreventivosPage() {
     const [activeTab, setActiveTab] = useState('tickets');
     const [query, setQuery] = useState('');
     const [activo, setActivo] = useState('true');
+    const [mostrarBajaDesuso, setMostrarBajaDesuso] = useState(false);
     const [formTarget, setFormTarget] = useState(null);
     const [detailTarget, setDetailTarget] = useState(null);
     const [showForm, setShowForm] = useState(false);
@@ -116,6 +119,12 @@ export default function MantenimientosPreventivosPage() {
         setFilters({ activo: value === '' ? undefined : value === 'true' });
     };
 
+    const handleBajaDesusoChange = () => {
+        const next = !mostrarBajaDesuso;
+        setMostrarBajaDesuso(next);
+        setFilters({ incluirBaja: next || undefined });
+    };
+
     const openCreate = () => {
         setFormTarget(null);
         setShowForm(true);
@@ -129,21 +138,21 @@ export default function MantenimientosPreventivosPage() {
     const handleSubmit = async (payload) => {
         if (formTarget) {
             await updateRegla(formTarget.id, payload);
-            notify.success('Regla recurrente actualizada.');
+            notify.success('Programacion preventiva actualizada.');
         } else {
             await createRegla(payload);
-            notify.success('Regla recurrente creada.');
+            notify.success('Programacion preventiva creada.');
         }
     };
 
     const handleToggleActivo = async (regla) => {
         const msg = regla.activo
             ? 'Pausar programacion recurrente. No cancela mantenimientos ya creados.'
-            : 'Activar regla recurrente.';
+            : 'Activar programacion preventiva.';
         if (!window.confirm(msg)) return;
         try {
             await toggleActivo(regla);
-            notify.success(regla.activo ? 'Regla pausada.' : 'Regla activada.');
+            notify.success(regla.activo ? 'Programacion pausada.' : 'Programacion activada.');
         } catch (err) {
             notify.error(err?.message || 'Error al cambiar estado.');
         }
@@ -171,6 +180,8 @@ export default function MantenimientosPreventivosPage() {
                         onQueryChange={handleQueryChange}
                         activo={activo}
                         onActivoChange={handleActivoChange}
+                        mostrarBajaDesuso={mostrarBajaDesuso}
+                        onToggleBajaDesuso={handleBajaDesusoChange}
                         onRefresh={refresh}
                         onCreate={openCreate}
                         canManage={canManage}

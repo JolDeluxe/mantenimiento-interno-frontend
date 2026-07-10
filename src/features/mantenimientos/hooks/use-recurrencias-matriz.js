@@ -10,6 +10,7 @@ const normalizeMatrizResponse = (res) => {
         year: root?.year,
         total: root?.total ?? rows.length,
         rows,
+        cobertura: root?.cobertura ?? null,
     };
 };
 
@@ -17,6 +18,7 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
     const [year, setYear] = useState(initialYear);
     const [rows, setRows] = useState([]);
     const [total, setTotal] = useState(0);
+    const [cobertura, setCobertura] = useState(null);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -31,10 +33,11 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
         setLoading(true);
         setError(null);
         try {
-            const res = await getRecurrenciasMatriz({ year: targetYear });
+            const res = await getRecurrenciasMatriz({ year: targetYear, incluirBaja: filters.mostrarBajaDesuso });
             const parsed = normalizeMatrizResponse(res);
             setRows(parsed.rows);
             setTotal(parsed.total);
+            setCobertura(parsed.cobertura);
             if (parsed.year && parsed.year !== targetYear) setYear(parsed.year);
             return parsed;
         } catch (err) {
@@ -44,7 +47,7 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
         } finally {
             setLoading(false);
         }
-    }, [year]);
+    }, [filters.mostrarBajaDesuso, year]);
 
     useEffect(() => {
         fetchMatriz(year).catch(() => {});
@@ -95,7 +98,7 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
             await fetchMatriz(year);
             return res;
         } catch (err) {
-            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al generar ciclo.';
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al generar mantenimiento.';
             setError(message);
             throw new Error(message);
         } finally {
@@ -113,6 +116,7 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
         rows,
         filteredRows,
         total,
+        cobertura,
         loading,
         submitting,
         error,

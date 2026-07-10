@@ -13,7 +13,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
         ['Ubicacion', `${regla.maquina?.planta || '-'} / ${regla.maquina?.area || '-'}`],
         ['Responsable', regla.tecnicoResponsable?.nombre || '-'],
         ['Frecuencia', frecuenciaLabel(regla)],
-        ['Proxima ejecucion', formatearFechaTextoLargo(datePart(regla.proximaFechaEjecucion)) || '-'],
+        ['Proxima programacion', formatearFechaTextoLargo(datePart(regla.proximaFechaEjecucion)) || '-'],
         ['Prioridad', regla.prioridad || '-'],
         ['Tiempo estimado', regla.tiempoEstimado ? `${regla.tiempoEstimado} min` : '-'],
     ];
@@ -23,7 +23,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
             <ModalHeader onClose={onClose}>
                 <div className="flex items-center gap-2">
                     <Icon name="event_repeat" className="text-marca-primario" />
-                    <span className="font-bold text-slate-800">Detalle regla recurrente</span>
+                    <span className="font-bold text-slate-800">Detalle programacion preventiva</span>
                 </div>
             </ModalHeader>
             <ModalBody className="space-y-4 p-5">

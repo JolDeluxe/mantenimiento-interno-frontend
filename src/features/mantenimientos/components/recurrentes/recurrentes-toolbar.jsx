@@ -15,7 +15,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) =>
             type="text"
             value={localValue}
             onChange={(event) => onChange(event.target.value)}
-            placeholder="Buscar regla, maquina o responsable"
+            placeholder="Buscar programacion, maquina o responsable"
             className="h-[38px] w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm font-semibold text-slate-800 transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
         />
         {localValue && (
@@ -35,6 +35,8 @@ export const RecurrentesToolbar = ({
     onQueryChange,
     activo,
     onActivoChange,
+    mostrarBajaDesuso,
+    onToggleBajaDesuso,
     onRefresh,
     onCreate,
     canManage,
@@ -78,7 +80,7 @@ export const RecurrentesToolbar = ({
                     </Button>
                     {canManage && (
                         <Button type="button" variant="primario" icon="add" size="sm" onClick={onCreate} className="h-[38px]">
-                            Nueva regla
+                            Nueva programacion
                         </Button>
                     )}
                 </div>
@@ -96,9 +98,19 @@ export const RecurrentesToolbar = ({
                         className="w-full"
                     />
                 </div>
+                <Button
+                    type="button"
+                    variant="filtro_gris"
+                    icon={mostrarBajaDesuso ? 'close' : 'hide_source'}
+                    size="sm"
+                    onClick={onToggleBajaDesuso}
+                    className={`h-[38px] ${mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
+                >
+                    Mostrar baja/desuso
+                </Button>
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                     <Icon name="event_repeat" size="16px" className="text-marca-primario" />
-                    Programaciones preventivas por maquina. Generan mantenimientos cuando corresponde.
+                    Programaciones preventivas por maquina. El sistema genera mantenimientos del periodo mensual.
                 </div>
             </div>
         </div>

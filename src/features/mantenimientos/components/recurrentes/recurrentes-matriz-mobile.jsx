@@ -40,6 +40,7 @@ export const RecurrentesMatrizMobile = ({
     setYear,
     rows,
     total,
+    cobertura,
     loading,
     submitting,
     error,
@@ -105,7 +106,7 @@ export const RecurrentesMatrizMobile = ({
                     <input
                         value={filters.q}
                         onChange={(event) => setFilters({ q: event.target.value })}
-                        placeholder="Buscar regla o maquina"
+                        placeholder="Buscar programacion o maquina"
                         className="h-[38px] min-w-[90px] flex-1 rounded-[14px] border border-white/40 bg-white/60 px-3 py-2 text-xs font-semibold text-slate-700 outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-marca-secundario/30"
                     />
                 </div>
@@ -166,6 +167,11 @@ export const RecurrentesMatrizMobile = ({
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada</span>
                 </div>
+                {cobertura?.maquinasActivasSinRegla > 0 && (
+                    <div className="relative z-10 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                        {cobertura.maquinasActivasSinRegla} maquina{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} activa{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} sin programacion preventiva mensual.
+                    </div>
+                )}
             </div>
 
             {error && (
@@ -180,7 +186,7 @@ export const RecurrentesMatrizMobile = ({
             ) : rows.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
                     <div className="text-sm font-black text-slate-700">Sin datos de matriz</div>
-                    <p className="text-xs font-medium text-slate-500">No hay reglas para este filtro.</p>
+                    <p className="text-xs font-medium text-slate-500">No hay programaciones para este filtro.</p>
                 </div>
             ) : (
                 rows.map((rawRow) => {

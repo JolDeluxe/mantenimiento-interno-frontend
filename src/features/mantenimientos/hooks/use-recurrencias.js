@@ -67,7 +67,7 @@ export const useRecurrencias = (initialFilters = {}) => {
             await fetchReglas();
             return res;
         } catch (err) {
-            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al crear regla recurrente.';
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al crear programacion preventiva.';
             setError(message);
             throw new Error(message);
         } finally {
@@ -83,7 +83,7 @@ export const useRecurrencias = (initialFilters = {}) => {
             await fetchReglas();
             return res;
         } catch (err) {
-            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar regla recurrente.';
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar programacion preventiva.';
             setError(message);
             throw new Error(message);
         } finally {
@@ -117,7 +117,7 @@ export const useRecurrencias = (initialFilters = {}) => {
             await fetchReglas();
             return res;
         } catch (err) {
-            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al materializar ciclo.';
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al generar mantenimiento.';
             setError(message);
             throw new Error(message);
         } finally {

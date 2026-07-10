@@ -20,5 +20,5 @@ export {
 export const getRecurrencias = (params = {}) =>
     api.get('/api/recurrencias', { params });
 
-export const getRecurrenciasMatriz = ({ year } = {}) =>
-    api.get('/api/recurrencias/matriz', { params: { year } });
+export const getRecurrenciasMatriz = ({ year, incluirBaja } = {}) =>
+    api.get('/api/recurrencias/matriz', { params: { year, ...(incluirBaja ? { incluirBaja: true } : {}) } });

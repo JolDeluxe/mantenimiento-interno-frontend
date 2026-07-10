@@ -51,6 +51,10 @@ export const formatDDMM = (fecha) => {
 export const executionStatusClass = (estado = '') => {
     const value = String(estado).toUpperCase();
     if (value === 'RESUELTO' || value === 'CERRADO') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    if (value === 'REALIZADO_EN_MES') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    if (value === 'REALIZADO_FUERA_DEL_MES') return 'border-orange-200 bg-orange-50 text-orange-700';
+    if (value === 'PENDIENTE_DEL_MES') return 'border-amber-200 bg-amber-50 text-amber-700';
+    if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'border-sky-200 bg-sky-50 text-sky-700';
     if (value === 'ASIGNADA') return 'border-blue-200 bg-blue-50 text-blue-700';
     if (value === 'EN_PROGRESO') return 'border-violet-200 bg-violet-50 text-violet-700';
     if (value === 'EN_PAUSA') return 'border-slate-200 bg-slate-100 text-slate-600';
@@ -63,6 +67,10 @@ export const executionStatusClass = (estado = '') => {
 export const executionStatusLabel = (estado = '') => {
     const value = String(estado || '').toUpperCase();
     if (value === 'RESUELTO' || value === 'CERRADO') return 'Resuelto';
+    if (value === 'REALIZADO_EN_MES') return 'Realizado en el mes';
+    if (value === 'REALIZADO_FUERA_DEL_MES') return 'Realizado fuera del mes';
+    if (value === 'PENDIENTE_DEL_MES') return 'Pendiente del mes';
+    if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'Programado por recurrencia';
     if (value === 'ASIGNADA') return 'Asignada';
     if (value === 'EN_PROGRESO') return 'En progreso';
     if (value === 'EN_PAUSA') return 'Pausada';

@@ -18,6 +18,7 @@ export const RecurrentesMatrizDesktop = ({
     setYear,
     rows,
     total,
+    cobertura,
     loading,
     submitting,
     error,
@@ -161,13 +162,19 @@ export const RecurrentesMatrizDesktop = ({
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide">
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado = mantenimiento cerrado/resuelto</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado = viene de recurrencia</span>
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado en el mes</span>
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-700">Realizado fuera del mes</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado por recurrencia</span>
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar = aun no se ha creado el mantenimiento</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Sin mantenimiento este mes = observacion mensual</span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = regla detenida</span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = programacion detenida</span>
                     <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-1 text-cyan-700">Impreso = etiqueta derivada</span>
                 </div>
+                {cobertura?.maquinasActivasSinRegla > 0 && (
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                        {cobertura.maquinasActivasSinRegla} maquina{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} activa{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} sin programacion preventiva mensual.
+                    </div>
+                )}
             </div>
 
             {error && (
