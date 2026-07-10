@@ -9,14 +9,14 @@ export const RecurrenteActions = ({
     onToggleActivo,
     onMaterialize,
 }) => (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center justify-center gap-1.5">
         <button
             type="button"
             onClick={() => onView(regla)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            className="inline-flex rounded-md p-1.5 text-slate-600 transition-colors hover:bg-slate-600/10"
             title="Ver detalle"
         >
-            <Icon name="visibility" size="16px" />
+            <Icon name="visibility" size="sm" />
         </button>
 
         {canManage && (
@@ -25,34 +25,33 @@ export const RecurrenteActions = ({
                     type="button"
                     onClick={() => onEdit(regla)}
                     disabled={submitting}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    className="inline-flex rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-500/10 disabled:opacity-50"
                     title="Editar regla"
                 >
-                    <Icon name="edit" size="16px" />
+                    <Icon name="edit" size="sm" />
                 </button>
                 <button
                     type="button"
                     onClick={() => onToggleActivo(regla)}
                     disabled={submitting}
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border disabled:opacity-50 ${
+                    className={`inline-flex rounded-md p-1.5 transition-colors disabled:opacity-50 ${
                         regla.activo
-                            ? 'border-red-100 bg-white text-red-600 hover:bg-red-50'
-                            : 'border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-50'
+                            ? 'text-red-700 hover:bg-red-500/10'
+                            : 'text-estado-resuelto hover:bg-estado-resuelto/10'
                     }`}
                     title={regla.activo ? 'Pausar regla' : 'Activar regla'}
                 >
-                    <Icon name={regla.activo ? 'pause' : 'play_arrow'} size="16px" />
+                    <Icon name={regla.activo ? 'pause_circle' : 'play_circle'} size="sm" />
                 </button>
                 {regla.activo && (
                     <button
                         type="button"
                         onClick={() => onMaterialize(regla)}
                         disabled={submitting}
-                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-marca-primario/20 bg-marca-primario/10 px-2 text-[10px] font-black uppercase tracking-wide text-marca-primario hover:bg-marca-primario/15 disabled:opacity-50"
+                        className="inline-flex rounded-md p-1.5 text-estado-asignada transition-colors hover:bg-estado-asignada/10 disabled:opacity-50"
                         title="Materializar ciclo actual o vencido"
                     >
-                        <Icon name="bolt" size="14px" />
-                        Generar
+                        <Icon name="bolt" size="sm" />
                     </button>
                 )}
             </>

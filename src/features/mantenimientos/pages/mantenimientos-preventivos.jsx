@@ -11,6 +11,7 @@ import { useRecurrencias } from '../hooks/use-recurrencias';
 import { useRecurrenciasMatriz } from '../hooks/use-recurrencias-matriz';
 import { RecurrentesTabs } from '../components/recurrentes/recurrentes-tabs';
 import { RecurrentesToolbar } from '../components/recurrentes/recurrentes-toolbar';
+import { RecurrentesToolbarMobile } from '../components/recurrentes/recurrentes-toolbar-mobile';
 import { RecurrentesListado } from '../components/recurrentes/recurrentes-listado';
 import { RecurrentesListadoMobile } from '../components/recurrentes/recurrentes-listado-mobile';
 import { RecurrentesMatrizDesktop } from '../components/recurrentes/recurrentes-matriz-desktop';
@@ -103,6 +104,7 @@ export default function MantenimientosPreventivosPage() {
     } = useRecurrencias({ activo: true, limit: 50 });
 
     const ListComponent = isDesktop ? RecurrentesListado : RecurrentesListadoMobile;
+    const ToolbarComponent = isDesktop ? RecurrentesToolbar : RecurrentesToolbarMobile;
 
     const handleQueryChange = (value) => {
         setQuery(value);
@@ -164,7 +166,7 @@ export default function MantenimientosPreventivosPage() {
             {activeTab === 'tickets' && <TicketsPreventivos />}
             {activeTab === 'plan' && (
                 <div className="flex flex-col gap-4">
-                    <RecurrentesToolbar
+                    <ToolbarComponent
                         query={query}
                         onQueryChange={handleQueryChange}
                         activo={activo}

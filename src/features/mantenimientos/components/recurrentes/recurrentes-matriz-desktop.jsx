@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, Icon, Spinner } from '@/components/ui/z_index';
+import { Button, Icon, SearchableSelect, Spinner } from '@/components/ui/z_index';
 import { frecuenciaLabel } from './recurrentes-utils';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
 import {
@@ -31,6 +31,12 @@ export const RecurrentesMatrizDesktop = ({
     const [viewMode, setViewMode] = useState('trimestre');
     const [selectedMes, setSelectedMes] = useState(String(new Date().getMonth() + 1));
     const [selectedQuarter, setSelectedQuarter] = useState(getCurrentQuarter);
+    const yearOptions = useMemo(() => (
+        Array.from({ length: 7 }, (_, index) => {
+            const value = String(new Date().getFullYear() - 3 + index);
+            return { value, label: value };
+        })
+    ), []);
 
     const visibleMonths = useMemo(
         () => getVisibleMonths({ mode: viewMode, month: selectedMes, quarter: selectedQuarter }),
@@ -50,80 +56,97 @@ export const RecurrentesMatrizDesktop = ({
                             {total} regla{total === 1 ? '' : 's'} desde backend. Vista actual: {visibleMonths.map((mes) => mes.short).join(', ')}.
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <input
-                            type="number"
-                            min="2020"
-                            max="2100"
-                            value={year}
-                            onChange={(event) => setYear(Number(event.target.value))}
-                            className="w-24 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                        />
-                        <select
-                            value={viewMode}
-                            onChange={(event) => setViewMode(event.target.value)}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                        >
-                            {MATRIX_VIEW_MODES.map((mode) => (
-                                <option key={mode.value} value={mode.value}>{mode.label}</option>
-                            ))}
-                        </select>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="min-w-28 flex-none">
+                            <SearchableSelect
+                                options={yearOptions}
+                                value={String(year)}
+                                onChange={(value) => setYear(Number(value))}
+                                placeholder="Año..."
+                                icon="calendar_today"
+                                allOptionText={null}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="min-w-36 flex-none">
+                            <SearchableSelect
+                                options={MATRIX_VIEW_MODES}
+                                value={viewMode}
+                                onChange={setViewMode}
+                                placeholder="Vista..."
+                                icon="view_week"
+                                allOptionText={null}
+                                className="w-full"
+                            />
+                        </div>
                         {viewMode === 'mes' && (
-                            <select
-                                value={selectedMes}
-                                onChange={(event) => setSelectedMes(event.target.value)}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                            >
-                                {MESES_MATRIZ.map((mes) => (
-                                    <option key={mes.key} value={mes.key}>{mes.label}</option>
-                                ))}
-                            </select>
+                            <div className="min-w-36 flex-none">
+                                <SearchableSelect
+                                    options={MESES_MATRIZ.map((mes) => ({ value: mes.key, label: mes.label }))}
+                                    value={selectedMes}
+                                    onChange={setSelectedMes}
+                                    placeholder="Mes..."
+                                    icon="event_note"
+                                    allOptionText={null}
+                                    className="w-full"
+                                />
+                            </div>
                         )}
                         {viewMode === 'trimestre' && (
-                            <select
-                                value={selectedQuarter}
-                                onChange={(event) => setSelectedQuarter(event.target.value)}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                            >
-                                {TRIMESTRES_MATRIZ.map((trimestre) => (
-                                    <option key={trimestre.key} value={trimestre.key}>{trimestre.label}</option>
-                                ))}
-                            </select>
+                            <div className="min-w-40 flex-none">
+                                <SearchableSelect
+                                    options={TRIMESTRES_MATRIZ.map((trimestre) => ({ value: trimestre.key, label: trimestre.label }))}
+                                    value={selectedQuarter}
+                                    onChange={setSelectedQuarter}
+                                    placeholder="Trimestre..."
+                                    icon="date_range"
+                                    allOptionText={null}
+                                    className="w-full"
+                                />
+                            </div>
                         )}
                         <input
                             value={filters.q}
                             onChange={(event) => setFilters({ q: event.target.value })}
                             placeholder="Buscar codigo, maquina, responsable"
-                            className="min-w-[250px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
+                            className="h-[38px] min-w-[250px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20"
                         />
-                        <select
-                            value={filters.responsable}
-                            onChange={(event) => setFilters({ responsable: event.target.value })}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                        >
-                            <option value="">Responsables</option>
-                            {responsables.map((responsable) => (
-                                <option key={responsable.id} value={responsable.id}>{responsable.nombre}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={filters.estadoRegla}
-                            onChange={(event) => setFilters({ estadoRegla: event.target.value })}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                        >
-                            <option value="">Todas</option>
-                            <option value="activa">Activas</option>
-                            <option value="pausada">Pausadas</option>
-                        </select>
-                        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-                            <input
-                                type="checkbox"
-                                checked={filters.mostrarBajaDesuso}
-                                onChange={(event) => setFilters({ mostrarBajaDesuso: event.target.checked })}
+                        <div className="min-w-44 flex-none">
+                            <SearchableSelect
+                                options={responsables.map((responsable) => ({ value: responsable.id, label: responsable.nombre }))}
+                                value={filters.responsable}
+                                onChange={(value) => setFilters({ responsable: value })}
+                                placeholder="Responsable..."
+                                icon="person"
+                                allOptionText="Cualquiera"
+                                className="w-full"
                             />
+                        </div>
+                        <div className="min-w-36 flex-none">
+                            <SearchableSelect
+                                options={[
+                                    { value: 'activa', label: 'Activas' },
+                                    { value: 'pausada', label: 'Pausadas' },
+                                ]}
+                                value={filters.estadoRegla}
+                                onChange={(value) => setFilters({ estadoRegla: value })}
+                                placeholder="Estado..."
+                                icon="settings"
+                                allOptionText="Todas"
+                                className="w-full"
+                            />
+                        </div>
+                        <Button
+                            type="button"
+                            variant="filtro_gris"
+                            icon={filters.mostrarBajaDesuso ? 'close' : 'hide_source'}
+                            size="sm"
+                            onClick={() => setFilters({ mostrarBajaDesuso: !filters.mostrarBajaDesuso })}
+                            className={`h-[38px] ${filters.mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
+                        >
                             Baja/desuso
-                        </label>
-                        <Button type="button" variant="light" icon="refresh" onClick={refresh} disabled={loading}>
+                        </Button>
+                        <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-[38px]">
                             Actualizar
                         </Button>
                     </div>

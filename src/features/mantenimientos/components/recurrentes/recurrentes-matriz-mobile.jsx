@@ -1,9 +1,39 @@
 import { useMemo, useState } from 'react';
 import { Button, Icon, Spinner } from '@/components/ui/z_index';
+import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { frecuenciaLabel } from './recurrentes-utils';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
 import { ESTADOS_BAJA, MESES_MATRIZ, normalizeMeses, summarizeExecutions } from './matriz-utils';
 import { MatrizCell } from './matriz-cell';
+
+const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
+    const selected = options.find((option) => option.value === String(value));
+    const isActive = Boolean(value);
+
+    return (
+        <div className="relative h-9.5 w-full">
+            <select
+                value={value ? String(value) : ''}
+                onChange={(event) => onChange(event.target.value)}
+                className="absolute inset-0 z-20 h-full w-full cursor-pointer appearance-none opacity-0"
+            >
+                <option value="">{placeholder}</option>
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+            <div
+                style={isActive ? { ...glassBase('primary'), borderRadius: 12 } : { ...glassBase('light'), borderRadius: 12 }}
+                className={`absolute inset-0 flex items-center gap-1.5 overflow-hidden px-3 py-2 text-xs font-bold transition-all ${isActive ? 'text-white' : 'text-slate-600'}`}
+            >
+                <GlassSheen />
+                <Icon name={icon} size="xs" className="relative z-10 shrink-0" />
+                <span className="relative z-10 flex-1 truncate">{selected?.label ?? placeholder}</span>
+                <Icon name="expand_more" size="xs" className="relative z-10 shrink-0" />
+            </div>
+        </div>
+    );
+};
 
 export const RecurrentesMatrizMobile = ({
     year,
@@ -21,6 +51,13 @@ export const RecurrentesMatrizMobile = ({
     onGenerate,
 }) => {
     const [selectedMes, setSelectedMes] = useState(String(new Date().getMonth() + 1));
+    const [showFilters, setShowFilters] = useState(false);
+    const yearOptions = useMemo(() => (
+        Array.from({ length: 7 }, (_, index) => {
+            const value = String(new Date().getFullYear() - 3 + index);
+            return { value, label: value };
+        })
+    ), []);
 
     const mesActual = useMemo(
         () => MESES_MATRIZ.find((mes) => mes.key === selectedMes) || MESES_MATRIZ[0],
@@ -29,7 +66,8 @@ export const RecurrentesMatrizMobile = ({
 
     return (
         <div className="flex flex-col gap-3 pb-24">
-            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="relative overflow-hidden rounded-[20px] p-3 shadow-sm" style={glassBase('light')}>
+                <GlassSheen />
                 <div className="mb-3 flex items-center justify-between gap-2">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-800">
@@ -38,65 +76,87 @@ export const RecurrentesMatrizMobile = ({
                         </div>
                         <p className="text-xs font-medium text-slate-500">{total} reglas desde backend.</p>
                     </div>
-                    <Button type="button" variant="light" icon="refresh" onClick={refresh} disabled={loading}>
-                        Actualizar
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setShowFilters((prev) => !prev)}
+                            style={showFilters ? { ...glassBase('primary'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
+                            className={`relative h-[38px] w-[38px] overflow-hidden transition-all active:scale-95 ${showFilters ? 'text-white' : 'text-slate-600'}`}
+                        >
+                            <GlassSheen />
+                            <Icon name="filter_alt" size="sm" className="relative z-10" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={refresh}
+                            disabled={loading}
+                            style={{ ...glassBase('light'), borderRadius: 14 }}
+                            className="relative h-[38px] w-[38px] overflow-hidden text-slate-600 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            <GlassSheen />
+                            <Icon name="refresh" size="sm" className="relative z-10" />
+                        </button>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                    <input
-                        type="number"
-                        min="2020"
-                        max="2100"
-                        value={year}
-                        onChange={(event) => setYear(Number(event.target.value))}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                    />
-                    <select
-                        value={selectedMes}
-                        onChange={(event) => setSelectedMes(event.target.value)}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                    >
-                        {MESES_MATRIZ.map((mes) => (
-                            <option key={mes.key} value={mes.key}>{mes.label}</option>
-                        ))}
-                    </select>
+                <div className="relative z-10 flex items-center gap-1.5">
                     <input
                         value={filters.q}
                         onChange={(event) => setFilters({ q: event.target.value })}
                         placeholder="Buscar regla o maquina"
-                        className="col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
+                        className="h-[38px] min-w-[90px] flex-1 rounded-[14px] border border-white/40 bg-white/60 px-3 py-2 text-xs font-semibold text-slate-700 outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-marca-secundario/30"
                     />
-                    <select
-                        value={filters.responsable}
-                        onChange={(event) => setFilters({ responsable: event.target.value })}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                    >
-                        <option value="">Responsables</option>
-                        {responsables.map((responsable) => (
-                            <option key={responsable.id} value={responsable.id}>{responsable.nombre}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={filters.estadoRegla}
-                        onChange={(event) => setFilters({ estadoRegla: event.target.value })}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-marca-primario"
-                    >
-                        <option value="">Todas</option>
-                        <option value="activa">Activas</option>
-                        <option value="pausada">Pausadas</option>
-                    </select>
-                    <label className="col-span-2 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-                        <input
-                            type="checkbox"
-                            checked={filters.mostrarBajaDesuso}
-                            onChange={(event) => setFilters({ mostrarBajaDesuso: event.target.checked })}
-                        />
-                        Mostrar baja/desuso
-                    </label>
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px] font-black uppercase tracking-wide">
+                {showFilters && (
+                    <div className="relative z-10 mt-3 grid grid-cols-2 gap-2">
+                        <GlassNativeSelect
+                            icon="calendar_today"
+                            placeholder="Año"
+                            options={yearOptions}
+                            value={String(year)}
+                            onChange={(value) => setYear(Number(value))}
+                        />
+                        <GlassNativeSelect
+                            icon="event_note"
+                            placeholder="Mes"
+                            options={MESES_MATRIZ.map((mes) => ({ value: mes.key, label: mes.label }))}
+                            value={selectedMes}
+                            onChange={setSelectedMes}
+                        />
+                        <GlassNativeSelect
+                            icon="person"
+                            placeholder="Responsable"
+                            options={responsables.map((responsable) => ({ value: responsable.id, label: responsable.nombre }))}
+                            value={filters.responsable}
+                            onChange={(value) => setFilters({ responsable: value })}
+                        />
+                        <GlassNativeSelect
+                            icon="settings"
+                            placeholder="Estado"
+                            options={[
+                                { value: 'activa', label: 'Activas' },
+                                { value: 'pausada', label: 'Pausadas' },
+                            ]}
+                            value={filters.estadoRegla}
+                            onChange={(value) => setFilters({ estadoRegla: value })}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setFilters({ mostrarBajaDesuso: !filters.mostrarBajaDesuso })}
+                            style={filters.mostrarBajaDesuso ? { ...glassBase('dark'), borderRadius: 12 } : { ...glassBase('light'), borderRadius: 12 }}
+                            className={`relative col-span-2 h-[38px] overflow-hidden text-xs font-bold ${filters.mostrarBajaDesuso ? 'text-white' : 'text-slate-600'}`}
+                        >
+                            <GlassSheen />
+                            <span className="relative z-10 inline-flex items-center gap-1.5">
+                                <Icon name={filters.mostrarBajaDesuso ? 'close' : 'hide_source'} size="xs" />
+                                Mostrar baja/desuso
+                            </span>
+                        </button>
+                    </div>
+                )}
+
+                <div className="relative z-10 mt-3 grid grid-cols-2 gap-1.5 text-[10px] font-black uppercase tracking-wide">
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Real = ticket</span>
                     <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Proyeccion</span>
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente generar</span>
