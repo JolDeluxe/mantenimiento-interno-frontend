@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button, Icon, Spinner } from '@/components/ui/z_index';
 import { frecuenciaLabel } from './recurrentes-utils';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
-import { ESTADOS_BAJA, MESES_MATRIZ, normalizeMeses } from './matriz-utils';
+import { ESTADOS_BAJA, MESES_MATRIZ, normalizeMeses, summarizeExecutions } from './matriz-utils';
 import { MatrizCell } from './matriz-cell';
 
 export const RecurrentesMatrizMobile = ({
@@ -95,6 +95,13 @@ export const RecurrentesMatrizMobile = ({
                         Mostrar baja/desuso
                     </label>
                 </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px] font-black uppercase tracking-wide">
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Real = ticket</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Proyeccion</span>
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente generar</span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada</span>
+                </div>
             </div>
 
             {error && (
@@ -115,6 +122,8 @@ export const RecurrentesMatrizMobile = ({
                 rows.map((rawRow) => {
                     const row = { ...rawRow, meses: normalizeMeses(rawRow.meses) };
                     const baja = ESTADOS_BAJA.has(String(row.maquina?.estado || '').toUpperCase());
+                    const ejecucionesMes = row.meses[selectedMes] || [];
+                    const summary = summarizeExecutions(ejecucionesMes);
                     return (
                         <article key={row.regla?.id || `${row.maquina?.id}-${row.regla?.titulo}`} className={`rounded-2xl border bg-white p-4 shadow-sm ${baja ? 'border-slate-100 opacity-70' : 'border-slate-200'}`}>
                             <div className="mb-2 flex items-start justify-between gap-2">
@@ -134,12 +143,22 @@ export const RecurrentesMatrizMobile = ({
                             </div>
 
                             <div className="rounded-xl border border-slate-100 bg-slate-50 p-2">
-                                <div className="mb-2 text-[10px] font-black uppercase tracking-wide text-slate-500">
-                                    {mesActual.label} {year}
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                    <div className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                                        {mesActual.label} {year}
+                                    </div>
+                                    <div className="text-[10px] font-black uppercase text-slate-500">
+                                        {summary.total} total
+                                    </div>
+                                </div>
+                                <div className="mb-2 grid grid-cols-3 gap-1 text-center text-[9px] font-black uppercase">
+                                    <div className="rounded-lg bg-emerald-50 px-1.5 py-1 text-emerald-700">{summary.reales} reales</div>
+                                    <div className="rounded-lg bg-sky-50 px-1.5 py-1 text-sky-700">{summary.proyecciones} proy.</div>
+                                    <div className="rounded-lg bg-amber-50 px-1.5 py-1 text-amber-700">{summary.pendientesGenerar} generar</div>
                                 </div>
                                 <MatrizCell
                                     row={row}
-                                    ejecuciones={row.meses[selectedMes] || []}
+                                    ejecuciones={ejecucionesMes}
                                     canManage={canManage}
                                     submitting={submitting}
                                     onGenerate={onGenerate}

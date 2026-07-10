@@ -15,6 +15,32 @@ export const MESES_MATRIZ = [
 
 export const ESTADOS_BAJA = new Set(['BAJA', 'BAJA_ERP', 'DESUSO', 'INACTIVA']);
 
+export const MATRIX_VIEW_MODES = [
+    { value: 'mes', label: 'Mes' },
+    { value: 'trimestre', label: 'Trimestre' },
+    { value: 'anual', label: 'Año' },
+];
+
+export const TRIMESTRES_MATRIZ = [
+    { key: '1', label: 'Trimestre 1', months: ['1', '2', '3'] },
+    { key: '2', label: 'Trimestre 2', months: ['4', '5', '6'] },
+    { key: '3', label: 'Trimestre 3', months: ['7', '8', '9'] },
+    { key: '4', label: 'Trimestre 4', months: ['10', '11', '12'] },
+];
+
+export const getCurrentQuarter = () => String(Math.floor(new Date().getMonth() / 3) + 1);
+
+export const getVisibleMonths = ({ mode, month, quarter }) => {
+    if (mode === 'mes') {
+        return MESES_MATRIZ.filter((mes) => mes.key === String(month));
+    }
+    if (mode === 'trimestre') {
+        const trimestre = TRIMESTRES_MATRIZ.find((item) => item.key === String(quarter)) || TRIMESTRES_MATRIZ[0];
+        return MESES_MATRIZ.filter((mes) => trimestre.months.includes(mes.key));
+    }
+    return MESES_MATRIZ;
+};
+
 export const formatDDMM = (fecha) => {
     if (!fecha) return '--';
     const [year, month, day] = String(fecha).split('-');
@@ -32,6 +58,36 @@ export const executionStatusClass = (estado = '') => {
     if (value === 'ATRASADO') return 'border-red-200 bg-red-50 text-red-700';
     if (value === 'IMPRESO') return 'border-cyan-200 bg-cyan-50 text-cyan-700';
     return 'border-slate-200 bg-slate-50 text-slate-600';
+};
+
+export const executionStatusLabel = (estado = '') => {
+    const value = String(estado || '').toUpperCase();
+    if (value === 'RESUELTO' || value === 'CERRADO') return 'Resuelto';
+    if (value === 'ASIGNADA') return 'Asignada';
+    if (value === 'EN_PROGRESO') return 'En progreso';
+    if (value === 'EN_PAUSA') return 'Pausada';
+    if (value === 'PENDIENTE') return 'Pendiente';
+    if (value === 'ATRASADO') return 'Atrasado';
+    if (value === 'IMPRESO') return 'Impreso';
+    return value || 'Sin estado';
+};
+
+export const originLabel = (origen = '') => (
+    String(origen).toLowerCase() === 'ticket' ? 'Real' : 'Proyeccion'
+);
+
+export const summarizeExecutions = (ejecuciones = []) => {
+    const total = ejecuciones.length;
+    const reales = ejecuciones.filter((item) => item.origen === 'ticket' || item.ticketId).length;
+    const proyecciones = ejecuciones.filter((item) => item.origen !== 'ticket' && !item.ticketId).length;
+    const pendientesGenerar = ejecuciones.filter((item) => item.pendienteMaterializar && !item.ticketId).length;
+
+    return {
+        total,
+        reales,
+        proyecciones,
+        pendientesGenerar,
+    };
 };
 
 export const normalizeMeses = (meses = {}) =>
