@@ -28,20 +28,28 @@ export const RecurrentesMatrizDesktop = ({
     canManage,
     onGenerate,
 }) => {
+    const currentYear = new Date().getFullYear();
+    const currentQuarter = getCurrentQuarter();
     const [viewMode, setViewMode] = useState('trimestre');
     const [selectedMes, setSelectedMes] = useState(String(new Date().getMonth() + 1));
-    const [selectedQuarter, setSelectedQuarter] = useState(getCurrentQuarter);
+    const [selectedQuarter, setSelectedQuarter] = useState(currentQuarter);
     const yearOptions = useMemo(() => (
         Array.from({ length: 7 }, (_, index) => {
-            const value = String(new Date().getFullYear() - 3 + index);
+            const value = String(currentYear - 3 + index);
             return { value, label: value };
         })
-    ), []);
+    ), [currentYear]);
 
     const visibleMonths = useMemo(
         () => getVisibleMonths({ mode: viewMode, month: selectedMes, quarter: selectedQuarter }),
         [selectedMes, selectedQuarter, viewMode],
     );
+    const isDefaultYear = Number(year) === currentYear;
+    const isDefaultView = viewMode === 'trimestre';
+    const isDefaultQuarter = selectedQuarter === currentQuarter;
+    const rangeLabel = viewMode === 'trimestre'
+        ? `Mostrando trimestre ${isDefaultQuarter && isDefaultYear ? 'actual' : 'seleccionado'}: Q${selectedQuarter} ${year} · ${visibleMonths.map((mes) => mes.label).join(' - ')}`
+        : `Mostrando ${viewMode === 'mes' ? 'mes' : 'año'}: ${visibleMonths.map((mes) => mes.label).join(' - ')} ${year}`;
 
     return (
         <div className="flex flex-col gap-4">
@@ -53,29 +61,29 @@ export const RecurrentesMatrizDesktop = ({
                             Matriz anual
                         </div>
                         <p className="mt-0.5 text-xs font-medium text-slate-500">
-                            {total} regla{total === 1 ? '' : 's'} desde backend. Vista actual: {visibleMonths.map((mes) => mes.short).join(', ')}.
+                            {total} regla{total === 1 ? '' : 's'} desde backend. {rangeLabel}.
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="min-w-28 flex-none">
                             <SearchableSelect
                                 options={yearOptions}
-                                value={String(year)}
-                                onChange={(value) => setYear(Number(value))}
-                                placeholder="Año..."
+                                value={isDefaultYear ? '' : String(year)}
+                                onChange={(value) => setYear(value ? Number(value) : currentYear)}
+                                placeholder={String(currentYear)}
                                 icon="calendar_today"
-                                allOptionText={null}
+                                allOptionText={String(currentYear)}
                                 className="w-full"
                             />
                         </div>
                         <div className="min-w-36 flex-none">
                             <SearchableSelect
                                 options={MATRIX_VIEW_MODES}
-                                value={viewMode}
-                                onChange={setViewMode}
-                                placeholder="Vista..."
+                                value={isDefaultView ? '' : viewMode}
+                                onChange={(value) => setViewMode(value || 'trimestre')}
+                                placeholder="Trimestre"
                                 icon="view_week"
-                                allOptionText={null}
+                                allOptionText="Trimestre"
                                 className="w-full"
                             />
                         </div>
@@ -96,11 +104,11 @@ export const RecurrentesMatrizDesktop = ({
                             <div className="min-w-40 flex-none">
                                 <SearchableSelect
                                     options={TRIMESTRES_MATRIZ.map((trimestre) => ({ value: trimestre.key, label: trimestre.label }))}
-                                    value={selectedQuarter}
-                                    onChange={setSelectedQuarter}
-                                    placeholder="Trimestre..."
+                                    value={isDefaultQuarter ? '' : selectedQuarter}
+                                    onChange={(value) => setSelectedQuarter(value || currentQuarter)}
+                                    placeholder={`Trimestre ${currentQuarter}`}
                                     icon="date_range"
-                                    allOptionText={null}
+                                    allOptionText={`Trimestre ${currentQuarter}`}
                                     className="w-full"
                                 />
                             </div>

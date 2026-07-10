@@ -5,11 +5,12 @@ import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 const ESTADO_OPTIONS = [
     { value: 'true', label: 'Activas' },
     { value: 'false', label: 'Pausadas' },
+    { value: 'all', label: 'Todas' },
 ];
 
-const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
+const GlassNativeSelect = ({ icon, placeholder, options, value, onChange, defaultValue = '' }) => {
     const selected = options.find((option) => option.value === String(value));
-    const isActive = Boolean(value);
+    const isActive = Boolean(value) && String(value) !== String(defaultValue);
 
     return (
         <div className="relative h-9.5 w-full">
@@ -86,7 +87,7 @@ export const RecurrentesToolbarMobile = ({
         return () => clearTimeout(timer);
     }, [localValue, onQueryChange, query]);
 
-    const hasFilters = Boolean(activo);
+    const hasFilters = activo !== 'true';
 
     return (
         <div className="flex w-full flex-col gap-2.5">
@@ -133,13 +134,14 @@ export const RecurrentesToolbarMobile = ({
                             icon="settings"
                             placeholder="Estado regla"
                             options={ESTADO_OPTIONS}
-                            value={activo}
-                            onChange={onActivoChange}
+                            value={activo === 'true' ? 'true' : (activo || 'all')}
+                            onChange={(value) => onActivoChange(value === 'all' ? '' : value || 'true')}
+                            defaultValue="true"
                         />
                         <button
                             type="button"
                             disabled={!hasFilters}
-                            onClick={() => onActivoChange('')}
+                            onClick={() => onActivoChange('true')}
                             className={`justify-self-end px-3 py-1.5 text-xs font-bold ${hasFilters ? 'text-red-500' : 'text-slate-400'}`}
                         >
                             <Icon name="filter_alt_off" size="xs" />

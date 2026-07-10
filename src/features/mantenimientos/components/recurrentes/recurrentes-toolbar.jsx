@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 
 const ESTADO_REGLA_OPTIONS = [
-    { value: 'true', label: 'Activas' },
     { value: 'false', label: 'Pausadas' },
+    { value: 'all', label: 'Todas' },
 ];
 
 const SearchInput = ({ localValue, onChange, onClear, className = 'w-full' }) => (
@@ -41,6 +41,7 @@ export const RecurrentesToolbar = ({
     loading,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
+    const estadoValue = activo === 'true' ? '' : (activo || 'all');
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -87,11 +88,11 @@ export const RecurrentesToolbar = ({
                 <div className="min-w-40 flex-none">
                     <SearchableSelect
                         options={ESTADO_REGLA_OPTIONS}
-                        value={activo}
-                        onChange={onActivoChange}
-                        placeholder="Estado regla..."
+                        value={estadoValue}
+                        onChange={(value) => onActivoChange(value === 'all' ? '' : value || 'true')}
+                        placeholder="Activas"
                         icon="settings"
-                        allOptionText="Todas"
+                        allOptionText="Activas"
                         className="w-full"
                     />
                 </div>

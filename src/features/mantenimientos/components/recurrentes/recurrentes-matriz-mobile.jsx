@@ -6,9 +6,9 @@ import { RecurrenteStatusBadge } from './recurrente-status-badge';
 import { ESTADOS_BAJA, MESES_MATRIZ, normalizeMeses, summarizeExecutions } from './matriz-utils';
 import { MatrizCell } from './matriz-cell';
 
-const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
+const GlassNativeSelect = ({ icon, placeholder, options, value, onChange, defaultValue = '' }) => {
     const selected = options.find((option) => option.value === String(value));
-    const isActive = Boolean(value);
+    const isActive = Boolean(value) && String(value) !== String(defaultValue);
 
     return (
         <div className="relative h-9.5 w-full">
@@ -50,14 +50,16 @@ export const RecurrentesMatrizMobile = ({
     canManage,
     onGenerate,
 }) => {
-    const [selectedMes, setSelectedMes] = useState(String(new Date().getMonth() + 1));
+    const currentYear = new Date().getFullYear();
+    const currentMonth = String(new Date().getMonth() + 1);
+    const [selectedMes, setSelectedMes] = useState(currentMonth);
     const [showFilters, setShowFilters] = useState(false);
     const yearOptions = useMemo(() => (
         Array.from({ length: 7 }, (_, index) => {
-            const value = String(new Date().getFullYear() - 3 + index);
+            const value = String(currentYear - 3 + index);
             return { value, label: value };
         })
-    ), []);
+    ), [currentYear]);
 
     const mesActual = useMemo(
         () => MESES_MATRIZ.find((mes) => mes.key === selectedMes) || MESES_MATRIZ[0],
@@ -115,14 +117,16 @@ export const RecurrentesMatrizMobile = ({
                             placeholder="Año"
                             options={yearOptions}
                             value={String(year)}
-                            onChange={(value) => setYear(Number(value))}
+                            onChange={(value) => setYear(Number(value || currentYear))}
+                            defaultValue={String(currentYear)}
                         />
                         <GlassNativeSelect
                             icon="event_note"
                             placeholder="Mes"
                             options={MESES_MATRIZ.map((mes) => ({ value: mes.key, label: mes.label }))}
                             value={selectedMes}
-                            onChange={setSelectedMes}
+                            onChange={(value) => setSelectedMes(value || currentMonth)}
+                            defaultValue={currentMonth}
                         />
                         <GlassNativeSelect
                             icon="person"
