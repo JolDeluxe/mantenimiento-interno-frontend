@@ -1,0 +1,21 @@
+import api from '@/lib/axios';
+import {
+    createReglaRecurrencia,
+    deleteReglaRecurrencia,
+    getProyeccionRegla,
+    getProyeccionesGlobales,
+    materializeReglaCiclo,
+    updateReglaRecurrencia,
+} from '@/features/maquinaria/api/recurrencias-api';
+
+export {
+    createReglaRecurrencia,
+    deleteReglaRecurrencia,
+    getProyeccionRegla,
+    getProyeccionesGlobales,
+    materializeReglaCiclo,
+    updateReglaRecurrencia,
+};
+
+export const getRecurrencias = (params = {}) =>
+    api.get('/api/recurrencias', { params });
