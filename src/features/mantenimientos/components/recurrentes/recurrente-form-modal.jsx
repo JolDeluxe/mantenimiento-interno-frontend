@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, SearchableSelect, Spinner } from '@/components/ui/z_index';
 import { getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
+import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import { getMinDateHoy } from '@/lib/date';
 
 const FRECUENCIAS = [
@@ -53,12 +54,12 @@ export const RecurrenteFormModal = ({
             .then(([maquinasRes, tecnicosRes]) => {
                 const maquinasData = Array.isArray(maquinasRes?.data) ? maquinasRes.data : Array.isArray(maquinasRes?.data?.data) ? maquinasRes.data.data : Array.isArray(maquinasRes) ? maquinasRes : [];
                 const tecnicosData = Array.isArray(tecnicosRes) ? tecnicosRes : Array.isArray(tecnicosRes?.data) ? tecnicosRes.data : [];
-                setMaquinas(maquinasData);
+                setMaquinas(filterMaquinasParaMantenimiento(maquinasData, regla?.maquinaId));
                 setTecnicos(tecnicosData);
             })
             .catch(() => setFormError('Error al cargar catalogos.'))
             .finally(() => setLoadingCatalogos(false));
-    }, [isOpen]);
+    }, [isOpen, regla]);
 
     useEffect(() => {
         if (!isOpen) return;

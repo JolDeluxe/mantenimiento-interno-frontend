@@ -5,6 +5,7 @@ import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/compon
 import { formatFecha, formatFechaHora, format12h, formatDurationToDaysHours, isoToLocalMXTime } from '@/lib/date';
 import { TicketTimeline } from '@/features/common/components/ticket-timeline';
 import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
+import { WorkTimeSummary } from '@/features/common/components/work-time-summary';
 import { useAuthStore } from '@/stores/auth-store';
 import {
     getClasificacionIcon,
@@ -730,19 +731,8 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                     </div>
                 )}
                 {(ticket.fechaInicio || fechaFinalizada) && (
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
-                        <DataRow
-                            icon="play_circle"
-                            label="Inicio real"
-                            value={ticket.fechaInicio ? formatFechaHora(ticket.fechaInicio) : null}
-                            fallback="Sin inicio registrado"
-                        />
-                        <DataRow
-                            icon="task_alt"
-                            label="Finalizado"
-                            value={fechaFinalizada ? formatFechaHora(fechaFinalizada) : null}
-                            fallback="Sin cierre registrado"
-                        />
+                    <div className="pt-2 border-t border-slate-200/60">
+                        <WorkTimeSummary inicio={ticket.fechaInicio} fin={fechaFinalizada} />
                     </div>
                 )}
                 {renderComparativaTiempos()}

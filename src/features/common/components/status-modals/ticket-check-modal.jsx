@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
-import { getMinDateHoy, isoToDateInput, localMXTimeToISO } from '@/lib/date';
+import { getMinDateHoy, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 
-const MAX_DURATION_MINS = 540; // 9 horas
+const MAX_DURATION_MINS = 960; // 16 horas
 
 const addDaysToDateInput = (dateStr, days) => {
     const date = new Date(`${dateStr}T12:00:00.000Z`);
@@ -21,10 +21,10 @@ const buildRangeTimePayload = (dateStr, range, duracionManualMinutos) => {
     return { inicioManual, finManual, duracionManualMinutos };
 };
 
-const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
-    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
-    const [startTime, setStartTime] = useState('07:00');
-    const [endTime, setEndTime] = useState('08:00');
+const TimePicker = ({ totalMins, onChange, onRangeChange, defaultMode = 'duration', defaultStartTime = '07:00', defaultEndTime = '08:00' }) => {
+    const [mode, setMode] = useState(defaultMode); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState(defaultStartTime);
+    const [endTime, setEndTime] = useState(defaultEndTime);
 
     const horas = Math.floor(totalMins / 60);
     const minutos = totalMins % 60;
@@ -47,12 +47,12 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-lg w-full sm:w-auto sm:self-start">
                 <button
                     type="button"
                     onClick={() => setMode('duration')}
                     className={cn(
-                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+                        'px-3 py-2 text-xs font-bold rounded-md transition-all cursor-pointer',
                         mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
                     )}
                 >
@@ -62,7 +62,7 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                     type="button"
                     onClick={() => setMode('range')}
                     className={cn(
-                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer',
+                        'px-3 py-2 text-xs font-bold rounded-md transition-all cursor-pointer',
                         mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
                     )}
                 >
@@ -71,8 +71,8 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
             </div>
 
             {mode === 'duration' ? (
-                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
-                    <div className="flex flex-col gap-1.5 items-center">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <select
                             value={horas}
                             onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
@@ -87,7 +87,7 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
 
                     <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
 
-                    <div className="flex flex-col gap-1.5 items-center">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <select
                             value={minutos}
                             onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
@@ -101,25 +101,25 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                     </div>
                 </div>
             ) : (
-                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
-                    <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2 sm:gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
                         <input
                             type="time"
-                            min="07:00"
-                            max="20:00"
+                            min="06:00"
+                            max="22:00"
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
                             className={selectCls}
                         />
                     </div>
-                    <span className="text-slate-300 pb-2">a</span>
-                    <div className="flex flex-col gap-1.5">
+                    <span className="text-slate-300 pb-2 text-center">a</span>
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
                         <input
                             type="time"
-                            min="07:00"
-                            max="20:00"
+                            min="06:00"
+                            max="22:00"
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             className={selectCls}
@@ -133,7 +133,7 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                 {totalMins > MAX_DURATION_MINS && (
                     <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
                         <Icon name="error" size="xs" />
-                        Máximo permitido: 9 horas.
+                        Máximo permitido: 16 horas.
                     </p>
                 )}
             </div>
@@ -158,13 +158,15 @@ export const TicketCheckModal = ({
 
     useEffect(() => {
         if (isOpen) {
-            setMarcada(false);
-            setArchivos([]);
-            setNota('');
-            setTiempoManualMins(0);
-            setTiempoManualRange({ mode: 'duration' });
+            queueMicrotask(() => {
+                setMarcada(false);
+                setArchivos([]);
+                setNota('');
+                setTiempoManualMins(ticket?.tiempoEstimado || 0);
+                setTiempoManualRange({ mode: 'duration' });
+            });
         }
-    }, [isOpen]);
+    }, [isOpen, ticket]);
 
     // Limpiar previews al desmontar
     useEffect(() => {
@@ -174,6 +176,11 @@ export const TicketCheckModal = ({
     }, [archivos]);
 
     if (!ticket) return null;
+
+    const hasScheduledRange = Boolean(ticket?.horaInicioProgramada && ticket?.horaFinProgramada);
+    const scheduledStartTime = isoToLocalMXTime(ticket?.horaInicioProgramada) || '07:00';
+    const scheduledEndTime = isoToLocalMXTime(ticket?.horaFinProgramada) || '08:00';
+    const defaultTimePickerMode = hasScheduledRange ? 'range' : 'duration';
 
     const handleFileChange = (e) => {
         const nuevos = Array.from(e.target.files || []).slice(0, MAX_FOTOS - archivos.length);
@@ -359,7 +366,7 @@ export const TicketCheckModal = ({
                                 <label className="text-sm font-semibold text-slate-700">
                                     Tiempo invertido <span className="font-normal text-slate-400">(opcional)</span>
                                 </label>
-                                <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
+                                <TimePicker totalMins={tiempoManualMins || ticket?.tiempoEstimado || 0} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} defaultMode={defaultTimePickerMode} defaultStartTime={scheduledStartTime} defaultEndTime={scheduledEndTime} />
                             </div>
                         </div>
                     )}
@@ -390,3 +397,4 @@ export const TicketCheckModal = ({
         </Modal>
     );
 };
+

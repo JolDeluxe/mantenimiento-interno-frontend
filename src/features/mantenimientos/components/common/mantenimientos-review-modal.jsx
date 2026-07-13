@@ -6,6 +6,7 @@ import { Label, Input } from '@/components/form/z_index';
 import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
+import { WorkTimeSummary } from '@/features/common/components/work-time-summary';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -14,13 +15,6 @@ const formatMins = (mins) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
-};
-
-const formatRangoTrabajo = (inicio, fin) => {
-    if (inicio && fin) return `${formatFechaHora(inicio)} - ${formatFechaHora(fin)}`;
-    if (inicio) return `Inicio: ${formatFechaHora(inicio)}`;
-    if (fin) return `Fin: ${formatFechaHora(fin)}`;
-    return null;
 };
 
 /**
@@ -67,7 +61,7 @@ export const TicketReviewModal = ({
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
-    const rangoTrabajoLabel = formatRangoTrabajo(ticket?.fechaInicio, ticket?.finalizadoAt);
+    const hasRangoTrabajo = Boolean(ticket?.fechaInicio || ticket?.finalizadoAt);
 
     const parseManualMins = (str) => {
         if (!str) return 0;
@@ -96,13 +90,14 @@ export const TicketReviewModal = ({
 
     useEffect(() => {
         if (isOpen) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setNota('');
-            setDecision(null);
-            setError(null);
-            setPreviewIndex(null);
-            setNuevaFechaVencimiento('');
-            setErrorFecha('');
+            queueMicrotask(() => {
+                setNota('');
+                setDecision(null);
+                setError(null);
+                setPreviewIndex(null);
+                setNuevaFechaVencimiento('');
+                setErrorFecha('');
+            });
         }
     }, [isOpen]);
 
@@ -110,8 +105,7 @@ export const TicketReviewModal = ({
         if (decision === 'RECHAZADO' && esSupervisor && !nuevaFechaVencimiento) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString()));
+            queueMicrotask(() => setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString())));
         }
     }, [decision, esSupervisor, nuevaFechaVencimiento]);
 
@@ -217,34 +211,26 @@ export const TicketReviewModal = ({
                                         </div>
                                     </div>
 
-                                    {rangoTrabajoLabel && (
-                                        <div className="flex items-start gap-2 border-t border-slate-100 pt-2.5">
-                                            <Icon name="schedule" size="xs" className="text-slate-400 shrink-0 mt-0.5" />
-                                            <div className="flex flex-col">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    Rango registrado
-                                                </span>
-                                                <span className="text-[11px] font-bold text-slate-700 leading-snug">
-                                                    {rangoTrabajoLabel}
-                                                </span>
-                                            </div>
+                                    {hasRangoTrabajo && (
+                                        <div className="border-t border-slate-100 pt-2.5">
+                                            <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
                                         </div>
                                     )}
 
-                                    <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-0.5">
-                                        <div className="flex items-center gap-1.5">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5 mt-0.5">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <Icon 
                                                 name={isManual ? "edit_note" : "timer"} 
-                                                size="xs" 
+                                                size="sm" 
                                                 className={isManual ? "text-amber-600" : "text-blue-600"} 
                                             />
-                                            <span className="text-[10px] font-semibold text-slate-500">
-                                                Medición: <strong className={isManual ? "text-amber-700" : "text-blue-700"}>{isManual ? "Técnico (Manual)" : "Sistema"}</strong>
+                                            <span className="truncate text-[10px] font-bold text-slate-500">
+                                                <strong className={isManual ? "text-amber-700" : "text-blue-700"}>{isManual ? "Manual" : "Sistema"}</strong>
                                             </span>
                                         </div>
                                         {hasDiferencia && (
                                             <span className={cn(
-                                                "text-[10px] font-bold px-2 py-0.5 rounded",
+                                                "shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full",
                                                 diferenciaMins > 0 
                                                     ? "bg-red-50 text-red-700 border border-red-100" 
                                                     : diferenciaMins < 0 

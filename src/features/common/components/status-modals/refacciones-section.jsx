@@ -27,8 +27,8 @@ export const RefaccionesSection = ({
 
     return (
         <div className="flex flex-col gap-3 mt-4 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center justify-between gap-3">
-                <div>
+            <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                <div className="min-w-0">
                     <p className="font-bold text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm">
                         <Icon name="construction" size="xs" className="text-slate-500 shrink-0" />
                         ¿Usó refacciones?
@@ -59,7 +59,7 @@ export const RefaccionesSection = ({
 
             {usaRefacciones && (
                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-xs font-bold text-slate-600">Refacciones utilizadas *</span>
                         <Button
                             type="button"
@@ -79,20 +79,26 @@ export const RefaccionesSection = ({
                             Agrega al menos una refacción para poder continuar.
                         </p>
                     ) : (
-                        <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                        <div className="flex flex-col gap-2.5 max-h-[260px] overflow-y-auto pr-1">
                             {refacciones.map((ref, idx) => (
-                                <div key={idx} className="flex gap-2 items-center bg-slate-50 border border-slate-200/60 p-2 rounded-lg">
-                                    <div className="flex-1">
+                                <div key={idx} className="grid grid-cols-12 gap-2 bg-slate-50 border border-slate-200/60 p-2.5 rounded-xl">
+                                    <div className="col-span-12 sm:col-span-6">
+                                        <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-400">
+                                            Refacción
+                                        </label>
                                         <input
                                             type="text"
                                             value={ref.nombre}
                                             onChange={(e) => handleChange(idx, 'nombre', e.target.value)}
                                             placeholder="Nombre / Repuesto *"
                                             disabled={disabled}
-                                            className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
+                                            className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
                                         />
                                     </div>
-                                    <div className="w-16">
+                                    <div className="col-span-4 sm:col-span-2">
+                                        <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-400">
+                                            Cant.
+                                        </label>
                                         <input
                                             type="number"
                                             min={1}
@@ -100,27 +106,33 @@ export const RefaccionesSection = ({
                                             onChange={(e) => handleChange(idx, 'cantidad', parseInt(e.target.value) || 1)}
                                             placeholder="Cant."
                                             disabled={disabled}
-                                            className="w-full text-xs border border-slate-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
+                                            className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-2 text-center focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
                                         />
                                     </div>
-                                    <div className="w-24">
+                                    <div className="col-span-6 sm:col-span-3">
+                                        <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-400">
+                                            Código
+                                        </label>
                                         <input
                                             type="text"
                                             value={ref.codigo}
                                             onChange={(e) => handleChange(idx, 'codigo', e.target.value)}
                                             placeholder="Código"
                                             disabled={disabled}
-                                            className="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
+                                            className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white disabled:bg-slate-100"
                                         />
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemove(idx)}
-                                        disabled={disabled}
-                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-all shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                                    >
-                                        <Icon name="delete" size="xs" />
-                                    </button>
+                                    <div className="col-span-2 sm:col-span-1 flex items-end justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemove(idx)}
+                                            disabled={disabled}
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                            aria-label="Quitar refacción"
+                                        >
+                                            <Icon name="delete" size="xs" />
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

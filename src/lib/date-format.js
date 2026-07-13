@@ -48,6 +48,24 @@ export const formatFechaHora = (iso, fallback = null) => {
     });
 };
 
+export const formatFechaHoraCompacta = (iso, fallback = null) => {
+    if (!iso) return fallback;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return fallback;
+
+    const fecha = d.toLocaleDateString(BASE_LOCALE, {
+        day: '2-digit', month: 'short', year: 'numeric',
+        timeZone: 'America/Mexico_City'
+    }).replace(/\./g, '');
+
+    const hora = d.toLocaleTimeString(BASE_LOCALE, {
+        hour: '2-digit', minute: '2-digit',
+        timeZone: 'America/Mexico_City'
+    });
+
+    return { fecha, hora };
+};
+
 export const formatFechaRelativa = (iso) => {
     if (!iso) return '-';
     const toMXDateStr = (date) => date.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });

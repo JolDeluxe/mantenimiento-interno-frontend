@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-import { isoToDateInput, fechaInputToISOLocal, localMXTimeToISO } from '@/lib/date';
+import { isoToDateInput, fechaInputToISOLocal, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { RefaccionesSection } from '@/features/common/components/status-modals/refacciones-section';
 import { hasValidRefacciones, sanitizeRefacciones } from '@/features/common/components/status-modals/refacciones-utils';
 
@@ -11,7 +11,7 @@ import { hasValidRefacciones, sanitizeRefacciones } from '@/features/common/comp
 const MIN_TECNICO = 5;
 const MAX_EXTRA_ESTIMADO = 60;
 const MAX_SIN_ESTIMADO = 480;
-const MAX_DURATION_MINS = 540; // 9 horas
+const MAX_DURATION_MINS = 960; // 16 horas
 
 const MOTIVOS_PAUSA = [
     'Espera de refacciones o materiales',
@@ -59,8 +59,6 @@ const formatMinsFull = (mins) => {
 };
 
 const evaluarTiempo = (mins, ticket) => {
-    const fechaVencimiento = ticket.fechaLimite || ticket.fechaVencimiento;
-
     if (ticket.isOverdue) {
         return {
             alerta: true,
@@ -112,10 +110,10 @@ const buildRangeTimePayload = (dateStr, range, duracionManualMinutos) => {
 };
 
 // ── Sub-componente: Selector de tiempo ─────────────────────────────────────
-const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
-    const [mode, setMode] = useState('duration'); // 'duration' | 'range'
-    const [startTime, setStartTime] = useState('07:00');
-    const [endTime, setEndTime] = useState('08:00');
+const TimePicker = ({ totalMins, onChange, onRangeChange, defaultMode = 'duration', defaultStartTime = '07:00', defaultEndTime = '08:00' }) => {
+    const [mode, setMode] = useState(defaultMode); // 'duration' | 'range'
+    const [startTime, setStartTime] = useState(defaultStartTime);
+    const [endTime, setEndTime] = useState(defaultEndTime);
 
     const horas = Math.floor(totalMins / 60);
     const minutos = totalMins % 60;
@@ -131,19 +129,19 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
         } else {
             onRangeChange?.({ mode: 'duration' });
         }
-    }, [startTime, endTime, mode]);
+    }, [startTime, endTime, mode, onChange, onRangeChange]);
 
     const selectCls =
         'border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 appearance-none cursor-pointer';
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex p-1 bg-slate-100 rounded-lg self-start">
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-lg w-full sm:w-auto sm:self-start">
                 <button
                     type="button"
                     onClick={() => setMode('duration')}
                     className={cn(
-                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        'px-3 py-2 text-xs font-bold rounded-md transition-all',
                         mode === 'duration' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
                     )}
                 >
@@ -153,7 +151,7 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                     type="button"
                     onClick={() => setMode('range')}
                     className={cn(
-                        'px-3 py-1.5 text-xs font-bold rounded-md transition-all',
+                        'px-3 py-2 text-xs font-bold rounded-md transition-all',
                         mode === 'range' ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
                     )}
                 >
@@ -162,8 +160,8 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
             </div>
 
             {mode === 'duration' ? (
-                <div className="flex items-end gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
-                    <div className="flex flex-col gap-1.5 items-center">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3 animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <select
                             value={horas}
                             onChange={(e) => onChange(Number(e.target.value) * 60 + minutos)}
@@ -178,7 +176,7 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
 
                     <span className="text-2xl text-slate-300 font-thin pb-5">:</span>
 
-                    <div className="flex flex-col gap-1.5 items-center">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <select
                             value={minutos}
                             onChange={(e) => onChange(horas * 60 + Number(e.target.value))}
@@ -192,25 +190,25 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                     </div>
                 </div>
             ) : (
-                <div className="flex items-end gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
-                    <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2 sm:gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Inicio</span>
                         <input
                             type="time"
-                            min="07:00"
-                            max="20:00"
+                            min="06:00"
+                            max="22:00"
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
                             className={selectCls}
                         />
                     </div>
-                    <span className="text-slate-300 pb-2">a</span>
-                    <div className="flex flex-col gap-1.5">
+                    <span className="text-slate-300 pb-2 text-center">a</span>
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fin</span>
                         <input
                             type="time"
-                            min="07:00"
-                            max="20:00"
+                            min="06:00"
+                            max="22:00"
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             className={selectCls}
@@ -224,13 +222,13 @@ const TimePicker = ({ totalMins, onChange, onRangeChange }) => {
                 {totalMins > MAX_DURATION_MINS && (
                     <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
                         <Icon name="error" size="xs" />
-                        Máximo permitido: 9 horas.
+                        Máximo permitido: 16 horas.
                     </p>
                 )}
-                {mode === 'range' && (startTime < '07:00' || endTime > '20:00' || startTime > '20:00' || endTime < '07:00') && (
+                {mode === 'range' && (startTime < '06:00' || endTime > '22:00' || startTime > '22:00' || endTime < '06:00') && (
                     <p className="text-[10px] text-estado-rechazado font-bold flex items-center gap-1">
                         <Icon name="info" size="xs" />
-                        Rango permitido: 07:00 AM a 08:00 PM.
+                        Rango permitido: 06:00 AM a 10:00 PM.
                     </p>
                 )}
             </div>
@@ -352,28 +350,36 @@ export const TicketProgressModal = ({
 
     useEffect(() => {
         if (isOpen) {
-            setVista('principal');
-            setMotivoPausa('');
-            setNotaOtro('');
-            setNotaResolver('');
-            setArchivos([]);
-            setEvaluacion(null);
-            setTimePhase('confirmado');
-            setTiempoManualMins(0);
-            setTiempoManualRange(null);
-            setFechaFinManual('');
-            setErrorPausa(false);
-            setUsaRefacciones(false);
-            setRefacciones([]);
-            setMaquinaOperativaAlResolver(false);
+            queueMicrotask(() => {
+                setVista('principal');
+                setMotivoPausa('');
+                setNotaOtro('');
+                setNotaResolver('');
+                setArchivos([]);
+                setEvaluacion(null);
+                setTimePhase('confirmado');
+                setTiempoManualMins(0);
+                setTiempoManualRange(null);
+                setFechaFinManual('');
+                setErrorPausa(false);
+                setUsaRefacciones(false);
+                setRefacciones([]);
+                setMaquinaOperativaAlResolver(false);
+            });
         }
     }, [isOpen]);
 
-    if (!ticket) return null;
-
-    const minDate = isoToDateInput(ticket.createdAt);
+    const minDate = isoToDateInput(ticket?.createdAt);
     const maxDate = isoToDateInput(new Date().toISOString());
     const isFechaFinValida = fechaFinManual && fechaFinManual >= minDate && fechaFinManual <= maxDate;
+    const hasScheduledRange = Boolean(ticket?.horaInicioProgramada && ticket?.horaFinProgramada);
+    const scheduledStartTime = isoToLocalMXTime(ticket?.horaInicioProgramada) || '07:00';
+    const scheduledEndTime = isoToLocalMXTime(ticket?.horaFinProgramada) || '08:00';
+    const scheduledMins = hasScheduledRange
+        ? Math.max(5, ((Number(scheduledEndTime.slice(0, 2)) * 60 + Number(scheduledEndTime.slice(3, 5))) - (Number(scheduledStartTime.slice(0, 2)) * 60 + Number(scheduledStartTime.slice(3, 5))) + 1440) % 1440)
+        : 0;
+    const defaultTimePickerMode = hasScheduledRange ? 'range' : 'duration';
+    const getManualBaseMins = (fallback = 60) => scheduledMins || ticket?.tiempoEstimado || fallback;
 
     const handleEntrarResolver = () => {
         const mins = calcElapsedMins(ticket);
@@ -384,7 +390,7 @@ export const TicketProgressModal = ({
 
         // Intercepción Liquid UI: Si es 0 min, saltamos la pregunta y forzamos manual
         if (mins === 0) {
-            setTiempoManualMins(60);
+            setTiempoManualMins(getManualBaseMins(60));
             if (ev?.tipo === 'alto') {
                 setFechaFinManual(isoToDateInput(new Date().toISOString()));
                 setTimePhase('atrasada_fecha');
@@ -410,6 +416,8 @@ export const TicketProgressModal = ({
             return copia;
         });
     }, []);
+
+    if (!ticket) return null;
 
     const buildFdPausar = () => {
         const fd = new FormData();
@@ -650,7 +658,7 @@ export const TicketProgressModal = ({
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                const base = elapsedMins > 0 ? elapsedMins : 60;
+                                                const base = getManualBaseMins(elapsedMins > 0 ? elapsedMins : 60);
                                                 const redondeado = Math.round(base / 5) * 5;
                                                 setTiempoManualMins(Math.min(redondeado, 1435) || 60);
                                                 if (isAtrasada) {
@@ -675,7 +683,7 @@ export const TicketProgressModal = ({
                                         <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                         <p className="text-sm font-bold text-slate-700">Ingresa el tiempo real trabajado</p>
                                     </div>
-                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
+                                    <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} defaultMode={defaultTimePickerMode} defaultStartTime={scheduledStartTime} defaultEndTime={scheduledEndTime} />
                                     {tiempoManualMins === 0 && (
                                         <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1">
                                             <Icon name="warning" size="xs" />
@@ -735,7 +743,7 @@ export const TicketProgressModal = ({
                                             <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
                                             <p className="text-sm font-bold text-slate-700">Tiempo invertido ese día</p>
                                         </div>
-                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} />
+                                        <TimePicker totalMins={tiempoManualMins} onChange={setTiempoManualMins} onRangeChange={setTiempoManualRange} defaultMode={defaultTimePickerMode} defaultStartTime={scheduledStartTime} defaultEndTime={scheduledEndTime} />
                                         {tiempoManualMins === 0 && (
                                             <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
                                                 <Icon name="warning" size="xs" />
@@ -903,3 +911,4 @@ export const TicketProgressModal = ({
         </Modal>
     );
 };
+

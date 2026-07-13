@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
 import { Label, Input, Select } from '@/components/form/z_index';
-import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, isoToLocalMXTime } from '@/lib/date';
 import {
     validateFechaEdicionNoPasadaSiCambio,
     validateFechaInicioRecurrencia,
@@ -11,7 +11,8 @@ import {
 import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
 import { ResponsablesMobileSection } from '@/features/common/forms/tareas/responsables';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
-import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
+import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine, deriveCategoryFromTicket, deriveLocationFromTicket, deriveTimeModeFromTicket } from '@/features/common/forms/tareas/utils/machinery-utils';
+import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import api from '@/lib/axios';
 import {
     PLANTAS,
@@ -205,17 +206,22 @@ export const MobileTicketFormModal = ({
         setBackendError('');
 
         if (esEdicion) {
+            const loc = deriveLocationFromTicket(ticketAEditar);
+            const timeMode = deriveTimeModeFromTicket(ticketAEditar);
             setTitulo(ticketAEditar.titulo ?? '');
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
-            setCategoria(ticketAEditar.categoria ?? '');
-            setPlanta(ticketAEditar.planta ?? '');
-            setArea(ticketAEditar.area ?? '');
+            setCategoria(deriveCategoryFromTicket(ticketAEditar, scope === 'mantenimientos' ? 'MAQUINARIA' : ''));
+            setPlanta(loc.planta);
+            setArea(loc.area);
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
-            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? 0);
+            setTiempoEstimadoMins(timeMode.tiempoEstimado);
+            setModoRangoHoras(timeMode.modoRangoHoras);
+            setHoraInicio(timeMode.horaInicioProgramada ? isoToLocalMXTime(timeMode.horaInicioProgramada) : '');
+            setHoraFin(timeMode.horaFinProgramada ? isoToLocalMXTime(timeMode.horaFinProgramada) : '');
             setResponsables(ticketAEditar.responsables?.map((r) => String(r.id)) ?? []);
             setMaquinaId(ticketAEditar.maquinaId ? String(ticketAEditar.maquinaId) : '');
             setMaquinaInfo(ticketAEditar.maquina ?? null);
@@ -239,7 +245,7 @@ export const MobileTicketFormModal = ({
             setFrecuencia('MENSUAL');
             setIntervaloDias('');
         }
-    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion, hoyLocal]);
 
     const puedeReportarParoProduccion = canReportProductionHalt({ categoria, scope, maquinaId, clasificacion });
 
@@ -257,7 +263,9 @@ export const MobileTicketFormModal = ({
         const cargarCatalogoMaquinas = async () => {
             try {
                 const res = await getMaquinas({ limit: 500 });
-                const list = res?.data?.data || res?.data || [];
+                const rawList = res?.data?.data || res?.data || [];
+                const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
+                const list = filterMaquinasParaMantenimiento(rawList, selectedId);
                 setMaquinasRaw(list);
                 const opts = list.map(m => ({
                     value: String(m.id),
@@ -270,7 +278,7 @@ export const MobileTicketFormModal = ({
         };
 
         cargarCatalogoMaquinas();
-    }, [isOpen]);
+    }, [isOpen, ticketAEditar]);
 
     // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
     useEffect(() => {
@@ -353,13 +361,13 @@ export const MobileTicketFormModal = ({
             if (modoRangoHoras) {
                 if (!horaInicio) {
                     e.horaInicio = 'Selecciona la hora de inicio.';
-                } else if (horaInicio < '08:00' || horaInicio > '17:30') {
-                    e.horaInicio = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                } else if (horaInicio < '06:00' || horaInicio > '22:00') {
+                    e.horaInicio = 'Debe ser entre 6:00 AM y 10:00 PM.';
                 }
                 if (!horaFin) {
                     e.horaFin = 'Selecciona la hora de fin.';
-                } else if (horaFin < '08:00' || horaFin > '17:30') {
-                    e.horaFin = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                } else if (horaFin < '06:00' || horaFin > '22:00') {
+                    e.horaFin = 'Debe ser entre 6:00 AM y 10:00 PM.';
                 }
                 if (horaInicio && horaFin && horaFin <= horaInicio) {
                     e.horaFin = 'La hora de fin debe ser posterior a la de inicio.';
@@ -820,8 +828,8 @@ export const MobileTicketFormModal = ({
                                                     value={horaInicio}
                                                     onChange={(e) => handleHoraInicioChange(e.target.value)}
                                                     disabled={isSubmitting}
-                                                    min="08:00"
-                                                    max="17:30"
+                                                    min="06:00"
+                                                    max="22:00"
                                                     step="300"
                                                     className={cn(
                                                         "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
@@ -836,8 +844,8 @@ export const MobileTicketFormModal = ({
                                                     value={horaFin}
                                                     onChange={(e) => handleHoraFinChange(e.target.value)}
                                                     disabled={isSubmitting}
-                                                    min="08:00"
-                                                    max="17:30"
+                                                    min="06:00"
+                                                    max="22:00"
                                                     step="300"
                                                     className={cn(
                                                         "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
@@ -939,3 +947,4 @@ export const MobileTicketFormModal = ({
 };
 
 export { MobileTicketFormModal as MobileMantenimientosFormModal };
+

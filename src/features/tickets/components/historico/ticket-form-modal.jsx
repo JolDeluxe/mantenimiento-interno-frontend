@@ -3,13 +3,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { MaquinaSelectField, PlantaAreaFields, TiempoHorarioSection } from '@/features/common/forms/tareas/fields';
-import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput } from '@/lib/date';
+import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
 import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio } from '@/features/common/forms/tareas/validation';
 import { PrioridadField, TituloField, DescripcionField } from '@/features/common/forms/tareas/fields';
 import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/forms/tareas/responsables';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
-import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine } from '@/features/common/forms/tareas/utils/machinery-utils';
+import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine, deriveCategoryFromTicket, deriveLocationFromTicket, deriveTimeModeFromTicket } from '@/features/common/forms/tareas/utils/machinery-utils';
+import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
@@ -232,6 +233,9 @@ export const TicketFormModal = ({
     const [tipo, setTipo] = useState('');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
+    const [modoRangoHoras, setModoRangoHoras] = useState(false);
+    const [horaInicio, setHoraInicio] = useState('');
+    const [horaFin, setHoraFin] = useState('');
 
     const [responsables, setResponsables] = useState([]);
 
@@ -282,17 +286,22 @@ export const TicketFormModal = ({
         setCarrito([]);
 
         if (esEdicion) {
+            const loc = deriveLocationFromTicket(ticketAEditar);
+            const timeMode = deriveTimeModeFromTicket(ticketAEditar);
             setTitulo(ticketAEditar.titulo ?? '');
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
-            setCategoria(ticketAEditar.categoria ?? '');
-            setPlanta(ticketAEditar.planta ?? '');
-            setArea(ticketAEditar.area ?? '');
+            setCategoria(deriveCategoryFromTicket(ticketAEditar, scope === 'mantenimientos' ? 'MAQUINARIA' : ''));
+            setPlanta(loc.planta);
+            setArea(loc.area);
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
             setTipo(ticketAEditar.tipo ?? 'PLANEADA');
             setFechaVencimiento(isoToDateInput(ticketAEditar.fechaVencimiento));
-            setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? ticketAEditar.tiempoEstimadoMins ?? 0);
+            setTiempoEstimadoMins(timeMode.tiempoEstimado);
+            setModoRangoHoras(timeMode.modoRangoHoras);
+            setHoraInicio(timeMode.horaInicioProgramada ? isoToLocalMXTime(timeMode.horaInicioProgramada) : '');
+            setHoraFin(timeMode.horaFinProgramada ? isoToLocalMXTime(timeMode.horaFinProgramada) : '');
             setResponsables(ticketAEditar.responsables?.map(r => String(r.id)) ?? []);
             const targetMaquinaId = ticketAEditar.maquinaId ?? ticketAEditar.maquina?.id;
             setMaquinaId(targetMaquinaId ? String(targetMaquinaId) : '');
@@ -308,13 +317,16 @@ export const TicketFormModal = ({
             setTipo('PLANEADA');
             setFechaVencimiento(defaultDate || hoyLocal);
             setTiempoEstimadoMins(0); setResponsables([]);
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
             setTecnicoCartId('');
             setMaquinaId('');
             setMaquinaInfo(null);
             setParoProduccion(false);
             setImpactoProduccionMins(0);
         }
-    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion]);
+    }, [isOpen, esEdicion, ticketAEditar, scope, defaultDate, defaultClasificacion, hoyLocal]);
 
     useEffect(() => {
         if (!puedeReportarParoProduccion) {
@@ -330,7 +342,9 @@ export const TicketFormModal = ({
         const cargarCatalogoMaquinas = async () => {
             try {
                 const res = await getMaquinas({ limit: 500 });
-                const list = res?.data?.data || res?.data || [];
+                const rawList = res?.data?.data || res?.data || [];
+                const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
+                const list = filterMaquinasParaMantenimiento(rawList, selectedId);
                 setMaquinasRaw(list);
                 const opts = list.map(m => ({
                     value: String(m.id),
@@ -343,7 +357,7 @@ export const TicketFormModal = ({
         };
 
         cargarCatalogoMaquinas();
-    }, [isOpen]);
+    }, [isOpen, ticketAEditar]);
 
     // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
     useEffect(() => {
@@ -417,8 +431,13 @@ export const TicketFormModal = ({
                 if (errVal) e.fechaVencimiento = errVal;
             }
 
-            // Validación: Tiempo estimado obligatorio para tickets planeados generales, opcional en MAQUINARIA o TICKET
-            if (tipo !== 'TICKET' && categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
+            if (modoRangoHoras) {
+                if (!horaInicio || !horaFin) {
+                    e.tiempoEstimado = 'Indica hora de inicio y fin.';
+                } else if (horaInicio < '06:00' || horaInicio > '22:00' || horaFin < '06:00' || horaFin > '22:00') {
+                    e.tiempoEstimado = 'Debe ser entre 6:00 AM y 10:00 PM.';
+                }
+            } else if (tipo !== 'TICKET' && categoria !== 'MAQUINARIA' && tiempoEstimadoMins <= 0) {
                 e.tiempoEstimado = 'El tiempo estimado es obligatorio.';
             }
 
@@ -439,6 +458,9 @@ export const TicketFormModal = ({
         setPlanta(''); setArea(''); setPrioridad('');
         setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo(''); setFechaVencimiento('');
         setTiempoEstimadoMins(0); setSubmitted(false);
+        setModoRangoHoras(false);
+        setHoraInicio('');
+        setHoraFin('');
         setIsDropdownOpen(false);
         setMaquinaId('');
         setMaquinaInfo(null);
@@ -455,7 +477,12 @@ export const TicketFormModal = ({
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
             prioridad, clasificacion, tipo, fechaVencimiento,
-            tiempoEstimado: tiempoEstimadoMins, esRutina,
+            tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
+            modoRangoHoras,
+            horaInicio: modoRangoHoras ? horaInicio : null,
+            horaFin: modoRangoHoras ? horaFin : null,
+            horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
             responsables: tecnicoCartId ? [tecnicoCartId] : [],
             maquinaId: maquinaId ? Number(maquinaId) : null,
             paroProduccion,
@@ -467,6 +494,9 @@ export const TicketFormModal = ({
         setDescripcion('');
         setMostrarDescripcion(false);
         setTiempoEstimadoMins(0);
+        setModoRangoHoras(false);
+        setHoraInicio('');
+        setHoraFin('');
         setSubmitted(false);
         setIsDropdownOpen(false);
         setMaquinaId('');
@@ -534,8 +564,15 @@ export const TicketFormModal = ({
             if (esAdmin) {
                 fd.append('tipo', tipo);
                 if (fechaVencimiento) fd.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
-                if (!esRutina && tiempoEstimadoMins > 0)
+                if (modoRangoHoras) {
+                    fd.append('tiempoEstimado', '0');
+                    if (horaInicio) fd.append('horaInicioProgramada', localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio));
+                    if (horaFin) fd.append('horaFinProgramada', localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin));
+                } else if (!esRutina && tiempoEstimadoMins > 0) {
                     fd.append('tiempoEstimado', String(tiempoEstimadoMins));
+                    fd.append('horaInicioProgramada', '');
+                    fd.append('horaFinProgramada', '');
+                }
                 responsables.forEach(id => fd.append('responsables', id));
             }
             try {
@@ -863,6 +900,13 @@ export const TicketFormModal = ({
                                 tiempoLabel={`Tiempo estimado ${tipo === 'TICKET' ? '' : '*'}`}
                                 tiempoError={fe.tiempoEstimado}
                                 tiempoDisabled={isSubmitting}
+                                allowRangoHoras
+                                modoRangoHoras={modoRangoHoras}
+                                onModoRangoHorasChange={setModoRangoHoras}
+                                horaInicio={horaInicio}
+                                horaFin={horaFin}
+                                onHoraInicioChange={setHoraInicio}
+                                onHoraFinChange={setHoraFin}
                                 layoutClassName="grid grid-cols-1 md:grid-cols-2 gap-3"
                             />
                         )}

@@ -47,3 +47,27 @@ export const deriveLocationFromMachine = (maquina) => {
 export const shouldLockLocationByMachine = (maquinaInfo) => {
     return Boolean(maquinaInfo);
 };
+
+export const deriveCategoryFromTicket = (ticket, fallback = '') => {
+    if (ticket?.categoria) return ticket.categoria;
+    if (ticket?.maquinaId || ticket?.maquina) return 'MAQUINARIA';
+    return fallback;
+};
+
+export const deriveLocationFromTicket = (ticket) => {
+    const maquinaLocation = deriveLocationFromMachine(ticket?.maquina);
+    return {
+        planta: ticket?.planta || maquinaLocation.planta || '',
+        area: ticket?.area || maquinaLocation.area || '',
+    };
+};
+
+export const deriveTimeModeFromTicket = (ticket) => {
+    const hasRange = Boolean(ticket?.horaInicioProgramada && ticket?.horaFinProgramada);
+    return {
+        modoRangoHoras: hasRange,
+        horaInicioProgramada: ticket?.horaInicioProgramada || null,
+        horaFinProgramada: ticket?.horaFinProgramada || null,
+        tiempoEstimado: hasRange ? 0 : (ticket?.tiempoEstimado ?? ticket?.tiempoEstimadoMins ?? 0),
+    };
+};

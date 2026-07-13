@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
-import { formatFechaHora } from '@/lib/date';
+import { formatFechaHoraCompacta } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const getOrigen = (ticket) => {
@@ -28,6 +28,7 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
     const responsablesMostrar = responsablesExpanded
         ? ticket.responsables
         : ticket.responsables?.slice(0, 2);
+    const finalizadoCompacto = formatFechaHoraCompacta(ticket.finalizadoAt);
 
     return (
         <div className="border border-slate-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col h-full transition-all">
@@ -110,8 +111,15 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
                         <Icon name="check_circle" size="xs" fill />
                         Resuelto
                     </span>
-                    <span className="text-[10px] font-medium text-slate-400 ml-auto uppercase tracking-wider">
-                        {ticket.finalizadoAt ? formatFechaHora(ticket.finalizadoAt) : 'Finalizado'}
+                    <span className="ml-auto flex flex-wrap items-baseline justify-end gap-x-1.5 text-right">
+                        {finalizadoCompacto ? (
+                            <>
+                                <span className="text-[11px] font-black text-slate-600">{finalizadoCompacto.hora}</span>
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{finalizadoCompacto.fecha}</span>
+                            </>
+                        ) : (
+                            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Finalizado</span>
+                        )}
                     </span>
                 </div>
             </div>

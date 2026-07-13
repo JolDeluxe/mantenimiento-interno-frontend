@@ -7,6 +7,7 @@ import { formatFechaHora, getMinDateHoy, fechaInputToISOLocal, isoToDateInput } 
 import { cn } from '@/utils/cn';
 import { getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 import { TicketRefaccionesCard } from '@/features/common/components/ticket-refacciones-card';
+import { WorkTimeSummary } from '@/features/common/components/work-time-summary';
 
 // Helper local para formatear los minutos del sistema
 const formatMins = (mins) => {
@@ -17,13 +18,6 @@ const formatMins = (mins) => {
     return m > 0 ? `${h} h ${m} min` : `${h} h`;
 };
 
-const formatRangoTrabajo = (inicio, fin) => {
-    if (inicio && fin) return `${formatFechaHora(inicio)} - ${formatFechaHora(fin)}`;
-    if (inicio) return `Inicio: ${formatFechaHora(inicio)}`;
-    if (fin) return `Fin: ${formatFechaHora(fin)}`;
-    return null;
-};
-
 const NativeImageStack = ({ images, onExpand, sensitivity = 50 }) => {
     const [stack, setStack] = useState(() => images.map((url, i) => ({ id: i, originalIndex: i, url })));
     const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -31,7 +25,9 @@ const NativeImageStack = ({ images, onExpand, sensitivity = 50 }) => {
     const startPos = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
-        setStack(images.map((url, i) => ({ id: i, originalIndex: i, url })));
+        queueMicrotask(() => {
+            setStack(images.map((url, i) => ({ id: i, originalIndex: i, url })));
+        });
     }, [images]);
 
     const handleStart = (clientX, clientY) => {
@@ -150,17 +146,19 @@ export const MobileTicketReviewModal = ({
     const [maquinaInfo, setMaquinaInfo] = useState(null);
 
     useEffect(() => {
-        if (ticket?.maquinaId) {
-            setMaquinaId(String(ticket.maquinaId));
-        } else {
-            setMaquinaId('');
-            setMaquinaInfo(null);
-        }
+        queueMicrotask(() => {
+            if (ticket?.maquinaId) {
+                setMaquinaId(String(ticket.maquinaId));
+            } else {
+                setMaquinaId('');
+                setMaquinaInfo(null);
+            }
+        });
     }, [ticket]);
 
     useEffect(() => {
         if (!maquinaId) {
-            setMaquinaInfo(null);
+            queueMicrotask(() => setMaquinaInfo(null));
             return;
         }
         const fetchMaquina = async () => {
@@ -194,7 +192,7 @@ export const MobileTicketReviewModal = ({
     const realMins = ticket?.duracionReal || 0;
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
-    const rangoTrabajoLabel = formatRangoTrabajo(ticket?.fechaInicio, ticket?.finalizadoAt);
+    const hasRangoTrabajo = Boolean(ticket?.fechaInicio || ticket?.finalizadoAt);
 
     // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
     const notaLimpia = notaTecnico
@@ -213,12 +211,14 @@ export const MobileTicketReviewModal = ({
 
     useEffect(() => {
         if (isOpen) {
-            setNota('');
-            setDecision(null);
-            setError(null);
-            setPreviewIndex(null);
-            setNuevaFechaVencimiento('');
-            setErrorFecha('');
+            queueMicrotask(() => {
+                setNota('');
+                setDecision(null);
+                setError(null);
+                setPreviewIndex(null);
+                setNuevaFechaVencimiento('');
+                setErrorFecha('');
+            });
         }
     }, [isOpen]);
 
@@ -226,7 +226,7 @@ export const MobileTicketReviewModal = ({
         if (decision === 'RECHAZADO' && esSupervisor && !nuevaFechaVencimiento) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString()));
+            queueMicrotask(() => setNuevaFechaVencimiento(isoToDateInput(tomorrow.toISOString())));
         }
     }, [decision, esSupervisor, nuevaFechaVencimiento]);
 
@@ -297,34 +297,26 @@ export const MobileTicketReviewModal = ({
                                 </p>
 
                                 {/* Banner Indicador de Tiempo (Manual vs Sistema) Adaptado a Móvil */}
-                                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border border-slate-200 rounded-lg shadow-sm mb-4">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
-                                            <Icon name={isManual ? "edit_note" : "timer"} size="sm" className={isManual ? "text-amber-600" : "text-blue-600"} />
+                                <div className="flex flex-col gap-3 px-3 py-3 bg-white border border-slate-200 rounded-xl shadow-sm mb-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0", isManual ? "bg-amber-100" : "bg-blue-100")}>
+                                            <Icon name={isManual ? "edit_note" : "timer"} size="lg" className={isManual ? "text-amber-600" : "text-blue-600"} />
                                         </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <div className="flex min-w-0 flex-1 flex-col">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                                                 Tiempo total
                                             </span>
-                                            <span className="text-sm font-extrabold font-mono text-slate-700">
+                                            <span className="text-base font-black font-mono text-slate-800 leading-tight">
                                                 {tiempoAMostrar}
                                             </span>
                                         </div>
+                                        <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wide", isManual ? "bg-amber-100 text-amber-700" : "bg-blue-50 text-blue-700")}>
+                                            {isManual ? 'Manual' : 'Sistema'}
+                                        </span>
                                     </div>
-                                    <div className={cn("px-2 py-1 rounded text-[9px] font-extrabold uppercase tracking-wider text-center self-start sm:self-auto", isManual ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-blue-50 text-blue-600 border border-blue-100")}>
-                                        {isManual ? 'Registro Manual' : 'Medido por Sistema'}
-                                    </div>
-                                    {rangoTrabajoLabel && (
-                                        <div className="sm:basis-full flex items-start gap-2 border-t border-slate-100 pt-2">
-                                            <Icon name="schedule" size="xs" className="text-slate-400 shrink-0 mt-0.5" />
-                                            <div className="flex flex-col">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    Rango registrado
-                                                </span>
-                                                <span className="text-[11px] font-bold text-slate-700 leading-snug">
-                                                    {rangoTrabajoLabel}
-                                                </span>
-                                            </div>
+                                    {hasRangoTrabajo && (
+                                        <div className="border-t border-slate-100 pt-2">
+                                            <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
                                         </div>
                                     )}
                                 </div>
@@ -379,33 +371,35 @@ export const MobileTicketReviewModal = ({
 
                         <div className="flex flex-col gap-3">
                             <Label error={!!error}>Decisión de conformidad *</Label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => { setDecision('RECHAZADO'); setError(null); }}
                                     disabled={isSubmitting}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all shadow-sm
+                                    className={`flex min-h-[112px] flex-col items-center justify-center gap-2 rounded-2xl border-2 px-2.5 py-3 text-center transition-all shadow-sm active:scale-[0.98]
                                         ${decision === 'RECHAZADO'
                                             ? 'bg-red-50/50 border-red-500 text-red-700'
                                             : 'bg-white border-slate-200 text-slate-500 hover:border-red-300'
                                         }`}
                                 >
-                                    <Icon name="cancel" size="lg" fill={decision === 'RECHAZADO'} />
-                                    <span className="text-xs font-bold uppercase tracking-wide">Rechazar</span>
+                                    <Icon name="cancel" size="xl" fill={decision === 'RECHAZADO'} />
+                                    <span className="text-[11px] font-black uppercase tracking-wide">No conforme</span>
+                                    <span className="text-[9px] font-semibold leading-tight opacity-70">Pedir corrección</span>
                                 </button>
 
                                 <button
                                     type="button"
                                     onClick={() => { setDecision('CERRADO'); setError(null); }}
                                     disabled={isSubmitting}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all shadow-sm
+                                    className={`flex min-h-[112px] flex-col items-center justify-center gap-2 rounded-2xl border-2 px-2.5 py-3 text-center transition-all shadow-sm active:scale-[0.98]
                                         ${decision === 'CERRADO'
                                             ? 'bg-emerald-50/50 border-emerald-500 text-emerald-700'
                                             : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300'
                                         }`}
                                 >
-                                    <Icon name="check_circle" size="lg" fill={decision === 'CERRADO'} />
-                                    <span className="text-xs font-bold uppercase tracking-wide">Aprobar</span>
+                                    <Icon name="check_circle" size="xl" fill={decision === 'CERRADO'} />
+                                    <span className="text-[11px] font-black uppercase tracking-wide">Conforme</span>
+                                    <span className="text-[9px] font-semibold leading-tight opacity-70">Cerrar tarea</span>
                                 </button>
                             </div>
                             {error && <p className="text-xs text-red-600 font-bold mt-1 animate-in slide-in-from-top-1">{error}</p>}

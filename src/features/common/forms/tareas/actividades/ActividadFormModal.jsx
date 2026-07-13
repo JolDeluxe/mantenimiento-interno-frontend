@@ -664,13 +664,13 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             if (modoRangoHoras) {
                 if (!horaInicio) {
                     e.horaInicio = 'Selecciona la hora de inicio.';
-                } else if (horaInicio < '08:00' || horaInicio > '17:30') {
-                    e.horaInicio = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                } else if (horaInicio < '06:00' || horaInicio > '22:00') {
+                    e.horaInicio = 'Debe ser entre 6:00 AM y 10:00 PM.';
                 }
                 if (!horaFin) {
                     e.horaFin = 'Selecciona la hora de fin.';
-                } else if (horaFin < '08:00' || horaFin > '17:30') {
-                    e.horaFin = 'Debe ser entre 8:00 AM y 5:30 PM.';
+                } else if (horaFin < '06:00' || horaFin > '22:00') {
+                    e.horaFin = 'Debe ser entre 6:00 AM y 10:00 PM.';
                 }
                 if (horaInicio && horaFin && horaFin <= horaInicio) {
                     e.horaFin = 'La hora de fin debe ser posterior a la de inicio.';
@@ -1231,8 +1231,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                                         value={horaInicio}
                                                         onChange={(e) => handleHoraInicioChange(e.target.value)}
                                                         disabled={isSubmitting}
-                                                        min="08:00"
-                                                        max="17:30"
+                                                        min="06:00"
+                                                        max="22:00"
                                                         step="300"
                                                         className={cn(
                                                             "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
@@ -1247,8 +1247,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                                         value={horaFin}
                                                         onChange={(e) => handleHoraFinChange(e.target.value)}
                                                         disabled={isSubmitting}
-                                                        min="08:00"
-                                                        max="17:30"
+                                                        min="06:00"
+                                                        max="22:00"
                                                         step="300"
                                                         className={cn(
                                                             "w-full border rounded-sm px-3 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:cursor-not-allowed transition-colors",
@@ -1419,3 +1419,4 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         </Modal>
     );
 };
+
