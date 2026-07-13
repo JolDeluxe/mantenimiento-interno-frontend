@@ -99,11 +99,7 @@ export const RecurrentesMatrizDesktop = ({
                             onClear={() => setFilters({ q: '' })}
                             className="min-w-50 max-w-md flex-1"
                         />
-                        <div className="ml-auto flex flex-none items-center gap-3">
-                            <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-9.5">
-                                Actualizar
-                            </Button>
-                        </div>
+
                     </div>
 
                     <div className="flex flex-wrap items-start gap-2.5">

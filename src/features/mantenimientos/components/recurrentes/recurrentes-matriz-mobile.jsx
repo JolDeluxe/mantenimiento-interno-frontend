@@ -92,16 +92,6 @@ export const RecurrentesMatrizMobile = ({
                             <GlassSheen />
                             <Icon name="filter_alt" size="sm" className="relative z-10" />
                         </button>
-                        <button
-                            type="button"
-                            onClick={refresh}
-                            disabled={loading}
-                            style={{ ...glassBase('light'), borderRadius: 14 }}
-                            className="relative h-[38px] w-[38px] overflow-hidden text-slate-600 transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            <GlassSheen />
-                            <Icon name="refresh" size="sm" className="relative z-10" />
-                        </button>
                     </div>
                 </div>
 

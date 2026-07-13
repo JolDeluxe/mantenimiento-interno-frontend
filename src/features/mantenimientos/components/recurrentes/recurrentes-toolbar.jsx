@@ -67,20 +67,9 @@ export const RecurrentesToolbar = ({
                     className="min-w-[180px] max-w-md flex-1"
                 />
                 <div className="ml-auto flex flex-none items-center gap-3">
-                    <Button
-                        type="button"
-                        variant="filtro_gris"
-                        icon="refresh"
-                        size="sm"
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="h-9.5"
-                    >
-                        Actualizar
-                    </Button>
                     {canManage && (
-                        <Button type="button" variant="primario" icon="add" size="sm" onClick={onCreate} className="h-9.5">
-                            Nueva programacion
+                        <Button type="button" variant="secundario" icon="add" size="sm" onClick={onCreate} className="h-9.5">
+                            Agregar preventivo recurrente
                         </Button>
                     )}
                 </div>

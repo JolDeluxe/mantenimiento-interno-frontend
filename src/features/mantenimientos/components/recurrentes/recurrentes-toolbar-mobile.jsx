@@ -105,16 +105,7 @@ export const RecurrentesToolbarMobile = ({
                     <Icon name="filter_alt" size="sm" className="relative z-10" />
                     {hasFilters && !showFilters && <span className="absolute right-0 top-0 z-20 h-2.5 w-2.5 rounded-full border-2 border-white bg-marca-acento" />}
                 </button>
-                <button
-                    type="button"
-                    onClick={onRefresh}
-                    disabled={loading}
-                    style={{ ...glassBase('light'), borderRadius: 14 }}
-                    className="relative h-[38px] w-[38px] shrink-0 overflow-hidden text-slate-600 transition-all active:scale-95 disabled:opacity-50"
-                >
-                    <GlassSheen />
-                    <Icon name="refresh" size="sm" className="relative z-10" />
-                </button>
+
                 {canManage && (
                     <button
                         type="button"
