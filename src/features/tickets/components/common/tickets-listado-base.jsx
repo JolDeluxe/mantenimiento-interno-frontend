@@ -17,6 +17,7 @@ import { TicketDetailModal } from '@/features/common/components/ticket-detail-mo
 import { TicketFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 import { formatFechaNumerica } from '@/lib/date';
+import { ROLES_ADMIN } from '../../constants';
 
 const LIMIT = 50;
 const EMPTY_DEFAULT_FILTERS = {};
@@ -48,6 +49,7 @@ export default function TicketsListadoBase({
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
+    const canCreate = allowCreate && ROLES_ADMIN.has(currentUser?.rol);
 
     const {
         tickets,
@@ -224,7 +226,7 @@ export default function TicketsListadoBase({
     }, [mode, sortedTickets]);
 
     const handleCreate = async (payloads) => {
-        if (!allowCreate) return;
+        if (!canCreate) return;
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 await createBatch(payloads);
@@ -313,10 +315,10 @@ export default function TicketsListadoBase({
         onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,
         onSave: handleUpdate, onChangeStatus: handleChangeStatus,
-        onOpenCreate: allowCreate ? () => setShowCreate(true) : undefined,
+        onOpenCreate: canCreate ? () => setShowCreate(true) : undefined,
         onRefresh: loadTickets,
         onExport: handleExport,
-        allowCreate,
+        allowCreate: canCreate,
         emptyState,
         toApproveCount,
     };
@@ -332,7 +334,7 @@ export default function TicketsListadoBase({
                 existenciaGlobal={metricas?.existenciaGlobal || {}}
             />
             {isDesktop ? <DesktopView {...sharedViewProps} /> : <MobileView {...sharedViewProps} />}
-            {allowCreate && showCreate && (
+            {canCreate && showCreate && (
                 isDesktop ? (
                     <CreateFormModal isOpen={showCreate} onClose={handleCloseCreate} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} scope={scope} isMobile={false} />
                 ) : (
