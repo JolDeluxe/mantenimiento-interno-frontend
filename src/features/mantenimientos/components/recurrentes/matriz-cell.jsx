@@ -7,6 +7,7 @@ import {
     originLabel,
     summarizeExecutions,
 } from './matriz-utils';
+import { AjusteOcurrenciaActions } from './ajuste-ocurrencia-actions';
 
 export const MatrizCell = ({
     row,
@@ -14,6 +15,9 @@ export const MatrizCell = ({
     canManage,
     submitting,
     onGenerate,
+    onMove = () => {},
+    onSkip = () => {},
+    onRemoveAdjustment = () => {},
 }) => {
     const [expanded, setExpanded] = useState(false);
 
@@ -44,16 +48,21 @@ export const MatrizCell = ({
                 <div className="mt-1 flex flex-wrap gap-1 text-[9px] font-bold uppercase text-slate-500">
                     <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-emerald-700">{summary.reales} generados</span>
                     <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-sky-700">{summary.proyecciones} programados</span>
+                    {summary.movidos > 0 && <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-sky-800">{summary.movidos} movidos</span>}
+                    {summary.omitidos > 0 && <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-slate-700">{summary.omitidos} omitidos</span>}
                 </div>
             </div>
 
             {visibleItems.map((item, index) => {
                 const pendiente = item.pendienteMaterializar && !item.ticketId;
                 const esHistoricoSinRegistro = item.estado === 'SIN_MANTENIMIENTO_REGISTRADO';
+                const omitida = item.omitida || item.estado === 'OMITIDO';
+                const movida = item.movida || item.ajusteTipo === 'MOVER';
+                const fechaProgramada = item.fechaProgramada || item.fechaProgramadaPreventiva;
                 return (
                     <div key={`${item.fechaInicio}-${item.ticketId || index}`} className={`rounded-lg border px-2 py-1.5 ${executionStatusClass(item.estado)}`}>
                         <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] font-black uppercase">{formatDDMM(item.fechaInicio)}</span>
+                            <span className="text-[10px] font-black uppercase">{formatDDMM(fechaProgramada || item.fechaInicio)}</span>
                             <span className="text-[9px] font-black uppercase">{executionStatusLabel(item.estado)}</span>
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[9px] font-bold uppercase opacity-85">
@@ -63,6 +72,17 @@ export const MatrizCell = ({
                             </span>
                             {pendiente && (
                                 <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-amber-700">Pendiente de generar</span>
+                            )}
+                            {movida && (
+                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-sky-700">
+                                    Movido este mes · Original {formatDDMM(item.fechaOriginal || item.fechaInicio)} · Nueva fecha {formatDDMM(fechaProgramada)}
+                                </span>
+                            )}
+                            {omitida && (
+                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-slate-700">Ajuste operativo</span>
+                            )}
+                            {item.ajusteMotivo && (
+                                <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-slate-700">Motivo: {item.ajusteMotivo}</span>
                             )}
                             {esHistoricoSinRegistro && (
                                 <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-slate-700">Observacion mensual</span>
@@ -99,6 +119,14 @@ export const MatrizCell = ({
                                 </span>
                             ) : null}
                         </div>
+                        <AjusteOcurrenciaActions
+                            item={item}
+                            canManage={canManage}
+                            disabled={submitting}
+                            onMove={() => onMove(row, item)}
+                            onSkip={() => onSkip(row, item)}
+                            onRemoveAdjustment={() => onRemoveAdjustment(row, item)}
+                        />
                     </div>
                 );
             })}

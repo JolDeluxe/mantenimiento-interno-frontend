@@ -18,6 +18,8 @@ import { RecurrentesMatrizDesktop } from '../components/recurrentes/recurrentes-
 import { RecurrentesMatrizMobile } from '../components/recurrentes/recurrentes-matriz-mobile';
 import { RecurrenteFormModal } from '../components/recurrentes/recurrente-form-modal';
 import { RecurrenteDetailModal } from '../components/recurrentes/recurrente-detail-modal';
+import { AjusteOcurrenciaModal } from '../components/recurrentes/ajuste-ocurrencia-modal';
+import { QuitarAjusteModal } from '../components/recurrentes/quitar-ajuste-modal';
 
 const TicketsPreventivos = () => (
     <div className="w-full min-w-0">
@@ -45,37 +47,93 @@ const MatrizAnual = ({ canManage }) => {
         setFilters,
         refresh,
         materializeFromCell,
+        handleMoverOcurrencia,
+        handleOmitirOcurrencia,
+        handleQuitarAjuste,
     } = useRecurrenciasMatriz();
+    const [adjustTarget, setAdjustTarget] = useState(null);
 
     const MatrixComponent = isDesktop ? RecurrentesMatrizDesktop : RecurrentesMatrizMobile;
 
-    const handleGenerate = async (row) => {
+    const handleGenerate = async (row, item) => {
         if (!window.confirm('Generar mantenimiento de este periodo?')) return;
         try {
-            const res = await materializeFromCell(row);
+            const res = await materializeFromCell(row, item);
             notify.success(res?.mensaje || 'Mantenimiento generado.');
         } catch (err) {
             notify.error(err?.message || 'No se pudo generar mantenimiento.');
         }
     };
 
+    const closeAdjust = () => setAdjustTarget(null);
+
+    const submitMove = async (data) => {
+        try {
+            await handleMoverOcurrencia(adjustTarget.row, data);
+            notify.success('Ocurrencia movida este mes.');
+            closeAdjust();
+        } catch (err) {
+            notify.error(err?.message || 'No se pudo mover este periodo.');
+        }
+    };
+
+    const submitSkip = async (data) => {
+        try {
+            await handleOmitirOcurrencia(adjustTarget.row, data);
+            notify.success('Ocurrencia omitida este mes.');
+            closeAdjust();
+        } catch (err) {
+            notify.error(err?.message || 'No se pudo omitir este periodo.');
+        }
+    };
+
+    const submitRemove = async (data) => {
+        try {
+            await handleQuitarAjuste(adjustTarget.row, data);
+            notify.success('Ocurrencia volvió a la programación base.');
+            closeAdjust();
+        } catch (err) {
+            notify.error(err?.message || 'No se pudo quitar el ajuste.');
+        }
+    };
+
     return (
-        <MatrixComponent
-            year={year}
-            setYear={setYear}
-            rows={filteredRows}
-            total={total}
-            cobertura={cobertura}
-            loading={loading}
-            submitting={submitting}
-            error={error}
-            filters={filters}
-            responsables={responsables}
-            setFilters={setFilters}
-            refresh={refresh}
-            canManage={canManage}
-            onGenerate={handleGenerate}
-        />
+        <>
+            <MatrixComponent
+                year={year}
+                setYear={setYear}
+                rows={filteredRows}
+                total={total}
+                cobertura={cobertura}
+                loading={loading}
+                submitting={submitting}
+                error={error}
+                filters={filters}
+                responsables={responsables}
+                setFilters={setFilters}
+                refresh={refresh}
+                canManage={canManage}
+                onGenerate={handleGenerate}
+                onMove={(row, item) => setAdjustTarget({ type: 'mover', row, item })}
+                onSkip={(row, item) => setAdjustTarget({ type: 'omitir', row, item })}
+                onRemoveAdjustment={(row, item) => setAdjustTarget({ type: 'quitar', row, item })}
+            />
+            <AjusteOcurrenciaModal
+                isOpen={adjustTarget?.type === 'mover' || adjustTarget?.type === 'omitir'}
+                mode={adjustTarget?.type}
+                item={adjustTarget?.item}
+                submitting={submitting}
+                onClose={closeAdjust}
+                onConfirm={adjustTarget?.type === 'mover' ? submitMove : submitSkip}
+            />
+            <QuitarAjusteModal
+                isOpen={adjustTarget?.type === 'quitar'}
+                item={adjustTarget?.item}
+                submitting={submitting}
+                onClose={closeAdjust}
+                onConfirm={submitRemove}
+            />
+        </>
     );
 };
 

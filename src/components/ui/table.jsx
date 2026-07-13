@@ -105,7 +105,7 @@ export const Table = ({
         hasPaginationBar ? 'rounded-t-lg border-b-0' : 'rounded-lg'
       )}>
         <table className="w-full text-sm font-sans relative">
-          <thead className="bg-slate-100 text-black text-xs uppercase sticky top-0 z-20 shadow-inner">
+          <thead className="bg-slate-100 text-black text-xs uppercase sticky top-0 z-30 shadow-inner">
             <tr>
               {columns.map((col, idx) => (
                 <th

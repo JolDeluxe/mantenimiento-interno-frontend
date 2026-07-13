@@ -59,11 +59,8 @@ export const CalendarItemActions = ({
 
     const esAdmin = ROLES_ADMIN_LIST.includes(rol);
     const esSupervisor = ROLES_SUPERVISOR_LIST.includes(rol);
-    const esTecnico = rol === 'TECNICO';
     const esCliente = rol === 'CLIENTE_INTERNO';
     const esCreador = ticket.creadorId === userId;
-    const esResponsable = ticket.responsables?.some((r) => r.id === userId);
-    const tieneResponsables = ticket.responsables && ticket.responsables.length > 0;
 
     const puedeEditar =
         !['EN_PROGRESO', 'RESUELTO', ...ESTADOS_FINALES_LIST].includes(ticket.estado) &&

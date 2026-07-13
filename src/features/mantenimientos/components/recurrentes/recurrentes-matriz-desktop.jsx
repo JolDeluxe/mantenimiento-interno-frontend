@@ -13,6 +13,30 @@ import {
 } from './matriz-utils';
 import { MatrizMonthColumn } from './matriz-month-column';
 
+const SearchInput = ({ value, onChange, onClear, className = 'w-full' }) => (
+    <div className={`relative ${className}`}>
+        <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+            <Icon name="search" size="sm" className="text-slate-400" />
+        </div>
+        <input
+            type="text"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Buscar codigo, maquina, responsable"
+            className="h-9.5 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm font-semibold text-slate-800 transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
+        />
+        {value && (
+            <button
+                type="button"
+                onClick={onClear}
+                className="absolute inset-y-0 right-2 flex cursor-pointer items-center px-2 text-slate-400 hover:text-slate-600"
+            >
+                <Icon name="close" size="xs" />
+            </button>
+        )}
+    </div>
+);
+
 export const RecurrentesMatrizDesktop = ({
     year,
     setYear,
@@ -28,6 +52,9 @@ export const RecurrentesMatrizDesktop = ({
     refresh,
     canManage,
     onGenerate,
+    onMove,
+    onSkip,
+    onRemoveAdjustment,
 }) => {
     const currentYear = new Date().getFullYear();
     const currentQuarter = getCurrentQuarter();
@@ -55,7 +82,7 @@ export const RecurrentesMatrizDesktop = ({
     return (
         <div className="flex flex-col gap-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div className="flex flex-col gap-3">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-800">
                             <Icon name="calendar_month" className="text-marca-primario" />
@@ -65,7 +92,21 @@ export const RecurrentesMatrizDesktop = ({
                             {total} programacion{total === 1 ? '' : 'es'} preventiva{total === 1 ? '' : 's'}. {rangeLabel}.
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex w-full items-center gap-3 border-t border-slate-100 pt-3">
+                        <SearchInput
+                            value={filters.q}
+                            onChange={(value) => setFilters({ q: value })}
+                            onClear={() => setFilters({ q: '' })}
+                            className="min-w-50 max-w-md flex-1"
+                        />
+                        <div className="ml-auto flex flex-none items-center gap-3">
+                            <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-9.5">
+                                Actualizar
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-start gap-2.5">
                         <div className="min-w-28 flex-none">
                             <SearchableSelect
                                 options={yearOptions}
@@ -114,12 +155,6 @@ export const RecurrentesMatrizDesktop = ({
                                 />
                             </div>
                         )}
-                        <input
-                            value={filters.q}
-                            onChange={(event) => setFilters({ q: event.target.value })}
-                            placeholder="Buscar codigo, maquina, responsable"
-                            className="h-[38px] min-w-[250px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20"
-                        />
                         <div className="min-w-44 flex-none">
                             <SearchableSelect
                                 options={responsables.map((responsable) => ({ value: responsable.id, label: responsable.nombre }))}
@@ -151,25 +186,13 @@ export const RecurrentesMatrizDesktop = ({
                             icon={filters.mostrarBajaDesuso ? 'close' : 'hide_source'}
                             size="sm"
                             onClick={() => setFilters({ mostrarBajaDesuso: !filters.mostrarBajaDesuso })}
-                            className={`h-[38px] ${filters.mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
+                            className={`h-9.5 ${filters.mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
                         >
                             Baja/desuso
-                        </Button>
-                        <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-[38px]">
-                            Actualizar
                         </Button>
                     </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide">
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado en el mes</span>
-                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-700">Realizado fuera del mes</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado por recurrencia</span>
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar = aun no se ha creado el mantenimiento</span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Sin mantenimiento este mes = observacion mensual</span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = programacion detenida</span>
-                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-1 text-cyan-700">Impreso = etiqueta derivada</span>
-                </div>
                 {cobertura?.maquinasActivasSinRegla > 0 && (
                     <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
                         {cobertura.maquinasActivasSinRegla} maquina{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} activa{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} sin programacion preventiva mensual.
@@ -195,11 +218,11 @@ export const RecurrentesMatrizDesktop = ({
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="max-h-[calc(100vh-260px)] overflow-auto">
                         <table className="min-w-max divide-y divide-slate-100 text-left">
-                            <thead className="sticky top-0 z-30 bg-slate-50 shadow-sm">
+                            <thead className="sticky top-0 z-40 bg-slate-50 shadow-sm">
                                 <tr className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                                    <th className="sticky left-0 z-40 min-w-[92px] bg-slate-50 px-3 py-3">Codigo</th>
-                                    <th className="sticky left-[92px] z-40 min-w-[240px] bg-slate-50 px-3 py-3">Maquina / area</th>
-                                    <th className="sticky left-[332px] z-40 min-w-[190px] bg-slate-50 px-3 py-3">Responsable / frecuencia</th>
+                                    <th className="sticky left-0 z-50 min-w-[92px] bg-slate-50 px-3 py-3">Codigo</th>
+                                    <th className="sticky left-[92px] z-50 min-w-[240px] bg-slate-50 px-3 py-3">Maquina / area</th>
+                                    <th className="sticky left-[332px] z-50 min-w-[190px] bg-slate-50 px-3 py-3">Responsable / frecuencia</th>
                                     {visibleMonths.map((mes) => (
                                         <th key={mes.key} className="min-w-[220px] border-l border-slate-100 px-2 py-3">{mes.label}</th>
                                     ))}
@@ -233,6 +256,9 @@ export const RecurrentesMatrizDesktop = ({
                                                     canManage={canManage}
                                                     submitting={submitting}
                                                     onGenerate={onGenerate}
+                                                    onMove={onMove}
+                                                    onSkip={onSkip}
+                                                    onRemoveAdjustment={onRemoveAdjustment}
                                                 />
                                             ))}
                                         </tr>

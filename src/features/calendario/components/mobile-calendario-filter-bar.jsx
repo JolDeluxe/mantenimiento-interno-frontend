@@ -98,8 +98,6 @@ export const MobileCalendarioFilterBar = ({
     onScopeChange,
     filtroEstado,
     onFilterChange,
-    filtroTipo,
-    onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -116,12 +114,12 @@ export const MobileCalendarioFilterBar = ({
     onSearchChange,
     tecnicos = [],
     onClearFilters,
-    isFiltering = false
 }) => {
     const [localQuery, setLocalQuery] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalQuery(query || '');
     }, [query]);
 
@@ -152,7 +150,6 @@ export const MobileCalendarioFilterBar = ({
     const hasActiveFilters =
         scope !== 'general' ||
         filtroEstado !== 'TODOS' ||
-        filtroTipo !== '' ||
         filtroPrioridad !== '' ||
         filtroCategoria !== '' ||
         filtroClasificacion !== '' ||

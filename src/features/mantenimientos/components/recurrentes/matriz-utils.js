@@ -53,6 +53,7 @@ export const executionStatusClass = (estado = '') => {
     if (value === 'RESUELTO' || value === 'CERRADO') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     if (value === 'REALIZADO_EN_MES') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     if (value === 'REALIZADO_FUERA_DEL_MES') return 'border-orange-200 bg-orange-50 text-orange-700';
+    if (value === 'OMITIDO') return 'border-slate-300 bg-slate-100 text-slate-700';
     if (value === 'PENDIENTE_DEL_MES') return 'border-amber-200 bg-amber-50 text-amber-700';
     if (value === 'SIN_MANTENIMIENTO_REGISTRADO') return 'border-slate-200 bg-slate-100 text-slate-700';
     if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'border-sky-200 bg-sky-50 text-sky-700';
@@ -70,6 +71,7 @@ export const executionStatusLabel = (estado = '') => {
     if (value === 'RESUELTO' || value === 'CERRADO') return 'Resuelto';
     if (value === 'REALIZADO_EN_MES') return 'Realizado en el mes';
     if (value === 'REALIZADO_FUERA_DEL_MES') return 'Realizado fuera del mes';
+    if (value === 'OMITIDO') return 'Omitido este mes';
     if (value === 'PENDIENTE_DEL_MES') return 'Pendiente del mes';
     if (value === 'SIN_MANTENIMIENTO_REGISTRADO') return 'Sin mantenimiento registrado';
     if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'Programado por recurrencia';
@@ -89,7 +91,9 @@ export const originLabel = (origen = '') => (
 export const summarizeExecutions = (ejecuciones = []) => {
     const total = ejecuciones.length;
     const reales = ejecuciones.filter((item) => item.origen === 'ticket' || item.ticketId).length;
-    const proyecciones = ejecuciones.filter((item) => item.origen !== 'ticket' && !item.ticketId).length;
+    const omitidos = ejecuciones.filter((item) => item.omitida || item.estado === 'OMITIDO').length;
+    const movidos = ejecuciones.filter((item) => item.movida || item.ajusteTipo === 'MOVER').length;
+    const proyecciones = ejecuciones.filter((item) => item.origen !== 'ticket' && !item.ticketId && !item.omitida).length;
     const pendientesGenerar = ejecuciones.filter((item) => item.pendienteMaterializar && !item.ticketId).length;
 
     return {
@@ -97,6 +101,8 @@ export const summarizeExecutions = (ejecuciones = []) => {
         reales,
         proyecciones,
         pendientesGenerar,
+        omitidos,
+        movidos,
     };
 };
 
