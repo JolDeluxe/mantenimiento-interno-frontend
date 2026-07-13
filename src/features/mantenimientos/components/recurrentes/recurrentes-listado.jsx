@@ -1,4 +1,4 @@
-import { Icon, Spinner } from '@/components/ui/z_index';
+import { Table, Icon, Spinner } from '@/components/ui/z_index';
 import { formatearFechaTextoLargo } from '../../helpers/fechas';
 import { RecurrenteActions } from './recurrente-actions';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
@@ -16,16 +16,97 @@ export const RecurrentesListado = ({
     onToggleActivo,
     onMaterialize,
 }) => {
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 text-slate-500">
-                <Spinner size="sm" className="mr-2" />
-                <span className="text-xs font-black uppercase tracking-wide">Cargando programaciones...</span>
-            </div>
-        );
-    }
+    const columns = [
+        {
+            header: 'Código máquina',
+            accessorKey: 'maquina.codigo',
+            headerClassName: 'w-[10%] min-w-[100px]',
+            cell: (row) => <span className="font-black text-slate-800">{row.maquina?.codigo || '-'}</span>
+        },
+        {
+            header: 'Máquina/equipo',
+            accessorKey: 'maquina.nombre',
+            headerClassName: 'w-[20%] min-w-[200px]',
+            cell: (row) => (
+                <div>
+                    <div className="max-w-[260px] truncate font-bold text-slate-800">{row.maquina?.nombre || '-'}</div>
+                    <div className="text-[10px] font-semibold text-slate-400">{row.titulo}</div>
+                </div>
+            )
+        },
+        {
+            header: 'Área/ubicación',
+            accessorKey: 'maquina.area',
+            headerClassName: 'w-[15%] min-w-[150px]',
+            cell: (row) => (
+                <span className="font-semibold text-slate-600">
+                    {row.maquina?.planta || '-'} / {row.maquina?.area || '-'}
+                </span>
+            )
+        },
+        {
+            header: 'Responsable',
+            accessorKey: 'tecnicoResponsable.nombre',
+            headerClassName: 'w-[15%] min-w-[150px]',
+            cell: (row) => <span className="font-semibold text-slate-700">{row.tecnicoResponsable?.nombre || '-'}</span>
+        },
+        {
+            header: 'Frecuencia',
+            accessorKey: 'frecuencia',
+            headerClassName: 'w-[10%] min-w-[100px]',
+            cell: (row) => <span className="font-bold text-slate-700">{frecuenciaLabel(row)}</span>
+        },
+        {
+            header: 'Próxima programación',
+            accessorKey: 'proximaFechaEjecucion',
+            headerClassName: 'w-[15%] min-w-[150px]',
+            cell: (row) => (
+                <span className="font-semibold text-slate-700">
+                    {formatearFechaTextoLargo(datePart(row.proximaFechaEjecucion)) || '-'}
+                </span>
+            )
+        },
+        {
+            header: 'Tiempo estimado',
+            accessorKey: 'tiempoEstimado',
+            headerClassName: 'w-[10%] min-w-[100px]',
+            cell: (row) => (
+                <span className="font-semibold text-slate-700">
+                    {row.tiempoEstimado ? `${row.tiempoEstimado} min` : '-'}
+                </span>
+            )
+        },
+        {
+            header: 'Estado programación',
+            accessorKey: 'activo',
+            headerClassName: 'w-[10%] min-w-[120px]',
+            cell: (row) => <RecurrenteStatusBadge activo={row.activo} />
+        },
+        {
+            header: 'Observación mensual',
+            accessorKey: 'observacion',
+            headerClassName: 'w-[10%] min-w-[150px]',
+            cell: () => <span className="font-semibold text-slate-400">Generación mensual automática</span>
+        },
+        {
+            header: 'Acciones',
+            accessorKey: 'acciones',
+            headerClassName: 'w-[10%] min-w-[120px]',
+            cell: (row) => (
+                <RecurrenteActions
+                    regla={row}
+                    canManage={canManage}
+                    submitting={submitting}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onToggleActivo={onToggleActivo}
+                    onMaterialize={onMaterialize}
+                />
+            )
+        }
+    ];
 
-    if (!reglas.length) {
+    if (!loading && !reglas.length) {
         return (
             <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center">
                 <div className="rounded-full border border-slate-200 bg-slate-50 p-3 text-slate-400">
@@ -40,62 +121,13 @@ export const RecurrentesListado = ({
     }
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 text-left">
-                    <thead className="bg-slate-50">
-                        <tr className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                            <th className="px-3 py-3">Codigo maquina</th>
-                            <th className="px-3 py-3">Maquina/equipo</th>
-                            <th className="px-3 py-3">Area/ubicacion</th>
-                            <th className="px-3 py-3">Responsable</th>
-                            <th className="px-3 py-3">Frecuencia</th>
-                            <th className="px-3 py-3">Proxima programacion</th>
-                            <th className="px-3 py-3">Tiempo estimado</th>
-                            <th className="px-3 py-3">Estado programacion</th>
-                            <th className="px-3 py-3">Observacion mensual</th>
-                            <th className="px-3 py-3">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {reglas.map((regla) => (
-                            <tr key={regla.id} className={!regla.activo ? 'bg-slate-50/60 opacity-75' : 'bg-white'}>
-                                <td className="px-3 py-3 text-xs font-black text-slate-800">{regla.maquina?.codigo || '-'}</td>
-                                <td className="px-3 py-3">
-                                    <div className="max-w-[260px] truncate text-xs font-bold text-slate-800">{regla.maquina?.nombre || '-'}</div>
-                                    <div className="text-[10px] font-semibold text-slate-400">{regla.titulo}</div>
-                                </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-600">
-                                    {regla.maquina?.planta || '-'} / {regla.maquina?.area || '-'}
-                                </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-700">{regla.tecnicoResponsable?.nombre || '-'}</td>
-                                <td className="px-3 py-3 text-xs font-bold text-slate-700">{frecuenciaLabel(regla)}</td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-700">
-                                    {formatearFechaTextoLargo(datePart(regla.proximaFechaEjecucion)) || '-'}
-                                </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-700">
-                                    {regla.tiempoEstimado ? `${regla.tiempoEstimado} min` : '-'}
-                                </td>
-                                <td className="px-3 py-3">
-                                    <RecurrenteStatusBadge activo={regla.activo} />
-                                </td>
-                                <td className="px-3 py-3 text-xs font-semibold text-slate-400">Generacion mensual automatica</td>
-                                <td className="px-3 py-3">
-                                    <RecurrenteActions
-                                        regla={regla}
-                                        canManage={canManage}
-                                        submitting={submitting}
-                                        onView={onView}
-                                        onEdit={onEdit}
-                                        onToggleActivo={onToggleActivo}
-                                        onMaterialize={onMaterialize}
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <Table
+            columns={columns}
+            data={reglas}
+            loading={loading}
+            keyField="id"
+            hidePagination={true}
+            rowClassName={(row) => !row.activo ? 'bg-slate-50/60 opacity-75' : 'bg-white'}
+        />
     );
 };
