@@ -13,6 +13,30 @@ import {
 } from './matriz-utils';
 import { MatrizMonthColumn } from './matriz-month-column';
 
+const SearchInput = ({ value, onChange, onClear, className = 'w-full' }) => (
+    <div className={`relative ${className}`}>
+        <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+            <Icon name="search" size="sm" className="text-slate-400" />
+        </div>
+        <input
+            type="text"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="Buscar codigo, maquina, responsable"
+            className="h-9.5 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm font-semibold text-slate-800 transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
+        />
+        {value && (
+            <button
+                type="button"
+                onClick={onClear}
+                className="absolute inset-y-0 right-2 flex cursor-pointer items-center px-2 text-slate-400 hover:text-slate-600"
+            >
+                <Icon name="close" size="xs" />
+            </button>
+        )}
+    </div>
+);
+
 export const RecurrentesMatrizDesktop = ({
     year,
     setYear,
@@ -68,7 +92,21 @@ export const RecurrentesMatrizDesktop = ({
                             {total} programacion{total === 1 ? '' : 'es'} preventiva{total === 1 ? '' : 's'}. {rangeLabel}.
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
+                    <div className="flex w-full items-center gap-3 border-t border-slate-100 pt-3">
+                        <SearchInput
+                            value={filters.q}
+                            onChange={(value) => setFilters({ q: value })}
+                            onClear={() => setFilters({ q: '' })}
+                            className="min-w-50 max-w-md flex-1"
+                        />
+                        <div className="ml-auto flex flex-none items-center gap-3">
+                            <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-9.5">
+                                Actualizar
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-start gap-2.5">
                         <div className="min-w-28 flex-none">
                             <SearchableSelect
                                 options={yearOptions}
@@ -117,12 +155,6 @@ export const RecurrentesMatrizDesktop = ({
                                 />
                             </div>
                         )}
-                        <input
-                            value={filters.q}
-                            onChange={(event) => setFilters({ q: event.target.value })}
-                            placeholder="Buscar codigo, maquina, responsable"
-                            className="h-[38px] min-w-[250px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20"
-                        />
                         <div className="min-w-44 flex-none">
                             <SearchableSelect
                                 options={responsables.map((responsable) => ({ value: responsable.id, label: responsable.nombre }))}
@@ -154,12 +186,9 @@ export const RecurrentesMatrizDesktop = ({
                             icon={filters.mostrarBajaDesuso ? 'close' : 'hide_source'}
                             size="sm"
                             onClick={() => setFilters({ mostrarBajaDesuso: !filters.mostrarBajaDesuso })}
-                            className={`h-[38px] ${filters.mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
+                            className={`h-9.5 ${filters.mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
                         >
                             Baja/desuso
-                        </Button>
-                        <Button type="button" variant="filtro_gris" icon="refresh" size="sm" onClick={refresh} disabled={loading} className="h-[38px]">
-                            Actualizar
                         </Button>
                     </div>
                 </div>

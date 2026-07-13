@@ -74,12 +74,12 @@ export const RecurrentesToolbar = ({
                         size="sm"
                         onClick={onRefresh}
                         disabled={loading}
-                        className="h-[38px]"
+                        className="h-9.5"
                     >
                         Actualizar
                     </Button>
                     {canManage && (
-                        <Button type="button" variant="primario" icon="add" size="sm" onClick={onCreate} className="h-[38px]">
+                        <Button type="button" variant="primario" icon="add" size="sm" onClick={onCreate} className="h-9.5">
                             Nueva programacion
                         </Button>
                     )}
@@ -104,7 +104,7 @@ export const RecurrentesToolbar = ({
                     icon={mostrarBajaDesuso ? 'close' : 'hide_source'}
                     size="sm"
                     onClick={onToggleBajaDesuso}
-                    className={`h-[38px] ${mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
+                    className={`h-9.5 ${mostrarBajaDesuso ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
                 >
                     Mostrar baja/desuso
                 </Button>
