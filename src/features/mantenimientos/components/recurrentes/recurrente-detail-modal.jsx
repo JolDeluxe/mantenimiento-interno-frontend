@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Icon, Modal, ModalBody, ModalHeader, Spinner } from '@/components/ui/z_index';
 import { formatearFechaTextoLargo } from '../../helpers/fechas';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
@@ -10,6 +10,7 @@ import {
     omitirOcurrencia,
     quitarAjusteOcurrencia,
 } from '../../api/recurrencias-api';
+import { executionStatusClass, executionStatusLabel, formatDDMM } from './matriz-utils';
 
 const datePart = (value) => value ? String(value).split('T')[0] : '';
 
@@ -32,29 +33,53 @@ const isSameMonthAndYear = (str1, str2) => {
     return getYearMonth(str1) === getYearMonth(str2);
 };
 
-const getStatusBadgeStyle = (status) => {
-    switch (status) {
-        case 'PENDIENTE':
-            return 'bg-slate-50 text-slate-700 border-slate-200';
-        case 'ASIGNADA':
-            return 'bg-blue-50 text-blue-700 border-blue-200';
-        case 'EN_PROGRESO':
-        case 'EN_PROCESO':
-            return 'bg-amber-50 text-amber-700 border-amber-200';
-        case 'EN_PAUSA':
-            return 'bg-orange-50 text-orange-700 border-orange-200';
-        case 'RESUELTO':
-            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        case 'RECHAZADO':
-            return 'bg-red-50 text-red-700 border-red-200';
-        case 'CERRADO':
-            return 'bg-slate-100 text-slate-800 border-slate-300';
-        case 'CANCELADA':
-            return 'bg-slate-100 text-slate-400 border-slate-200 line-through';
-        default:
-            return 'bg-slate-50 text-slate-500 border-slate-200';
+const getOcurrenciaEstado = (item) => {
+    if (item.omitida || item.ajusteTipo === 'OMITIR') {
+        return 'OMITIDO';
     }
+    if (item.ticketId) {
+        const st = String(item.ticketEstado || '').toUpperCase();
+        if (st === 'RESUELTO' || st === 'CERRADO') return 'RESUELTO';
+        if (st === 'ASIGNADA') return 'ASIGNADA';
+        if (st === 'EN_PROGRESO' || st === 'EN_PROCESO') return 'EN_PROGRESO';
+        if (st === 'EN_PAUSA') return 'EN_PAUSA';
+        if (st === 'RECHAZADO') return 'RECHAZADO';
+        if (st === 'CANCELADA') return 'CANCELADA';
+        return st;
+    }
+    
+    const dateStr = item.fechaCicloLogicaFormateada || item.fechaOriginalFormateada || datePart(item.fechaCicloLogica);
+    if (!dateStr) return 'PROGRAMADO_POR_RECURRENCIA';
+    
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const cicloDate = new Date(Date.UTC(y, m - 1, d));
+    
+    const hoy = new Date();
+    const referenciaMesActual = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), 1));
+    const cicloMes = new Date(Date.UTC(cicloDate.getUTCFullYear(), cicloDate.getUTCMonth(), 1));
+    
+    if (cicloMes.getTime() === referenciaMesActual.getTime()) {
+        return 'PENDIENTE_DEL_MES';
+    }
+    if (cicloMes.getTime() < referenciaMesActual.getTime()) {
+        return 'SIN_MANTENIMIENTO_REGISTRADO';
+    }
+    return 'PROGRAMADO_POR_RECURRENCIA';
 };
+
+const DataRow = ({ icon, label, value, fallback = "No registrado" }) => (
+    <div className="flex gap-3 items-start">
+        <div className="mt-0.5 text-slate-400">
+            <Icon name={icon} size="sm" />
+        </div>
+        <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+            <span className="text-sm font-medium text-slate-800 mt-0.5">
+                {value || <span className="text-slate-400 italic font-normal">{fallback}</span>}
+            </span>
+        </div>
+    </div>
+);
 
 export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     if (!regla) return null;
@@ -157,38 +182,35 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
         }
     };
 
-    const infoFields = [
-        { label: 'Máquina', value: `${regla.maquina?.codigo || '-'} · ${regla.maquina?.nombre || '-'}`, icon: 'precision_manufacturing', color: 'text-blue-600 bg-blue-50' },
-        { label: 'Ubicación', value: `${regla.maquina?.planta || '-'} / ${regla.maquina?.area || '-'}`, icon: 'location_on', color: 'text-indigo-600 bg-indigo-50' },
-        { label: 'Responsable', value: regla.tecnicoResponsable?.nombre || '-', icon: 'person', color: 'text-emerald-600 bg-emerald-50' },
-        { label: 'Frecuencia', value: frecuenciaLabel(regla), icon: 'sync', color: 'text-purple-600 bg-purple-50' },
-        { label: 'Próxima Programación', value: formatearFechaTextoLargo(datePart(regla.proximaFechaEjecucion)) || '-', icon: 'event', color: 'text-amber-600 bg-amber-50' },
-        { label: 'Prioridad', value: regla.prioridad || '-', icon: 'warning', color: 'text-red-600 bg-red-50 border border-red-100' },
-        { label: 'Tiempo Estimado', value: regla.tiempoEstimado ? `${regla.tiempoEstimado} min` : '-', icon: 'schedule', color: 'text-cyan-600 bg-cyan-50' },
-    ];
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-2xl">
+        <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-3xl">
             <ModalHeader onClose={onClose}>
                 <div className="flex items-center gap-2">
                     <Icon name="event_repeat" className="text-marca-primario" />
                     <span className="font-bold text-slate-800">Detalle programacion preventiva</span>
                 </div>
             </ModalHeader>
-            <ModalBody className="space-y-4 p-5 max-h-[85vh] overflow-y-auto">
-                {/* Cabecera Principal */}
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-base font-black uppercase tracking-wide text-slate-800">{regla.titulo}</h3>
-                        <RecurrenteStatusBadge activo={regla.activo} />
+            <ModalBody className="space-y-4 p-6 max-h-[85vh] overflow-y-auto">
+                {/* ── Tarjeta de Identidad Principal (Imitación de UserDetailModal) ── */}
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-5 bg-slate-50 rounded-xl border border-slate-200 mb-6">
+                    <div className="w-16 h-16 rounded-full bg-marca-primario/10 flex items-center justify-center text-marca-primario border-4 border-white shadow-md shrink-0">
+                        <Icon name="event_repeat" size="lg" />
                     </div>
-                    {regla.descripcion && (
-                        <p className="text-xs font-semibold leading-relaxed text-slate-500">{regla.descripcion}</p>
-                    )}
+
+                    <div className="flex flex-col items-center sm:items-start flex-1 text-center sm:text-left">
+                        <h3 className="text-xl font-extrabold text-slate-900 leading-tight">
+                            {regla.titulo}
+                        </h3>
+                        <p className="text-slate-500 font-mono text-sm mt-1">{regla.maquina?.codigo || 'Sin código'}</p>
+
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
+                            <RecurrenteStatusBadge activo={regla.activo} />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Switcher de Vista */}
-                <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-xl">
+                <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-xl mb-4">
                     <button
                         type="button"
                         onClick={() => setActiveTab('info')}
@@ -207,20 +229,40 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Tab: Información General */}
+                {/* Tab: Información General (Imitación de UserDetailModal) */}
                 {activeTab === 'info' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in duration-200">
-                        {infoFields.map(({ label, value, icon, color }) => (
-                            <div key={label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm hover:shadow-md transition-shadow">
-                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${color}`}>
-                                    <Icon name={icon} size="sm" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</div>
-                                    <div className="text-xs font-black text-slate-700 break-words truncate max-w-[200px]" title={value}>{value}</div>
-                                </div>
+                    <div className="space-y-6 animate-in fade-in duration-200">
+                        {regla.descripcion && (
+                            <div className="rounded-xl border border-slate-150 bg-slate-50/50 p-4">
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Descripción del Plan</span>
+                                <p className="text-sm font-medium text-slate-750 leading-relaxed">{regla.descripcion}</p>
                             </div>
-                        ))}
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+                            {/* Columna Izquierda: Máquina y Ubicación */}
+                            <div className="space-y-5">
+                                <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                                    <Icon name="precision_manufacturing" size="sm" className="text-marca-primario" />
+                                    Máquina y Ubicación
+                                </h4>
+                                <DataRow icon="settings" label="Máquina / Equipo" value={`${regla.maquina?.codigo || '-'} · ${regla.maquina?.nombre || '-'}`} />
+                                <DataRow icon="location_on" label="Ubicación / Área" value={`${regla.maquina?.planta || '-'} / ${regla.maquina?.area || '-'}`} />
+                                <DataRow icon="person" label="Técnico Responsable" value={regla.tecnicoResponsable?.nombre || '-'} />
+                            </div>
+
+                            {/* Columna Derecha: Planificación y Parámetros */}
+                            <div className="space-y-5">
+                                <h4 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                                    <Icon name="date_range" size="sm" className="text-marca-primario" />
+                                    Planificación y Parámetros
+                                </h4>
+                                <DataRow icon="sync" label="Frecuencia de Mantenimiento" value={frecuenciaLabel(regla)} />
+                                <DataRow icon="event" label="Próxima Fecha Programada" value={formatearFechaTextoLargo(datePart(regla.proximaFechaEjecucion))} />
+                                <DataRow icon="warning" label="Prioridad del Trabajo" value={regla.prioridad} />
+                                <DataRow icon="schedule" label="Tiempo Estimado de Paro" value={regla.tiempoEstimado ? `${regla.tiempoEstimado} min` : '-'} />
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -234,7 +276,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedYear(y => y - 1)}
-                                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:scale-95 cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:scale-95 cursor-pointer"
                                 >
                                     <Icon name="chevron_left" size="xs" />
                                 </button>
@@ -242,7 +284,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedYear(y => y + 1)}
-                                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:scale-95 cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:scale-95 cursor-pointer"
                                 >
                                     <Icon name="chevron_right" size="xs" />
                                 </button>
@@ -260,7 +302,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                 Sin ocurrencias proyectadas para el año {selectedYear}.
                             </div>
                         ) : (
-                            <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                            <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
                                 {ocurrencias.map((item) => {
                                     const origDate = item.fechaOriginalFormateada || item.fechaCicloLogicaFormateada || datePart(item.fechaCicloLogica);
                                     const schedDate = item.fechaProgramadaFormateada || datePart(item.fechaProgramada);
@@ -270,56 +312,41 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                     const hasAjuste = isOmitted || isMoved;
                                     const hasTicket = Boolean(item.ticketId);
 
-                                    // Lógica de colores de borde
-                                    let borderStyle = 'border-l-4 border-l-slate-300';
-                                    let statusLabel = 'Programado';
-                                    let statusColor = 'bg-slate-50 text-slate-600 border-slate-200';
-
-                                    if (hasTicket) {
-                                        const term = item.ticketEstado === 'RESUELTO' || item.ticketEstado === 'CERRADO';
-                                        borderStyle = term ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-blue-500';
-                                        statusLabel = term ? 'Completado' : 'Mantenimiento generado';
-                                        statusColor = term ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200';
-                                    } else if (isOmitted) {
-                                        borderStyle = 'border-l-4 border-l-slate-400';
-                                        statusLabel = 'Omitido';
-                                        statusColor = 'bg-slate-100 text-slate-600 border-slate-300';
-                                    } else if (isMoved) {
-                                        borderStyle = 'border-l-4 border-l-sky-500';
-                                        statusLabel = 'Re-programado';
-                                        statusColor = 'bg-sky-50 text-sky-700 border-sky-200';
-                                    }
+                                    // Obtener estado exacto como en la matriz
+                                    const estado = getOcurrenciaEstado(item);
+                                    const statusClasses = executionStatusClass(estado);
+                                    const statusLabel = executionStatusLabel(estado);
 
                                     const isFormOpen = activeAction?.originalDate === origDate;
 
                                     return (
                                         <div
                                             key={origDate}
-                                            className={`rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all ${borderStyle} ${isFormOpen ? 'ring-2 ring-marca-secundario/10' : ''}`}
+                                            className={`rounded-xl border p-3.5 shadow-sm transition-all ${statusClasses} ${isFormOpen ? 'ring-2 ring-marca-secundario/20 border-marca-secundario' : ''}`}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div>
-                                                    <div className="text-xs font-black uppercase text-slate-800">
+                                                    <div className="text-xs font-black uppercase">
                                                         {formatearFechaTextoLargo(schedDate)}
                                                     </div>
                                                     {isMoved && (
-                                                        <div className="text-[10px] font-bold text-slate-400 mt-0.5">
+                                                        <div className="text-[10px] font-bold opacity-75 mt-0.5">
                                                             Original: {formatearFechaTextoLargo(origDate)}
                                                         </div>
                                                     )}
                                                     {item.ajusteMotivo && (
-                                                        <div className="text-[10px] font-bold text-slate-500 italic mt-1 bg-slate-50 rounded-lg p-1.5 border border-slate-200/50">
+                                                        <div className="text-[10px] font-bold italic mt-1.5 bg-white/50 rounded-lg p-2 border border-black/5">
                                                             Motivo: "{item.ajusteMotivo}"
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                                                    <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase ${statusColor}`}>
+                                                    <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[9px] font-black uppercase">
                                                         {statusLabel}
                                                     </span>
-                                                    {hasTicket && item.ticketEstado && (
-                                                        <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${getStatusBadgeStyle(item.ticketEstado)}`}>
-                                                            Ticket: {item.ticketEstado}
+                                                    {hasTicket && item.ticketId && (
+                                                        <span className="rounded-md bg-black/5 px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                                            Ticket #{item.ticketId}
                                                         </span>
                                                     )}
                                                 </div>
@@ -327,7 +354,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
 
                                             {/* Acciones para ocurrencias pendientes */}
                                             {!hasTicket && !periodClosed && !isFormOpen && (
-                                                <div className="mt-2.5 flex items-center justify-end gap-2 border-t border-slate-100 pt-2">
+                                                <div className="mt-3 flex items-center justify-end gap-3 border-t border-black/5 pt-2.5">
                                                     {!isOmitted && (
                                                         <button
                                                             type="button"
@@ -335,7 +362,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                                 setActiveAction({ type: 'mover', originalDate: origDate });
                                                                 setFormData({ fechaNueva: schedDate, motivo: item.ajusteMotivo || '' });
                                                             }}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-sky-600 hover:text-sky-800 cursor-pointer"
+                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase hover:opacity-80 cursor-pointer"
                                                         >
                                                             <Icon name="event_repeat" size="12px" />
                                                             Reprogramar
@@ -348,7 +375,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                                 setActiveAction({ type: 'omitir', originalDate: origDate });
                                                                 setFormData({ fechaNueva: '', motivo: '' });
                                                             }}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-slate-500 hover:text-slate-700 cursor-pointer"
+                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase hover:opacity-80 cursor-pointer"
                                                         >
                                                             <Icon name="event_busy" size="12px" />
                                                             Omitir
@@ -358,7 +385,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                         <button
                                                             type="button"
                                                             onClick={() => handleRemove(origDate)}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-red-500 hover:text-red-700 cursor-pointer"
+                                                            className="inline-flex items-center gap-1 text-[10px] font-black uppercase hover:opacity-80 cursor-pointer text-red-700"
                                                         >
                                                             <Icon name="undo" size="12px" />
                                                             Restaurar
@@ -369,41 +396,41 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
 
                                             {/* Formulario Inline de Reprogramación / Omisión */}
                                             {isFormOpen && (
-                                                <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-1 duration-150">
-                                                    <div className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
-                                                        <Icon name={activeAction.type === 'mover' ? 'event_repeat' : 'event_busy'} size="12px" />
-                                                        {activeAction.type === 'mover' ? 'Reprogramar este mes' : 'Omitir este mes'}
+                                                <div className="mt-3.5 p-3.5 bg-white border border-slate-200 rounded-xl space-y-3 shadow-inner animate-in slide-in-from-top-1 duration-150 text-slate-800">
+                                                    <div className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1 border-b border-slate-100 pb-1.5">
+                                                        <Icon name={activeAction.type === 'mover' ? 'event_repeat' : 'event_busy'} size="12px" className="text-marca-primario" />
+                                                        {activeAction.type === 'mover' ? 'Reprogramar Ocurrencia' : 'Omitir Ocurrencia'}
                                                     </div>
 
                                                     {activeAction.type === 'mover' && (
                                                         <div className="space-y-1">
-                                                            <label className="text-[10px] font-black uppercase text-slate-600">Nueva Fecha Programada</label>
+                                                            <label className="text-[10px] font-bold uppercase text-slate-500">Nueva Fecha Programada</label>
                                                             <input
                                                                 type="date"
                                                                 value={formData.fechaNueva}
                                                                 onChange={(e) => setFormData(prev => ({ ...prev, fechaNueva: e.target.value }))}
-                                                                className="h-[34px] w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
+                                                                className="h-[36px] w-full rounded-lg border border-slate-250 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
                                                             />
                                                         </div>
                                                     )}
 
                                                     <div className="space-y-1">
-                                                        <label className="text-[10px] font-black uppercase text-slate-600">Motivo Obligatorio</label>
+                                                        <label className="text-[10px] font-bold uppercase text-slate-500">Motivo Obligatorio</label>
                                                         <textarea
                                                             rows={2}
                                                             value={formData.motivo}
                                                             onChange={(e) => setFormData(prev => ({ ...prev, motivo: e.target.value }))}
                                                             placeholder="Ej. Por falta de refacción o paro general de planta..."
-                                                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
+                                                            className="w-full rounded-lg border border-slate-250 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
                                                         />
                                                     </div>
 
-                                                    <div className="flex gap-2 justify-end">
+                                                    <div className="flex gap-2 justify-end pt-1">
                                                         <button
                                                             type="button"
                                                             disabled={submittingAction}
                                                             onClick={() => setActiveAction(null)}
-                                                            className="px-2.5 py-1.5 text-[10px] font-black uppercase text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+                                                            className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-650 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer disabled:opacity-50"
                                                         >
                                                             Cancelar
                                                         </button>
@@ -411,7 +438,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                             type="button"
                                                             disabled={submittingAction}
                                                             onClick={() => activeAction.type === 'mover' ? handleSaveMove(origDate) : handleSaveSkip(origDate)}
-                                                            className="px-2.5 py-1.5 text-[10px] font-black uppercase text-white bg-marca-primario rounded-lg hover:brightness-110 cursor-pointer disabled:opacity-50"
+                                                            className="px-3 py-1.5 text-[10px] font-black uppercase text-white bg-marca-primario rounded-lg hover:brightness-110 cursor-pointer disabled:opacity-50"
                                                         >
                                                             {submittingAction ? 'Guardando...' : 'Confirmar'}
                                                         </button>
