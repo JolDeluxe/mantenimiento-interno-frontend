@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Icon, Modal, ModalBody, ModalHeader, Spinner } from '@/components/ui/z_index';
 import { formatearFechaTextoLargo } from '../../helpers/fechas';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
@@ -84,6 +84,8 @@ const DataRow = ({ icon, label, value, fallback = "No registrado" }) => (
 export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     if (!regla) return null;
 
+    const listRef = useRef(null);
+
     const [activeTab, setActiveTab] = useState('info');
     const [ocurrencias, setOcurrencias] = useState([]);
     const [loadingOcurrencias, setLoadingOcurrencias] = useState(false);
@@ -91,6 +93,37 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     const [submittingAction, setSubmittingAction] = useState(false);
     const [activeAction, setActiveAction] = useState(null); // { type: 'mover' | 'omitir', originalDate: string }
     const [formData, setFormData] = useState({ fechaNueva: '', motivo: '' });
+
+    useEffect(() => {
+        if (ocurrencias.length > 0 && activeTab === 'history') {
+            setTimeout(() => {
+                const today = new Date();
+                const currentMonth = today.getMonth(); // 0-indexed
+                let targetItem = null;
+                for (const item of ocurrencias) {
+                    const dateStr = item.fechaCicloLogicaFormateada || item.fechaOriginalFormateada || datePart(item.fechaCicloLogica);
+                    if (!dateStr) continue;
+                    const [y, m] = dateStr.split('-').map(Number);
+                    if (y === selectedYear && (m - 1) === currentMonth) {
+                        targetItem = item;
+                        break;
+                    }
+                }
+
+                if (targetItem) {
+                    const origDate = targetItem.fechaOriginalFormateada || targetItem.fechaCicloLogicaFormateada || datePart(targetItem.fechaCicloLogica);
+                    const el = document.getElementById(`ocurrencia-${origDate}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else if (selectedYear !== today.getFullYear()) {
+                    if (listRef.current) {
+                        listRef.current.scrollTop = 0;
+                    }
+                }
+            }, 150);
+        }
+    }, [ocurrencias, activeTab, selectedYear]);
 
     const fetchOcurrencias = useCallback(async () => {
         setLoadingOcurrencias(true);
@@ -302,7 +335,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                 Sin ocurrencias proyectadas para el año {selectedYear}.
                             </div>
                         ) : (
-                            <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                            <div ref={listRef} className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
                                 {ocurrencias.map((item) => {
                                     const origDate = item.fechaOriginalFormateada || item.fechaCicloLogicaFormateada || datePart(item.fechaCicloLogica);
                                     const schedDate = item.fechaProgramadaFormateada || datePart(item.fechaProgramada);
@@ -322,6 +355,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                     return (
                                         <div
                                             key={origDate}
+                                            id={`ocurrencia-${origDate}`}
                                             className={`rounded-xl border p-3.5 shadow-sm transition-all ${statusClasses} ${isFormOpen ? 'ring-2 ring-marca-secundario/20 border-marca-secundario' : ''}`}
                                         >
                                             <div className="flex items-start justify-between gap-3">

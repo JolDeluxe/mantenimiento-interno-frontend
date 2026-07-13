@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Button, Icon, SearchableSelect, Spinner } from '@/components/ui/z_index';
 import { frecuenciaLabel } from './recurrentes-utils';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
@@ -56,11 +56,33 @@ export const RecurrentesMatrizDesktop = ({
     onSkip,
     onRemoveAdjustment,
 }) => {
+    const scrollContainerRef = useRef(null);
+
     const currentYear = new Date().getFullYear();
     const currentQuarter = getCurrentQuarter();
     const [viewMode, setViewMode] = useState('trimestre');
     const [selectedMes, setSelectedMes] = useState(String(new Date().getMonth() + 1));
     const [selectedQuarter, setSelectedQuarter] = useState(currentQuarter);
+
+    useEffect(() => {
+        if (!loading && rows.length > 0) {
+            setTimeout(() => {
+                const today = new Date();
+                const currentMonth = today.getMonth() + 1; // 1-12
+                const el = document.getElementById(`matriz-header-${currentMonth}`);
+                if (el && scrollContainerRef.current) {
+                    const container = scrollContainerRef.current;
+                    const elLeft = el.offsetLeft;
+                    const stickyWidth = 522; // width of Code + Machine + Tech sticky headers
+                    container.scrollTo({
+                        left: Math.max(0, elLeft - stickyWidth - 20),
+                        behavior: 'smooth'
+                    });
+                }
+            }, 150);
+        }
+    }, [loading, rows, year, viewMode, selectedMes, selectedQuarter]);
+
     const yearOptions = useMemo(() => (
         Array.from({ length: 7 }, (_, index) => {
             const value = String(currentYear - 3 + index);
@@ -212,7 +234,7 @@ export const RecurrentesMatrizDesktop = ({
                 </div>
             ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="max-h-[calc(100vh-260px)] overflow-auto">
+                    <div ref={scrollContainerRef} className="max-h-[calc(100vh-260px)] overflow-auto">
                         <table className="min-w-max divide-y divide-slate-100 text-left">
                             <thead className="sticky top-0 z-40 bg-slate-50 shadow-sm">
                                 <tr className="text-[10px] font-black uppercase tracking-wide text-slate-500">
@@ -220,7 +242,7 @@ export const RecurrentesMatrizDesktop = ({
                                     <th className="sticky left-[92px] z-50 min-w-[240px] bg-slate-50 px-3 py-3">Maquina / area</th>
                                     <th className="sticky left-[332px] z-50 min-w-[190px] bg-slate-50 px-3 py-3">Responsable / frecuencia</th>
                                     {visibleMonths.map((mes) => (
-                                        <th key={mes.key} className="min-w-[220px] border-l border-slate-100 px-2 py-3">{mes.label}</th>
+                                        <th key={mes.key} id={`matriz-header-${mes.key}`} className="min-w-[220px] border-l border-slate-100 px-2 py-3">{mes.label}</th>
                                     ))}
                                 </tr>
                             </thead>
