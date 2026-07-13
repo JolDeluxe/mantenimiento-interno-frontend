@@ -90,7 +90,7 @@ export const AjusteOcurrenciaModal = ({
                 </ModalBody>
                 <ModalFooter>
                     <Button type="button" variant="cancelar" onClick={onClose} disabled={submitting}>Cancelar</Button>
-                    <Button type="submit" variant="primario" disabled={disabled} isLoading={submitting}>
+                    <Button type="submit" variant="guardar" disabled={disabled} isLoading={submitting}>
                         {isMove ? 'Mover este mes' : 'Omitir este mes'}
                     </Button>
                 </ModalFooter>

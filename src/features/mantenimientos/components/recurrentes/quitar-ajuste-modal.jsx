@@ -29,7 +29,7 @@ export const QuitarAjusteModal = ({
             </ModalBody>
             <ModalFooter>
                 <Button type="button" variant="cancelar" onClick={onClose} disabled={submitting}>Cancelar</Button>
-                <Button type="button" variant="primario" onClick={handleConfirm} disabled={!fechaOriginal || submitting} isLoading={submitting}>
+                <Button type="button" variant="guardar" onClick={handleConfirm} disabled={!fechaOriginal || submitting} isLoading={submitting}>
                     Volver a programación base
                 </Button>
             </ModalFooter>

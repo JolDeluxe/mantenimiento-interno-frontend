@@ -280,7 +280,7 @@ export const RecurrenteFormModal = ({
                     <Button type="button" variant="cancelar" onClick={onClose} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button type="submit" variant="primario" disabled={submitting || loadingCatalogos}>
+                    <Button type="submit" variant="guardar" disabled={submitting || loadingCatalogos}>
                         {submitting ? <span className="inline-flex items-center gap-1"><Spinner size="xs" /> Guardando</span> : 'Guardar'}
                     </Button>
                 </ModalFooter>
