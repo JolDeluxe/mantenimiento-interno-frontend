@@ -43,17 +43,6 @@ export const RecurrenteActions = ({
                 >
                     <Icon name={regla.activo ? 'pause_circle' : 'play_circle'} size="sm" />
                 </button>
-                {regla.activo && (
-                    <button
-                        type="button"
-                        onClick={() => onMaterialize(regla)}
-                        disabled={submitting}
-                        className="inline-flex rounded-md p-1.5 text-estado-asignada transition-colors hover:bg-estado-asignada/10 disabled:opacity-50"
-                        title="Generar mantenimiento"
-                    >
-                        <Icon name="bolt" size="sm" />
-                    </button>
-                )}
             </>
         )}
     </div>

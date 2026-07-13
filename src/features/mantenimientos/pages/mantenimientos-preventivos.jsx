@@ -275,7 +275,10 @@ export default function MantenimientosPreventivosPage() {
             )}
             <RecurrenteDetailModal
                 isOpen={Boolean(detailTarget)}
-                onClose={() => setDetailTarget(null)}
+                onClose={() => {
+                    setDetailTarget(null);
+                    refresh();
+                }}
                 regla={detailTarget}
             />
         </div>
