@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn';
 export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
     const location = useLocation();
     const cardRef = useRef(null);
+    const [todayMs] = useState(() => Date.now());
     const isHighlighted = location.hash === `#ticket-${ticket.id}`;
 
     useEffect(() => {
@@ -22,7 +23,7 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
         const createdMs = Date.parse(createdAt);
         if (isNaN(createdMs)) return 0;
 
-        const diffTime = Math.abs(Date.now() - createdMs);
+        const diffTime = Math.abs(todayMs - createdMs);
         return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     };
 
@@ -56,6 +57,21 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
             text: `ATRASADO: ${daysWaiting} DÍAS`
         };
     }
+
+    const tipoBadgeClass = {
+        TICKET: 'bg-slate-100 text-slate-600 border-slate-200/60',
+        PLANEADA: 'bg-blue-50 text-blue-700 border-blue-200/60',
+        EXTRAORDINARIA: 'bg-purple-50 text-purple-700 border-purple-200/60',
+    }[ticket.tipo] || 'bg-slate-100 text-slate-500 border-slate-200';
+
+    const clasificacionBadgeClass = {
+        PREVENTIVO: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+        CORRECTIVO: 'bg-rose-50 text-rose-700 border-rose-200/60',
+        INSPECCION: 'bg-amber-50 text-amber-700 border-amber-200/60',
+        RUTINA: 'bg-indigo-50 text-indigo-700 border-indigo-200/60',
+        MEJORA: 'bg-teal-50 text-teal-700 border-teal-200/60',
+        INFRAESTRUCTURA: 'bg-violet-50 text-violet-700 border-violet-200/60',
+    }[ticket.clasificacion] || 'bg-slate-100 text-slate-500 border-slate-200';
 
     return (
         <div
@@ -93,6 +109,26 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
                             {ticket.planta || 'General'}{ticket.area ? ` — ${ticket.area}` : ''}
                         </span>
                     </p>
+                )}
+                {(ticket.tipo || (ticket.clasificacion && ticket.categoria === 'MAQUINARIA')) && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {ticket.tipo && ticket.tipo !== 'TICKET' && (
+                            <span className={cn(
+                                'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none',
+                                tipoBadgeClass
+                            )}>
+                                {ticket.tipo}
+                            </span>
+                        )}
+                        {ticket.clasificacion && ticket.categoria === 'MAQUINARIA' && (
+                            <span className={cn(
+                                'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border leading-none',
+                                clasificacionBadgeClass
+                            )}>
+                                {ticket.clasificacion}
+                            </span>
+                        )}
+                    </div>
                 )}
                 {ticket.creador && (
                     <p className="flex items-center gap-2">

@@ -81,7 +81,6 @@ export default function TicketsBandejaGeneralPage() {
                 responsables: payload.responsables,
                 fechaVencimiento: payload.fechaVencimiento || payload.fechaProgramada,
                 prioridad: payload.prioridad,
-                estado: payload.estado,
                 tiempoEstimado: payload.tiempoEstimado,
                 maquinaId: payload.maquinaId, // Vincula máquina en la bandeja general
             });
@@ -91,7 +90,7 @@ export default function TicketsBandejaGeneralPage() {
             setIsAssignModalOpen(false);
             setTimeout(() => setSelectedTicket(null), 200);
         } catch (error) {
-            notify.error(error.response?.data?.message || 'Ocurrió un error al asignar');
+            notify.error(error.response?.data?.error || error.response?.data?.message || 'Ocurrió un error al asignar');
         } finally {
             setIsSubmitting(false);
         }
