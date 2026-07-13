@@ -74,6 +74,23 @@ reglaRecurrenciaId + fechaOriginal
 
 No usar solo `periodoAnio + periodoMes`, porque semanal/quincenal/personalizada pueden tener varias ocurrencias dentro del mismo mes.
 
+Decision adicional aprobada:
+
+```txt
+fechaCicloLogica = identidad original de la ocurrencia.
+fechaProgramadaPreventiva = fecha efectiva/programada real de la tarea.
+```
+
+Cuando una ocurrencia se mueve, la tarea real necesita guardar ambas fechas:
+
+```txt
+fechaCicloLogica: 2026-09-11
+fechaProgramadaPreventiva: 2026-09-20
+fechaVencimiento: 2026-09-30
+```
+
+Si no hay movimiento, `fechaProgramadaPreventiva` puede quedar `null` y el sistema usa `fechaCicloLogica` como fecha programada.
+
 ## 4. Modelo de datos propuesto
 
 Agregar enum:
@@ -123,6 +140,32 @@ Reglas:
 - `periodoAnio/periodoMes` son apoyo para consultas y matriz.
 - `activo=false` permite conservar historial si se quita ajuste.
 
+Agregar campo nullable en `Tarea`:
+
+```prisma
+fechaProgramadaPreventiva DateTime?
+```
+
+Nombre recomendado: `fechaProgramadaPreventiva`.
+
+Motivo:
+
+- Es claro para el dominio: solo aplica a preventivos recurrentes.
+- Evita confundirlo con programaciones generales de tickets.
+- Permite que calendario y UI muestren la fecha operativa real sin romper identidad/dedupe.
+
+Regla de lectura:
+
+```txt
+fechaProgramada = fechaProgramadaPreventiva ?? fechaCicloLogica
+```
+
+Regla de escritura:
+
+- Ocurrencia normal: `fechaProgramadaPreventiva = null`.
+- Ocurrencia movida: `fechaProgramadaPreventiva = fechaNueva`.
+- Ocurrencia omitida: no se crea tarea.
+
 ## 5. Backend a tocar
 
 Archivos principales:
@@ -162,6 +205,14 @@ omitida
 ajuste
 estadoAjuste
 ```
+
+Impacto en generacion de tarea:
+
+- `materializarCicloInterno()` debe recibir `fechaProgramadaPreventiva`.
+- Si la ocurrencia no fue movida, guardar `null`.
+- Si fue movida, guardar la fecha efectiva.
+- `fechaVencimiento` sigue siendo fin de mes de `fechaCicloLogica`.
+- `finalizadoAt` sigue siendo fecha real de cierre.
 
 ## 6. Frontend a tocar
 
@@ -263,6 +314,18 @@ Reglas:
 - HOY no debe mostrar programaciones virtuales.
 
 El filtro actual de HOY por `reglaRecurrenciaId`, `PREVENTIVO`, `PLANEADA` y `fechaCicloLogica` del mes debe mantenerse, pero respetando que omitidos no crean tarea.
+
+HOY debe seguir usando `fechaCicloLogica` para pertenencia mensual:
+
+```txt
+fechaCicloLogica dentro del mes actual
+```
+
+La fecha visible al usuario debe ser:
+
+```txt
+fechaProgramadaPreventiva ?? fechaCicloLogica
+```
 
 ## 10. Formularios y modales
 
@@ -481,17 +544,25 @@ Trabajo:
 - Mantener dedupe por `reglaRecurrenciaId + fechaOriginal`.
 - Para ocurrencia movida, recomendado:
   - `fechaCicloLogica = fechaOriginal`
-  - `fechaProgramadaOperativa = fechaNueva` solo si se agrega campo nuevo o se usa `fechaVencimiento/horaInicioProgramada` segun decision.
+  - `fechaProgramadaPreventiva = fechaNueva` cuando la ocurrencia fue movida.
 
 Recomendacion tecnica clave:
 
 ```txt
 Mantener fechaCicloLogica como fecha original.
 Guardar fechaNueva en ajuste.
-Agregar en respuestas fechaProgramada = fechaNueva ?? fechaOriginal.
+Agregar en Tarea fechaProgramadaPreventiva para la fecha efectiva real.
+Agregar en respuestas fechaProgramada = fechaProgramadaPreventiva ?? fechaCicloLogica.
 ```
 
 Esto protege matriz, calendario, dedupe e historicos.
+
+Por que no basta con `fechaNueva` solo en ajuste:
+
+- La tarea real debe conservar la fecha efectiva aun si luego el ajuste se desactiva o cambia.
+- Calendario/listados de tareas no deberian depender de hacer join contra ajustes para saber la fecha programada real.
+- Historico queda mas claro: identidad original y fecha operativa quedan dentro de la tarea generada.
+- Evita inconsistencias si una tarea fue generada y despues se quita el ajuste.
 
 Validacion:
 
@@ -536,4 +607,15 @@ Usar `ReglaRecurrenciaAjuste` por ocurrencia exacta:
 unique(reglaRecurrenciaId, fechaOriginal)
 ```
 
-Mantener la regla base intacta. Mantener `fechaCicloLogica` como identidad original. Resolver una `fechaProgramada` efectiva para mostrar/generar. `OMITIR` nunca debe contarse como descuido.
+Mantener la regla base intacta. Mantener `fechaCicloLogica` como identidad original. Agregar `fechaProgramadaPreventiva` nullable en `Tarea` para la fecha efectiva real cuando una ocurrencia se mueve.
+
+Regla final:
+
+```txt
+Identidad/matriz/dedupe: fechaCicloLogica
+Fecha visible/calendario: fechaProgramadaPreventiva ?? fechaCicloLogica
+Limite mensual: fechaVencimiento
+Cierre real: finalizadoAt
+```
+
+`OMITIR` nunca debe contarse como descuido.
