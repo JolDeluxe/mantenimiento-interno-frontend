@@ -1,6 +1,6 @@
 // src/features/calendario/hooks/use-calendario.js
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getCalendarioTickets, getCalendarioMetrics, getAsignables } from '../api/calendario-api';
+import { getCalendarioTickets, getCalendarioMetrics, getCalendarioProyecciones, getAsignables } from '../api/calendario-api';
 import { readSnapshot, writeSnapshot } from '@/lib/idb';
 
 const paramsToKey = (params = {}) => {
@@ -105,6 +105,7 @@ const getFinalizadosParams = (params, estado) => {
 
 export const useCalendario = () => {
     const [tickets, setTickets] = useState([]);
+    const [proyecciones, setProyecciones] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -243,6 +244,18 @@ export const useCalendario = () => {
         }
     }, []);
 
+    const fetchProyecciones = useCallback(async (year) => {
+        if (!navigator.onLine) return;
+        try {
+            const res = await getCalendarioProyecciones(year);
+            const data = Array.isArray(res?.data?.data) ? res.data.data : (Array.isArray(res?.data) ? res.data : []);
+            setProyecciones(data);
+        } catch (err) {
+            console.warn('[useCalendario] Error al cargar programaciones preventivas:', err);
+            setProyecciones([]);
+        }
+    }, []);
+
     const fetchTecnicos = useCallback(async () => {
         try {
             const record = await readSnapshot('tecnicos', 'asignables');
@@ -282,6 +295,7 @@ export const useCalendario = () => {
         const timer = setTimeout(() => {
             fetchTickets(params);
             fetchMetricas(params);
+            fetchProyecciones(calendarDate.getFullYear());
         }, 200);
 
         return () => clearTimeout(timer);
@@ -300,6 +314,7 @@ export const useCalendario = () => {
         query,
         fetchTickets,
         fetchMetricas,
+        fetchProyecciones,
     ]);
 
     useEffect(() => {
@@ -321,6 +336,7 @@ export const useCalendario = () => {
 
     return {
         tickets,
+        proyecciones,
         tecnicos,
         loading,
         submitting,

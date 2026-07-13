@@ -13,6 +13,9 @@ export const getCalendarioTickets = (params = {}) =>
 export const getCalendarioMetrics = (params = {}) =>
     api.get('/api/tickets/metrics', { params });
 
+export const getCalendarioProyecciones = (year) =>
+    api.get('/api/recurrencias/proyecciones', { params: { year } });
+
 /**
  * Devuelve el listado de técnicos asignables con sus cargas de trabajo.
  */
