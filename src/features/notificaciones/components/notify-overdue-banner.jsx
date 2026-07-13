@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, Button } from '@/components/ui/z_index';
 import { getTickets } from '@/features/tickets/api/tickets-api';
-import { cn } from '@/utils/cn';
 
 const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 const POLL_MS = 5 * 60 * 1000;
@@ -48,6 +47,7 @@ export const NotifyOverdueBanner = ({ currentUser }) => {
     }, [esAdmin]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData();
         const interval = setInterval(fetchData, POLL_MS);
         const onVisible = () => { if (!document.hidden) fetchData(); };
@@ -134,7 +134,7 @@ export const NotifyOverdueBanner = ({ currentUser }) => {
                                 variant="borrar"
                                 size="sm"
                                 icon="engineering"
-                                onClick={() => navigate('/tickets/bandeja')}
+                                onClick={() => navigate('/bandeja')}
                             >
                                 {totalBandeja === 1 ? 'Ir a bandeja' : 'Ver bandeja'}
                             </Button>

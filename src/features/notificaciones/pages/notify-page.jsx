@@ -74,7 +74,7 @@ export default function NotifyPage() {
                     const ticket = await getTicketById(Number(ticketId));
                     setActiveTicket(ticket);
                     setDetailOpen(true);
-                } catch (err) {
+                } catch {
                     notify.error('No se pudo cargar el ticket solicitado.');
                 } finally {
                     setFetchingTicket(false);
@@ -154,7 +154,7 @@ export default function NotifyPage() {
         }
 
         if (actionKey === 'ir_a_bandeja') {
-            navigate('/tickets/bandeja');
+            navigate('/bandeja');
             return;
         }
 
