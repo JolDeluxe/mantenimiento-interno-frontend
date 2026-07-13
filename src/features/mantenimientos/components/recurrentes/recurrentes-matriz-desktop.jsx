@@ -58,7 +58,7 @@ export const RecurrentesMatrizDesktop = ({
     return (
         <div className="flex flex-col gap-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div className="flex flex-col gap-3">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-800">
                             <Icon name="calendar_month" className="text-marca-primario" />
@@ -68,7 +68,7 @@ export const RecurrentesMatrizDesktop = ({
                             {total} programacion{total === 1 ? '' : 'es'} preventiva{total === 1 ? '' : 's'}. {rangeLabel}.
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
                         <div className="min-w-28 flex-none">
                             <SearchableSelect
                                 options={yearOptions}
@@ -164,17 +164,6 @@ export const RecurrentesMatrizDesktop = ({
                     </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide">
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado en el mes</span>
-                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-700">Realizado fuera del mes</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado por recurrencia</span>
-                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-1 text-sky-800">Movido este mes</span>
-                    <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-1 text-slate-700">Omitido este mes</span>
-                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar = aun no se ha creado el mantenimiento</span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Sin mantenimiento este mes = observacion mensual</span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = programacion detenida</span>
-                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-1 text-cyan-700">Impreso = etiqueta derivada</span>
-                </div>
                 {cobertura?.maquinasActivasSinRegla > 0 && (
                     <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
                         {cobertura.maquinasActivasSinRegla} maquina{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} activa{cobertura.maquinasActivasSinRegla === 1 ? '' : 's'} sin programacion preventiva mensual.
