@@ -450,8 +450,17 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                                 type="date"
                                                                 value={formData.fechaNueva}
                                                                 onChange={(e) => setFormData(prev => ({ ...prev, fechaNueva: e.target.value }))}
-                                                                className="h-[36px] w-full rounded-lg border border-slate-250 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
+                                                                className={`h-[36px] w-full rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20 ${formData.fechaNueva && (!fechaNuevaValida || !mismoMes || mismaFecha) ? 'border-red-400' : 'border-slate-250'}`}
                                                             />
+                                                            {formData.fechaNueva && !fechaNuevaValida && (
+                                                                <span className="text-[10px] font-bold text-red-600 block mt-0.5">* La fecha no es válida.</span>
+                                                            )}
+                                                            {formData.fechaNueva && mismaFecha && (
+                                                                <span className="text-[10px] font-bold text-red-600 block mt-0.5">* Debe ser diferente a la fecha original.</span>
+                                                            )}
+                                                            {formData.fechaNueva && fechaNuevaValida && !mismoMes && (
+                                                                <span className="text-[10px] font-bold text-red-600 block mt-0.5">* Debe quedar dentro del mismo mes.</span>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -462,23 +471,15 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                             value={formData.motivo}
                                                             onChange={(e) => setFormData(prev => ({ ...prev, motivo: e.target.value }))}
                                                             placeholder="Ej. Por falta de refacción o paro general de planta..."
-                                                            className="w-full rounded-lg border border-slate-250 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20"
+                                                            className={`w-full rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20 ${formData.motivo.length > 0 && motivoLimpio.length < 3 ? 'border-red-400' : 'border-slate-250'}`}
                                                         />
+                                                        {formData.motivo.length > 0 && motivoLimpio.length < 3 && (
+                                                            <span className="text-[10px] font-bold text-red-650 block mt-0.5">* Escribe un motivo de al menos 3 caracteres.</span>
+                                                        )}
+                                                        {motivoMuyLargo && (
+                                                            <span className="text-[10px] font-bold text-red-650 block mt-0.5">* El motivo no debe pasar de 250 caracteres.</span>
+                                                        )}
                                                     </div>
-
-                                                    {validationMessages.length > 0 && (
-                                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-bold text-amber-800 space-y-1">
-                                                            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase">
-                                                                <Icon name="info" size="xs" />
-                                                                Revisa los requisitos
-                                                            </div>
-                                                            <ul className="list-disc pl-4 space-y-0.5">
-                                                                {validationMessages.map((msg) => (
-                                                                    <li key={msg}>{msg}</li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
 
                                                     <div className="flex gap-2 justify-end pt-1">
                                                         <button
@@ -493,7 +494,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                             type="button"
                                                             disabled={isSubmitDisabled}
                                                             onClick={() => activeAction.type === 'mover' ? handleSaveMove(origDate) : handleSaveSkip(origDate)}
-                                                            className="px-3 py-1.5 text-[10px] font-black uppercase text-white bg-marca-primario rounded-lg hover:brightness-110 cursor-pointer disabled:opacity-50"
+                                                            className="px-3 py-1.5 text-[10px] font-black uppercase text-white bg-estado-resuelto rounded-lg hover:brightness-110 cursor-pointer disabled:opacity-50"
                                                         >
                                                             {submittingAction ? 'Guardando...' : 'Confirmar'}
                                                         </button>
