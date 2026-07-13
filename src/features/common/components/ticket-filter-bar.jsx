@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { Select, Input } from '@/components/form/z_index';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
@@ -412,3 +412,4 @@ export const TicketFilterBar = ({
 };
 
 export { TicketFilterBar as MantenimientosFilterBar };
+

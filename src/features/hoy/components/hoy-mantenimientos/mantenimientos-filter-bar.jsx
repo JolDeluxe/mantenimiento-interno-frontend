@@ -1,7 +1,7 @@
 // src/features/hoy/components/hoy-mantenimientos/mantenimientos-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import { HoyTeamToggle } from '../common/hoy-team-toggle';
 
 const CLASIFICACIONES_MANTENIMIENTO = [
@@ -276,3 +276,4 @@ export const MantenimientosFilterBar = ({
         </div>
     );
 };
+

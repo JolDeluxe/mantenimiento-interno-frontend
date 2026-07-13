@@ -7,7 +7,7 @@ import { MantenimientosFilterBar } from '../components/hoy-mantenimientos/manten
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { MantenimientosTicketTable } from '../components/hoy-mantenimientos/mantenimientos-ticket-table';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
@@ -214,3 +214,4 @@ export const HoyMantenimientosDesktop = ({
         </div>
     );
 };
+

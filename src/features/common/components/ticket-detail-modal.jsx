@@ -11,7 +11,7 @@ import {
     getClasificacionIcon,
     getTipoStyle,
     getCategoriaInfo
-} from '@/features/tickets/components/constants';
+} from '@/features/common/constants/catalogos-tareas';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
 const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
@@ -883,3 +883,4 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
 };
 
 export { TicketDetailModal as MantenimientosDetailModal };
+

@@ -7,7 +7,7 @@ import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import {
     PLANTAS, CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
-} from '@/features/hoy/constants';
+} from '@/features/common/constants/catalogos-tareas';
 import {
     PrioridadField,
     TituloField,
@@ -1419,4 +1419,5 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         </Modal>
     );
 };
+
 

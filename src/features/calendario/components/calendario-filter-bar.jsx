@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { Input } from '@/components/form/z_index';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const SCOPE_OPTIONS = [
     { value: 'general', label: 'Todas las Tareas' },
@@ -209,3 +209,4 @@ export const CalendarioFilterBar = ({
         </div>
     );
 };
+

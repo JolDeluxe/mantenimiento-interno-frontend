@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '../../constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
 const normalizeOpts = (opts = []) => opts.map(o => {

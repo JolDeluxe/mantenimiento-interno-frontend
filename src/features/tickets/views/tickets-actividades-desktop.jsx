@@ -6,7 +6,7 @@ import { ActividadesFilterBar } from '@/features/hoy/components/hoy-actividades/
 import { ActividadesTicketTable } from '@/features/hoy/components/hoy-actividades/actividades-ticket-table';
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 
 const VIEW_COPY = {
     actividades: {
@@ -189,3 +189,4 @@ export const TicketsActividadesDesktop = ({
         </div>
     );
 };
+

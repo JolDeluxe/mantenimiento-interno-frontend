@@ -17,7 +17,7 @@ import { TicketDetailModal } from '@/features/common/components/ticket-detail-mo
 import { TicketFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 import { formatFechaNumerica } from '@/lib/date';
-import { ROLES_ADMIN } from '../../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 
 const LIMIT = 50;
 const EMPTY_DEFAULT_FILTERS = {};
@@ -345,3 +345,4 @@ export default function TicketsListadoBase({
         </div>
     );
 }
+

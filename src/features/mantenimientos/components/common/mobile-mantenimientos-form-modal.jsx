@@ -24,7 +24,7 @@ import {
     AREAS_POR_PLANTA,
     AREAS,
     CATEGORIAS_EQUIPO
-} from '../../constants';
+} from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 import { cn } from '@/utils/cn';
 
@@ -139,6 +139,8 @@ export const MobileTicketFormModal = ({
     const [esRecurrente, setEsRecurrente] = useState(false);
     const [frecuencia, setFrecuencia] = useState('MENSUAL');
     const [intervaloDias, setIntervaloDias] = useState('');
+    const hoyLocal = getMinDateHoy();
+
     useEffect(() => {
         setConflictError('');
     }, [horaInicio, horaFin, fechaVencimiento, responsables]);
@@ -472,7 +474,6 @@ export const MobileTicketFormModal = ({
     };
 
     const fe = submitted ? getErrors() : {};
-    const hoyLocal = getMinDateHoy();
     const mananaLocal = isoToDateInput(Date.now() + 86400000);
     const setToday = () => setFechaVencimiento(hoyLocal);
     const setTomorrow = () => setFechaVencimiento(mananaLocal);
@@ -947,4 +948,5 @@ export const MobileTicketFormModal = ({
 };
 
 export { MobileTicketFormModal as MobileMantenimientosFormModal };
+
 

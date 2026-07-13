@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const SCOPE_OPTIONS = [
     { value: 'mantenimientos', label: 'Mantenimientos' },
@@ -236,3 +236,4 @@ export const MobileCalendarioFilterBar = ({
         </div>
     );
 };
+

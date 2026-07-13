@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getAsignables } from '../api/bandeja-api';
-import { PRIORIDADES } from '@/features/tickets/constants';
+import { PRIORIDADES } from '@/features/common/constants/catalogos-tareas';
 import { getMinDateHoy } from '@/lib/date';
 import { cn } from '@/utils/cn';
 

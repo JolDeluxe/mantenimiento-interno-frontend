@@ -6,7 +6,7 @@ import { MantenimientosSummaryBar as TicketSummaryBar } from '@/features/common/
 import { MantenimientosAddButton as TicketAddButton } from '../components/common/mantenimientos-add-button';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosFormModal as TicketFormModal } from '../components/common/mantenimientos-form-modal';
@@ -228,3 +228,4 @@ export const MantenimientosHistoricoDesktop = ({
         </div>
     );
 };
+

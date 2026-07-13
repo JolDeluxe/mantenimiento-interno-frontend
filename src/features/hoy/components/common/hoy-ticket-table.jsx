@@ -14,7 +14,7 @@ import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimie
 
 import { formatFecha, formatFechaRelativa, isoToLocalMXTime, format12h, formatDurationToDaysHours } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const ResponsablesCell = ({ lista }) => {
     const [expanded, setExpanded] = useState(false);
@@ -472,3 +472,4 @@ export const HoyTicketTable = ({
         </div>
     );
 };
+

@@ -15,7 +15,7 @@ import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinari
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
     PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
-} from '../../constants';
+} from '@/features/common/constants/catalogos-tareas';
 
 const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
@@ -1051,3 +1051,4 @@ export const TicketFormModal = ({
         </Modal>
     );
 };
+

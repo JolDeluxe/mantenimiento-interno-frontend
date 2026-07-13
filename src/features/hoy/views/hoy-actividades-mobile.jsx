@@ -13,7 +13,7 @@ import { MobileActividadesFilterBar } from '../components/hoy-actividades/mobile
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
 import { HoyTeamToggle } from '../components/common/hoy-team-toggle';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
@@ -239,3 +239,4 @@ export const HoyActividadesMobile = ({
         </div>
     );
 };
+

@@ -13,7 +13,7 @@ import { cn } from '@/utils/cn';
 import {
     getClasificacionIcon,
     getTipoStyle
-} from '../constants';
+} from '@/features/common/constants/catalogos-tareas';
 
 const ESTADOS_FINALES = ['RESUELTO', 'CERRADO', 'CANCELADA'];
 
@@ -479,3 +479,4 @@ export const TicketsTable = ({
 
 
 export { TicketsTable as MantenimientosTicketTable };
+

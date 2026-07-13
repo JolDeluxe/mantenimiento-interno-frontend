@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const CLASIFICACIONES_MANTENIMIENTO = [
     { value: 'CORRECTIVO', label: 'Correctivos', icon: 'report_problem', tone: 'danger' },
@@ -360,3 +360,4 @@ export const MobileMantenimientosFilterBar = ({
         </div>
     );
 };
+

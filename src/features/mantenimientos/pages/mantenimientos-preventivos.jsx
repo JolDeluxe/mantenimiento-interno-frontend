@@ -6,7 +6,7 @@ import { notify } from '@/components/notification/adaptive-notify';
 import MantenimientosHistoricoPage from './mantenimientos-historico';
 import { MantenimientosPreventivosDesktop } from '../views/mantenimientos-preventivos-desktop';
 import { MantenimientosPreventivosMobile } from '../views/mantenimientos-preventivos-mobile';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { useRecurrencias } from '../hooks/use-recurrencias';
 import { useRecurrenciasMatriz } from '../hooks/use-recurrencias-matriz';
 import { RecurrentesTabs } from '../components/recurrentes/recurrentes-tabs';
@@ -223,3 +223,4 @@ export default function MantenimientosPreventivosPage() {
         </div>
     );
 }
+

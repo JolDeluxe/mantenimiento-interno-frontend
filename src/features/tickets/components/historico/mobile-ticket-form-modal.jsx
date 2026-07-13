@@ -19,7 +19,7 @@ import {
     AREAS_POR_PLANTA,
     AREAS,
     CATEGORIAS_EQUIPO
-} from '../../constants';
+} from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 
 const MAX_TITULO = 255;
@@ -586,3 +586,4 @@ export const MobileTicketFormModal = ({
         </Modal>
     );
 };
+

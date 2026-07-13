@@ -16,7 +16,7 @@ import api from '@/lib/axios';
 import {
     PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
     PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
-} from '../../constants';
+} from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 
 const MAX_TITULO = 255;
@@ -1587,4 +1587,5 @@ export const MantenimientosFormModal = ({
 };
 
 export { MantenimientosFormModal as TicketFormModal };
+
 

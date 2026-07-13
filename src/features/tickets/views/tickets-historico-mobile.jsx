@@ -13,7 +13,7 @@ import { AdminCloseModal } from '@/features/common/components/admin-close-modal'
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { hardReload } from '@/utils/hard-reload';
 
 const SKELETON_COUNT = 5;
@@ -217,3 +217,4 @@ export const TicketsHistoricoMobile = ({
         </>
     );
 };
+

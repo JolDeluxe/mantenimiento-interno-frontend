@@ -6,7 +6,7 @@ import { TicketSummaryBar } from '@/features/common/components/ticket-summary-ba
 import { TicketAddButton } from '../components/historico/ticket-add-button';
 import { RefreshFab, Icon } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 // import { cn } from '@/utils/cn';
 
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
@@ -248,3 +248,4 @@ export const TicketsHistoricoDesktop = ({
         </div>
     );
 };
+

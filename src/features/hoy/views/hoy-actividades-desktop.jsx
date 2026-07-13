@@ -7,7 +7,7 @@ import { ActividadesFilterBar } from '../components/hoy-actividades/actividades-
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ActividadesTicketTable } from '../components/hoy-actividades/actividades-ticket-table';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
 
@@ -200,3 +200,4 @@ export const HoyActividadesDesktop = ({
         </div>
     );
 };
+

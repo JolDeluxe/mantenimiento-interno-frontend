@@ -4,7 +4,7 @@ import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
 import { formatFechaHora, formatDurationToDaysHours, isoToLocalMXTime, format12h } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { CATEGORIAS_EQUIPO } from '@/features/tickets/constants';
+import { CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import {
     puedeCerrarAdministrativamente,
     puedeOperarComoTecnico,
@@ -525,3 +525,4 @@ export const MantenimientosTicketCard = ({
         </div>
     );
 };
+

@@ -11,7 +11,7 @@ import { TicketActividadFormModal } from '@/features/common/forms/tareas/activid
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 
 const SKELETON_COUNT = 4;
 
@@ -225,3 +225,4 @@ export const TicketsActividadesMobile = ({
         </div>
     );
 };
+

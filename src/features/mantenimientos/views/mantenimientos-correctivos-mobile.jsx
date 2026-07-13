@@ -12,7 +12,7 @@ import { MantenimientosAssignModal as TicketAssignModal } from '@/features/commo
 import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
 import { MobileMantenimientosReviewModal as MobileTicketReviewModal } from '../components/common/mobile-mantenimientos-review-modal';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { ROLES_ADMIN } from '../constants';
+import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { hardReload } from '@/utils/hard-reload';
 
 const SKELETON_COUNT = 5;
@@ -199,3 +199,4 @@ export const MantenimientosCorrectivosMobile = ({
         </>
     );
 };
+
