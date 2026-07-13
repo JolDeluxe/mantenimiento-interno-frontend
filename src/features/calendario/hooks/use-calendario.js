@@ -161,6 +161,8 @@ export const useCalendario = () => {
         return () => {
             window.removeEventListener('cuadra-sync-complete', handleReload);
         };
+    // fetchTickets is declared below and remains stable via useCallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchTickets = useCallback(async (params = {}) => {
@@ -262,7 +264,9 @@ export const useCalendario = () => {
             if (record?.data) {
                 setTecnicos(record.data);
             }
-        } catch {}
+        } catch {
+            // Cache unavailable; continue with the network request.
+        }
 
         if (!navigator.onLine) return;
 
