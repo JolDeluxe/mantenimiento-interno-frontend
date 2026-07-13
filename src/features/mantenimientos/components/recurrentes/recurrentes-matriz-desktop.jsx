@@ -218,11 +218,11 @@ export const RecurrentesMatrizDesktop = ({
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="max-h-[calc(100vh-260px)] overflow-auto">
                         <table className="min-w-max divide-y divide-slate-100 text-left">
-                            <thead className="sticky top-0 z-30 bg-slate-50 shadow-sm">
+                            <thead className="sticky top-0 z-40 bg-slate-50 shadow-sm">
                                 <tr className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                                    <th className="sticky left-0 z-40 min-w-[92px] bg-slate-50 px-3 py-3">Codigo</th>
-                                    <th className="sticky left-[92px] z-40 min-w-[240px] bg-slate-50 px-3 py-3">Maquina / area</th>
-                                    <th className="sticky left-[332px] z-40 min-w-[190px] bg-slate-50 px-3 py-3">Responsable / frecuencia</th>
+                                    <th className="sticky left-0 z-50 min-w-[92px] bg-slate-50 px-3 py-3">Codigo</th>
+                                    <th className="sticky left-[92px] z-50 min-w-[240px] bg-slate-50 px-3 py-3">Maquina / area</th>
+                                    <th className="sticky left-[332px] z-50 min-w-[190px] bg-slate-50 px-3 py-3">Responsable / frecuencia</th>
                                     {visibleMonths.map((mes) => (
                                         <th key={mes.key} className="min-w-[220px] border-l border-slate-100 px-2 py-3">{mes.label}</th>
                                     ))}
