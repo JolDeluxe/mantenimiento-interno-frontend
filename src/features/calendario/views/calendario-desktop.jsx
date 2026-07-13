@@ -85,6 +85,7 @@ export const CalendarioDesktop = ({
                 isLoading={loading}
                 isMobile={false}
                 renderActions={(item) => (
+                    item.isProgramacion ? null : (
                     <CalendarItemActions
                         ticket={item.raw}
                         currentUser={currentUser}
@@ -95,6 +96,7 @@ export const CalendarioDesktop = ({
                         onReview={setReviewTarget}
                         onCancel={setCancelTarget}
                     />
+                    )
                 )}
             />
         </div>

@@ -59,5 +59,30 @@ export const mapTicketsToCalendarItems = (tickets = []) => {
         .filter((item) => item.date !== null && item.date !== '');
 };
 
+export const mapProyeccionesToCalendarItems = (proyecciones = []) => proyecciones
+    .map((proyeccion) => {
+        const fecha = proyeccion.fechaCicloLogicaFormateada || proyeccion.fechaCicloLogica?.split?.('T')[0];
+        const reglaId = proyeccion.reglaRecurrenciaId ?? proyeccion.reglaId;
+        if (!fecha || !reglaId || proyeccion.pendienteMaterializar === false) return null;
+        const maquina = proyeccion.maquina || {
+            id: proyeccion.maquinaId,
+            codigo: proyeccion.maquinaCodigo,
+            nombre: proyeccion.maquinaNombre
+        };
+        return {
+            id: `programacion-${reglaId}-${fecha}`,
+            eventType: 'PROGRAMACION_PREVENTIVA',
+            isProgramacion: true,
+            isMantenimiento: true,
+            date: fecha,
+            title: 'Mantenimiento preventivo programado',
+            colorKey: 'PROGRAMADO',
+            timeLabel: '',
+            sortKey: `0-${fecha}`,
+            raw: { ...proyeccion, reglaRecurrenciaId: reglaId, maquina }
+        };
+    })
+    .filter(Boolean);
+
 // Alias para mantener la compatibilidad con el código heredado de mantenimientos
 export const mapMantenimientosToCalendarItems = mapTicketsToCalendarItems;

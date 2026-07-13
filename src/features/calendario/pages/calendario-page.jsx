@@ -4,7 +4,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/stores/auth-store';
 import { notify } from '@/components/notification/adaptive-notify';
 import { useCalendario } from '../hooks/use-calendario';
-import { mapTicketsToCalendarItems } from '../utils/calendarioAdapter';
+import { mapTicketsToCalendarItems, mapProyeccionesToCalendarItems } from '../utils/calendarioAdapter';
 import { CalendarioDesktop } from '../views/calendario-desktop';
 import { CalendarioMobile } from '../views/calendario-mobile';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/z_index';
@@ -46,6 +46,7 @@ export default function CalendarioPage() {
 
     const {
         tickets,
+        proyecciones,
         tecnicos,
         loading,
         submitting,
@@ -90,11 +91,18 @@ export default function CalendarioPage() {
     const [createType, setCreateType] = useState(null);
     const [createClasificacion, setCreateClasificacion] = useState(null);
     const [calendarCreateDate, setCalendarCreateDate] = useState(null);
+    const [programacionTarget, setProgramacionTarget] = useState(null);
 
     // Mapear los datos de API a items compatibles con el calendario
     const calendarItems = useMemo(() => {
-        return mapTicketsToCalendarItems(tickets);
-    }, [tickets]);
+        const tareas = mapTicketsToCalendarItems(tickets);
+        const ciclosReales = new Set(tickets
+            .filter((ticket) => ticket.reglaRecurrenciaId && ticket.fechaCicloLogica)
+            .map((ticket) => `${ticket.reglaRecurrenciaId}|${String(ticket.fechaCicloLogica).split('T')[0]}`));
+        const programaciones = mapProyeccionesToCalendarItems(proyecciones)
+            .filter((item) => !ciclosReales.has(`${item.raw.reglaRecurrenciaId}|${item.date}`));
+        return [...tareas, ...programaciones];
+    }, [tickets, proyecciones]);
 
     // Comprobación rápida para saber si el item actual es de tipo mantenimiento
     const checkIsMantenimiento = useCallback((item) => {
@@ -218,7 +226,8 @@ export default function CalendarioPage() {
             setShowCreate(true);
         },
         onCalendarItemClick: (item) => {
-            setDetailTarget(item.raw);
+            if (item.isProgramacion) setProgramacionTarget(item.raw);
+            else setDetailTarget(item.raw);
         },
         loading,
         tecnicos,
@@ -270,6 +279,23 @@ export default function CalendarioPage() {
                 )}
 
                 {/* 1. Modal de Detalle (Común) */}
+                {programacionTarget && (
+                    <Modal isOpen={Boolean(programacionTarget)} onClose={() => setProgramacionTarget(null)}>
+                        <ModalHeader>Programación preventiva</ModalHeader>
+                        <ModalBody>
+                            <div className="space-y-3 text-sm text-slate-700">
+                                <p className="font-bold text-slate-900">Mantenimiento preventivo programado</p>
+                                <p><strong>Máquina:</strong> {programacionTarget.maquina?.codigo || 'Sin código'} · {programacionTarget.maquina?.nombre || 'Sin nombre'}</p>
+                                <p><strong>Frecuencia:</strong> {programacionTarget.frecuencia || 'Preventiva recurrente'}</p>
+                                <p><strong>Fecha programada:</strong> {programacionTarget.fechaCicloLogicaFormateada || String(programacionTarget.fechaCicloLogica || '').split('T')[0]}</p>
+                                <p><strong>Responsable:</strong> {programacionTarget.tecnicoResponsable?.nombre || 'Sin responsable definido'}</p>
+                                <p className="rounded-lg bg-sky-50 px-3 py-2 text-sky-700">Este elemento es una referencia de planificación. Todavía no es una tarea operativa.</p>
+                            </div>
+                        </ModalBody>
+                        <ModalFooter><Button variant="ghost" onClick={() => setProgramacionTarget(null)}>Cerrar</Button></ModalFooter>
+                    </Modal>
+                )}
+
                 <TicketDetailModal
                     isOpen={Boolean(detailTarget)}
                     onClose={() => setDetailTarget(null)}

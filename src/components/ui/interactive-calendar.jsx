@@ -19,6 +19,7 @@ const COLOR_MAP = {
     CERRADO: 'bg-estado-cerrado/10 text-estado-cerrado hover:bg-estado-cerrado/25 border-estado-cerrado',
     RECHAZADO: 'bg-estado-rechazado/10 text-estado-rechazado hover:bg-estado-rechazado/25 border-estado-rechazado',
     CANCELADA: 'bg-estado-cancelada/10 text-estado-cancelada hover:bg-estado-cancelada/25 border-estado-cancelada',
+    PROGRAMADO: 'bg-sky-50 text-sky-700 hover:bg-sky-100 border-sky-200',
 };
 
 const DOT_COLOR_MAP = {
@@ -30,6 +31,7 @@ const DOT_COLOR_MAP = {
     CERRADO: 'bg-estado-cerrado',
     RECHAZADO: 'bg-estado-rechazado',
     CANCELADA: 'bg-estado-cancelada',
+    PROGRAMADO: 'bg-sky-500',
 };
 
 const sortCalendarItems = (items = []) => {
@@ -45,6 +47,8 @@ const formatTipoLabel = (tipo) => {
     if (!tipo) return 'Registro';
     return tipo === 'TICKET' ? 'REPORTE' : tipo;
 };
+
+const formatEventLabel = (item) => item.isProgramacion ? 'PROGRAMADO' : formatTipoLabel(item.raw?.tipo);
 
 export const InteractiveCalendar = ({
     items = [],
@@ -368,7 +372,7 @@ export const InteractiveCalendar = ({
                                                     )}
                                                     title={item.title}
                                                 >
-                                                    <Icon name={item.isMantenimiento ? 'settings' : 'format_list_bulleted'} size="xs" className="shrink-0 text-[10px]" />
+                                                    <Icon name={item.isProgramacion ? 'event_repeat' : (item.isMantenimiento ? 'settings' : 'format_list_bulleted')} size="xs" className="shrink-0 text-[10px]" />
                                                     {item.timeLabel && (
                                                         <span className="shrink-0 text-[8px] font-black opacity-75">
                                                             {item.timeLabel}
@@ -435,14 +439,14 @@ export const InteractiveCalendar = ({
                                             onClick={() => onItemClick && onItemClick(item)}
                                             className="flex-1 min-w-0 flex items-start gap-1.5 cursor-pointer"
                                         >
-                                            <Icon name={item.isMantenimiento ? 'settings' : 'format_list_bulleted'} size="xs" className="text-slate-450 shrink-0 mt-0.5" />
+                                            <Icon name={item.isProgramacion ? 'event_repeat' : (item.isMantenimiento ? 'settings' : 'format_list_bulleted')} size="xs" className="text-slate-450 shrink-0 mt-0.5" />
                                             <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                                                 <span className="text-[11px] font-bold text-slate-800 leading-snug truncate">
                                                     {item.title}
                                                 </span>
-                                                {(item.timeLabel || item.raw?.tipo) && (
+                                                {(item.timeLabel || item.raw?.tipo || item.isProgramacion) && (
                                                     <span className="text-[9px] text-slate-400">
-                                                        {item.timeLabel ? `${item.timeLabel} · ` : ''}{formatTipoLabel(item.raw?.tipo)} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
+                                                        {item.timeLabel ? `${item.timeLabel} · ` : ''}{formatEventLabel(item)} {item.raw?.clasificacion ? `· ${item.raw.clasificacion}` : ''}
                                                     </span>
                                                 )}
                                             </div>
@@ -453,7 +457,7 @@ export const InteractiveCalendar = ({
                                                 'text-[8px] font-black uppercase px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap shrink-0',
                                                 colorCls
                                             )}>
-                                                {item.colorKey}
+                                                {item.isProgramacion ? 'PROGRAMADO' : item.colorKey}
                                             </span>
                                         </div>
                                     </div>

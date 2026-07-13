@@ -94,6 +94,7 @@ export const CalendarioMobile = ({
                 isLoading={loading}
                 isMobile={true}
                 renderActions={(item) => (
+                    item.isProgramacion ? null : (
                     <CalendarItemActions
                         ticket={item.raw}
                         currentUser={currentUser}
@@ -104,6 +105,7 @@ export const CalendarioMobile = ({
                         onReview={setReviewTarget}
                         onCancel={setCancelTarget}
                     />
+                    )
                 )}
             />
         </div>
