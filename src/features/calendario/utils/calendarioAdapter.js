@@ -61,7 +61,9 @@ export const mapTicketsToCalendarItems = (tickets = []) => {
 
 export const mapProyeccionesToCalendarItems = (proyecciones = []) => proyecciones
     .map((proyeccion) => {
-        const fecha = proyeccion.fechaCicloLogicaFormateada || proyeccion.fechaCicloLogica?.split?.('T')[0];
+        if (proyeccion.omitida) return null;
+        const fechaOriginal = proyeccion.fechaOriginalFormateada || proyeccion.fechaCicloLogicaFormateada || proyeccion.fechaCicloLogica?.split?.('T')[0];
+        const fecha = proyeccion.fechaProgramadaFormateada || proyeccion.fechaProgramadaPreventivaFormateada || fechaOriginal;
         const reglaId = proyeccion.reglaRecurrenciaId ?? proyeccion.reglaId;
         if (!fecha || !reglaId || proyeccion.pendienteMaterializar === false) return null;
         const maquina = proyeccion.maquina || {
@@ -75,11 +77,11 @@ export const mapProyeccionesToCalendarItems = (proyecciones = []) => proyeccione
             isProgramacion: true,
             isMantenimiento: true,
             date: fecha,
-            title: 'Mantenimiento preventivo programado',
+            title: proyeccion.movida ? 'Mantenimiento preventivo reprogramado' : 'Mantenimiento preventivo programado',
             colorKey: 'PROGRAMADO',
-            timeLabel: '',
+            timeLabel: proyeccion.movidaDesde ? `Movido desde ${proyeccion.movidaDesde}` : '',
             sortKey: `0-${fecha}`,
-            raw: { ...proyeccion, reglaRecurrenciaId: reglaId, maquina }
+            raw: { ...proyeccion, reglaRecurrenciaId: reglaId, maquina, fechaOriginalFormateada: fechaOriginal }
         };
     })
     .filter(Boolean);

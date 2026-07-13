@@ -100,7 +100,7 @@ export default function CalendarioPage() {
             .filter((ticket) => ticket.reglaRecurrenciaId && ticket.fechaCicloLogica)
             .map((ticket) => `${ticket.reglaRecurrenciaId}|${String(ticket.fechaCicloLogica).split('T')[0]}`));
         const programaciones = mapProyeccionesToCalendarItems(proyecciones)
-            .filter((item) => !ciclosReales.has(`${item.raw.reglaRecurrenciaId}|${item.date}`));
+            .filter((item) => !ciclosReales.has(`${item.raw.reglaRecurrenciaId}|${item.raw.fechaOriginalFormateada || item.raw.fechaCicloLogicaFormateada || item.date}`));
         return [...tareas, ...programaciones];
     }, [tickets, proyecciones]);
 
@@ -287,7 +287,11 @@ export default function CalendarioPage() {
                                 <p className="font-bold text-slate-900">Mantenimiento preventivo programado</p>
                                 <p><strong>Máquina:</strong> {programacionTarget.maquina?.codigo || 'Sin código'} · {programacionTarget.maquina?.nombre || 'Sin nombre'}</p>
                                 <p><strong>Frecuencia:</strong> {programacionTarget.frecuencia || 'Preventiva recurrente'}</p>
-                                <p><strong>Fecha programada:</strong> {programacionTarget.fechaCicloLogicaFormateada || String(programacionTarget.fechaCicloLogica || '').split('T')[0]}</p>
+                                {programacionTarget.movida && (
+                                    <p><strong>Movido desde:</strong> {programacionTarget.movidaDesde || programacionTarget.fechaOriginalFormateada}</p>
+                                )}
+                                <p><strong>Fecha programada:</strong> {programacionTarget.fechaProgramadaFormateada || programacionTarget.fechaProgramadaPreventivaFormateada || programacionTarget.fechaCicloLogicaFormateada || String(programacionTarget.fechaCicloLogica || '').split('T')[0]}</p>
+                                {programacionTarget.ajusteMotivo && <p><strong>Motivo:</strong> {programacionTarget.ajusteMotivo}</p>}
                                 <p><strong>Responsable:</strong> {programacionTarget.tecnicoResponsable?.nombre || 'Sin responsable definido'}</p>
                                 <p className="rounded-lg bg-sky-50 px-3 py-2 text-sky-700">Este elemento es una referencia de planificación. Todavía no es una tarea operativa.</p>
                             </div>

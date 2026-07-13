@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getRecurrenciasMatriz, materializeReglaCiclo } from '../api/recurrencias-api';
+import {
+    getRecurrenciasMatriz,
+    materializeReglaCiclo,
+    moverOcurrencia,
+    omitirOcurrencia,
+    quitarAjusteOcurrencia,
+} from '../api/recurrencias-api';
 
 const ESTADOS_BAJA = new Set(['BAJA', 'BAJA_ERP', 'DESUSO', 'INACTIVA']);
 
@@ -90,15 +96,64 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
         return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
     }, [rows]);
 
-    const materializeFromCell = useCallback(async (row) => {
+    const materializeFromCell = useCallback(async (row, item = null) => {
         setSubmitting(true);
         setError(null);
         try {
-            const res = await materializeReglaCiclo(row.regla.id);
+            const fechaCicloLogica = item?.fechaOriginal || item?.fechaInicio;
+            const res = await materializeReglaCiclo(row.regla.id, fechaCicloLogica ? { fechaCicloLogica } : {});
             await fetchMatriz(year);
             return res;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al generar mantenimiento.';
+            setError(message);
+            throw new Error(message);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchMatriz, year]);
+
+    const handleMoverOcurrencia = useCallback(async (row, data) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const res = await moverOcurrencia(row.regla.id, data);
+            await fetchMatriz(year);
+            return res?.data ?? res;
+        } catch (err) {
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al mover este periodo.';
+            setError(message);
+            throw new Error(message);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchMatriz, year]);
+
+    const handleOmitirOcurrencia = useCallback(async (row, data) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const res = await omitirOcurrencia(row.regla.id, data);
+            await fetchMatriz(year);
+            return res?.data ?? res;
+        } catch (err) {
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al omitir este periodo.';
+            setError(message);
+            throw new Error(message);
+        } finally {
+            setSubmitting(false);
+        }
+    }, [fetchMatriz, year]);
+
+    const handleQuitarAjuste = useCallback(async (row, data) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            const res = await quitarAjusteOcurrencia(row.regla.id, data);
+            await fetchMatriz(year);
+            return res?.data ?? res;
+        } catch (err) {
+            const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al quitar ajuste.';
             setError(message);
             throw new Error(message);
         } finally {
@@ -125,5 +180,8 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
         setFilters: updateFilter,
         refresh: () => fetchMatriz(year),
         materializeFromCell,
+        handleMoverOcurrencia,
+        handleOmitirOcurrencia,
+        handleQuitarAjuste,
     };
 };

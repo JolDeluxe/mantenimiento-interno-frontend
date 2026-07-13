@@ -22,3 +22,15 @@ export const getRecurrencias = (params = {}) =>
 
 export const getRecurrenciasMatriz = ({ year, incluirBaja } = {}) =>
     api.get('/api/recurrencias/matriz', { params: { year, ...(incluirBaja ? { incluirBaja: true } : {}) } });
+
+export const getAjustesRegla = (reglaId) =>
+    api.get(`/api/recurrencias/${reglaId}/ajustes`);
+
+export const moverOcurrencia = (reglaId, data) =>
+    api.post(`/api/recurrencias/${reglaId}/ocurrencias/mover`, data);
+
+export const omitirOcurrencia = (reglaId, data) =>
+    api.post(`/api/recurrencias/${reglaId}/ocurrencias/omitir`, data);
+
+export const quitarAjusteOcurrencia = (reglaId, data) =>
+    api.delete(`/api/recurrencias/${reglaId}/ocurrencias/ajuste`, { data });

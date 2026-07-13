@@ -50,6 +50,9 @@ export const RecurrentesMatrizMobile = ({
     refresh,
     canManage,
     onGenerate,
+    onMove,
+    onSkip,
+    onRemoveAdjustment,
 }) => {
     const currentYear = new Date().getFullYear();
     const currentMonth = String(new Date().getMonth() + 1);
@@ -164,6 +167,8 @@ export const RecurrentesMatrizMobile = ({
                 <div className="relative z-10 mt-3 grid grid-cols-2 gap-1.5 text-[10px] font-black uppercase tracking-wide">
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado</span>
                     <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-1 text-sky-800">Movido</span>
+                    <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-1 text-slate-700">Omitido</span>
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada</span>
                 </div>
@@ -232,6 +237,9 @@ export const RecurrentesMatrizMobile = ({
                                     canManage={canManage}
                                     submitting={submitting}
                                     onGenerate={onGenerate}
+                                    onMove={onMove}
+                                    onSkip={onSkip}
+                                    onRemoveAdjustment={onRemoveAdjustment}
                                 />
                             </div>
                         </article>

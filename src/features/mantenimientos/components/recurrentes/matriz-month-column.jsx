@@ -6,6 +6,9 @@ export const MatrizMonthColumn = ({
     canManage,
     submitting,
     onGenerate,
+    onMove,
+    onSkip,
+    onRemoveAdjustment,
 }) => (
     <td className="min-w-[170px] border-l border-slate-100 px-2 py-3 align-top">
         <MatrizCell
@@ -14,6 +17,9 @@ export const MatrizMonthColumn = ({
             canManage={canManage}
             submitting={submitting}
             onGenerate={onGenerate}
+            onMove={onMove}
+            onSkip={onSkip}
+            onRemoveAdjustment={onRemoveAdjustment}
         />
     </td>
 );

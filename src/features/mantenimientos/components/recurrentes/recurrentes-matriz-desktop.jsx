@@ -28,6 +28,9 @@ export const RecurrentesMatrizDesktop = ({
     refresh,
     canManage,
     onGenerate,
+    onMove,
+    onSkip,
+    onRemoveAdjustment,
 }) => {
     const currentYear = new Date().getFullYear();
     const currentQuarter = getCurrentQuarter();
@@ -165,6 +168,8 @@ export const RecurrentesMatrizDesktop = ({
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">Realizado en el mes</span>
                     <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-700">Realizado fuera del mes</span>
                     <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-700">Programado por recurrencia</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-1 text-sky-800">Movido este mes</span>
+                    <span className="rounded-full border border-slate-300 bg-slate-100 px-2 py-1 text-slate-700">Omitido este mes</span>
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">Pendiente de generar = aun no se ha creado el mantenimiento</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Sin mantenimiento este mes = observacion mensual</span>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-slate-600">Pausada = programacion detenida</span>
@@ -233,6 +238,9 @@ export const RecurrentesMatrizDesktop = ({
                                                     canManage={canManage}
                                                     submitting={submitting}
                                                     onGenerate={onGenerate}
+                                                    onMove={onMove}
+                                                    onSkip={onSkip}
+                                                    onRemoveAdjustment={onRemoveAdjustment}
                                                 />
                                             ))}
                                         </tr>
