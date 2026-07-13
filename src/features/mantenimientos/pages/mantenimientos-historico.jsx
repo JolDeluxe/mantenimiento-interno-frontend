@@ -11,11 +11,13 @@ import { MobileMantenimientosFormModal as MobileTicketFormModal } from '../compo
 import { MantenimientosDetailModal as TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { MantenimientosFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
+import { ROLES_ADMIN } from '../constants';
 
 const LIMIT = 50;
 
 export default function MantenimientosHistoricoPage({
     forcedClasificacion,
+    allowCreate = true,
     // eslint-disable-next-line no-unused-vars
     DesktopView = MantenimientosHistoricoDesktop,
     // eslint-disable-next-line no-unused-vars
@@ -24,6 +26,7 @@ export default function MantenimientosHistoricoPage({
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
     const currentUser = user?.data ?? user;
+    const canCreate = allowCreate && ROLES_ADMIN.has(currentUser?.rol);
 
     const {
         mantenimientos: tickets,
@@ -291,7 +294,7 @@ export default function MantenimientosHistoricoPage({
         onSortChange: setSortConfig,
         onSave: handleUpdate,
         onChangeStatus: handleChangeStatus,
-        onOpenCreate: () => setShowCreate(true),
+        onOpenCreate: canCreate ? () => setShowCreate(true) : undefined,
         onPageChange: setPage,
         onRefresh: loadTickets,
         disableClasificacionFilter: Boolean(forcedClasificacion),
@@ -316,7 +319,7 @@ export default function MantenimientosHistoricoPage({
                 <MobileView {...sharedProps} />
             )}
 
-            {showCreate && (
+            {canCreate && showCreate && (
                 isDesktop ? (
                     <TicketFormModal
                         isOpen={showCreate}

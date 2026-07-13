@@ -58,7 +58,6 @@ export const InteractiveCalendar = ({
     onNavigate,
     onDayClick,
     onItemClick,
-    renderBadge,
     renderActions,
     isLoading = false,
     isMobile = false,
@@ -76,6 +75,7 @@ export const InteractiveCalendar = ({
     // Update selected date if range changes
     useEffect(() => {
         const dStr = activeDate.toLocaleDateString('en-CA');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedDateStr(dStr);
     }, [activeDate]);
 

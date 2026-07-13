@@ -13,6 +13,19 @@ const paramsToKey = (params = {}) => {
     return JSON.stringify(sorted);
 };
 
+// Mantiene las tareas activas visibles antes que el backlog de atrasadas.
+const ordenarTareasHoy = (lista = []) => lista
+    .map((ticket, index) => ({ ticket, index }))
+    .sort((a, b) => {
+        const prioridad = (ticket) => {
+            if (ticket.estado === 'EN_PROGRESO') return 0;
+            if (ticket.isOverdue === true) return 1;
+            return 2;
+        };
+        return prioridad(a.ticket) - prioridad(b.ticket) || a.index - b.index;
+    })
+    .map(({ ticket }) => ticket);
+
 export const useHoy = (scope = 'general') => {
     const [tickets, setTickets] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
@@ -37,7 +50,7 @@ export const useHoy = (scope = 'general') => {
             if (snapshot?.data) {
                 const cached = snapshot.data;
                 const data = Array.isArray(cached.data) ? cached.data : cached;
-                setTickets(data);
+                setTickets(ordenarTareasHoy(data));
                 if (cached.pagination) {
                     setMeta({
                         totalFiltrado: cached.pagination.total ?? 0,
@@ -58,7 +71,7 @@ export const useHoy = (scope = 'general') => {
         try {
             const res = await getHoyTickets(queryParams);
             if (Array.isArray(res)) {
-                setTickets(res);
+                setTickets(ordenarTareasHoy(res));
                 setMeta({ totalFiltrado: res.length, totalPages: 1 });
                 setMetricas({});
                 setResumenEstados({});
@@ -67,7 +80,7 @@ export const useHoy = (scope = 'general') => {
             } else {
                 const pagination = res.pagination ?? {};
                 const data = Array.isArray(res.data) ? res.data : [];
-                setTickets(data);
+                setTickets(ordenarTareasHoy(data));
                 setMeta({
                     totalFiltrado: pagination.total ?? 0,
                     totalPages: pagination.totalPages ?? 1,
