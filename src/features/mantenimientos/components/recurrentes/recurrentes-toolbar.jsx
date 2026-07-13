@@ -68,7 +68,7 @@ export const RecurrentesToolbar = ({
                 />
                 <div className="ml-auto flex flex-none items-center gap-3">
                     {canManage && (
-                        <Button type="button" variant="secundario" icon="add" size="sm" onClick={onCreate} className="h-9.5">
+                        <Button type="button" variant="accion" icon="add" size="sm" onClick={onCreate} className="h-9.5">
                             Agregar preventivo recurrente
                         </Button>
                     )}
