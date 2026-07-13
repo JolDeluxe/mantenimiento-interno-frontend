@@ -22,6 +22,15 @@ const isValidDate = (fecha) => {
     return !Number.isNaN(date.getTime());
 };
 
+const isPastMonth = (fecha) => {
+    if (!fecha) return false;
+    const date = new Date(`${fecha}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return false;
+    const today = new Date();
+    return date.getFullYear() < today.getFullYear()
+        || (date.getFullYear() === today.getFullYear() && date.getMonth() < today.getMonth());
+};
+
 export const AjusteOcurrenciaModal = ({
     isOpen,
     mode,
@@ -49,9 +58,11 @@ export const AjusteOcurrenciaModal = ({
     const fechaNuevaValida = isMove ? isValidDate(fechaNueva) : true;
     const mismaFecha = isMove && fechaNueva === fechaOriginal;
     const mismoMes = isMove ? isSameMonth(fechaOriginal, fechaNueva) : true;
+    const periodoCerrado = isPastMonth(fechaOriginal);
 
     const validationMessages = [
         !fechaOriginal ? 'No se encontró la fecha programada original.' : null,
+        periodoCerrado ? 'Este periodo ya cerró. No se puede mover ni omitir.' : null,
         isMove && !fechaNueva ? 'Selecciona una nueva fecha programada.' : null,
         isMove && fechaNueva && !fechaNuevaValida ? 'La nueva fecha no es válida.' : null,
         isMove && mismaFecha ? 'La nueva fecha debe ser diferente a la original.' : null,

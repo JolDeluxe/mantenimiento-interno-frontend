@@ -1,5 +1,14 @@
 import { Icon } from '@/components/ui/z_index';
 
+const isPastMonth = (fecha) => {
+    if (!fecha) return false;
+    const date = new Date(`${fecha}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return false;
+    const today = new Date();
+    return date.getFullYear() < today.getFullYear()
+        || (date.getFullYear() === today.getFullYear() && date.getMonth() < today.getMonth());
+};
+
 export const AjusteOcurrenciaActions = ({
     item,
     canManage,
@@ -12,6 +21,19 @@ export const AjusteOcurrenciaActions = ({
 
     const hasAdjustment = Boolean(item?.ajusteTipo || item?.omitida || item?.movida);
     const omitida = Boolean(item?.omitida);
+    const fechaOriginal = item?.fechaOriginal || item?.fechaInicio;
+    const periodoCerrado = isPastMonth(fechaOriginal);
+
+    if (periodoCerrado) {
+        return (
+            <div className="mt-1">
+                <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-500">
+                    <Icon name="lock" size="10px" />
+                    Periodo cerrado
+                </span>
+            </div>
+        );
+    }
 
     return (
         <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -51,4 +73,3 @@ export const AjusteOcurrenciaActions = ({
         </div>
     );
 };
-
