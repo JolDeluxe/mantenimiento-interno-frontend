@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Icon, Modal, ModalBody, ModalHeader, Spinner } from '@/components/ui/z_index';
 import { formatearFechaTextoLargo } from '../../helpers/fechas';
 import { RecurrenteStatusBadge } from './recurrente-status-badge';
@@ -94,6 +94,31 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     const [activeAction, setActiveAction] = useState(null); // { type: 'mover' | 'omitir', originalDate: string }
     const [formData, setFormData] = useState({ fechaNueva: '', motivo: '' });
 
+    const activeOriginalDate = activeAction?.originalDate || '';
+    const isMove = activeAction?.type === 'mover';
+    const motivoLimpio = formData.motivo.trim();
+    const motivoMuyLargo = motivoLimpio.length > 250;
+    const fechaNuevaValida = isMove ? (formData.fechaNueva && !Number.isNaN(new Date(`${formData.fechaNueva}T00:00:00`).getTime())) : true;
+    const mismaFecha = isMove && formData.fechaNueva === activeOriginalDate;
+    const mismoMes = isMove ? isSameMonthAndYear(activeOriginalDate, formData.fechaNueva) : true;
+    const periodoCerrado = activeOriginalDate ? isPastMonth(activeOriginalDate) : false;
+
+    const validationMessages = useMemo(() => {
+        if (!activeAction) return [];
+        return [
+            !activeOriginalDate ? 'No se encontró la fecha programada original.' : null,
+            periodoCerrado ? 'Este periodo ya cerró. No se puede mover ni omitir.' : null,
+            isMove && !formData.fechaNueva ? 'Selecciona una nueva fecha programada.' : null,
+            isMove && formData.fechaNueva && !fechaNuevaValida ? 'La nueva fecha no es válida.' : null,
+            isMove && mismaFecha ? 'La nueva fecha debe ser diferente a la original.' : null,
+            isMove && formData.fechaNueva && !mismoMes ? 'La nueva fecha debe quedar dentro del mismo mes.' : null,
+            motivoLimpio.length < 3 ? 'Escribe un motivo de al menos 3 caracteres.' : null,
+            motivoMuyLargo ? 'El motivo no debe pasar de 250 caracteres.' : null,
+        ].filter(Boolean);
+    }, [activeAction, activeOriginalDate, periodoCerrado, isMove, formData.fechaNueva, fechaNuevaValida, mismaFecha, mismoMes, motivoLimpio, motivoMuyLargo]);
+
+    const isSubmitDisabled = submittingAction || validationMessages.length > 0;
+
     useEffect(() => {
         if (ocurrencias.length > 0 && activeTab === 'history') {
             setTimeout(() => {
@@ -145,22 +170,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     }, [isOpen, activeTab, fetchOcurrencias]);
 
     const handleSaveMove = async (originalDate) => {
-        if (!formData.fechaNueva) {
-            notify.error('Por favor selecciona una fecha programada.');
-            return;
-        }
-        if (!isSameMonthAndYear(originalDate, formData.fechaNueva)) {
-            notify.error('La nueva fecha debe quedar en el mismo mes.');
-            return;
-        }
-        if (originalDate === formData.fechaNueva) {
-            notify.error('La fecha programada debe ser distinta a la original.');
-            return;
-        }
-        if (formData.motivo.trim().length < 3) {
-            notify.error('Por favor escribe un motivo de al menos 3 caracteres.');
-            return;
-        }
+        if (validationMessages.length > 0) return;
 
         setSubmittingAction(true);
         try {
@@ -180,10 +190,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     };
 
     const handleSaveSkip = async (originalDate) => {
-        if (formData.motivo.trim().length < 3) {
-            notify.error('Por favor escribe un motivo de al menos 3 caracteres.');
-            return;
-        }
+        if (validationMessages.length > 0) return;
 
         setSubmittingAction(true);
         try {
@@ -459,6 +466,20 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                         />
                                                     </div>
 
+                                                    {validationMessages.length > 0 && (
+                                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-bold text-amber-800 space-y-1">
+                                                            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase">
+                                                                <Icon name="info" size="xs" />
+                                                                Revisa los requisitos
+                                                            </div>
+                                                            <ul className="list-disc pl-4 space-y-0.5">
+                                                                {validationMessages.map((msg) => (
+                                                                    <li key={msg}>{msg}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
                                                     <div className="flex gap-2 justify-end pt-1">
                                                         <button
                                                             type="button"
@@ -470,7 +491,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            disabled={submittingAction}
+                                                            disabled={isSubmitDisabled}
                                                             onClick={() => activeAction.type === 'mover' ? handleSaveMove(origDate) : handleSaveSkip(origDate)}
                                                             className="px-3 py-1.5 text-[10px] font-black uppercase text-white bg-marca-primario rounded-lg hover:brightness-110 cursor-pointer disabled:opacity-50"
                                                         >
