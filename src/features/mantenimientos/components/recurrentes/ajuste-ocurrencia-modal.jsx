@@ -88,6 +88,19 @@ export const AjusteOcurrenciaModal = ({
             <form onSubmit={handleSubmit}>
                 <ModalHeader title={title} onClose={onClose} />
                 <ModalBody className="space-y-4">
+                    {periodoCerrado && (
+                        <div className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                            <Icon name="error" size="xs" />
+                            Este periodo ya cerró. No se puede mover ni omitir.
+                        </div>
+                    )}
+                    {!fechaOriginal && (
+                        <div className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                            <Icon name="error" size="xs" />
+                            No se encontró la fecha programada original.
+                        </div>
+                    )}
+
                     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                         <div className="text-[10px] font-black uppercase text-slate-500">Fecha programada original</div>
                         <div className="mt-0.5 text-sm font-black text-slate-800">{formatDDMM(fechaOriginal)}</div>
@@ -100,8 +113,20 @@ export const AjusteOcurrenciaModal = ({
                                 type="date"
                                 value={fechaNueva}
                                 onChange={(event) => setFechaNueva(event.target.value)}
-                                className="h-[38px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20"
+                                className={`h-[38px] w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20 ${fechaNueva && (!fechaNuevaValida || mismaFecha || !mismoMes) ? 'border-red-400' : 'border-slate-200'}`}
                             />
+                            {isMove && !fechaNueva && (
+                                <span className="text-[10px] font-bold text-red-600 block mt-0.5">* Selecciona una nueva fecha programada.</span>
+                            )}
+                            {isMove && fechaNueva && !fechaNuevaValida && (
+                                <span className="text-[10px] font-bold text-red-650 block mt-0.5">* La nueva fecha no es válida.</span>
+                            )}
+                            {isMove && mismaFecha && (
+                                <span className="text-[10px] font-bold text-red-650 block mt-0.5">* La nueva fecha debe ser diferente a la original.</span>
+                            )}
+                            {isMove && fechaNuevaValida && !mismoMes && (
+                                <span className="text-[10px] font-bold text-red-650 block mt-0.5">* La nueva fecha debe quedar dentro del mismo mes.</span>
+                            )}
                             {weekendWarning && (
                                 <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-bold text-amber-700">
                                     <Icon name="warning" size="xs" />
@@ -123,24 +148,16 @@ export const AjusteOcurrenciaModal = ({
                             onChange={(event) => setMotivo(event.target.value)}
                             maxLength={260}
                             rows={3}
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20"
+                            className={`w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-2 focus:ring-marca-secundario/20 ${motivo.length > 0 && motivoLimpio.length < 3 ? 'border-red-400' : 'border-slate-200'}`}
                             placeholder={isMove ? 'Ej. Se mueve por disponibilidad de máquina' : 'Ej. Se omite por paro programado'}
                         />
+                        {motivo.length > 0 && motivoLimpio.length < 3 && (
+                            <span className="text-[10px] font-bold text-red-650 block mt-0.5">* Escribe un motivo de al menos 3 caracteres.</span>
+                        )}
+                        {motivoMuyLargo && (
+                            <span className="text-[10px] font-bold text-red-650 block mt-0.5">* El motivo no debe pasar de 250 caracteres.</span>
+                        )}
                     </div>
-
-                    {validationMessages.length > 0 && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-                            <div className="mb-1 flex items-center gap-1.5">
-                                <Icon name="info" size="xs" />
-                                Revisa antes de guardar
-                            </div>
-                            <ul className="list-disc space-y-0.5 pl-4">
-                                {validationMessages.map((message) => (
-                                    <li key={message}>{message}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
 
                     <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
                         {isMove
