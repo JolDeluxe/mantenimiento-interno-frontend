@@ -40,30 +40,33 @@ const CardSkeleton = () => (
 const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalSemana, totalPrimeraVista, totalAtrasadas }) => {
     const options = getHoyVistaOptions('general').map((opt, index) => ({
         ...opt,
+        mobileLabel: opt.id === 'activas' ? 'Activas' : opt.id === 'semana' ? 'Semana' : opt.label,
         count: index === 0 ? totalPrimeraVista : opt.id === 'hoy' ? totalHoy : opt.id === 'manana' ? totalManana : totalSemana,
         alert: opt.id === 'activas' && totalAtrasadas > 0,
     }));
-    const containerStyle = { display: 'inline-flex', padding: 4, borderRadius: 14, gap: 3, position: 'relative', overflow: 'hidden', ...glassBase('light'), width: '100%' };
+    const containerStyle = { padding: 4, borderRadius: 16, position: 'relative', overflow: 'hidden', ...glassBase('light'), width: '100%' };
 
     return (
         <div style={containerStyle}>
             <GlassSheen />
-            {options.map((opt) => {
-                const isActive = selected === opt.id;
-                const activeStyle = { ...glassBase('primary'), borderRadius: 10, position: 'relative', overflow: 'hidden', flex: 1 };
-                const inactiveStyle = { borderRadius: 10, background: 'transparent', border: '1px solid transparent', position: 'relative', flex: 1 };
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none relative z-10">
+                {options.map((opt) => {
+                    const isActive = selected === opt.id;
+                    const activeStyle = { ...glassBase('primary'), borderRadius: 12, position: 'relative', overflow: 'hidden' };
+                    const inactiveStyle = { borderRadius: 12, background: 'transparent', border: '1px solid transparent', position: 'relative' };
 
-                return (
-                    <button key={opt.id} onClick={() => onChange(opt.id)} style={isActive ? activeStyle : inactiveStyle} className="flex items-center justify-center gap-1.5 py-1.5 transition-all duration-200 active:scale-95 outline-none select-none relative z-10 cursor-pointer">
-                        {isActive && <GlassSheen />}
-                        <Icon name={opt.icon} size="xs" className={cn('relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')} />
-                        <span className={cn('text-xs font-bold relative z-10 transition-colors', isActive ? 'text-white' : 'text-slate-600')}>{opt.label}</span>
-                        {opt.count > 0 && (
-                            <span className={cn('text-[9px] font-extrabold px-1 py-0.5 rounded-full relative z-10 leading-none', isActive ? 'bg-white/25 text-white' : opt.alert ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-200 text-slate-600')}>{opt.count}</span>
-                        )}
-                    </button>
-                );
-            })}
+                    return (
+                        <button key={opt.id} onClick={() => onChange(opt.id)} style={isActive ? activeStyle : inactiveStyle} className="min-h-[38px] flex items-center justify-center gap-1.5 px-2.5 py-2 transition-all duration-200 active:scale-[0.98] outline-none select-none cursor-pointer shrink-0 min-w-[72px]">
+                            {isActive && <GlassSheen />}
+                            <Icon name={opt.icon} size="xs" className={cn('relative z-10 shrink-0 transition-colors', isActive ? 'text-white' : 'text-slate-600')} />
+                            <span className={cn('text-[11px] font-extrabold relative z-10 whitespace-nowrap transition-colors', isActive ? 'text-white' : 'text-slate-700')}>{opt.mobileLabel}</span>
+                            <span className={cn('min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[9px] font-black relative z-10 leading-none', isActive ? 'bg-white/25 text-white' : opt.alert ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-600')}>
+                                {opt.count > 99 ? '99+' : opt.count}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };

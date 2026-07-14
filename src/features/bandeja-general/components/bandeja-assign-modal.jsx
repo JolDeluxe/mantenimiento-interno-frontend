@@ -4,7 +4,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { Label, Input, Select } from '@/components/form/z_index';
 import { getAsignables } from '../api/bandeja-api';
 import { PRIORIDADES } from '@/features/common/constants/catalogos-tareas';
-import { getMinDateHoy } from '@/lib/date';
+import { localMXTimeToISO } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 const HORAS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
@@ -45,6 +45,31 @@ const DurationPicker = ({ valueMins, onChange, disabled }) => {
         </div>
     );
 };
+
+const TimeRangePicker = ({ startTime, endTime, onStartChange, onEndChange, disabled }) => (
+    <div className="grid grid-cols-2 gap-2">
+        <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-black uppercase text-slate-500">Inicio</span>
+            <input
+                type="time"
+                value={startTime}
+                onChange={(e) => onStartChange(e.target.value)}
+                disabled={disabled}
+                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+        </label>
+        <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-black uppercase text-slate-500">Fin</span>
+            <input
+                type="time"
+                value={endTime}
+                onChange={(e) => onEndChange(e.target.value)}
+                disabled={disabled}
+                className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+        </label>
+    </div>
+);
 
 // ─── Workload Badge ───────────────────────────────────────────────────────────
 const WorkloadBadge = ({ label, count, colorClass }) => (
@@ -180,6 +205,7 @@ const TecnicoSelector = ({ tecnicos, seleccionados, onToggle, disabled, loading,
         if (isOpen) {
             setTimeout(() => searchRef.current?.focus(), 50);
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setBusqueda('');
         }
     }, [isOpen]);
@@ -343,12 +369,16 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
     const [fechaProgramada, setFechaProgramada] = useState('');
     const [prioridad, setPrioridad] = useState('MEDIA');
     const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState(0);
+    const [modoRangoHoras, setModoRangoHoras] = useState(false);
+    const [horaInicio, setHoraInicio] = useState('');
+    const [horaFin, setHoraFin] = useState('');
     const [backendError, setBackendError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
     // Carga de personal
     useEffect(() => {
         if (!isOpen) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoadingTecnicos(true);
         getAsignables()
             .then(res => {
@@ -362,10 +392,14 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
     // Reset al abrir
     useEffect(() => {
         if (!isOpen || !ticket) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSeleccionados([]);
         setFechaProgramada('');
         setPrioridad(ticket.prioridad || 'MEDIA');
         setTiempoEstimadoMins(ticket.tiempoEstimado || 0);
+        setModoRangoHoras(false);
+        setHoraInicio('');
+        setHoraFin('');
         setBackendError('');
         setSubmitted(false);
     }, [isOpen, ticket]);
@@ -381,6 +415,13 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
         if (!fechaProgramada) e.fechaProgramada = 'La fecha es obligatoria.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
         if (seleccionados.length === 0) e.seleccionados = 'Debes seleccionar al menos un responsable.';
+        if (modoRangoHoras) {
+            if (!horaInicio || !horaFin) {
+                e.tiempo = 'Completa inicio y fin, o usa duración.';
+            } else if (horaFin <= horaInicio) {
+                e.tiempo = 'La hora final debe ser mayor que la hora inicial.';
+            }
+        }
         return e;
     };
 
@@ -399,7 +440,10 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                 fechaVencimiento: dateISO,
                 prioridad,
                 estado: 'ASIGNADO',
-                ...(tiempoEstimadoMins > 0 ? { tiempoEstimado: tiempoEstimadoMins } : {}),
+                ...(modoRangoHoras ? {
+                    horaInicioProgramada: localMXTimeToISO(fechaProgramada, horaInicio),
+                    horaFinProgramada: localMXTimeToISO(fechaProgramada, horaFin),
+                } : tiempoEstimadoMins > 0 ? { tiempoEstimado: tiempoEstimadoMins } : {}),
             });
         } catch (err) {
             const data = err?.response?.data;
@@ -418,6 +462,16 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
 
     const isHoy = fechaProgramada === hoyLocal;
     const isManana = fechaProgramada === mananaLocal;
+    const puedeUsarRangoHorario = isHoy || isManana;
+
+    useEffect(() => {
+        if (!puedeUsarRangoHorario && modoRangoHoras) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
+        }
+    }, [puedeUsarRangoHorario, modoRangoHoras]);
 
     const fe = submitted ? getErrors() : {};
 
@@ -532,15 +586,59 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label error={!!fe.tiempoEstimadoMins}>Tiempo planeado</Label>
-                            <DurationPicker
-                                valueMins={tiempoEstimadoMins}
-                                onChange={setTiempoEstimadoMins}
-                                disabled={isSubmitting}
-                            />
-                            {fe.tiempoEstimadoMins && (
+                            <div className="flex items-center justify-between gap-2">
+                                <Label error={!!fe.tiempo}>Tiempo planeado</Label>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Opcional</span>
+                            </div>
+                            {puedeUsarRangoHorario && (
+                                <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-100 mb-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setModoRangoHoras(false)}
+                                        disabled={isSubmitting}
+                                        className={cn(
+                                            'px-2 py-1.5 rounded-md text-xs font-bold transition-colors',
+                                            !modoRangoHoras ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                        )}
+                                    >
+                                        Duración
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setModoRangoHoras(true)}
+                                        disabled={isSubmitting}
+                                        className={cn(
+                                            'px-2 py-1.5 rounded-md text-xs font-bold transition-colors',
+                                            modoRangoHoras ? 'bg-white text-marca-primario shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                        )}
+                                    >
+                                        Rango horario
+                                    </button>
+                                </div>
+                            )}
+                            {modoRangoHoras ? (
+                                <TimeRangePicker
+                                    startTime={horaInicio}
+                                    endTime={horaFin}
+                                    onStartChange={setHoraInicio}
+                                    onEndChange={setHoraFin}
+                                    disabled={isSubmitting}
+                                />
+                            ) : (
+                                <DurationPicker
+                                    valueMins={tiempoEstimadoMins}
+                                    onChange={setTiempoEstimadoMins}
+                                    disabled={isSubmitting}
+                                />
+                            )}
+                            <p className="text-[10px] text-slate-400">
+                                {puedeUsarRangoHorario
+                                    ? 'Puedes dejarlo vacío o indicar duración/rango para organizar mejor el día.'
+                                    : 'Para fechas futuras usa duración estimada; también puedes dejarla vacía.'}
+                            </p>
+                            {fe.tiempo && (
                                 <span className="text-xs font-medium text-estado-rechazado mt-0.5">
-                                    {fe.tiempoEstimadoMins}
+                                    {fe.tiempo}
                                 </span>
                             )}
                         </div>

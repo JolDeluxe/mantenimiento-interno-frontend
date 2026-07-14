@@ -6,7 +6,7 @@
 export const MODULES_CONFIG = [
   {
     id: 'hoy',
-    name: 'Hoy',
+    name: 'Activas',
     icon: 'today',
     route: '/hoy',
     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],

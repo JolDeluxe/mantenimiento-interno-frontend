@@ -48,7 +48,7 @@ export const CATEGORIAS_EQUIPO = [
 ];
 
 export const AREAS_POR_PLANTA = {
-    OMEGA: ['PT'],
+    OMEGA: ['ALMACEN DE PT'],
     SIGMA: ['PRELIMINARES', 'LASER Y BORDADO'],
     LAMBDA: ['BOLSAS Y BILLETERAS'],
     KAPPA: [

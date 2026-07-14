@@ -1,6 +1,7 @@
 // src/features/common/components/ticket-assign-modal.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
+import { formatFechaRelativa, formatDurationToDaysHours, getMinDateHoy, isoToDateInput, isoToLocalMXTime, localMXTimeToISO } from '@/lib/date';
 
 const ROL_LABEL = {
     TECNICO: 'Técnico',
@@ -112,6 +113,9 @@ export const TicketAssignModal = ({
     const [seleccionados, setSeleccionados] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [error, setError] = useState(null);
+    const [tiempoEstimadoMins, setTiempoEstimadoMins] = useState('');
+    const [horaInicio, setHoraInicio] = useState('');
+    const [horaFin, setHoraFin] = useState('');
 
     const usuariosFiltrados = useMemo(() => {
         const filtrados = tecnicos.filter((t) =>
@@ -139,9 +143,13 @@ export const TicketAssignModal = ({
 
     useEffect(() => {
         if (isOpen && ticket) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSeleccionados(ticket.responsables?.map((r) => String(r.id)) ?? []);
             setBusqueda('');
             setError(null);
+            setTiempoEstimadoMins(ticket.tiempoEstimado ? String(ticket.tiempoEstimado) : '');
+            setHoraInicio(ticket.horaInicioProgramada ? isoToLocalMXTime(ticket.horaInicioProgramada) : '');
+            setHoraFin(ticket.horaFinProgramada ? isoToLocalMXTime(ticket.horaFinProgramada) : '');
         }
     }, [isOpen, ticket]);
 
@@ -156,10 +164,45 @@ export const TicketAssignModal = ({
     };
 
     const handleSubmit = () => {
+        const fechaVencimientoStr = isoToDateInput(ticket.fechaVencimiento);
+        const debeUsarRango = esFechaHoyOManana(fechaVencimientoStr);
+        const tieneInicio = Boolean(horaInicio);
+        const tieneFin = Boolean(horaFin);
+
+        if (debeUsarRango && (tieneInicio || tieneFin)) {
+            if (!tieneInicio || !tieneFin) {
+                setError('Completa inicio y fin, o deja el rango vacío.');
+                return;
+            }
+            if (horaFin <= horaInicio) {
+                setError('La hora final debe ser mayor que la hora inicial.');
+                return;
+            }
+        }
+
         const formData = new FormData();
         seleccionados.forEach((id) => formData.append('responsables', id));
+        if (debeUsarRango && horaInicio && horaFin && fechaVencimientoStr) {
+            const inicioIso = localMXTimeToISO(fechaVencimientoStr, horaInicio);
+            const finIso = localMXTimeToISO(fechaVencimientoStr, horaFin);
+            if (inicioIso) formData.append('horaInicioProgramada', inicioIso);
+            if (finIso) formData.append('horaFinProgramada', finIso);
+        }
+        if (!debeUsarRango && Number(tiempoEstimadoMins) > 0) {
+            formData.append('tiempoEstimado', String(Number(tiempoEstimadoMins)));
+        }
         onConfirm(ticket.id, formData);
     };
+
+    const fechaVencimientoStr = isoToDateInput(ticket.fechaVencimiento);
+    const mananaLocal = (() => {
+        const base = new Date(`${getMinDateHoy()}T00:00:00`);
+        base.setDate(base.getDate() + 1);
+        return base.toLocaleDateString('en-CA');
+    })();
+    const esFechaHoyOManana = (dateStr) => dateStr === getMinDateHoy() || dateStr === mananaLocal;
+    const mostrarRangoHorario = esFechaHoyOManana(fechaVencimientoStr);
+    const fechaRelativa = ticket.fechaVencimiento ? formatFechaRelativa(ticket.fechaVencimiento) : 'Sin fecha límite';
 
     return (
         <Modal isOpen={isOpen} onClose={() => !isSubmitting && onClose()}>
@@ -174,6 +217,71 @@ export const TicketAssignModal = ({
                     <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                         <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-0.5">Tarea</p>
                         <p className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">{ticket.titulo}</p>
+                    </div>
+
+                    {/* Programación opcional */}
+                    <div className="bg-white border border-slate-200 rounded-xl p-3">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                            <div>
+                                <p className="text-xs text-slate-500 font-black uppercase tracking-wider">Tiempo opcional</p>
+                                <p className="text-[11px] text-slate-400 font-semibold">
+                                    {mostrarRangoHorario
+                                        ? `${fechaRelativa}: puedes indicar horario sugerido.`
+                                        : 'Puedes indicar duración estimada si aplica.'}
+                                </p>
+                            </div>
+                            <Icon name={mostrarRangoHorario ? 'schedule' : 'timer'} size="sm" className="text-slate-400 shrink-0" />
+                        </div>
+
+                        {mostrarRangoHorario ? (
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-black uppercase text-slate-500">Inicio</span>
+                                    <input
+                                        type="time"
+                                        value={horaInicio}
+                                        onChange={(e) => {
+                                            setHoraInicio(e.target.value);
+                                            setError(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
+                                    />
+                                </label>
+                                <label className="flex flex-col gap-1">
+                                    <span className="text-[10px] font-black uppercase text-slate-500">Fin</span>
+                                    <input
+                                        type="time"
+                                        value={horaFin}
+                                        onChange={(e) => {
+                                            setHoraFin(e.target.value);
+                                            setError(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
+                                    />
+                                </label>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black uppercase text-slate-500">Duración estimada</span>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="5"
+                                        value={tiempoEstimadoMins}
+                                        onChange={(e) => setTiempoEstimadoMins(e.target.value)}
+                                        placeholder="Sin estimar"
+                                        className="w-full px-3 py-2 pr-16 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-marca-secundario/20"
+                                    />
+                                    <span className="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-slate-400">min</span>
+                                </div>
+                                {Number(tiempoEstimadoMins) > 0 && (
+                                    <span className="text-[11px] text-slate-500 font-semibold">
+                                        {formatDurationToDaysHours(Number(tiempoEstimadoMins))}
+                                    </span>
+                                )}
+                            </label>
+                        )}
                     </div>
 
                     {/* Header lista */}
