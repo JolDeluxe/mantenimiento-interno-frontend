@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/icon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useUIStore } from '@/stores/ui-store';
-import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
+import { GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { useNotifyStore } from '@/stores/notify-store';
 import { NotifyBadge } from '@/features/notificaciones/components/notify-badge';
 
@@ -11,8 +11,10 @@ import { NotifyBadge } from '@/features/notificaciones/components/notify-badge';
 export const MobileHeader = ({ showBurger = false }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { toggleMobileMenu } = useUIStore();
+  const { toggleMobileMenu, badgeCounts } = useUIStore();
   const { noLeidas } = useNotifyStore();
+
+  const totalBurgerCount = (badgeCounts?.bandeja || 0) + (badgeCounts?.aprobar || 0);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
@@ -111,25 +113,26 @@ export const MobileHeader = ({ showBurger = false }) => {
         </div>
 
         {/* DERECHA: Campana + Menú Condicional */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-4">
           {/* Campana móvil */}
           <button
             onClick={() => navigate(`/notificaciones?refresh=${Date.now()}`)}
-            className="relative p-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none"
+            className="relative w-10 h-10 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario flex items-center justify-center outline-none"
             aria-label="Notificaciones"
           >
-            <Icon name="notifications" size="24px" />
-            <NotifyBadge count={noLeidas} />
+            <Icon name="notifications" size="22px" />
+            <NotifyBadge count={noLeidas} className="-top-1 -right-1 border-white" />
           </button>
 
           {/* Hamburguesa (Condicional al número de módulos) */}
           {showBurger && (
             <button
               onClick={toggleMobileMenu}
-              className="p-2 -mr-2 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario outline-none border border-transparent hover:border-white/30"
+              className="relative w-10 h-10 rounded-xl hover:bg-white/20 active:scale-95 transition-all text-marca-primario flex items-center justify-center outline-none border border-transparent hover:border-white/30"
               aria-label="Menú de navegación"
             >
-              <Icon name="menu" size="28px" />
+              <Icon name="menu" size="26px" />
+              <NotifyBadge count={totalBurgerCount} className="-top-1 -right-1 border-white" />
             </button>
           )}
         </div>

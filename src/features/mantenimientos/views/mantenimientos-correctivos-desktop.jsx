@@ -12,6 +12,8 @@ import { MantenimientosFormModal as TicketFormModal } from '../components/common
 import { MantenimientosAssignModal as TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '../components/common/mantenimientos-status-modal';
 import { MantenimientosReviewModal as TicketReviewModal } from '../components/common/mantenimientos-review-modal';
+import { ExcelExportModal } from '@/features/common/components/excel-export-modal';
+
 
 export const MantenimientosCorrectivosDesktop = ({
     currentUser,
@@ -62,7 +64,6 @@ export const MantenimientosCorrectivosDesktop = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    onExport,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -74,6 +75,25 @@ export const MantenimientosCorrectivosDesktop = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [exportOpen, setExportOpen] = useState(false);
+
+    const activeFilters = {
+        q: query,
+        estado: mostrarRechazadas ? 'RECHAZADO' : (mostrarPapelera ? 'CANCELADA' : (filtroEstado !== 'TODOS' ? filtroEstado : undefined)),
+        tipo: filtroTipo,
+        prioridad: filtroPrioridad,
+        categoria: filtroCategoria,
+        clasificacion: filtroClasificacion,
+        planta: filtroPlanta,
+        area: filtroArea,
+        responsableId: filtroResponsable,
+        vencidos: mostrarAtrasadas || undefined,
+        vencimientoDesde: filtroProgramacion.start,
+        vencimientoHasta: filtroProgramacion.end,
+        finalizadoDesde: filtroConclusion.start,
+        finalizadoHasta: filtroConclusion.end
+    };
+
 
     return (
         <div className="flex flex-col gap-4 relative">
@@ -122,7 +142,7 @@ export const MantenimientosCorrectivosDesktop = ({
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 conteos={conteos}
                 showCategoria={false}
-                onExport={onExport}
+                onExport={() => setExportOpen(true)}
             />
 
             {!loading && (!tickets || tickets.length === 0) ? (
@@ -222,6 +242,14 @@ export const MantenimientosCorrectivosDesktop = ({
                     await onChangeStatus(id, payload);
                     setCancelTarget(null);
                 }}
+            />
+
+            <ExcelExportModal
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                defaultClasificacion="CORRECTIVO"
+                scope="mantenimientos"
+                currentFilters={activeFilters}
             />
         </div>
     );

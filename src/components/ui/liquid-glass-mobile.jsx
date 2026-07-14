@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Icon } from './icon';
 import { cn } from '@/utils/cn';
 
@@ -355,11 +356,11 @@ export const GlassBottomNavItem = ({ icon, label, isActive, onClick, badge, isBl
             {/* Badge */}
             {badge > 0 && (
                 <span className={cn(
-                    "absolute top-0.5 right-[calc(50%-26px)] flex items-center justify-center rounded-full text-[8.5px] font-extrabold leading-none pb-[1px] text-white border z-20 shadow-sm",
+                    "absolute top-0.5 right-[calc(50%-26px)] flex items-center justify-center rounded-full text-[8.5px] font-extrabold leading-none pb-[1px] text-white border-2 border-white z-20 shadow-sm bg-estado-rechazado",
                     badge > 9 ? 'px-1 h-[16px] min-w-[16px]' : 'h-[16px] w-[16px]',
-                    isBlinking ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-marca-primario border-white/20'
+                    isBlinking && 'animate-pulse'
                 )}>
-                    {badge}
+                    {badge > 99 ? '99+' : badge}
                 </span>
             )}
 

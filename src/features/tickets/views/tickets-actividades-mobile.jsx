@@ -12,6 +12,8 @@ import { TicketAssignModal } from '@/features/common/components/ticket-assign-mo
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
+import { hardReload } from '@/utils/hard-reload';
+
 
 const SKELETON_COUNT = 4;
 
@@ -101,6 +103,7 @@ export const TicketsActividadesMobile = ({
     const showCreateFab = allowCreate && puedeCrear;
     const baseBottom = hasPaginator ? 104 : 84;
     const addBottom = `${baseBottom}px`;
+    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
 
     const isFilteringActive = Boolean(
         query?.trim() ||
@@ -213,7 +216,20 @@ export const TicketsActividadesMobile = ({
                     <GlassFab onClick={onOpenCreate} icon="add" bottom={addBottom} />
                 </div>
             )}
-            <ScrollToTopButton bottom={addBottom} />
+            <div className="lg:hidden">
+                <GlassFab
+                    icon="refresh"
+                    onClick={hardReload}
+                    isLoading={loading}
+                    variant="neutral"
+                    size={50}
+                    bottom={fabRefreshBottom}
+                    right="20px"
+                />
+            </div>
+            <div className="lg:hidden">
+                <ScrollToTopButton bottom={addBottom} left="20px" />
+            </div>
 
             <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
             <TicketActividadFormModal scope="actividades" isMobile isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />

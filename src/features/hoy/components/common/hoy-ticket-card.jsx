@@ -138,7 +138,8 @@ export const HoyTicketCard = ({
 
     useEffect(() => {
         if (!isHighlighted) return;
-        showHighlight(true);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setShowHighlight(true);
         const raf = requestAnimationFrame(() => {
             cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
@@ -151,11 +152,8 @@ export const HoyTicketCard = ({
 
     const esAdmin = ROLES_ADMIN.includes(rol);
     const esSupervisor = ROLES_SUPERVISOR.includes(rol);
-    const esTecnico = rol === 'TECNICO';
     const esCliente = rol === 'CLIENTE_INTERNO';
     const esCreador = ticket.creadorId === userId;
-    const esResponsable = ticket.responsables?.some((r) => r.id === userId);
-    const tieneResponsables = ticket.responsables?.length > 0;
 
     const vencida = isVencida(ticket);
     const esRechazada = ticket.estado === 'RECHAZADO';

@@ -60,12 +60,16 @@ export const ActividadesFilterBar = ({
     equipoCount = 0,
     misTareasCount = 0,
     onOpenDrawerAmnistia,
+    puedeFiltrarAtrasadasRechazadas = true,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
     const esCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
 
-    useEffect(() => { setLocalValue(query || ''); }, [query]);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLocalValue(query || '');
+    }, [query]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -98,6 +102,7 @@ export const ActividadesFilterBar = ({
                     </div>
                 )}
 
+                {puedeFiltrarAtrasadasRechazadas && (
                 <div className="flex items-center gap-3 flex-none ml-auto">
                     <div className="relative">
                         <Button
@@ -148,6 +153,7 @@ export const ActividadesFilterBar = ({
                         )}
                     </div>
                 </div>
+                )}
             </div>
 
             <div className="flex items-center gap-3 w-full flex-wrap">

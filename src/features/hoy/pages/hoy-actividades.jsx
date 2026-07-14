@@ -11,6 +11,7 @@ import { HoyFormModal } from '../components/common/hoy-form-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { BacklogRescheduleDrawer } from '../components/common/backlog-reschedule-drawer';
 import { createTicket, createTicketsBatch } from '@/features/tickets/api/tickets-api';
+import { buildHoyDateParams, getDefaultHoyVista, getMetricTotalForVista, puedeFiltrarAtrasadasRechazadas } from '../utils/date-filters';
 
 
 
@@ -36,7 +37,7 @@ export default function HoyActividadesPage() {
         resumenEstados,
     } = useHoy('actividades');
 
-    const [dateOffset, setDateOffset] = useState(0);
+    const [vistaActiva, setVistaActiva] = useState(getDefaultHoyVista('actividades'));
     const [showCreate, setShowCreate] = useState(false);
     const [query, setQuery] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
@@ -49,35 +50,18 @@ export default function HoyActividadesPage() {
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [vistaEquipo, setVistaEquipo] = useState(true);
 
-    const handleDateOffsetChange = useCallback((offset) => {
-        setDateOffset(offset);
-        setQuery('');
-        setFiltroEstado('TODOS');
-        setFiltroTipo('');
-        setFiltroPrioridad('');
-        setFiltroCategoria('');
-        setFiltroResponsable('');
+    const handleVistaActivaChange = useCallback((vista) => {
+        setVistaActiva(vista);
         setMostrarAtrasadas(false);
         setIsDrawerAmnistiaOpen(false);
         setMostrarRechazadas(false);
-        setVistaEquipo(true);
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
     const queryPayload = useMemo(() => {
         const params = { limit: 200 };
 
-        if (dateOffset === 0) {
-            params.perteneceAHoy = true;
-        } else if (dateOffset === 1) {
-            params.venceManana = true;
-        } else {
-            // eslint-disable-next-line react-hooks/purity
-            const targetDate = new Date(Date.now() + dateOffset * 86400000);
-            const fechaStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-            params.vencimientoDesde = fechaStr;
-            params.vencimientoHasta = fechaStr;
-        }
+        Object.assign(params, buildHoyDateParams(vistaActiva, 'actividades'));
 
         if (query) params.q = query;
 
@@ -100,7 +84,7 @@ export default function HoyActividadesPage() {
         if (mostrarAtrasadas) params.vencidos = true;
 
         return params;
-    }, [dateOffset, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
+    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las actividades.'));
@@ -111,6 +95,9 @@ export default function HoyActividadesPage() {
 
     const totalHoy = metricas?.totalHoy ?? 0;
     const totalManana = metricas?.totalManana ?? 0;
+    const totalSemana = metricas?.totalSemana ?? 0;
+    const totalPrimeraVista = metricas?.totalActivas ?? 0;
+    const totalVistaActiva = getMetricTotalForVista(metricas, vistaActiva, 'actividades');
     const totalAtrasadas = metricas?.totalAtrasadas ?? 0;
     const totalRechazadas = metricas?.totalRechazadas ?? 0;
     const equipoCount = metricas?.equipoCount ?? 0;
@@ -120,7 +107,7 @@ export default function HoyActividadesPage() {
     // conteos y totalParaSummary vienen del backend (resumenEstados del response)
     // scope=actividades forzado en backend garantiza que las métricas incluyan solo sin máquina.
     const conteos = resumenEstados;
-    const totalParaSummary = metricas?.totalResumen ?? 0;
+    const totalParaSummary = totalVistaActiva;
 
     const handleCreate = async (payloads) => {
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
@@ -204,10 +191,14 @@ export default function HoyActividadesPage() {
         submitting,
         currentUser,
         tecnicos,
-        dateOffset,
-        onDateOffsetChange: handleDateOffsetChange,
+        vistaActiva,
+        onVistaActivaChange: handleVistaActivaChange,
+        puedeFiltrarAtrasadasRechazadas: puedeFiltrarAtrasadasRechazadas(vistaActiva),
         totalHoy,
         totalManana,
+        totalSemana,
+        totalPrimeraVista,
+        totalVistaActiva,
         totalParaSummary,
         conteos,
         totalAtrasadas,

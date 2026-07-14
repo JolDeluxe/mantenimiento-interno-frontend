@@ -12,7 +12,7 @@ import { TicketAssignModal as TicketsAssign, MantenimientosAssignModal as Manten
 import { TicketReviewModal as TicketsReview } from '@/features/tickets/components/historico/ticket-review-modal';
 import { TicketReviewModal as MantenimientosReview } from '@/features/mantenimientos/components/common/mantenimientos-review-modal';
 
-import { formatFecha, formatFechaRelativa, isoToLocalMXTime, format12h, formatDurationToDaysHours } from '@/lib/date';
+import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 

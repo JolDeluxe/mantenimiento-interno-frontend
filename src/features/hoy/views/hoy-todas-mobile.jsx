@@ -1,5 +1,5 @@
 // src/features/hoy/views/hoy-todas-mobile.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { GlassFab, Icon, Skeleton, ScrollToTopButton } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { HoyTicketCard } from '../components/common/hoy-ticket-card';
@@ -16,6 +16,9 @@ import { TicketsEmptyState } from '@/features/common/components/tickets-empty-st
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
+import { hardReload } from '@/utils/hard-reload';
+import { getHoyEmptyCopy, getHoyEmptyIcon, getHoyVistaOptions } from '../utils/date-filters';
+
 
 const SKELETON_COUNT = 4;
 
@@ -34,11 +37,12 @@ const CardSkeleton = () => (
     </div>
 );
 
-const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => {
-    const options = [
-        { id: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
-        { id: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
-    ];
+const GlassDateToggle = ({ selected, onChange, totalHoy, totalManana, totalSemana, totalPrimeraVista, totalAtrasadas }) => {
+    const options = getHoyVistaOptions('general').map((opt, index) => ({
+        ...opt,
+        count: index === 0 ? totalPrimeraVista : opt.id === 'hoy' ? totalHoy : opt.id === 'manana' ? totalManana : totalSemana,
+        alert: opt.id === 'activas' && totalAtrasadas > 0,
+    }));
     const containerStyle = { display: 'inline-flex', padding: 4, borderRadius: 14, gap: 3, position: 'relative', overflow: 'hidden', ...glassBase('light'), width: '100%' };
 
     return (
@@ -97,18 +101,23 @@ export const HoyTodasMobile = ({
     highlightId,
     onSave,
     onChangeStatus,
-    onOpenCreate,
     toApproveCount,
     onOpenDrawerAmnistia,
     conteos,
     totalParaSummary,
-    dateOffset,
-    onDateOffsetChange,
+    vistaActiva,
+    onVistaActivaChange,
+    puedeFiltrarAtrasadasRechazadas,
     totalHoy,
     totalManana,
+    totalSemana,
+    totalPrimeraVista,
     totalAtrasadas,
 }) => {
-    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const baseBottom = 84;
+    const showCreateFab = false;
+    const fabAddBottom = `${baseBottom}px`;
+    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
     const [statusTarget, setStatusTarget] = useState(null);
@@ -147,7 +156,7 @@ export const HoyTodasMobile = ({
 
 
             <div className="flex flex-col gap-2">
-                <GlassDateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
+                <GlassDateToggle selected={vistaActiva} onChange={onVistaActivaChange} totalHoy={totalHoy} totalManana={totalManana} totalSemana={totalSemana} totalPrimeraVista={totalPrimeraVista} totalAtrasadas={totalAtrasadas} />
                 {currentUser?.rol === 'COORDINADOR_MTTO' && (
                     <HoyTeamToggle value={vistaEquipo} onChange={onVistaEquipoChange} misCount={misTareasCount} eqCount={equipoCount} currentUser={currentUser} isMobile />
                 )}
@@ -177,6 +186,7 @@ export const HoyTodasMobile = ({
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 currentUser={currentUser}
                 onOpenDrawerAmnistia={onOpenDrawerAmnistia}
+                puedeFiltrarAtrasadasRechazadas={puedeFiltrarAtrasadasRechazadas}
                 hideStatusFilter
             />
 
@@ -193,9 +203,9 @@ export const HoyTodasMobile = ({
                         isFiltering={isFilteringActive}
                         onClearFilters={handleClearFilters}
                         onRefresh={onRefresh}
-                        mensaje={dateOffset === 0 ? "Sin tareas para hoy" : "Sin tareas para mañana"}
+                        mensaje={getHoyEmptyCopy(vistaActiva, 'tareas')}
                         subtexto="No hay tareas programadas."
-                        icon={dateOffset === 0 ? "today" : "event"}
+                        icon={getHoyEmptyIcon(vistaActiva)}
                     />
                 </div>
             ) : (
@@ -220,13 +230,27 @@ export const HoyTodasMobile = ({
                 </div>
             )}
 
-            {/* {puedeCrear && (
+            {/* {showCreateFab && (
                 <div className="lg:hidden">
-                    <GlassFab onClick={onOpenCreate} icon="add" bottom="84px" />
+                    <GlassFab onClick={onOpenCreate} icon="add" bottom={fabAddBottom} />
                 </div>
             )} */}
 
-            <ScrollToTopButton bottom="84px" />
+            <div className="lg:hidden">
+                <GlassFab
+                    icon="refresh"
+                    onClick={hardReload}
+                    isLoading={loading}
+                    variant="neutral"
+                    size={50}
+                    bottom={fabRefreshBottom}
+                    right="20px"
+                />
+            </div>
+
+            <div className="lg:hidden">
+                <ScrollToTopButton bottom={fabAddBottom} left="20px" />
+            </div>
 
             <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
             <MobileHoyFormModal scope="general" isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
