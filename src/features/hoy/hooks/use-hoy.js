@@ -1,5 +1,5 @@
 // src/features/hoy/hooks/use-hoy.js
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getHoyTickets, updateHoyTicket, getAsignables, changeHoyTicketStatus } from '../api/hoy-api';
 import { readSnapshot, writeSnapshot } from '@/lib/idb';
 
@@ -61,7 +61,9 @@ export const useHoy = (scope = 'general') => {
                 setResumenEstados(cached.resumenEstados ?? {});
                 setTotalAbsoluto(cached.totalAbsoluto ?? cached.pagination?.total ?? 0);
             }
-        } catch {}
+        } catch {
+            // Cache miss: continue with network.
+        }
  
         if (!navigator.onLine) {
             setLoading(false);
@@ -102,7 +104,9 @@ export const useHoy = (scope = 'general') => {
         try {
             const snapshot = await readSnapshot('tecnicos', 'default');
             if (snapshot?.data) setTecnicos(snapshot.data);
-        } catch {}
+        } catch {
+            // Cache miss: continue with network.
+        }
 
         if (!navigator.onLine) return;
 
@@ -110,7 +114,9 @@ export const useHoy = (scope = 'general') => {
             const lista = await getAsignables();
             setTecnicos(lista);
             await writeSnapshot('tecnicos', lista);
-        } catch {}
+        } catch {
+            // Offline/permission fallback: keep current list.
+        }
     }, []);
 
     const updateTicket = useCallback(async (id, data) => {

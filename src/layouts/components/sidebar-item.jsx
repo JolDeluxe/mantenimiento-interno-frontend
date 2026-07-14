@@ -50,11 +50,11 @@ export const SidebarItem = ({ module }) => {
 
           {!sidebarExpanded && count > 0 && (
             <span className={`
-              absolute top-2 right-2 flex items-center justify-center rounded-full text-[9px] font-extrabold leading-none pb-[1px] text-white border shadow-sm
+              absolute top-1 right-1 flex items-center justify-center rounded-full text-[9px] font-extrabold leading-none text-white border-2 border-white shadow-sm
               ${count > 9 ? 'px-1 h-[18px] min-w-[18px]' : 'h-[18px] w-[18px]'}
-              ${isBlinking ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-marca-acento border-white/20'}
+              bg-estado-rechazado ${isBlinking ? 'animate-pulse' : ''}
             `}>
-              {count}
+              {count > 99 ? '99+' : count}
             </span>
           )}
 
@@ -67,11 +67,11 @@ export const SidebarItem = ({ module }) => {
 
           {sidebarExpanded && count > 0 && (
             <span className={`
-              ml-auto flex items-center justify-center rounded-full text-[9px] font-extrabold leading-none pb-[1px] text-white border transition-all duration-300
-              ${count > 9 ? 'px-1.5 h-5 min-w-[20px]' : 'h-5 w-5'}
-              ${isBlinking ? 'bg-red-600 border-red-500 shadow-md shadow-red-500/40 animate-pulse' : 'bg-white/15 border-white/10'}
+              ml-auto flex items-center justify-center rounded-full text-[9px] font-extrabold leading-none text-white border-2 border-white shadow-sm transition-all duration-300
+              ${count > 9 ? 'px-1 h-[18px] min-w-[18px]' : 'h-[18px] w-[18px]'}
+              bg-estado-rechazado ${isBlinking ? 'animate-pulse' : ''}
             `}>
-              {count}
+              {count > 99 ? '99+' : count}
             </span>
           )}
 

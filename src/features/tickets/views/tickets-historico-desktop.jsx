@@ -15,6 +15,8 @@ import { TicketAssignModal } from '@/features/common/components/ticket-assign-mo
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '../components/historico/ticket-review-modal';
 import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
+import { ExcelExportModal } from '@/features/common/components/excel-export-modal';
+
 
 export const TicketsHistoricoDesktop = ({
     currentUser,
@@ -65,7 +67,6 @@ export const TicketsHistoricoDesktop = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    onExport,
     allowCreate = true,
     emptyState = {},
     // toApproveCount = 0,
@@ -80,6 +81,25 @@ export const TicketsHistoricoDesktop = ({
     const [assignTarget, setAssignTarget] = useState(null);
     const [reviewTarget, setReviewTarget] = useState(null);
     const [cancelTarget, setCancelTarget] = useState(null);
+    const [exportOpen, setExportOpen] = useState(false);
+
+    const activeFilters = {
+        q: query,
+        estado: mostrarRechazadas ? 'RECHAZADO' : (mostrarPapelera ? 'CANCELADA' : (filtroEstado !== 'TODOS' ? filtroEstado : undefined)),
+        tipo: filtroTipo,
+        prioridad: filtroPrioridad,
+        categoria: filtroCategoria,
+        clasificacion: filtroClasificacion,
+        planta: filtroPlanta,
+        area: filtroArea,
+        responsableId: filtroResponsable,
+        vencidos: mostrarAtrasadas || undefined,
+        vencimientoDesde: filtroProgramacion.start,
+        vencimientoHasta: filtroProgramacion.end,
+        finalizadoDesde: filtroConclusion.start,
+        finalizadoHasta: filtroConclusion.end
+    };
+
 
     return (
         <div className="flex flex-col gap-4 relative">
@@ -127,7 +147,7 @@ export const TicketsHistoricoDesktop = ({
                 existenciaGlobal={existenciaGlobal}
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 conteos={conteos}
-                onExport={onExport}
+                onExport={() => setExportOpen(true)}
             />
 
             {!loading && (!tickets || tickets.length === 0) ? (
@@ -244,6 +264,14 @@ export const TicketsHistoricoDesktop = ({
                     await onChangeStatus(id, payload);
                     setCancelTarget(null);
                 }}
+            />
+
+            <ExcelExportModal
+                isOpen={exportOpen}
+                onClose={() => setExportOpen(false)}
+                defaultClasificacion=""
+                scope="actividades"
+                currentFilters={activeFilters}
             />
         </div>
     );

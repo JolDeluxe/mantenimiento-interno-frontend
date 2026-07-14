@@ -1,5 +1,5 @@
 // src/features/hoy/views/hoy-actividades-desktop.jsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { RefreshFab } from '@/components/ui/z_index';
 import { HoyAddButton } from '../components/common/hoy-add-button';
@@ -10,20 +10,21 @@ import { ActividadesTicketTable } from '../components/hoy-actividades/actividade
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
+import { getHoyEmptyCopy, getHoyEmptyIcon, getHoyPeriodoLabel, getHoyVistaOptions } from '../utils/date-filters';
 
-const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas }) => (
+const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalSemana, totalPrimeraVista, totalAtrasadas }) => (
     <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shadow-sm">
-        {[
-            { value: 0, label: 'Hoy', icon: 'today', count: totalHoy, alert: totalAtrasadas > 0 },
-            { value: 1, label: 'Mañana', icon: 'event', count: totalManana, alert: false },
-        ].map(({ value, label, icon, count, alert }) => (
+        {getHoyVistaOptions('actividades').map(({ id, label, icon }, index) => {
+            const count = index === 0 ? totalPrimeraVista : id === 'hoy' ? totalHoy : id === 'manana' ? totalManana : totalSemana;
+            const alert = id === 'activas' && totalAtrasadas > 0;
+            return (
             <button
-                key={value}
+                key={id}
                 type="button"
-                onClick={() => onChange(value)}
+                onClick={() => onChange(id)}
                 className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 relative cursor-pointer',
-                    selected === value
+                    selected === id
                         ? 'bg-marca-secundario text-white shadow-md'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                 )}
@@ -33,7 +34,7 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas 
                 {count > 0 && (
                     <span className={cn(
                         'min-w-5 h-5 px-1.5 rounded-full text-[10px] font-extrabold flex items-center justify-center border-2 border-white leading-none shadow-sm',
-                        selected === value
+                        selected === id
                             ? 'bg-white text-marca-secundario'
                             : alert ? 'bg-estado-rechazado text-white animate-pulse' : 'bg-slate-200 text-slate-600'
                     )}>
@@ -41,7 +42,7 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalAtrasadas 
                     </span>
                 )}
             </button>
-        ))}
+        )})}
     </div>
 );
 
@@ -83,14 +84,18 @@ export const HoyActividadesDesktop = ({
     onOpenDrawerAmnistia,
     conteos,
     totalParaSummary,
-    dateOffset,
-    onDateOffsetChange,
+    vistaActiva,
+    onVistaActivaChange,
+    puedeFiltrarAtrasadasRechazadas,
     totalHoy,
     totalManana,
+    totalSemana,
+    totalPrimeraVista,
+    totalVistaActiva,
     totalAtrasadas,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
-    const totalPeriodo = dateOffset === 0 ? totalHoy : totalManana;
+    const totalPeriodo = totalVistaActiva;
 
     const isFilteringActive = !!(
         query.trim() ||
@@ -126,8 +131,8 @@ export const HoyActividadesDesktop = ({
                     {loading ? 'Cargando…' : (
                         <>
                             {totalPeriodo} actividad{totalPeriodo !== 1 ? 'es' : ''}
-                            {dateOffset === 0 ? ' para hoy' : ' para mañana'}
-                            {dateOffset === 0 && totalAtrasadas > 0 && (
+                            {' '}{getHoyPeriodoLabel(vistaActiva)}
+                            {puedeFiltrarAtrasadasRechazadas && totalAtrasadas > 0 && (
                                 <span className="ml-2 font-semibold text-estado-rechazado">· {totalAtrasadas} atrasada{totalAtrasadas !== 1 ? 's' : ''}</span>
                             )}
                         </>
@@ -138,7 +143,7 @@ export const HoyActividadesDesktop = ({
             <HoySummaryBar totalParaSummary={totalParaSummary} conteos={conteos} filtroActual={filtroEstado} onFilterChange={onEstadoChange} loading={loading} mostrarRechazadas={mostrarRechazadas} />
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
-                <DateToggle selected={dateOffset} onChange={onDateOffsetChange} totalHoy={totalHoy} totalManana={totalManana} totalAtrasadas={totalAtrasadas} />
+                <DateToggle selected={vistaActiva} onChange={onVistaActivaChange} totalHoy={totalHoy} totalManana={totalManana} totalSemana={totalSemana} totalPrimeraVista={totalPrimeraVista} totalAtrasadas={totalAtrasadas} />
                 <div className="flex items-center gap-2">
                     {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
                 </div>
@@ -170,6 +175,7 @@ export const HoyActividadesDesktop = ({
                 totalAtrasadasGlobal={totalAtrasadasGlobal}
                 currentUser={currentUser}
                 onOpenDrawerAmnistia={onOpenDrawerAmnistia}
+                puedeFiltrarAtrasadasRechazadas={puedeFiltrarAtrasadasRechazadas}
                 hideStatusFilter
             />
 
@@ -179,9 +185,9 @@ export const HoyActividadesDesktop = ({
                         isFiltering={isFilteringActive}
                         onClearFilters={handleClearFilters}
                         onRefresh={onRefresh}
-                        mensaje={dateOffset === 0 ? "Sin actividades para hoy" : "Sin actividades para mañana"}
+                        mensaje={getHoyEmptyCopy(vistaActiva, 'actividades')}
                         subtexto="No hay actividades programadas para esta fecha."
-                        icon={dateOffset === 0 ? "today" : "event"}
+                        icon={getHoyEmptyIcon(vistaActiva)}
                     />
                 </div>
             ) : (

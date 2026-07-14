@@ -41,7 +41,6 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
-    const selected = options.find((o) => o.value === String(value));
     const isActive = Boolean(value);
 
     return (
@@ -93,12 +92,14 @@ export const MobileActividadesFilterBar = ({
     totalAtrasadasGlobal = 0,
     currentUser,
     onOpenDrawerAmnistia,
+    puedeFiltrarAtrasadasRechazadas = true,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalValue(query || '');
     }, [query]);
 
@@ -179,6 +180,7 @@ export const MobileActividadesFilterBar = ({
                     className="flex-1 min-w-[90px]"
                 />
 
+                {puedeFiltrarAtrasadasRechazadas && (
                 <button
                     type="button"
                     onClick={onToggleAtrasadas}
@@ -197,7 +199,9 @@ export const MobileActividadesFilterBar = ({
                         </span>
                     )}
                 </button>
+                )}
 
+                {puedeFiltrarAtrasadasRechazadas && (
                 <button
                     type="button"
                     onClick={onToggleRechazadas}
@@ -215,6 +219,7 @@ export const MobileActividadesFilterBar = ({
                         </span>
                     )}
                 </button>
+                )}
 
                 <button
                     type="button"
@@ -233,7 +238,7 @@ export const MobileActividadesFilterBar = ({
                 </button>
             </div>
 
-            {mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
+            {puedeFiltrarAtrasadasRechazadas && mostrarAtrasadas && esAdmin && onOpenDrawerAmnistia && (
                 <button
                     type="button"
                     onClick={onOpenDrawerAmnistia}

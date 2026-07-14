@@ -5,6 +5,8 @@ import { cn } from '@/utils/cn';
 import { BandejaTicketCard } from '../components/bandeja-ticket-card';
 import { BandejaFiltro } from '../components/bandeja-filtro';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
+import { hardReload } from '@/utils/hard-reload';
+
 
 const BandejaMobileSkeleton = () => (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
@@ -30,7 +32,6 @@ export const TicketsBandejaMobile = ({
     onSortChange,
     pagination,
     onPageChange,
-    onOpenCreate,
     onRefresh,
     isFiltering = false,
     onClearFilters
@@ -39,6 +40,7 @@ export const TicketsBandejaMobile = ({
     const hasPaginator = hasContent && pagination && pagination.totalPages > 1;
 
     const baseBottom = hasPaginator ? 104 : 84;
+    const fabRefreshBottom = `${baseBottom}px`;
 
     return (
         <>
@@ -103,7 +105,24 @@ export const TicketsBandejaMobile = ({
                 </div>
             )}
 
-            <ScrollToTopButton bottom={hasPaginator ? '150px' : '90px'} />
+            <div className="lg:hidden">
+                <GlassFab
+                    icon="refresh"
+                    onClick={hardReload}
+                    isLoading={isLoading}
+                    variant="neutral"
+                    size={50}
+                    bottom={fabRefreshBottom}
+                    right="20px"
+                />
+            </div>
+
+            <div className="lg:hidden">
+                <ScrollToTopButton
+                    bottom={fabRefreshBottom}
+                    left="20px"
+                />
+            </div>
         </>
     );
 };

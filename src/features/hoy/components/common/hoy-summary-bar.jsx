@@ -62,13 +62,9 @@ export const HoySummaryBar = ({
         );
     }
 
-    const totalActivo = ESTADOS_ACTIVOS
-        .filter((e) => e.id !== 'TODOS')
-        .reduce((acc, e) => acc + (conteos[e.id] ?? 0), 0);
-
     const items = ESTADOS_ACTIVOS.map((e) => ({
         ...e,
-        value: e.id === 'TODOS' ? totalActivo : (conteos[e.id] ?? 0),
+        value: e.id === 'TODOS' ? totalParaSummary : (conteos[e.id] ?? 0),
     }));
 
     return (

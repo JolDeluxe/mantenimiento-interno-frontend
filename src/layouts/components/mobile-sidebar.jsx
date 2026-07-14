@@ -66,11 +66,11 @@ export const MobileSidebar = ({ userModules = [] }) => {
                           </span>
                           {count > 0 && (
                             <span className={cn(
-                              "ml-auto flex items-center justify-center rounded-full text-[10px] font-extrabold leading-none pb-[1px] text-white border relative z-10 shadow-sm transition-all",
-                              count > 9 ? 'px-1.5 h-5 min-w-[20px]' : 'h-5 w-5',
-                              isBlinking ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-marca-primario text-white border-marca-primario/20'
+                              "ml-auto flex items-center justify-center rounded-full text-[10px] font-extrabold leading-none text-white border-2 border-white shadow-sm relative z-10 transition-all bg-estado-rechazado",
+                              count > 9 ? 'px-1.5 h-[18px] min-w-[18px]' : 'h-[18px] w-[18px]',
+                              isBlinking && 'animate-pulse'
                             )}>
-                              {count}
+                              {count > 99 ? '99+' : count}
                             </span>
                           )}
                         </>

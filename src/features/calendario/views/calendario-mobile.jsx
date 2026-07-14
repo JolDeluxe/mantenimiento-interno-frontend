@@ -3,6 +3,9 @@ import React from 'react';
 import { InteractiveCalendar } from '@/components/ui/interactive-calendar';
 import { MobileCalendarioFilterBar } from '../components/mobile-calendario-filter-bar';
 import { CalendarItemActions } from '../components/calendar-item-actions';
+import { GlassFab } from '@/components/ui/z_index';
+import { hardReload } from '@/utils/hard-reload';
+
 
 export const CalendarioMobile = ({
     currentUser,
@@ -108,6 +111,18 @@ export const CalendarioMobile = ({
                     )
                 )}
             />
+
+            <div className="lg:hidden">
+                <GlassFab
+                    icon="refresh"
+                    onClick={hardReload}
+                    isLoading={loading}
+                    variant="neutral"
+                    size={50}
+                    bottom="84px"
+                    right="20px"
+                />
+            </div>
         </div>
     );
 };

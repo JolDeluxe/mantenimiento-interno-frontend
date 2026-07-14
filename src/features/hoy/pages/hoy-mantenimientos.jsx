@@ -11,6 +11,7 @@ import { HoyFormModal } from '../components/common/hoy-form-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { BacklogRescheduleDrawer } from '../components/common/backlog-reschedule-drawer';
 import { createTicket, createTicketsBatch } from '@/features/tickets/api/tickets-api';
+import { buildHoyDateParams, getDefaultHoyVista, getMetricTotalForVista, puedeFiltrarAtrasadasRechazadas } from '../utils/date-filters';
 
 
 
@@ -36,7 +37,7 @@ export default function HoyMantenimientosPage() {
         resumenEstados,
     } = useHoy('mantenimientos');
 
-    const [dateOffset, setDateOffset] = useState(0);
+    const [vistaActiva, setVistaActiva] = useState(getDefaultHoyVista('mantenimientos'));
     const [showCreate, setShowCreate] = useState(false);
     const [query, setQuery] = useState('');
     const [filtroEstado, setFiltroEstado] = useState('TODOS');
@@ -51,37 +52,18 @@ export default function HoyMantenimientosPage() {
     const [mostrarRechazadas, setMostrarRechazadas] = useState(false);
     const [vistaEquipo, setVistaEquipo] = useState(true);
 
-    const handleDateOffsetChange = useCallback((offset) => {
-        setDateOffset(offset);
-        setQuery('');
-        setFiltroEstado('TODOS');
-        setFiltroTipo('');
-        setFiltroClasificacion('');
-        setFiltroCriticidad('');
-        setFiltroPrioridad('');
-        setFiltroCategoria('');
-        setFiltroResponsable('');
+    const handleVistaActivaChange = useCallback((vista) => {
+        setVistaActiva(vista);
         setMostrarAtrasadas(false);
         setIsDrawerAmnistiaOpen(false);
         setMostrarRechazadas(false);
-        setVistaEquipo(true);
         if (highlightId) setSearchParams({});
     }, [highlightId, setSearchParams]);
 
     const queryPayload = useMemo(() => {
         const params = { limit: 200 };
 
-        if (dateOffset === 0) {
-            params.perteneceAHoy = true;
-        } else if (dateOffset === 1) {
-            params.venceManana = true;
-        } else {
-            // eslint-disable-next-line react-hooks/purity
-            const targetDate = new Date(Date.now() + dateOffset * 86400000);
-            const fechaStr = targetDate.toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
-            params.vencimientoDesde = fechaStr;
-            params.vencimientoHasta = fechaStr;
-        }
+        Object.assign(params, buildHoyDateParams(vistaActiva, 'mantenimientos'));
 
         if (query) params.q = query;
 
@@ -106,7 +88,7 @@ export default function HoyMantenimientosPage() {
         if (mostrarAtrasadas) params.vencidos = true;
 
         return params;
-    }, [dateOffset, query, filtroEstado, filtroTipo, filtroClasificacion, filtroCriticidad, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
+    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroClasificacion, filtroCriticidad, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar los mantenimientos.'));
@@ -117,6 +99,9 @@ export default function HoyMantenimientosPage() {
 
     const totalHoy = metricas?.totalHoy ?? 0;
     const totalManana = metricas?.totalManana ?? 0;
+    const totalSemana = metricas?.totalSemana ?? 0;
+    const totalPrimeraVista = metricas?.totalMes ?? 0;
+    const totalVistaActiva = getMetricTotalForVista(metricas, vistaActiva, 'mantenimientos');
     const totalAtrasadas = metricas?.totalAtrasadas ?? 0;
     const totalRechazadas = metricas?.totalRechazadas ?? 0;
     const equipoCount = metricas?.equipoCount ?? 0;
@@ -126,7 +111,7 @@ export default function HoyMantenimientosPage() {
     // conteos y totalParaSummary vienen del backend (resumenEstados del response)
     // scope=mantenimientos forzado en backend garantiza métricas de solo tareas con máquina.
     const conteos = resumenEstados;
-    const totalParaSummary = metricas?.totalResumen ?? 0;
+    const totalParaSummary = totalVistaActiva;
 
     const handleCreate = async (payloads) => {
         if (payloads === null) {
@@ -217,10 +202,14 @@ export default function HoyMantenimientosPage() {
         submitting,
         currentUser,
         tecnicos,
-        dateOffset,
-        onDateOffsetChange: handleDateOffsetChange,
+        vistaActiva,
+        onVistaActivaChange: handleVistaActivaChange,
+        puedeFiltrarAtrasadasRechazadas: puedeFiltrarAtrasadasRechazadas(vistaActiva),
         totalHoy,
         totalManana,
+        totalSemana,
+        totalPrimeraVista,
+        totalVistaActiva,
         totalParaSummary,
         conteos,
         totalAtrasadas,
