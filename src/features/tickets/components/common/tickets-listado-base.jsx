@@ -332,6 +332,7 @@ export default function TicketsListadoBase({
                 onYearChange={handleYearChange}
                 onMonthChange={handleMonthChange}
                 existenciaGlobal={metricas?.existenciaGlobal || {}}
+                limitesFechas={metricas?.limitesFechas || null}
             />
             {isDesktop ? <DesktopView {...sharedViewProps} /> : <MobileView {...sharedViewProps} />}
             {canCreate && showCreate && (

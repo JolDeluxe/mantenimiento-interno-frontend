@@ -49,21 +49,42 @@ export const CATEGORIAS_EQUIPO = [
 
 export const AREAS_POR_PLANTA = {
     OMEGA: ['ALMACEN DE PT'],
-    SIGMA: ['PRELIMINARES', 'LASER Y BORDADO'],
-    LAMBDA: ['BOLSAS Y BILLETERAS'],
+    SIGMA: [
+        'AREAS COMUNES',
+        'PRELIMINARES',
+        'LASER',
+        'BORDADO'
+    ],
+    LAMBDA: [
+        'AREAS COMUNES',
+        'BILLETERAS',
+        'BOLSAS',
+        'TORRE 1'
+    ],
     KAPPA: [
         'ACABADO',
-        'ALMACEN DE MATERIA PRIMA',
-        'ALMACEN DE PIELES',
-        'BORDADO',
-        'CELULA DESARROLLO',
+        'ADMINISTRACION',
+        'ADORNO',
+        'ALMACEN MP',
+        'ALMACEN PIEL',
+        'AREAS COMUNES',
+        'AVIOS',
+        'BETA 7',
+        'CAPITAL HUMANO',
         'CHAMARRAS',
         'CINTOS',
         'CORTE',
+        'DESARROLLO',
+        'DISEÑO',
         'LASER',
-        'PESPUNTE',
+        'MAQUILA',
         'MONTADO',
+        'PESPUNTE',
         'PRELIMINARES',
+        'PREMONTADO',
+        'SALON',
+        'TALLER',
+        'TRAFICO'
     ],
     GENERAL: [],
 };

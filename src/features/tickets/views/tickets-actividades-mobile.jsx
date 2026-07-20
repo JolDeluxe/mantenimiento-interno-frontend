@@ -10,7 +10,7 @@ import { AdminCloseModal } from '@/features/common/components/admin-close-modal'
 import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
-import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
+import { GlobalTicketReviewModal as MobileTicketReviewModal } from '@/features/common/components/global-ticket-review-modal';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { hardReload } from '@/utils/hard-reload';
 
@@ -132,7 +132,7 @@ export const TicketsActividadesMobile = ({
     };
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in pb-28">
+        <div className="flex flex-col gap-4 animate-fade-in pb-44">
             <TicketSummaryBar
                 totalParaSummary={totalParaSummary}
                 conteos={conteos}
@@ -207,7 +207,7 @@ export const TicketsActividadesMobile = ({
 
             {hasPaginator && (
                 <div className="lg:hidden">
-                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
+                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="calc(80px + var(--safe-bottom-offset, 0px))" />
                 </div>
             )}
 

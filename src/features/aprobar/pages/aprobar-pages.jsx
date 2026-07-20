@@ -7,7 +7,7 @@ import { useTickets } from '@/features/tickets/hooks/use-tickets';
 import { AprobarDesktop } from '../views/aprobar-desktop';
 import { AprobarMobile } from '../views/aprobar-mobile';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
-import { TicketReviewModal as AprobarReviewModal } from '@/features/tickets/components/historico/ticket-review-modal';
+import { GlobalTicketReviewModal as AprobarReviewModal } from '@/features/common/components/global-ticket-review-modal';
 import { AprobarBatchDrawer } from '../components/aprobar-batch-drawer';
 
 export default function AprobarPage() {

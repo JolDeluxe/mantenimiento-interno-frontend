@@ -259,6 +259,7 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                                             {t.nombre} {t.cargo ? `- ${t.cargo}` : ''}
                                         </option>
                                     ))}
+
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
                                     <Icon name="expand_more" size="xs" />
@@ -278,21 +279,22 @@ export const MantenimientosFormModal = ({
     isOpen, onClose, onSuccess,
     ticketAEditar, currentUser, tecnicos = [], isSubmitting,
     scope = 'general',
-    defaultDate, defaultClasificacion,
+    defaultDate, defaultClasificacion, defaultModoLista
 }) => {
     const esEdicion = Boolean(ticketAEditar);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
 
     const [modoLista, setModoLista] = useState(() => {
         if (esEdicion) return false;
+        if (defaultModoLista !== undefined) return defaultModoLista;
         const saved = localStorage.getItem('mantenimientos_modoLista');
-        return saved !== null ? JSON.parse(saved) : true;
+        return saved !== null ? JSON.parse(saved) : false;
     });
 
     useEffect(() => {
-        if (esEdicion) return;
+        if (esEdicion || defaultModoLista !== undefined) return;
         localStorage.setItem('mantenimientos_modoLista', JSON.stringify(modoLista));
-    }, [modoLista, esEdicion]);
+    }, [modoLista, esEdicion, defaultModoLista]);
 
     const modoCarrito = !esEdicion && esAdmin && modoLista;
 
@@ -1587,5 +1589,6 @@ export const MantenimientosFormModal = ({
 };
 
 export { MantenimientosFormModal as TicketFormModal };
+
 
 

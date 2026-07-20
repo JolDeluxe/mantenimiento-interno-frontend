@@ -9,9 +9,14 @@ export const useUIStore = create(
       badgeCounts: { bandeja: 0, hasOldTickets: false, aprobar: 0 },
       mobileMenuOpen: false,
 
+      mobileMenuOpen: false,
+      isBottomNav: false,
+
       toggleSidebar: () => set((state) => ({ 
         sidebarExpanded: !state.sidebarExpanded 
       })),
+
+      setIsBottomNav: (val) => set({ isBottomNav: val }),
 
       setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
 

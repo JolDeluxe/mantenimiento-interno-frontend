@@ -38,7 +38,7 @@ export const RecurrentesListadoMobile = ({
     }
 
     return (
-        <div className="flex flex-col gap-3 pb-24">
+        <div className="flex flex-col gap-3 pb-32">
             {reglas.map((regla) => (
                 <article key={regla.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${regla.activo ? 'border-slate-200' : 'border-slate-100 opacity-75'}`}>
                     <div className="mb-2 flex items-start justify-between gap-2">

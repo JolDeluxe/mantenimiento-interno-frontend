@@ -1,6 +1,8 @@
 // src/components/ui/scroll-to-top-button.jsx
 import { useState, useEffect } from 'react';
 import { Icon } from './icon';
+import { useUIStore } from '@/stores/ui-store';
+import { cn } from '@/utils/cn';
 
 const glassStyle = {
     background: 'rgba(255,255,255,0.18)',
@@ -21,14 +23,14 @@ const GlassSheen = () => (
 );
 
 /**
- * Botón flotante liquid-glass que aparece cuando el contenedor scrolleable
- * baja más de `threshold` píxeles. Al hacer clic regresa al tope suavemente.
+ * Botn flotante liquid-glass que aparece cuando el contenedor scrolleable
+ * baja ms de `threshold` pxeles. Al hacer clic regresa al tope suavemente.
  *
  * Props:
- *   bottom        → posición CSS bottom   (default '84px')
- *   left          → posición CSS left     (default '20px')
- *   threshold     → px de scroll para aparecer (default 300)
- *   getContainer  → fn que devuelve el elemento scrolleable
+ *   bottom          posicin CSS bottom   (default '84px')
+ *   left            posicin CSS left     (default '20px')
+ *   threshold       px de scroll para aparecer (default 300)
+ *   getContainer    fn que devuelve el elemento scrolleable
  *                   (default: () => document.querySelector('main'))
  */
 export const ScrollToTopButton = ({
@@ -37,6 +39,8 @@ export const ScrollToTopButton = ({
     threshold = 300,
     getContainer = () => document.querySelector('main'),
 }) => {
+    const { isBottomNav } = useUIStore();
+    const finalBottom = isBottomNav && bottom && bottom.toString().includes('px') ? `calc(${bottom} + 75px)` : bottom;
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
@@ -57,9 +61,8 @@ export const ScrollToTopButton = ({
     return (
         <button
             onClick={scrollToTop}
-            style={{ bottom, left, position: 'fixed', zIndex: 40, borderRadius: '50%', overflow: 'hidden', ...glassStyle }}
-            className="w-10 h-10 flex items-center justify-center text-slate-600
-                       active:scale-90 transition-transform duration-200 outline-none select-none"
+            style={{ bottom: finalBottom, left, position: 'fixed', zIndex: 40, borderRadius: '50%', overflow: 'hidden', ...glassStyle }}
+            className={cn("w-10 h-10 flex items-center justify-center text-slate-600 active:scale-90 transition-transform duration-200 outline-none select-none")}
         >
             <GlassSheen />
             <Icon name="arrow_upward" size="sm" className="relative" />

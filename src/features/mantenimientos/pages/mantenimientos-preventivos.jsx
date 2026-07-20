@@ -162,7 +162,7 @@ export default function MantenimientosPreventivosPage() {
         materializeRegla,
         refresh,
         setFilters,
-    } = useRecurrencias({ activo: true, limit: 50 });
+    } = useRecurrencias({ activo: true, limit: 1000 });
 
     const ListComponent = isDesktop ? RecurrentesListado : RecurrentesListadoMobile;
     const ToolbarComponent = isDesktop ? RecurrentesToolbar : RecurrentesToolbarMobile;

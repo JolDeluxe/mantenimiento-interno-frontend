@@ -160,7 +160,7 @@ export const UsersMobile = ({
                         totalItems={totalParaPaginador}
                         onPageChange={onPageChange}
                         loading={loading}
-                        bottom="80px"
+                        bottom="calc(80px + var(--safe-bottom-offset, 0px))"
                     />
                 </div>
             )}

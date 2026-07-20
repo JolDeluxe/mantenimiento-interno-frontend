@@ -111,7 +111,7 @@ export const MODULES_CONFIG = [
     name: 'Dashboard',
     icon: 'dashboard',
     route: '/dashboard',
-    allowedRoles: ['SUPER_ADMIN', 'TECNICO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
     divider: true,
   },
   {

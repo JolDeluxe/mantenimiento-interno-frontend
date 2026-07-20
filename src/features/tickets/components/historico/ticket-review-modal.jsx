@@ -63,6 +63,8 @@ export const TicketReviewModal = ({
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
     const hasRangoTrabajo = Boolean(ticket?.fechaInicio || ticket?.finalizadoAt);
+    const isRangeManual = isManual && tiempoManualStr && (tiempoManualStr.includes(' a ') || tiempoManualStr.includes('-'));
+    const shouldShowTimeRange = !isManual || isRangeManual;
 
     // Convert manual registration to minutes if possible for difference calculation
     // e.g. "1 h 20 min" or "50 min" or "2 h"
@@ -217,11 +219,11 @@ export const TicketReviewModal = ({
                                         </div>
                                     </div>
 
-                                    {hasRangoTrabajo && (
-                                        <div className="border-t border-slate-100 pt-2.5">
-                                            <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
-                                        </div>
-                                    )}
+                                    {shouldShowTimeRange && hasRangoTrabajo && (
+                                          <div className="border-t border-slate-100 pt-2">
+                                              <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
+                                          </div>
+                                      )}
 
                                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5 mt-0.5">
                                         <div className="flex items-center gap-2 min-w-0">

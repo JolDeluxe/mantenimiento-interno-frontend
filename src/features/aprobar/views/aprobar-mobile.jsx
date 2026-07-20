@@ -107,7 +107,7 @@ export const AprobarMobile = ({
                         totalItems={pagination.total}
                         onPageChange={onPageChange}
                         loading={isLoading}
-                        bottom="80px"
+                        bottom="calc(80px + var(--safe-bottom-offset, 0px))"
                     />
                 </div>
             )}

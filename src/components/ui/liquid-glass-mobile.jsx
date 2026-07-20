@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Icon } from './icon';
 import { cn } from '@/utils/cn';
+import { useUIStore } from '@/stores/ui-store';
 
 // ── Tokens de variantes ────────────────────────────────────────────────────
 const GLASS_VARIANTS = {
@@ -110,6 +111,8 @@ export const GlassFab = ({
     zIndex = 50,
     className,
 }) => {
+    const { isBottomNav } = useUIStore();
+    const finalBottom = isBottomNav && bottom && bottom.toString().includes('px') ? `calc(${bottom} + 75px)` : bottom;
     const style = {
         position: 'fixed',
         bottom,

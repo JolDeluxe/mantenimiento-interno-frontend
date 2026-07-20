@@ -63,7 +63,7 @@ export default function DashboardLayoutMobile({ children, contextData }) {
                 </div>
             )}
 
-            <div className="flex-1 w-full pb-24">
+            <div className="flex-1 w-full pb-32">
                 {children}
             </div>
         </>

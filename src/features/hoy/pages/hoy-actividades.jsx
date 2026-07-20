@@ -237,7 +237,7 @@ export default function HoyActividadesPage() {
             {isDesktop ? (
                 <HoyFormModal defaultModoLista={true} scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             ) : (
-                <MobileHoyFormModal scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <MobileHoyFormModal defaultModoLista={true} scope="actividades" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}

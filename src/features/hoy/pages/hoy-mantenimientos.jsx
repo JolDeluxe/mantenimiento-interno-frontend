@@ -250,9 +250,9 @@ export default function HoyMantenimientosPage() {
         <>
             {isDesktop ? <HoyMantenimientosDesktop {...sharedProps} /> : <HoyMantenimientosMobile {...sharedProps} />}
             {isDesktop ? (
-                <HoyFormModal scope="mantenimientos" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <HoyFormModal defaultModoLista={false} scope="mantenimientos" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             ) : (
-                <MobileHoyFormModal scope="mantenimientos" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
+                <MobileHoyFormModal defaultModoLista={false} scope="mantenimientos" isOpen={showCreate} onClose={() => setShowCreate(false)} ticketAEditar={null} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={handleCreate} />
             )}
             <BacklogRescheduleDrawer
                 isOpen={isDrawerAmnistiaOpen}

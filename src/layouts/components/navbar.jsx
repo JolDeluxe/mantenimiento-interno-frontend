@@ -62,7 +62,7 @@ export const Navbar = () => {
   return (
     <header
       ref={navRef}
-      className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40"
+      className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-[70]"
     >
       <div className="grid grid-cols-3 items-center px-4 py-3 gap-4">
 
@@ -103,7 +103,7 @@ export const Navbar = () => {
         <div className="flex items-center gap-2 sm:gap-4 justify-end">
 
           {/* Campana — Desktop: dropdown | Mobile: oculto aquí (está en mobile-header) */}
-          <div ref={bellRef} className="relative hidden lg:block">
+          <div ref={bellRef} className="relative z-[80] hidden lg:block">
             <button
               onClick={() => setDropdownOpen((p) => !p)}
               className="p-2 rounded-md hover:bg-slate-100 transition-colors relative cursor-pointer"

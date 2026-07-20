@@ -71,7 +71,7 @@ export const RecurrentesMatrizMobile = ({
     );
 
     return (
-        <div className="flex flex-col gap-3 pb-24">
+        <div className="flex flex-col gap-3 pb-32">
             <div className="relative overflow-hidden rounded-[20px] p-3 shadow-sm" style={glassBase('light')}>
                 <GlassSheen />
                 <div className="mb-3 flex items-center justify-between gap-2">

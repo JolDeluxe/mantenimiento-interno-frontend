@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, Button, Skeleton } from '@/components/ui/z_index';
 import { getNotificaciones, markAllAsRead } from '../api/notificaciones-api';

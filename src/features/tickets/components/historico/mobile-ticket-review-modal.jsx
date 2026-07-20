@@ -193,6 +193,8 @@ export const MobileTicketReviewModal = ({
     const tiempoSistemaStr = formatMins(realMins);
     const tiempoAMostrar = (isManual && tiempoManualStr) ? tiempoManualStr : tiempoSistemaStr;
     const hasRangoTrabajo = Boolean(ticket?.fechaInicio || ticket?.finalizadoAt);
+    const isRangeManual = isManual && tiempoManualStr && (tiempoManualStr.includes(' a ') || tiempoManualStr.includes('-'));
+    const shouldShowTimeRange = !isManual || isRangeManual;
 
     // Limpiador robusto y retroactivo para ocultar flags del sistema en la UI
     const notaLimpia = notaTecnico
@@ -314,11 +316,11 @@ export const MobileTicketReviewModal = ({
                                             {isManual ? 'Manual' : 'Sistema'}
                                         </span>
                                     </div>
-                                    {hasRangoTrabajo && (
-                                        <div className="border-t border-slate-100 pt-2">
-                                            <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
-                                        </div>
-                                    )}
+                                    {shouldShowTimeRange && hasRangoTrabajo && (
+                                          <div className="border-t border-slate-100 pt-2">
+                                              <WorkTimeSummary inicio={ticket?.fechaInicio} fin={ticket?.finalizadoAt} />
+                                          </div>
+                                      )}
                                 </div>
 
                                 {notaLimpia && (

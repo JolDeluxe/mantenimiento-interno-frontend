@@ -104,8 +104,8 @@ export const MantenimientosHistoricoMobile = ({
     const hasPaginator = hasContent && totalPages > 1;
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const baseBottom = hasPaginator ? 104 : 84;
-    const fabAddBottom = `${baseBottom}px`;
-    const fabRefreshBottom = puedeCrear ? `${baseBottom + 60}px` : `${baseBottom}px`;
+    const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
+    const fabRefreshBottom = puedeCrear ? `calc(${baseBottom + 60}px + var(--safe-bottom-offset, 0px))` : `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
 
     return (
         <>
@@ -175,7 +175,7 @@ export const MantenimientosHistoricoMobile = ({
 
             {hasPaginator && (
                 <div className="lg:hidden">
-                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
+                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="calc(80px + var(--safe-bottom-offset, 0px))" />
                 </div>
             )}
             <div className="lg:hidden">

@@ -18,9 +18,10 @@ import { AdminCloseModal } from '@/features/common/components/admin-close-modal'
 // ── Modales específicos de Reportes / Actividades ─────────────────────────
 import { TicketFormModal } from '@/features/tickets/components/historico/ticket-form-modal';
 import { MobileTicketFormModal } from '@/features/tickets/components/historico/mobile-ticket-form-modal';
+import { GlobalTicketReviewModal as MobileTicketReviewModal } from '@/features/common/components/global-ticket-review-modal';
+import { TicketProgressModal } from '@/features/tickets/components/historico/status-modals/ticket-progress-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketReviewModal } from '@/features/tickets/components/historico/ticket-review-modal';
-import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
 import { 
     createTicket, 
     updateTicket, 

@@ -312,6 +312,7 @@ export default function MantenimientosHistoricoPage({
                 onYearChange={handleYearChange}
                 onMonthChange={handleMonthChange}
                 existenciaGlobal={metricas?.existenciaGlobal || {}}
+                limitesFechas={metricas?.limitesFechas || null}
             />
             {isDesktop ? (
                 <DesktopView {...sharedProps} />

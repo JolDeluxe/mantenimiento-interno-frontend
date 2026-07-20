@@ -10,7 +10,7 @@ import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
-import { MobileTicketReviewModal } from '../components/historico/mobile-ticket-review-modal';
+import { GlobalTicketReviewModal as MobileTicketReviewModal } from '@/features/common/components/global-ticket-review-modal';
 import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
@@ -108,7 +108,7 @@ export const TicketsHistoricoMobile = ({
     const hasPaginator = hasContent && totalPages > 1;
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const baseBottom = hasPaginator ? 104 : 84;
-    const fabAddBottom = `${baseBottom}px`;
+    const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
     const showCreateFab = allowCreate && puedeCrear;
     const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
 
@@ -179,7 +179,7 @@ export const TicketsHistoricoMobile = ({
 
             {hasPaginator && (
                 <div className="lg:hidden">
-                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="80px" />
+                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="calc(80px + var(--safe-bottom-offset, 0px))" />
                 </div>
             )}
             <div className="lg:hidden">

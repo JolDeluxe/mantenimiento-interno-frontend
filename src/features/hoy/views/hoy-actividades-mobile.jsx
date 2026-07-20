@@ -8,7 +8,7 @@ import { AdminCloseModal } from '@/features/common/components/admin-close-modal'
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { TicketAssignModal } from '@/features/common/components/ticket-assign-modal';
 import { TicketStatusModal as HoyStatusModal } from '@/features/common/components/status-modal';
-import { MobileTicketReviewModal } from '@/features/tickets/components/historico/mobile-ticket-review-modal';
+import { GlobalTicketReviewModal as MobileTicketReviewModal } from '@/features/common/components/global-ticket-review-modal';
 import { MobileActividadesFilterBar } from '../components/hoy-actividades/mobile-actividades-filter-bar';
 import { HoySummaryBar } from '../components/common/hoy-summary-bar';
 import { HoyTeamToggle } from '../components/common/hoy-team-toggle';
@@ -121,8 +121,8 @@ export const HoyActividadesMobile = ({
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const baseBottom = 84;
     const showCreateFab = puedeCrear;
-    const fabAddBottom = `${baseBottom}px`;
-    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
+    const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
+    const fabRefreshBottom = showCreateFab ? `calc(${baseBottom + 60}px + var(--safe-bottom-offset, 0px))` : `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
     const [statusTarget, setStatusTarget] = useState(null);
@@ -155,7 +155,7 @@ export const HoyActividadesMobile = ({
     };
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in pb-28">
+        <div className="flex flex-col gap-4 animate-fade-in pb-44">
 
             <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile />
 

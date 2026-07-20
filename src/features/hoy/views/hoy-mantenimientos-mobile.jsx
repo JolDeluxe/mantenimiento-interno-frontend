@@ -125,8 +125,8 @@ export const HoyMantenimientosMobile = ({
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const baseBottom = 84;
     const showCreateFab = puedeCrear;
-    const fabAddBottom = `${baseBottom}px`;
-    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
+    const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
+    const fabRefreshBottom = showCreateFab ? `calc(${baseBottom + 60}px + var(--safe-bottom-offset, 0px))` : `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
     const [statusTarget, setStatusTarget] = useState(null);
@@ -163,7 +163,7 @@ export const HoyMantenimientosMobile = ({
     };
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in pb-28">
+        <div className="flex flex-col gap-4 animate-fade-in pb-44">
 
             <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile />
 

@@ -35,49 +35,43 @@ const MESES_FULL = [
     { num: 12, name: 'Diciembre' },
 ];
 
-const extractAvailableYears = (existenciaGlobal) => {
+const extractAvailableYears = (limitesFechas) => {
     const currentYear = Number(getMinDateHoy().split('-')[0]);
+    let startYear = currentYear;
+    let endYear = currentYear;
 
-    if (!existenciaGlobal || typeof existenciaGlobal !== 'object') {
-        return [currentYear];
+    if (limitesFechas && (limitesFechas._min?.fechaVencimiento || limitesFechas._max?.fechaVencimiento)) {
+        if (limitesFechas._min?.fechaVencimiento) {
+            startYear = new Date(limitesFechas._min.fechaVencimiento).getFullYear();
+        }
+        if (limitesFechas._max?.fechaVencimiento) {
+            endYear = new Date(limitesFechas._max.fechaVencimiento).getFullYear();
+        }
+    } else {
+        // Fallback seguro: sabemos por el CSV que la data empieza en 2025.
+        // Si el cache IndexedDB bloquea la data real, garantizamos ver 2025 y 2026.
+        startYear = 2025;
+        endYear = 2026;
     }
 
-    const years = Object.keys(existenciaGlobal)
-        .map(Number)
-        .filter(n => !isNaN(n) && n > 2000);
-
-    if (!years.includes(currentYear)) {
-        years.push(currentYear);
+    if (startYear > currentYear) startYear = currentYear;
+    if (endYear < currentYear) endYear = currentYear;
+    
+    const years = [];
+    for (let y = startYear; y <= endYear; y++) {
+        years.push(y);
     }
 
     return years.sort((a, b) => b - a);
 };
 
-const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existenciaGlobal }) => {
-    const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
+const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existenciaGlobal, limitesFechas }) => {
+    const years = useMemo(() => extractAvailableYears(limitesFechas), [limitesFechas]);
     const isFiltered = year !== null;
 
     const checkMonthHasData = (mNum) => {
-        if (!year) return false;
-        const data = existenciaGlobal?.[year] || existenciaGlobal?.[String(year)];
-        if (!data) return false;
-
-        if (Array.isArray(data)) {
-            if (data.length > 0 && typeof data[0] === 'object') {
-                const obj = data.find(item => Number(item.mes || item.month || item.id) === mNum);
-                return obj ? Number(obj.total || obj.count || obj.conteo || 0) > 0 : false;
-            }
-            return data.some(val => Number(val) === mNum);
-        }
-
-        if (typeof data === 'object') {
-            const val = data[mNum] ?? data[String(mNum)];
-            if (val === undefined || val === null) return false;
-            if (typeof val === 'boolean') return val;
-            return Number(val) > 0;
-        }
-
-        return false;
+        // Without backend monthly aggregation, all months are potentially selectable.
+        return true;
     };
 
     const handleGoToCurrent = () => {
@@ -187,8 +181,8 @@ const TicketFechasDesktop = ({ year, month, onYearChange, onMonthChange, existen
     );
 };
 
-const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenciaGlobal }) => {
-    const years = useMemo(() => extractAvailableYears(existenciaGlobal), [existenciaGlobal]);
+const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenciaGlobal, limitesFechas }) => {
+    const years = useMemo(() => extractAvailableYears(limitesFechas), [limitesFechas]);
     const isFiltered = year !== null;
 
     const handleGoToCurrent = () => {
@@ -301,7 +295,7 @@ const TicketFechasMobile = ({ year, month, onYearChange, onMonthChange, existenc
     );
 };
 
-export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existenciaGlobal = {} }) => {
+export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existenciaGlobal = {}, limitesFechas }) => {
     return (
         <>
             <div className="hidden lg:block">
@@ -311,6 +305,7 @@ export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existen
                     onYearChange={onYearChange}
                     onMonthChange={onMonthChange}
                     existenciaGlobal={existenciaGlobal}
+                    limitesFechas={limitesFechas}
                 />
             </div>
             <div className="lg:hidden">
@@ -320,6 +315,7 @@ export const TicketFechas = ({ year, month, onYearChange, onMonthChange, existen
                     onYearChange={onYearChange}
                     onMonthChange={onMonthChange}
                     existenciaGlobal={existenciaGlobal}
+                    limitesFechas={limitesFechas}
                 />
             </div>
         </>
