@@ -242,7 +242,7 @@ export const HoyTicketCard = ({
                                 <span>{['RESUELTO', 'CERRADO'].includes(ticket.estado) ? "PARO RESUELTO" : "PARO ACTIVO"}</span>
                             </span>
                         )}
-                        {ticket.clasificacion && (
+                        {ticket.categoria === 'MAQUINARIA' && ticket.clasificacion && (
                             <span className={cn(
                                 "text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none border",
                                 ticket.clasificacion === 'PREVENTIVO' ? 'bg-blue-50 text-blue-700 border-blue-200/50' :
