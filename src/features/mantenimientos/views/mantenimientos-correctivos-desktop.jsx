@@ -183,6 +183,7 @@ export const MantenimientosCorrectivosDesktop = ({
             />
 
             <TicketFormModal
+                scope="mantenimientos"
                 isOpen={Boolean(editTarget)}
                 onClose={() => setEditTarget(null)}
                 ticketAEditar={editTarget}
