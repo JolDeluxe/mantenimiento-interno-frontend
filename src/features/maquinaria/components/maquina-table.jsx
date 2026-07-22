@@ -58,7 +58,7 @@ export const MaquinaTable = ({
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
       BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
-      BAJA_ERP: 'bg-red-50 text-red-700 border-red-200'
+      // BAJA_ERP: 'bg-red-50 text-red-700 border-red-200'
     };
     return map[est] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
@@ -160,16 +160,16 @@ export const MaquinaTable = ({
         }
         return (
           <div className="flex flex-col gap-0.5">
-            {showPlanta && (
+            {showArea && (
               <span className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
                 <Icon name="store" size="xxs" className="text-slate-400 font-bold" />
-                {row.planta}
+                {row.area}  
               </span>
             )}
-            {showArea && (
+            {showPlanta && (
               <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
                 <Icon name="location_on" size="xxs" className="text-slate-300" />
-                {row.area}
+                {row.planta}
               </span>
             )}
           </div>

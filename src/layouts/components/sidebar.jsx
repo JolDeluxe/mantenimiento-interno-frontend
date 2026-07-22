@@ -27,15 +27,19 @@ export const Sidebar = () => {
 
       <nav className="sidebar-nav flex-1 overflow-y-auto min-h-0 py-4 px-2 custom-scrollbar">
         <ul className="space-y-1 relative">
-          {userModules.map((module) => (
-            <React.Fragment key={module.id}>
-              {/* Aquí se inyecta el divisor si la propiedad existe */}
-              {module.divider && (
-                <li className="h-px bg-white/10 my-4 mx-2" />
-              )}
-              <SidebarItem module={module} />
-            </React.Fragment>
-          ))}
+          {userModules.map((module, index) => {
+            if (module.isDivider) {
+              return <li key={module.id || `div-${index}`} className="h-px bg-white/10 my-4 mx-2" />;
+            }
+            return (
+              <React.Fragment key={module.id}>
+                {module.divider && (
+                  <li className="h-px bg-white/10 my-4 mx-2" />
+                )}
+                <SidebarItem module={module} />
+              </React.Fragment>
+            );
+          })}
         </ul>
       </nav>
 

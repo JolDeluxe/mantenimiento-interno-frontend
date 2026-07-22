@@ -73,11 +73,12 @@ export const UserSummaryBar = ({
     departamentos,
 }) => {
     const rol = currentUser?.rol;
+    const esJefe = rol === 'JEFE_MTTO' || rol === 'COORDINADOR_MTTO';
 
-    if (rol !== 'SUPER_ADMIN' && rol !== 'JEFE_MTTO') return null;
+    if (rol !== 'SUPER_ADMIN' && !esJefe) return null;
 
     if (loading && total === 0 && Object.keys(conteos).length === 0) {
-        const count = rol === 'JEFE_MTTO' ? 4 : mostrarInactivos ? 1 : 6;
+        const count = esJefe ? 4 : mostrarInactivos ? 1 : 6;
         return <SummaryBarSkeleton count={count} />;
     }
 
@@ -120,7 +121,7 @@ export const UserSummaryBar = ({
             if (esOtroDepto) return !ROLES_NO_MTTO.has(id);
             return true;
         }
-        if (rol === 'JEFE_MTTO') return ROLES_JEFE.has(id);
+        if (esJefe) return ROLES_JEFE.has(id);
         return false;
     });
 

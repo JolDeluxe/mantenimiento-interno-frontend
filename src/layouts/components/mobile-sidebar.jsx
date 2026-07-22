@@ -34,52 +34,57 @@ export const MobileSidebar = ({ userModules = [] }) => {
 
         <nav className="flex-1 overflow-y-auto py-5 px-3 custom-scrollbar">
           <ul className="space-y-2.5">
-            {userModules.map((module) => (
-              <React.Fragment key={module.id}>
-                {module.divider && (
-                  <li className="h-px bg-marca-primario/20 my-2 mx-4" />
-                )}
-                <li>
-                  <NavLink
-                    to={module.route}
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-4 px-4 py-3.5 outline-none select-none transition-transform active:scale-[0.98]"
-                    style={({ isActive }) => (
-                      isActive
-                        ? { ...glassBase('primary'), borderRadius: '14px' }
-                        : { borderRadius: '14px', background: 'transparent' }
-                    )}
-                  >
-                    {({ isActive }) => {
-                      const count = module.id === 'bandeja' ? badgeCounts?.bandeja : (module.id === 'aprobar' ? badgeCounts?.aprobar : 0);
-                      const isBlinking = module.id === 'bandeja' && badgeCounts?.hasOldTickets;
-                      return (
-                        <>
-                          {isActive && <GlassSheen />}
-                          <Icon
-                            name={module.icon}
-                            size="md"
-                            className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
-                          />
-                          <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
-                            {module.name}
-                          </span>
-                          {count > 0 && (
-                            <span className={cn(
-                              "ml-auto flex items-center justify-center rounded-full text-[10px] font-extrabold leading-none text-white border-2 border-white shadow-sm relative z-10 transition-all bg-estado-rechazado",
-                              count > 9 ? 'px-1.5 h-[18px] min-w-[18px]' : 'h-[18px] w-[18px]',
-                              isBlinking && 'animate-pulse'
-                            )}>
-                              {count > 99 ? '99+' : count}
+            {userModules.map((module, index) => {
+              if (module.isDivider) {
+                return <li key={module.id || `div-${index}`} className="h-px bg-marca-primario/20 my-2 mx-4" />;
+              }
+              return (
+                <React.Fragment key={module.id}>
+                  {module.divider && (
+                    <li className="h-px bg-marca-primario/20 my-2 mx-4" />
+                  )}
+                  <li>
+                    <NavLink
+                      to={module.route}
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-4 px-4 py-3.5 outline-none select-none transition-transform active:scale-[0.98]"
+                      style={({ isActive }) => (
+                        isActive
+                          ? { ...glassBase('primary'), borderRadius: '14px' }
+                          : { borderRadius: '14px', background: 'transparent' }
+                      )}
+                    >
+                      {({ isActive }) => {
+                        const count = module.id === 'bandeja' ? badgeCounts?.bandeja : (module.id === 'aprobar' ? badgeCounts?.aprobar : 0);
+                        const isBlinking = module.id === 'bandeja' && badgeCounts?.hasOldTickets;
+                        return (
+                          <>
+                            {isActive && <GlassSheen />}
+                            <Icon
+                              name={module.icon}
+                              size="md"
+                              className={cn('shrink-0 relative transition-colors', isActive ? 'text-white' : 'text-marca-primario/60')}
+                            />
+                            <span className={cn('text-[15px] tracking-wide relative font-bold transition-colors', isActive ? 'text-white' : 'text-marca-primario/80')}>
+                              {module.name}
                             </span>
-                          )}
-                        </>
-                      );
-                    }}
-                  </NavLink>
-                </li>
-              </React.Fragment>
-            ))}
+                            {count > 0 && (
+                              <span className={cn(
+                                "ml-auto flex items-center justify-center rounded-full text-[10px] font-extrabold leading-none text-white border-2 border-white shadow-sm relative z-10 transition-all bg-estado-rechazado",
+                                count > 9 ? 'px-1.5 h-[18px] min-w-[18px]' : 'h-[18px] w-[18px]',
+                                isBlinking && 'animate-pulse'
+                              )}>
+                                {count > 99 ? '99+' : count}
+                              </span>
+                            )}
+                          </>
+                        );
+                      }}
+                    </NavLink>
+                  </li>
+                </React.Fragment>
+              );
+            })}
           </ul>
         </nav>
 

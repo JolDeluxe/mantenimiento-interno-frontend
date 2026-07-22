@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/z_index';
 import { MaquinaFilterBar, MaquinaFormModal, MaquinaDetailModal, MaquinaTable } from '../components';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { useQrPrintStore } from '../stores/qr-print-store';
 import { getMaquinas } from '../api/maquinaria-api';
 
@@ -123,18 +124,28 @@ export default function MaquinariaDesktop({
       )}
 
       {/* Tabla de Resultados */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-        <MaquinaTable
-          maquinas={maquinas}
-          loading={loading}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-          totalItems={pagination.total}
-          onPageChange={(page) => onFilterChange({ page })}
-          onViewDetail={handleOpenDetail}
-          onEdit={handleOpenEdit}
+      {!loading && maquinas.length === 0 ? (
+        <TicketsEmptyState
+          isMobile={false}
+          isFiltering={Object.keys(filters).some(k => filters[k] !== '' && k !== 'page' && k !== 'limit')}
+          mensaje="Sin maquinaria"
+          subtexto="No se encontraron máquinas con los filtros aplicados."
+          icon="precision_manufacturing"
         />
-      </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <MaquinaTable
+            maquinas={maquinas}
+            loading={loading}
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            onPageChange={(page) => onFilterChange({ page })}
+            onViewDetail={handleOpenDetail}
+            onEdit={handleOpenEdit}
+          />
+        </div>
+      )}
 
       {/* Modal Formulario */}
       <MaquinaFormModal

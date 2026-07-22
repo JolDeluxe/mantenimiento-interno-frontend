@@ -21,14 +21,16 @@ const ROL_COLOR = {
 const puedeEditar = (me, row) => {
     if (me?.rol === 'SUPER_ADMIN') return true;
     if (Number(me?.id) === Number(row.id)) return true;
-    if (me?.rol === 'JEFE_MTTO' && row.rol !== 'JEFE_MTTO' && row.rol !== 'SUPER_ADMIN') return true;
+    const esJefe = me?.rol === 'JEFE_MTTO' || me?.rol === 'COORDINADOR_MTTO';
+    if (esJefe && row.rol !== 'SUPER_ADMIN') return true;
     return false;
 };
 
 const puedeCambiarEstado = (me, row) => {
     if (Number(me?.id) === Number(row.id)) return false;
     if (me?.rol === 'SUPER_ADMIN') return true;
-    if (me?.rol === 'JEFE_MTTO' && row.rol !== 'JEFE_MTTO' && row.rol !== 'SUPER_ADMIN') return true;
+    const esJefe = me?.rol === 'JEFE_MTTO' || me?.rol === 'COORDINADOR_MTTO';
+    if (esJefe && row.rol !== 'SUPER_ADMIN') return true;
     return false;
 };
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQrPrintStore } from '../stores/qr-print-store';
 import { QrCodeCard } from '../components';
 import { Button, Icon, Spinner } from '@/components/ui/z_index';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { getMaquinas } from '../api/maquinaria-api';
 import { notify } from '@/components/notification/adaptive-notify';
 
@@ -136,15 +137,12 @@ export default function QrBatchPrintPage() {
         </div>
 
         {selectedList.length === 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <Icon name="warning" className="text-amber-500 shrink-0" size="sm" />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider">Sin Selección</h4>
-              <p className="text-xs text-amber-700 leading-normal font-medium">
-                No has seleccionado ninguna máquina para imprimir. Regresa al catálogo y activa las casillas de verificación de las máquinas que desees imprimir en lote.
-              </p>
-            </div>
-          </div>
+          <TicketsEmptyState
+            isMobile={false}
+            mensaje="Sin Selección"
+            subtexto="No has seleccionado ninguna máquina para imprimir. Regresa al catálogo y activa las casillas de verificación de las máquinas que desees imprimir en lote."
+            icon="warning"
+          />
         )}
       </div>
 

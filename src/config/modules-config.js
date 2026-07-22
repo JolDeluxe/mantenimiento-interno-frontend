@@ -111,15 +111,47 @@ export const MODULES_CONFIG = [
     name: 'Dashboard',
     icon: 'dashboard',
     route: '/dashboard',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
-    divider: true,
+    // allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO', 'TECNICO'],
+    allowedRoles: ['SUPER_ADMIN'],
+  },
+  {
+    id: 'divider-admin',
+    isDivider: true,
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'reportes',
     name: 'Reportes y KPIs',
     icon: 'bar_chart',
     route: '/reportes',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    // allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    // children: [
+    //   {
+    //     id: 'reportes-general',
+    //     name: 'General',
+    //     route: '/reportes/general',
+    //     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    //   },
+    //   {
+    //     id: 'reportes-equipo',
+    //     name: 'Equipo',
+    //     route: '/reportes/equipo',
+    //     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    //   },
+    //   {
+    //     id: 'reportes-area',
+    //     name: 'Área',
+    //     route: '/reportes/area',
+    //     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    //   },
+    //   {
+    //     id: 'reportes-cliente',
+    //     name: 'Cliente',
+    //     route: '/reportes/cliente',
+    //     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    //   }
+    // ],
+    allowedRoles: ['SUPER_ADMIN'],
     children: [
       {
         id: 'reportes-general',
@@ -160,14 +192,14 @@ export const MODULES_CONFIG = [
     name: 'Usuarios',
     icon: 'group',
     route: '/usuarios',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'dias_laborados',
     name: 'Días Laborados',
     icon: 'calendar_clock',
     route: '/dias_laborados',
-    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+    allowedRoles: ['SUPER_ADMIN'],
     hideInMenu: true,
   },
   {

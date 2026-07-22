@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Icon, GlassPaginationPill, GlassFab, ScrollToTopButton } from '@/components/ui/z_index';
+import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { MobileMaquinaFilterBar, MaquinaFormModal, MaquinaDetailModal, MaquinaCard } from '../components';
 import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
@@ -87,10 +88,13 @@ export default function MaquinariaMobile({
               />
             ))
           ) : (
-            <div className="py-20 text-center text-slate-400 italic bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <Icon name="search_off" className="mb-2 text-slate-300" size="lg" />
-              No se encontraron máquinas.
-            </div>
+            <TicketsEmptyState
+              isMobile={true}
+              isFiltering={Object.keys(filters).some(k => filters[k] !== '' && k !== 'page' && k !== 'limit')}
+              mensaje="Sin maquinaria"
+              subtexto="No se encontraron máquinas con los filtros aplicados."
+              icon="precision_manufacturing"
+            />
           )}
         </div>
       </div>

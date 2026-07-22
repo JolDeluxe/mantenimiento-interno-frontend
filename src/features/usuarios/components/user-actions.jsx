@@ -9,7 +9,7 @@ export const UserActions = ({
 }) => {
     const esMismoUsuario = currentUser?.id === usuario.id;
     const esSuperAdmin = currentUser?.rol === "SUPER_ADMIN";
-    const esJefeMtto = currentUser?.rol === "JEFE_MTTO";
+    const esJefeMtto = currentUser?.rol === "JEFE_MTTO" || currentUser?.rol === "COORDINADOR_MTTO";
 
     // Casteo estricto a Number para evitar falsos negativos lógicos
     const currentDeptoId = currentUser?.departamentoId ? Number(currentUser.departamentoId) : null;
@@ -20,7 +20,7 @@ export const UserActions = ({
         : (usuario.departamento?.id ? Number(usuario.departamento.id) : null);
 
     const mismoDepartamento = currentDeptoId !== null && currentDeptoId === objetivoDeptoId;
-    const objetivoAltaJerarquia = usuario.rol === "SUPER_ADMIN" || usuario.rol === "JEFE_MTTO";
+    const objetivoAltaJerarquia = usuario.rol === "SUPER_ADMIN";
 
     const puedeEditar = esSuperAdmin || esMismoUsuario || (esJefeMtto && mismoDepartamento && !objetivoAltaJerarquia);
     const puedeToggle = (esSuperAdmin || (esJefeMtto && mismoDepartamento && !objetivoAltaJerarquia)) && !esMismoUsuario;
