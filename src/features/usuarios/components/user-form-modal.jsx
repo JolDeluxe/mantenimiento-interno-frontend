@@ -220,7 +220,7 @@ export const UserFormModal = ({
         if (username) formData.append('username', username);
         if (email) formData.append('email', email);
         if (password) formData.append('password', password);
-        if (cargo) formData.append('cargo', cargo);
+        if (cargo && rol !== 'CLIENTE_INTERNO') formData.append('cargo', cargo);
         if (telefono) formData.append('telefono', telefono);
 
         if (!esEdicion && esJefe && currentUser?.departamentoId) {
@@ -415,37 +415,39 @@ export const UserFormModal = ({
 
                     {/* ── SEGURIDAD Y CARGO ── */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="u-cargo-select">Puesto / Cargo (Opcional)</Label>
+                        {rol !== 'CLIENTE_INTERNO' && (
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="u-cargo-select">Puesto / Cargo (Opcional)</Label>
 
-                            <Select
-                                id="u-cargo-select"
-                                value={cargoSelect}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setCargoSelect(val);
-                                    if (val !== 'Otro...') {
-                                        setCargo(val);
-                                    } else {
-                                        setCargo('');
-                                    }
-                                }}
-                            >
-                                <option value="">Selecciona un cargo</option>
-                                {CARGOS_DEFAULT.map(c => <option key={c} value={c}>{c}</option>)}
-                                <option value="Otro...">Otro...</option>
-                            </Select>
+                                <Select
+                                    id="u-cargo-select"
+                                    value={cargoSelect}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setCargoSelect(val);
+                                        if (val !== 'Otro...') {
+                                            setCargo(val);
+                                        } else {
+                                            setCargo('');
+                                        }
+                                    }}
+                                >
+                                    <option value="">Selecciona un cargo</option>
+                                    {CARGOS_DEFAULT.map(c => <option key={c} value={c}>{c}</option>)}
+                                    <option value="Otro...">Otro...</option>
+                                </Select>
 
-                            {cargoSelect === 'Otro...' && (
-                                <Input
-                                    id="u-cargo"
-                                    value={cargo}
-                                    onChange={(e) => setCargo(e.target.value)}
-                                    placeholder="Escribe el puesto..."
-                                    className="mt-2"
-                                />
-                            )}
-                        </div>
+                                {cargoSelect === 'Otro...' && (
+                                    <Input
+                                        id="u-cargo"
+                                        value={cargo}
+                                        onChange={(e) => setCargo(e.target.value)}
+                                        placeholder="Escribe el puesto..."
+                                        className="mt-2"
+                                    />
+                                )}
+                            </div>
+                        )}
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="u-pass" error={!!fe.password}>
                                 Contraseña {esEdicion ? <span className="font-normal text-slate-400 normal-case text-[10px]">(Dejar vacío para conservar)</span> : '*'}
