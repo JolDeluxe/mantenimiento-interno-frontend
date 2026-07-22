@@ -509,9 +509,25 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const esTiempoManual = Boolean(
         ticket.historial?.some(h => 
             h.esTiempoManual === true || 
-            /\[TIEMPO_MANUAL:/i.test(h.nota || '')
+            /\[TIEMPO_MANUAL:/i.test(h.nota || '') ||
+            /\|\|\[META:TIEMPO_MANUAL\]\|\|/i.test(h.nota || '')
         )
     );
+
+    // Heurística para saber si el tiempo manual fue ingresado mediante rango o duración pura.
+    // Si se ingresó mediante rango horario, los segundos y milisegundos son exactamente 0 (forzado por localMXTimeToISO).
+    // Si se ingresó como duración pura, el backend usa `new Date()` que contiene segundos.
+    let isManualRange = false;
+    if (esTiempoManual && ticket.fechaInicio && fechaFinalizada) {
+        const tInicio = new Date(ticket.fechaInicio);
+        const tFin = new Date(fechaFinalizada);
+        if (tInicio.getSeconds() === 0 && tInicio.getMilliseconds() === 0 &&
+            tFin.getSeconds() === 0 && tFin.getMilliseconds() === 0) {
+            isManualRange = true;
+        }
+    }
+
+    const mostrarWorkTimeSummary = !esTiempoManual || isManualRange;
     const mostrarReporteContexto = shouldShowReportContext(ticket);
     const usarLayoutActividadSimple = !ticket.maquina && !ticket.maquinaId && !mostrarReporteContexto;
 
@@ -730,7 +746,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                         />
                     </div>
                 )}
-                {(ticket.fechaInicio || fechaFinalizada) && (
+                {(ticket.fechaInicio || fechaFinalizada) && mostrarWorkTimeSummary && (
                     <div className="pt-2 border-t border-slate-200/60">
                         <WorkTimeSummary inicio={ticket.fechaInicio} fin={fechaFinalizada} />
                     </div>
