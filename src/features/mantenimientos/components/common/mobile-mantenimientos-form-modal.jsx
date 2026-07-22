@@ -385,6 +385,15 @@ export const MobileTicketFormModal = ({
             e.maquinaId = 'La máquina ingresada no existe.';
         }
 
+        if (scope === 'mantenimientos') {
+            if (!maquinaId) {
+                e.maquinaId = 'La máquina es obligatoria para mantenimientos.';
+            }
+            if (!clasificacion) {
+                e.clasificacion = 'La clasificación es obligatoria para mantenimientos.';
+            }
+        }
+
         if (esAdmin && fechaVencimiento) {
             const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
             const fechaError = validateFechaEdicionNoPasadaSiCambio(fechaVencimiento, fechaOriginal, {
