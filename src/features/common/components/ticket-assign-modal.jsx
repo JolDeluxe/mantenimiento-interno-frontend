@@ -6,11 +6,13 @@ import { formatFechaRelativa, formatDurationToDaysHours, getMinDateHoy, isoToDat
 const ROL_LABEL = {
     TECNICO: 'Técnico',
     COORDINADOR_MTTO: 'Coordinador',
+    JEFE_MTTO: 'Jefe Mtto',
 };
 
 const ROL_COLOR = {
     TECNICO: 'bg-blue-100 text-blue-700',
     COORDINADOR_MTTO: 'bg-amber-100 text-amber-700',
+    JEFE_MTTO: 'bg-purple-100 text-purple-700',
 };
 
 // ── Badge de carga de trabajo ─────────────────────────────────────────────
