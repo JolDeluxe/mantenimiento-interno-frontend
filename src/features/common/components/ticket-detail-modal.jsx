@@ -859,7 +859,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         </span>
                                         <MiniImageGrid 
                                             urls={ticket.imagenes.map(img => resolveUrl(img.url))} 
-                                            onExpand={handleImageExpand} 
+                                            onExpand={(idx) => handleImageExpand(ticket.imagenes.map(img => resolveUrl(img.url)), idx)} 
                                         />
                                     </div>
                                 )}
