@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO, AREAS } from '@/features/common/constants/catalogos-tareas';
 import { HoyTeamToggle } from './hoy-team-toggle';
 
 const normalizeOpts = (opts = []) =>
@@ -59,6 +59,8 @@ export const HoyFilterBar = ({
     equipoCount = 0,
     misTareasCount = 0,
     onOpenDrawerAmnistia,
+    filtroArea,
+    onAreaChange,
     puedeFiltrarAtrasadasRechazadas = true,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
@@ -186,6 +188,17 @@ export const HoyFilterBar = ({
                         placeholder="Categoría..."
                         icon="label"
                         allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+                <div className="min-w-40 w-auto max-w-full flex-none">
+                    <SearchableSelect
+                        options={normalizeOpts(AREAS)}
+                        value={filtroArea ? String(filtroArea) : ''}
+                        onChange={onAreaChange}
+                        placeholder="Área..."
+                        icon="place"
+                        allOptionText="Todas las áreas"
                         className="w-full"
                     />
                 </div>

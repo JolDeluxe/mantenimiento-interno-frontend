@@ -1,7 +1,7 @@
 // src/features/hoy/components/hoy-mantenimientos/mantenimientos-filter-bar.jsx
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO, AREAS } from '@/features/common/constants/catalogos-tareas';
 import { HoyTeamToggle } from '../common/hoy-team-toggle';
 
 const CLASIFICACIONES_MANTENIMIENTO = [
@@ -99,6 +99,8 @@ export const MantenimientosFilterBar = ({
     misTareasCount = 0,
     onOpenDrawerAmnistia,
     puedeFiltrarAtrasadasRechazadas = true,
+    filtroArea,
+    onAreaChange,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
@@ -262,6 +264,17 @@ export const MantenimientosFilterBar = ({
                         placeholder="Categoría..."
                         icon="label"
                         allOptionText="Todas"
+                        className="w-full"
+                    />
+                </div>
+                <div className="min-w-40 w-auto max-w-full flex-none">
+                    <SearchableSelect
+                        options={normalizeOpts(AREAS)}
+                        value={filtroArea ? String(filtroArea) : ''}
+                        onChange={onAreaChange}
+                        placeholder="Área..."
+                        icon="place"
+                        allOptionText="Todas las áreas"
                         className="w-full"
                     />
                 </div>

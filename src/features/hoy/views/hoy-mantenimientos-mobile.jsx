@@ -90,7 +90,9 @@ export const HoyMantenimientosMobile = ({
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
+    filtroArea,
     onCategoriaChange,
+    onAreaChange,
     filtroResponsable,
     onResponsableChange,
     mostrarAtrasadas,
@@ -192,7 +194,9 @@ export const HoyMantenimientosMobile = ({
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
+                            filtroArea={filtroArea}
                 onCategoriaChange={onCategoriaChange}
+                            onAreaChange={onAreaChange}
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}

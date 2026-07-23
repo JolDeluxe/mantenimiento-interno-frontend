@@ -41,6 +41,7 @@ export const TicketsActividadesDesktop = ({
     filtroTipo,
     filtroPrioridad,
     filtroCategoria,
+    filtroArea,
     filtroResponsable,
     filtroProgramacion,
     filtroConclusion,
@@ -58,6 +59,7 @@ export const TicketsActividadesDesktop = ({
     onTipoChange,
     onPrioridadChange,
     onCategoriaChange,
+    onAreaChange,
     onResponsableChange,
     onProgramacionChange,
     onConclusionChange,
@@ -135,6 +137,8 @@ export const TicketsActividadesDesktop = ({
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
                 onCategoriaChange={onCategoriaChange}
+                filtroArea={filtroArea}
+                onAreaChange={onAreaChange}
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}

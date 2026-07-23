@@ -64,6 +64,7 @@ export const TicketsActividadesMobile = ({
     filtroTipo,
     filtroPrioridad,
     filtroCategoria,
+    filtroArea,
     filtroResponsable,
     filtroProgramacion,
     filtroConclusion,
@@ -78,6 +79,7 @@ export const TicketsActividadesMobile = ({
     onTipoChange,
     onPrioridadChange,
     onCategoriaChange,
+    onAreaChange,
     onResponsableChange,
     onProgramacionChange,
     onConclusionChange,
@@ -153,7 +155,9 @@ export const TicketsActividadesMobile = ({
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
+                            filtroArea={filtroArea}
                 onCategoriaChange={onCategoriaChange}
+                            onAreaChange={onAreaChange}
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
