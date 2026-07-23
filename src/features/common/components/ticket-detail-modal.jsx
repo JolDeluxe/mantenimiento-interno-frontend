@@ -306,6 +306,7 @@ const getContextualEntry = (historial, estado) => {
 
 const resolveUrl = (url) => {
     if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const cleanUrl = url.replace(/\\/g, '/');
     let prefix = ENV.API_URL || '';
     if (prefix.endsWith('/api')) prefix = prefix.slice(0, -4);
