@@ -52,6 +52,7 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 );
 
 const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
+    const selected = options.find((o) => o.value === String(value));
     const isActive = Boolean(value);
 
     return (
@@ -59,26 +60,41 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
             <select
                 value={value ? String(value) : ''}
                 onChange={(e) => onChange(e.target.value)}
-                style={isActive ? { ...glassBase('primary'), borderRadius: 14 } : { ...glassBase('light'), borderRadius: 14 }}
-                className={`
-                    w-full h-full pl-8 pr-6 text-xs bg-transparent appearance-none border-none outline-none select-none relative z-10 font-bold transition-colors
-                    ${isActive ? 'text-white' : 'text-slate-600'}
-                `}
+                className="absolute inset-0 w-full h-full opacity-0 z-20 appearance-none cursor-pointer"
             >
-                <option value="" className="text-slate-800 bg-white font-medium">{placeholder}: Todos</option>
-                {options.map((o) => (
-                    <option key={o.value} value={o.value} className="text-slate-800 bg-white font-medium">
-                        {o.label}
+                <option value="">{placeholder}</option>
+                {options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
                     </option>
                 ))}
             </select>
-            <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none z-10">
-                <Icon name={icon} size="xs" className={isActive ? 'text-white' : 'text-slate-500'} />
+
+            <div
+                style={isActive ? { ...glassBase('primary'), borderRadius: 12 } : { ...glassBase('light'), borderRadius: 12 }}
+                className={`
+                    absolute inset-0 flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-all duration-200 pointer-events-none overflow-hidden
+                    ${isActive ? 'text-white' : 'text-slate-600'}
+                `}
+            >
+                <GlassSheen />
+                <Icon name={icon} size="xs" className="relative shrink-0 z-10" />
+                <span className="relative flex-1 truncate z-10">
+                    {selected?.label ?? placeholder}
+                </span>
+
+                {isActive ? (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onChange(''); }}
+                        className="relative z-30 flex items-center justify-center w-5 h-5 -mr-1 rounded-full bg-white/20 hover:bg-white/30 pointer-events-auto shrink-0 active:scale-95 transition-transform"
+                    >
+                        <Icon name="close" size="xs" className="text-white scale-75" />
+                    </button>
+                ) : (
+                    <Icon name="expand_more" size="xs" className="text-slate-500 shrink-0 relative z-10" />
+                )}
             </div>
-            <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none z-10">
-                <Icon name="unfold_more" size="xxs" className={isActive ? 'text-white' : 'text-slate-400'} />
-            </div>
-            <GlassSheen />
         </div>
     );
 };
