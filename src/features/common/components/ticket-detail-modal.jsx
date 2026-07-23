@@ -304,15 +304,24 @@ const getContextualEntry = (historial, estado) => {
     return historial.find(h => h.estadoNuevo === estado) ?? null;
 };
 
+const resolveUrl = (url) => {
+    if (!url) return '';
+    const cleanUrl = url.replace(/\\/g, '/');
+    let prefix = ENV.API_URL || '';
+    if (prefix.endsWith('/api')) prefix = prefix.slice(0, -4);
+    const sep = cleanUrl.startsWith('/') ? '' : '/';
+    return `${prefix}${sep}${cleanUrl}`;
+};
+
 const getContextualImages = (entry, ticket) => {
     if (entry?.imagenes?.length > 0) {
-        return entry.imagenes.map(i => (typeof i === 'string' ? i : i?.url)).filter(Boolean);
+        return entry.imagenes.map(i => resolveUrl(typeof i === 'string' ? i : i?.url)).filter(Boolean);
     }
     const tipoFiltro = EVIDENCIA_TIPO[ticket?.estado];
     if (tipoFiltro && ticket?.imagenes?.length > 0) {
         return ticket.imagenes
             .filter(img => img.tipo === tipoFiltro)
-            .map(img => img.url)
+            .map(img => resolveUrl(img.url))
             .filter(Boolean);
     }
     return [];
@@ -848,7 +857,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                             Evidencia Adjunta ({ticket.imagenes.length})
                                         </span>
                                         <MiniImageGrid 
-                                            urls={ticket.imagenes.map(img => `${ENV.API_URL || ''}${img.url}`)} 
+                                            urls={ticket.imagenes.map(img => resolveUrl(img.url))} 
                                             onExpand={handleImageExpand} 
                                         />
                                     </div>
