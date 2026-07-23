@@ -13,14 +13,15 @@ const paramsToKey = (params = {}) => {
     return JSON.stringify(sorted);
 };
 
-// Mantiene las tareas activas visibles antes que el backlog de atrasadas.
+// Conserva rechazadas al inicio; después deja la respuesta del backend casi intacta.
 const ordenarTareasHoy = (lista = []) => lista
     .map((ticket, index) => ({ ticket, index }))
     .sort((a, b) => {
         const prioridad = (ticket) => {
-            if (ticket.estado === 'EN_PROGRESO') return 0;
-            if (ticket.isOverdue === true) return 1;
-            return 2;
+            if (ticket.estado === 'RECHAZADO') return 0;
+            if (ticket.estado === 'EN_PROGRESO') return 1;
+            if (ticket.isOverdue === true) return 2;
+            return 3;
         };
         return prioridad(a.ticket) - prioridad(b.ticket) || a.index - b.index;
     })

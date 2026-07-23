@@ -2,7 +2,7 @@
 import api from '@/lib/axios';
 
 export const getHoyTickets = (params = {}) =>
-    api.get('/api/tickets', { params });
+    api.get('/api/tickets', { params: { ...params, perteneceAHoy: true } });
 
 export const updateHoyTicket = (id, data) =>
     api.put(`/api/tickets/${id}`, data, {
