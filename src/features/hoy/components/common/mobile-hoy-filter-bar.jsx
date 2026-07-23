@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO, AREAS } from '@/features/common/constants/catalogos-tareas';
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
@@ -109,6 +109,8 @@ export const MobileHoyFilterBar = ({
     currentUser,
     onOpenDrawerAmnistia,
     puedeFiltrarAtrasadasRechazadas = true,
+    filtroArea,
+    onAreaChange,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -134,6 +136,7 @@ export const MobileHoyFilterBar = ({
 
     const hasActiveFilters = Boolean(
         filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
+        filtroArea ||
         mostrarAtrasadas || mostrarRechazadas
     );
 
@@ -141,6 +144,7 @@ export const MobileHoyFilterBar = ({
         if (filtroTipo) onTipoChange('');
         if (filtroPrioridad) onPrioridadChange('');
         if (filtroCategoria) onCategoriaChange('');
+        if (filtroArea) onAreaChange('');
         if (filtroResponsable) onResponsableChange('');
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -170,6 +174,14 @@ export const MobileHoyFilterBar = ({
             options={CATEGORIAS_EQUIPO}
             value={filtroCategoria}
             onChange={onCategoriaChange}
+        />,
+        <GlassNativeSelect
+            key="area"
+            icon="place"
+            placeholder="Área"
+            options={normalizeOpts(AREAS)}
+            value={filtroArea}
+            onChange={onAreaChange}
         />
     ];
 

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO, AREAS } from '@/features/common/constants/catalogos-tareas';
 
 const normalizeOpts = (opts = []) =>
     opts.map(o =>
@@ -62,12 +62,12 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange }) => {
                 ))}
             </select>
             <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none z-10">
-                <Icon name={icon} size="xs" className={isActive ? 'text-white' : 'text-slate-500'} />
+                <Icon name={icon} size="xs" className={isActive ? 'text-white/90' : 'text-slate-400'} />
             </div>
             <div className="absolute inset-y-0 right-2.5 flex items-center pointer-events-none z-10">
-                <Icon name="unfold_more" size="xxs" className={isActive ? 'text-white' : 'text-slate-400'} />
+                <Icon name="expand_more" size="xs" className={isActive ? 'text-white/70' : 'text-slate-400'} />
             </div>
-            <GlassSheen />
+            {isActive && <GlassSheen />}
         </div>
     );
 };
@@ -81,6 +81,8 @@ export const MobileActividadesFilterBar = ({
     onPrioridadChange,
     filtroCategoria,
     onCategoriaChange,
+    filtroArea,
+    onAreaChange,
     filtroResponsable,
     onResponsableChange,
     opcionesResponsables = [],
@@ -91,12 +93,17 @@ export const MobileActividadesFilterBar = ({
     existenciaGlobal = {},
     totalAtrasadasGlobal = 0,
     currentUser,
+    vistaEquipo,
+    onVistaEquipoChange,
+    equipoCount = 0,
+    misTareasCount = 0,
     onOpenDrawerAmnistia,
     puedeFiltrarAtrasadasRechazadas = true,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);
     const esAdmin = ROLES_ADMIN.has(currentUser?.rol);
+    const esCoordinador = currentUser?.rol === 'COORDINADOR_MTTO';
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -117,7 +124,7 @@ export const MobileActividadesFilterBar = ({
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     const hasActiveFilters = Boolean(
-        filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
+        filtroTipo || filtroPrioridad || filtroCategoria || filtroArea || filtroResponsable ||
         mostrarAtrasadas || mostrarRechazadas
     );
 
@@ -125,6 +132,7 @@ export const MobileActividadesFilterBar = ({
         if (filtroTipo) onTipoChange('');
         if (filtroPrioridad) onPrioridadChange('');
         if (filtroCategoria) onCategoriaChange('');
+        if (filtroArea) onAreaChange('');
         if (filtroResponsable) onResponsableChange('');
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -154,6 +162,14 @@ export const MobileActividadesFilterBar = ({
             options={CATEGORIAS_EQUIPO}
             value={filtroCategoria}
             onChange={onCategoriaChange}
+        />,
+        <GlassNativeSelect
+            key="area"
+            icon="place"
+            placeholder="Área"
+            options={normalizeOpts(AREAS)}
+            value={filtroArea}
+            onChange={onAreaChange}
         />
     ];
 

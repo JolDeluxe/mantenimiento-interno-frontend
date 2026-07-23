@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, ROLES_ADMIN, CATEGORIAS_EQUIPO, AREAS } from '@/features/common/constants/catalogos-tareas';
 
 const CLASIFICACIONES_MANTENIMIENTO = [
     { value: 'CORRECTIVO', label: 'Correctivos', icon: 'report_problem', tone: 'danger' },
@@ -120,6 +120,8 @@ export const MobileMantenimientosFilterBar = ({
     onPrioridadChange,
     filtroCategoria,
     onCategoriaChange,
+    filtroArea,
+    onAreaChange,
     filtroResponsable,
     onResponsableChange,
     opcionesResponsables = [],
@@ -156,7 +158,7 @@ export const MobileMantenimientosFilterBar = ({
     const isRechazadasAlert = totalRechazadas > 0 && !mostrarRechazadas;
 
     const hasActiveFilters = Boolean(
-        filtroTipo || filtroClasificacion || filtroCriticidad || filtroPrioridad || filtroCategoria || filtroResponsable ||
+        filtroTipo || filtroClasificacion || filtroCriticidad || filtroPrioridad || filtroCategoria || filtroArea || filtroResponsable ||
         mostrarAtrasadas || mostrarRechazadas
     );
 
@@ -166,6 +168,7 @@ export const MobileMantenimientosFilterBar = ({
         if (filtroCriticidad) onCriticidadChange('');
         if (filtroPrioridad) onPrioridadChange('');
         if (filtroCategoria) onCategoriaChange('');
+        if (filtroArea) onAreaChange('');
         if (filtroResponsable) onResponsableChange('');
         if (mostrarAtrasadas) onToggleAtrasadas();
         if (mostrarRechazadas) onToggleRechazadas();
@@ -195,6 +198,14 @@ export const MobileMantenimientosFilterBar = ({
             options={CATEGORIAS_EQUIPO}
             value={filtroCategoria}
             onChange={onCategoriaChange}
+        />,
+        <GlassNativeSelect
+            key="area"
+            icon="place"
+            placeholder="Área"
+            options={normalizeOpts(AREAS)}
+            value={filtroArea}
+            onChange={onAreaChange}
         />
     ];
 
