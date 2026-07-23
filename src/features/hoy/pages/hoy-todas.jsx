@@ -45,6 +45,7 @@ export default function HoyTodasPage() {
     const [filtroTipo, setFiltroTipo] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
     const [filtroCategoria, setFiltroCategoria] = useState('');
+    const [filtroArea, setFiltroArea] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
     const [isDrawerAmnistiaOpen, setIsDrawerAmnistiaOpen] = useState(false);
@@ -75,6 +76,7 @@ export default function HoyTodasPage() {
         if (filtroTipo) params.tipo = filtroTipo;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroCategoria) params.categoria = filtroCategoria;
+        if (filtroArea) params.area = filtroArea;
 
         if (filtroResponsable) {
             params.responsableId = filtroResponsable;
@@ -85,7 +87,7 @@ export default function HoyTodasPage() {
         if (mostrarAtrasadas) params.vencidos = true;
 
         return params;
-    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
+    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroArea, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las tareas.'));
@@ -207,6 +209,8 @@ export default function HoyTodasPage() {
         onPrioridadChange: setFiltroPrioridad,
         filtroCategoria,
         onCategoriaChange: setFiltroCategoria,
+        filtroArea,
+        onAreaChange: setFiltroArea,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,

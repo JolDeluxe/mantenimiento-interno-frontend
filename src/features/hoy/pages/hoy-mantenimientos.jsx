@@ -46,6 +46,7 @@ export default function HoyMantenimientosPage() {
     const [filtroCriticidad, setFiltroCriticidad] = useState('');
     const [filtroPrioridad, setFiltroPrioridad] = useState('');
     const [filtroCategoria, setFiltroCategoria] = useState('');
+    const [filtroArea, setFiltroArea] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
     const [mostrarAtrasadas, setMostrarAtrasadas] = useState(false);
     const [isDrawerAmnistiaOpen, setIsDrawerAmnistiaOpen] = useState(false);
@@ -78,6 +79,7 @@ export default function HoyMantenimientosPage() {
         if (filtroCriticidad) params.criticidadMaquina = filtroCriticidad;
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroCategoria) params.categoria = filtroCategoria;
+        if (filtroArea) params.area = filtroArea;
 
         if (filtroResponsable) {
             params.responsableId = filtroResponsable;
@@ -88,7 +90,7 @@ export default function HoyMantenimientosPage() {
         if (mostrarAtrasadas) params.vencidos = true;
 
         return params;
-    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroClasificacion, filtroCriticidad, filtroPrioridad, filtroCategoria, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
+    }, [vistaActiva, query, filtroEstado, filtroTipo, filtroClasificacion, filtroCriticidad, filtroPrioridad, filtroCategoria, filtroArea, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
     const loadTickets = useCallback(() => {
         fetchTickets(queryPayload).catch(() => notify.error('Error al cargar los mantenimientos.'));
@@ -227,6 +229,8 @@ export default function HoyMantenimientosPage() {
         onPrioridadChange: setFiltroPrioridad,
         filtroCategoria,
         onCategoriaChange: setFiltroCategoria,
+        filtroArea,
+        onAreaChange: setFiltroArea,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
         mostrarAtrasadas,

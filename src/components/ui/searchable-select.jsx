@@ -6,7 +6,7 @@ import { cn } from '@/utils/cn';
 export const SearchableSelect = ({
     options = [],
     value,
-    onChange,
+    onChange = () => {},
     placeholder = "Seleccionar...",
     searchPlaceholder = "Buscar...",
     allOptionText = "Todos",
