@@ -12,6 +12,7 @@ import {
     getTipoStyle,
     getCategoriaInfo
 } from '@/features/common/constants/catalogos-tareas';
+import { ENV } from '@/config/env';
 
 // ── DataRow ────────────────────────────────────────────────────────────────
 const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
@@ -841,6 +842,17 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                 <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                                     {ticket.descripcion}
                                 </p>
+                                {ticket.imagenes && ticket.imagenes.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t border-slate-200/60">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                            Evidencia Adjunta ({ticket.imagenes.length})
+                                        </span>
+                                        <MiniImageGrid 
+                                            urls={ticket.imagenes.map(img => `${ENV.API_URL || ''}${img.url}`)} 
+                                            onExpand={handleImageExpand} 
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <ContextualBanner ticket={ticket} onImageExpand={handleImageExpand} />
