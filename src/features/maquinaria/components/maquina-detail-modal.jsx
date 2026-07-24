@@ -4,6 +4,7 @@ import { formatFecha } from '@/lib/date';
 import api from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth-store';
 import { MaquinaRecurrenciaTab } from './maquina-recurrencia-tab';
+import { QrCodeCard } from './qr-code-card';
 import { buildMachineQrPayload } from '../utils/qr-payload';
 
 const limpiarNota = (nota) => {
@@ -88,73 +89,7 @@ export const MaquinaDetailModal = ({
 
   const imprimirQR = () => {
     if (!maquina || !qrUrl) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Imprimir QR - ${maquina.codigo}</title>
-          <style>
-            body {
-              font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              text-align: center;
-              padding: 40px;
-            }
-            .card {
-              border: 3px double #333;
-              padding: 30px;
-              border-radius: 12px;
-              max-width: 350px;
-            }
-            .code {
-              font-size: 24px;
-              font-weight: bold;
-              font-family: monospace;
-              margin: 10px 0;
-              letter-spacing: 2px;
-            }
-            .name {
-              font-size: 18px;
-              font-weight: bold;
-              text-transform: uppercase;
-              margin-bottom: 20px;
-              color: #222;
-            }
-            .qr {
-              margin: 15px 0;
-            }
-            .desc {
-              font-size: 11px;
-              color: #666;
-              margin-top: 15px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="code">${maquina.codigo}</div>
-            <div class="name">${maquina.nombre}</div>
-            <div class="qr">
-              <img src="${qrUrl}" width="200" height="200" alt="QR Code" />
-            </div>
-            <div class="desc">
-              Escanee para reportar falla o solicitar servicio técnico.
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    window.print();
   };
 
   const toggleExpand = (id) => {
@@ -715,32 +650,7 @@ export const MaquinaDetailModal = ({
               </span>
             </div>
             
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center shadow-inner relative group">
-              {qrUrl ? (
-                <img
-                  src={qrUrl}
-                  width="180"
-                  height="180"
-                  alt={`QR ${maquina.codigo}`}
-                  className="mix-blend-multiply transition-transform duration-200 group-hover:scale-105"
-                />
-              ) : (
-                <div className="w-[180px] min-h-[180px] flex items-center justify-center text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3 leading-snug">
-                  No se puede generar el QR porque la URL del portal público no está configurada correctamente.
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-1 bg-slate-50 border border-slate-100 p-2.5 rounded-2xl w-full">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">URL del QR</span>
-              <span className="text-[10px] font-mono text-slate-500 break-all select-all font-medium">
-                {qrPayload || 'URL del portal público no configurada.'}
-              </span>
-            </div>
-
-            <p className="text-[11px] leading-relaxed text-slate-400 font-medium max-w-[250px]">
-              Escanea el código para reportar una falla o registrar mantenimiento programado de manera inmediata en la aplicación.
-            </p>
+            <QrCodeCard maquina={maquina} />
           </ModalBody>
           <ModalFooter className="flex gap-2 justify-end w-full">
             <Button
@@ -763,6 +673,17 @@ export const MaquinaDetailModal = ({
             </Button>
           </ModalFooter>
         </Modal>
+      )}
+
+      {isQrOpen && qrUrl && (
+        <div
+          id="printable-area"
+          className="hidden p-4 bg-white print:block print:p-0 print:absolute print:left-0 print:top-0 print:m-0 print:w-full"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 print:grid-cols-2 print:grid-rows-2 print:gap-8 print:h-[100vh] print:w-full print:place-items-center mb-6 print:mb-0">
+            <QrCodeCard maquina={maquina} />
+          </div>
+        </div>
       )}
     </>
   );

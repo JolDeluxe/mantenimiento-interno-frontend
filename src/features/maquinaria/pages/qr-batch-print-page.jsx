@@ -45,12 +45,13 @@ export default function QrBatchPrintPage() {
   }, []);
 
   const selectedList = maquinas.filter((m) => selectedMaquinas.includes(m.id));
+  const selectedMaquinasKey = selectedMaquinas.join(',');
 
   // Cada vez que cambia el conjunto de máquinas seleccionadas, reinicia el contador
   // de QR cargados para volver a esperar a que todos generen su imagen.
   useEffect(() => {
     resetLoadedQr();
-  }, [selectedMaquinas.join(','), resetLoadedQr]);
+  }, [selectedMaquinasKey, resetLoadedQr]);
 
   const totalQr = selectedList.length;
   const cargados = loadedQrIds.filter((id) => selectedMaquinas.includes(id)).length;
@@ -114,7 +115,7 @@ export default function QrBatchPrintPage() {
               disabled={selectedList.length === 0 || !qrListos}
               onClick={handlePrint}
             >
-              Imprimir Lote
+              {selectedList.length === 1 ? 'Imprimir QR' : 'Imprimir Lote'}
             </Button>
             <Button
               variant="light"

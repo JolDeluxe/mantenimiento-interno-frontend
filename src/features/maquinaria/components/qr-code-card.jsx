@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from '@/components/ui/z_index';
 import { buildMachineQrPayload } from '../utils/qr-payload';
 
 export const QrCodeCard = ({ maquina, onLoad }) => {
@@ -39,8 +40,9 @@ export const QrCodeCard = ({ maquina, onLoad }) => {
           No se puede generar el QR porque la URL del portal público no está configurada correctamente.
         </div>
       )}
-      <div className="text-[9px] text-slate-400 font-bold mt-2.5 leading-tight uppercase tracking-wider print:text-slate-500 print:text-xs print:mt-3">
-        Escanee para reportar falla
+      <div className="flex items-center justify-center gap-1.5 text-[9px] text-slate-400 font-bold mt-2.5 leading-tight uppercase tracking-wider print:text-slate-500 print:text-xs print:mt-3">
+        <Icon name="photo_camera" size="13px" className="shrink-0 print:text-slate-500" />
+        <span>Para reportar incidentes, escanea con la cámara del celular</span>
       </div>
     </div>
   );
