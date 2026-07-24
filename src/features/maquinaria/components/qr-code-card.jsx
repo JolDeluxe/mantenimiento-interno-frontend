@@ -1,12 +1,15 @@
 import React from 'react';
+import { buildMachineQrPayload } from '../utils/qr-payload';
 
 export const QrCodeCard = ({ maquina, onLoad }) => {
   if (!maquina) return null;
 
+  const qrPayload = buildMachineQrPayload(maquina.codigo);
+
   // 400x400 para que se vea nítido incluso a tamaño grande en impresión
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
-    `${window.location.origin}/hoy/todas?prefill=${maquina.codigo}`
-  )}`;
+  const qrUrl = qrPayload
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrPayload)}`
+    : null;
 
   const handleLoaded = () => {
     if (onLoad) onLoad(maquina.id);
@@ -20,17 +23,22 @@ export const QrCodeCard = ({ maquina, onLoad }) => {
       <div className="text-xs font-black text-slate-800 uppercase tracking-tight w-full mb-3 print:text-black leading-tight print:text-sm print:mb-4 whitespace-normal break-words min-h-[2rem] flex items-center justify-center">
         {maquina.nombre}
       </div>
-      <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-center shadow-inner relative print:bg-white print:border-none print:p-0 print:shadow-none">
-        <img
-          src={qrUrl}
-          width="140"
-          height="140"
-          alt={`QR ${maquina.codigo}`}
-          onLoad={handleLoaded}
-          onError={handleLoaded}
-          className="mix-blend-multiply print:w-[280px] print:h-[280px]"
-        />
-      </div>
+      {qrUrl ? (
+        <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-center shadow-inner relative print:bg-white print:border-none print:p-0 print:shadow-none">
+          <img
+            src={qrUrl}
+            width="140"
+            height="140"
+            alt={`QR ${maquina.codigo}`}
+            onLoad={handleLoaded}
+            className="mix-blend-multiply print:w-[280px] print:h-[280px]"
+          />
+        </div>
+      ) : (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-[10px] font-bold text-red-700 leading-snug">
+          No se puede generar el QR porque la URL del portal público no está configurada correctamente.
+        </div>
+      )}
       <div className="text-[9px] text-slate-400 font-bold mt-2.5 leading-tight uppercase tracking-wider print:text-slate-500 print:text-xs print:mt-3">
         Escanee para reportar falla
       </div>
