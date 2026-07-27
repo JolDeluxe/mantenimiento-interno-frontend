@@ -40,14 +40,14 @@ export const useHoy = (scope = 'general') => {
  
     const lastFetchParams = useRef({});
  
-    const fetchTickets = useCallback(async (params = {}) => {
+    const fetchTickets = useCallback(async (params = {}, options = {}) => {
         setLoading(true);
         const queryParams = { ...params, scope };
         lastFetchParams.current = queryParams;
         const cacheKey = `hoy_${scope}_${paramsToKey(params)}`;
  
         try {
-            const snapshot = await readSnapshot('tickets', cacheKey);
+            const snapshot = options.forceFresh ? null : await readSnapshot('tickets', cacheKey);
             if (snapshot?.data) {
                 const cached = snapshot.data;
                 const data = Array.isArray(cached.data) ? cached.data : cached;

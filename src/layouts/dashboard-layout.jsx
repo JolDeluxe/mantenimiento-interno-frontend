@@ -8,6 +8,7 @@ import { RefreshFab } from '@/components/ui/z_index';
 import { useNotifyStore } from '@/stores/notify-store';
 import { getUnreadCount } from '@/features/notificaciones/api/notificaciones-api';
 import { OfflineBanner } from '@/components/ui/offline-banner';
+import { OfflinePendingBadge } from '@/components/ui/offline-pending-badge';
 import { subscribeToPush } from '@/lib/push';
 import { notify } from '@/components/notification/adaptive-notify';
 import socket from '@/lib/socket';
@@ -32,6 +33,8 @@ export const DashboardLayout = () => {
         })
         .catch((err) => console.warn('Hydratación silenciosa fallida:', err.message));
     }
+    // Solo se hidrata al cambiar el usuario activo, no por cada merge de perfil.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
   // Conteo inicial de no leídas
@@ -141,6 +144,7 @@ export const DashboardLayout = () => {
   return (
     <>
       <OfflineBanner />
+      <OfflinePendingBadge />
       {isDesktop ? <DesktopLayout /> : <MobileLayout />}
       {isDesktop && (
         <div className="print:hidden">

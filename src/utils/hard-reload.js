@@ -1,3 +1,5 @@
+import { clearAllSnapshots } from '@/lib/idb';
+
 export const hardReload = async () => {
   const isOffline = !navigator.onLine;
 
@@ -16,14 +18,24 @@ export const hardReload = async () => {
           setTimeout(resolve, 800);
         });
       }
-    } catch (_) { }
+    } catch {
+      // Best effort: si falla el SW, seguimos limpiando caches locales.
+    }
   }
 
   if ('caches' in window) {
     try {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
-    } catch (_) { }
+    } catch {
+      // Best effort: el navegador puede negar acceso a Cache Storage.
+    }
+  }
+
+  try {
+    await clearAllSnapshots();
+  } catch {
+    // Best effort: si IndexedDB falla, la recarga de página continúa.
   }
 
   window.location.reload();

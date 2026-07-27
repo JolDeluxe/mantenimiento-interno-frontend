@@ -5,6 +5,8 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
+/* global clients */
+
 // Toma control inmediato de todos los clientes abiertos
 clientsClaim();
 
@@ -19,6 +21,19 @@ self.addEventListener('message', (event) => {
     }
 });
 
+self.addEventListener('sync', (event) => {
+    if (event.tag !== 'cuadra-offline-mutations') return;
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then((windowClients) => {
+                windowClients.forEach((client) => {
+                    client.postMessage({ type: 'CUADRA_SYNC_OFFLINE_QUEUE' });
+                });
+            })
+    );
+});
+
 // ── SPA Fallback (crítico para React Router) ──────────────────────────────────
 registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/index.html'), {
@@ -28,7 +43,9 @@ registerRoute(
 
 // ── API → NetworkFirst ────────────────────────────────────────────────────────
 registerRoute(
-    ({ url }) => url.pathname.startsWith('/api/'),
+    ({ url, request }) =>
+        request.method === 'GET' &&
+        url.pathname.startsWith('/api/'),
     new NetworkFirst({
         cacheName: 'cuadra-api-v1',
         networkTimeoutSeconds: 5,

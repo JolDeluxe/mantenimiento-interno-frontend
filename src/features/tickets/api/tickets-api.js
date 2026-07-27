@@ -1,5 +1,6 @@
 // src/features/tickets/api/tickets-api.js
 import api from '@/lib/axios';
+import { QUEUE_OPERATIONS, sendOrQueueMutation } from '@/lib/offline-mutation-queue';
 
 // ── Listado y detalle ──────────────────────────────────────────────────────
 
@@ -17,8 +18,13 @@ export const getTicketMetrics = (params = {}) =>
 // ── Mutaciones ─────────────────────────────────────────────────────────────
 
 export const createTicket = (data) =>
-    api.post('/api/tickets', data, {
+    sendOrQueueMutation({
+        operation: QUEUE_OPERATIONS.CREATE_TICKET,
+        method: 'POST',
+        endpoint: '/api/tickets',
+        payload: data,
         headers: { 'Content-Type': 'multipart/form-data' },
+        itemCount: 1,
     });
 
 export const updateTicket = (id, data) =>
@@ -32,7 +38,13 @@ export const changeTicketStatus = (id, data) =>
     });
 
 export const createTicketsBatch = (tareas) =>
-    api.post('/api/tickets/batch', { tareas });
+    sendOrQueueMutation({
+        operation: QUEUE_OPERATIONS.CREATE_TICKETS_BATCH,
+        method: 'POST',
+        endpoint: '/api/tickets/batch',
+        payload: { tareas },
+        itemCount: Array.isArray(tareas) ? tareas.length : 1,
+    });
 
 export const rescheduleTicketsBatch = (payload) =>
     api.patch('/api/tickets/reschedule', payload);

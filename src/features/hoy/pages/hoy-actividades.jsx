@@ -11,6 +11,7 @@ import { HoyFormModal } from '../components/common/hoy-form-modal';
 import { MobileHoyFormModal } from '../components/common/mobile-hoy-form-modal';
 import { BacklogRescheduleDrawer } from '../components/common/backlog-reschedule-drawer';
 import { createTicket, createTicketsBatch } from '@/features/tickets/api/tickets-api';
+import { isQueuedResult, notifyQueuedResult } from '@/features/tickets/utils/offline-result';
 import { buildHoyDateParams, getDefaultHoyVista, getMetricTotalForVista, puedeFiltrarAtrasadasRechazadas } from '../utils/date-filters';
 
 
@@ -88,9 +89,13 @@ export default function HoyActividadesPage() {
         return params;
     }, [vistaActiva, query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroArea, filtroResponsable, mostrarAtrasadas, mostrarRechazadas, currentUser, vistaEquipo]);
 
-    const loadTickets = useCallback(() => {
-        fetchTickets(queryPayload).catch(() => notify.error('Error al cargar las actividades.'));
+    const loadTickets = useCallback((options = {}) => {
+        return fetchTickets(queryPayload, options).catch(() => notify.error('Error al cargar las actividades.'));
     }, [fetchTickets, queryPayload]);
+
+    const refreshAfterSuccess = useCallback(() => {
+        loadTickets({ forceFresh: true }).catch(() => {});
+    }, [loadTickets]);
 
     useEffect(() => { loadTickets(); }, [loadTickets]);
     useEffect(() => { fetchTecnicos(); }, [fetchTecnicos]);
@@ -114,10 +119,15 @@ export default function HoyActividadesPage() {
     const handleCreate = async (payloads) => {
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
-                await createTicketsBatch(payloads);
+                const result = await createTicketsBatch(payloads);
+                if (isQueuedResult(result)) {
+                    notifyQueuedResult(result);
+                    setShowCreate(false);
+                    return;
+                }
                 notify.success(`${payloads.length} actividad${payloads.length !== 1 ? 'es' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
                 setShowCreate(false);
-                loadTickets();
+                refreshAfterSuccess();
             } catch (err) {
                 const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
                 const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
@@ -130,10 +140,19 @@ export default function HoyActividadesPage() {
         }
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
-            for (const payload of items) await createTicket(payload);
+            let queuedResult = null;
+            for (const payload of items) {
+                const result = await createTicket(payload);
+                if (isQueuedResult(result)) queuedResult = result;
+            }
+            if (queuedResult) {
+                notifyQueuedResult(items.length > 1 ? { ...queuedResult, itemCount: items.length } : queuedResult);
+                setShowCreate(false);
+                return;
+            }
             notify.success(items.length > 1 ? `${items.length} actividades creadas correctamente.` : 'Actividad creada correctamente.');
             setShowCreate(false);
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
             const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
@@ -148,7 +167,7 @@ export default function HoyActividadesPage() {
         try {
             await updateTicket(id, payload);
             notify.success('Actividad actualizada correctamente.');
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             const errStr = err?.response?.data?.error || err?.response?.data?.message || '';
             const isConflict = err?.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
@@ -163,7 +182,7 @@ export default function HoyActividadesPage() {
         try {
             await changeStatus(id, payload);
             notify.success('Estado actualizado correctamente.');
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado.');
             throw err;
@@ -232,7 +251,7 @@ export default function HoyActividadesPage() {
         onSave: handleUpdate,
         onChangeStatus: handleChangeStatus,
         onOpenCreate: () => setShowCreate(true),
-        onRefresh: loadTickets,
+        onRefresh: () => loadTickets({ forceFresh: true }),
     };
 
     return (

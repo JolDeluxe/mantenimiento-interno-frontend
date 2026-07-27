@@ -5,6 +5,10 @@ import { ENV } from '@/config/env';
 // --- INFRAESTRUCTURA OFFLINE (Nativa, sin dependencias extra) ---
 const DB_NAME = 'CuadraSyncDB';
 const STORE_NAME = 'failed_requests';
+const MUTATION_METHODS = ['post', 'put', 'patch', 'delete'];
+const pendingMutations = new Map();
+const OFFLINE_MESSAGE = 'Sin conexión a internet. Conéctate para continuar.';
+const UNSTABLE_CONNECTION_MESSAGE = 'La conexión está inestable. Espera un momento antes de volver a intentar.';
 
 const openDB = () => new Promise((resolve, reject) => {
   const request = indexedDB.open(DB_NAME, 1);
@@ -13,49 +17,11 @@ const openDB = () => new Promise((resolve, reject) => {
   request.onerror = (e) => reject(e.target.error);
 });
 
-const serializeData = (data) => {
-  if (data instanceof FormData) {
-    const serialized = { _isFormData: true, fields: [] };
-    for (const [key, value] of data.entries()) {
-      serialized.fields.push({ key, value });
-    }
-    return serialized;
-  }
-  return data;
-};
-
-const deserializeData = (data) => {
-  if (data && data._isFormData) {
-    const fd = new FormData();
-    for (const { key, value } of data.fields) {
-      fd.append(key, value);
-    }
-    return fd;
-  }
-  return data;
-};
-
-const saveToOfflineQueue = async (requestConfig) => {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).add({
-      url: requestConfig.url,
-      method: requestConfig.method,
-      data: serializeData(requestConfig.data),
-      headers: requestConfig.headers,
-      timestamp: Date.now()
-    });
-  } catch (error) {
-    console.error('Error al guardar en cola offline:', error);
-  }
-};
-
-const deleteFromOfflineQueue = async (key) => {
+const clearOfflineQueue = async () => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).delete(key);
+    tx.objectStore(STORE_NAME).clear();
     tx.oncomplete = () => resolve();
     tx.onerror = (e) => reject(e.target.error);
   });
@@ -64,8 +30,7 @@ const deleteFromOfflineQueue = async (key) => {
 export const processOfflineQueue = async () => {
   try {
     const db = await openDB();
-    
-    // 1. Obtener todas las peticiones con sus llaves de IndexedDB
+
     const requests = await new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
@@ -85,53 +50,96 @@ export const processOfflineQueue = async () => {
 
     if (requests.length === 0) return;
 
-    console.log(`🔄 Sincronizando ${requests.length} peticiones encoladas...`);
-    let syncSuccessful = false;
-
-    // 2. Procesar cada petición secuencialmente fuera de la transacción inicial
-    for (const req of requests) {
-      try {
-        const deserializedData = deserializeData(req.value.data);
-        const headers = { ...req.value.headers };
-
-        // Eliminar content-type viejo para que Axios regenere el boundary multipart
-        if (req.value.data && req.value.data._isFormData) {
-          delete headers['Content-Type'];
-          delete headers['content-type'];
-        }
-
-        await api({
-          url: req.value.url,
-          method: req.value.method,
-          data: deserializedData,
-          headers: headers,
-          _isRetry: true
-        });
-
-        // Eliminar de la cola tras éxito
-        await deleteFromOfflineQueue(req.key);
-        syncSuccessful = true;
-      } catch (err) {
-        console.error('Fallo al sincronizar petición encolada:', err);
-        // Si el error es de HTTP (respuesta del servidor), es un error permanente de validación/permisos
-        if (err.response) {
-          await deleteFromOfflineQueue(req.key);
-        } else {
-          // Error de red persistente (el servidor sigue caído): detenemos la sincronización
-          console.warn('❌ Red aún no disponible, posponiendo el resto de la cola.');
-          break;
-        }
-      }
-    }
-
-    if (syncSuccessful) {
-      window.dispatchEvent(new CustomEvent('cuadra-sync-complete'));
-    }
+    await clearOfflineQueue();
+    console.warn(`[OFFLINE] Se descartaron ${requests.length} acciones pendientes para evitar duplicados en produccion.`);
   } catch (error) {
-    console.error('Error durante la sincronización offline:', error);
+    console.error('Error al limpiar la cola offline:', error);
   }
 };
 // ------------------------------------------------------------------
+
+const normalizeForKey = (value) => {
+  if (value instanceof FormData) {
+    return Array.from(value.entries()).map(([key, fieldValue]) => [
+      key,
+      fieldValue instanceof File
+        ? { name: fieldValue.name, size: fieldValue.size, type: fieldValue.type, lastModified: fieldValue.lastModified }
+        : fieldValue
+    ]);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeForKey);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value).sort().reduce((acc, key) => {
+      acc[key] = normalizeForKey(value[key]);
+      return acc;
+    }, {});
+  }
+
+  return value;
+};
+
+const getMutationKey = (config) => {
+  const method = config.method?.toLowerCase();
+  if (!MUTATION_METHODS.includes(method) || config._isRetry) return null;
+  return JSON.stringify({
+    method,
+    url: config.url,
+    data: normalizeForKey(config.data),
+  });
+};
+
+const createConnectivityError = (message) => {
+  const error = new Error(message);
+  error.userMessage = message;
+  error.response = {
+    data: {
+      error: message,
+      message,
+    },
+  };
+  return error;
+};
+
+const normalizeConnectivityError = (error, message) => {
+  error.message = message;
+  error.userMessage = message;
+  error.response = {
+    ...(error.response || {}),
+    data: {
+      ...(error.response?.data || {}),
+      error: message,
+      message,
+    },
+  };
+  return error;
+};
+
+const isConnectivityError = (error) => (
+  !error.response &&
+  (error.message === 'Network Error' || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED')
+);
+
+const attachMutationDedupe = (config, mutationKey) => {
+  const originalAdapter = config.adapter;
+
+  config.adapter = (adapterConfig) => {
+    const inFlight = pendingMutations.get(mutationKey);
+    if (inFlight) return inFlight;
+
+    const httpAdapter = axios.getAdapter(originalAdapter || api.defaults.adapter || axios.defaults.adapter);
+    const request = Promise.resolve(httpAdapter(adapterConfig))
+      .finally(() => {
+        pendingMutations.delete(mutationKey);
+      });
+
+    pendingMutations.set(mutationKey, request);
+    return request;
+  };
+};
 
 const api = axios.create({
   baseURL: ENV.API_URL,
@@ -189,6 +197,16 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    const mutationKey = getMutationKey(config);
+    if (mutationKey) {
+      if (!navigator.onLine) {
+        throw createConnectivityError(OFFLINE_MESSAGE);
+      }
+
+      config._mutationKey = mutationKey;
+      attachMutationDedupe(config, mutationKey);
+    }
+
     if (ENV.IS_DEV) {
       console.log(`🌐 [${config.method?.toUpperCase()}] ${config.url}`, {
         hasToken: !!token,
@@ -208,22 +226,19 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Intercepción de error de red (Modo Offline)
-    if (!error.response && error.message === 'Network Error') {
-      const isMutation = ['post', 'put', 'patch', 'delete'].includes(originalRequest.method);
-      if (isMutation && !originalRequest._isRetry) {
-        console.warn('📡 Guardando mutación en cola local (Offline)');
-        await saveToOfflineQueue(originalRequest);
-        
-        const offlineError = new Error('Modo offline: La acción ha sido guardada y se sincronizará automáticamente.');
-        offlineError.response = {
-          data: {
-            message: 'Modo offline: La acción ha sido guardada y se sincronizará automáticamente.'
-          }
-        };
-        return Promise.reject(offlineError);
+    // Intercepción de error de red. Las mutaciones no se encolan para evitar duplicados.
+    if (isConnectivityError(error)) {
+      const isMutation = MUTATION_METHODS.includes(originalRequest?.method);
+      if (isMutation && originalRequest?._allowOfflineQueue) {
+        console.warn('[OFFLINE] Mutacion encolable detenida por conexion inestable.');
+        return Promise.reject(error);
       }
-      console.error('📡 Error de Red - Backend no disponible');
+
+      if (isMutation && !originalRequest?._isRetry) {
+        console.warn('[OFFLINE] Mutacion detenida por conexion inestable.');
+        return Promise.reject(normalizeConnectivityError(error, UNSTABLE_CONNECTION_MESSAGE));
+      }
+      console.error('[OFFLINE] Error de red durante lectura.');
       return Promise.reject(error);
     }
 

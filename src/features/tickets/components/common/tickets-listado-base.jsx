@@ -18,6 +18,7 @@ import { TicketFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 import { formatFechaNumerica } from '@/lib/date';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
+import { isQueuedResult, notifyQueuedResult } from '@/features/tickets/utils/offline-result';
 
 const LIMIT = 50;
 const EMPTY_DEFAULT_FILTERS = {};
@@ -146,6 +147,10 @@ export default function TicketsListadoBase({
         return fetchTickets(payload).catch(() => notify.error('Error al cargar tickets.'));
     }, [fetchTickets, queryKey]);
 
+    const refreshAfterSuccess = useCallback(() => {
+        loadTickets().catch(() => {});
+    }, [loadTickets]);
+
     useEffect(() => {
         const payload = JSON.parse(queryKey);
         fetchTickets(payload).catch(() => notify.error('Error al cargar tickets.'));
@@ -229,10 +234,15 @@ export default function TicketsListadoBase({
         if (!canCreate) return;
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
-                await createBatch(payloads);
+                const result = await createBatch(payloads);
+                if (isQueuedResult(result)) {
+                    notifyQueuedResult(result);
+                    setShowCreate(false);
+                    return;
+                }
                 notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
                 setShowCreate(false);
-                await loadTickets();
+                refreshAfterSuccess();
             } catch (err) {
                 notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear las tareas.');
                 throw err;
@@ -241,10 +251,19 @@ export default function TicketsListadoBase({
         }
         const items = Array.isArray(payloads) ? payloads : [payloads];
         try {
-            for (const payload of items) await createTicket(payload);
+            let queuedResult = null;
+            for (const payload of items) {
+                const result = await createTicket(payload);
+                if (isQueuedResult(result)) queuedResult = result;
+            }
+            if (queuedResult) {
+                notifyQueuedResult(items.length > 1 ? { ...queuedResult, itemCount: items.length } : queuedResult);
+                setShowCreate(false);
+                return;
+            }
             notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
             setShowCreate(false);
-            await loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al crear la tarea.');
             throw err;
@@ -259,7 +278,7 @@ export default function TicketsListadoBase({
         try {
             await updateTicket(id, payload);
             notify.success('Ticket actualizado correctamente.');
-            await loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar.');
             throw err;
@@ -270,7 +289,7 @@ export default function TicketsListadoBase({
         try {
             await changeStatus(id, payload);
             notify.success('Estado actualizado correctamente.');
-            await loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado.');
             throw err;

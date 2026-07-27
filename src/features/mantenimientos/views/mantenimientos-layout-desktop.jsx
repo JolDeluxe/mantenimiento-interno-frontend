@@ -16,6 +16,7 @@ export default function MantenimientosLayoutDesktop() {
         const baseMenu = [
             { id: 'mantenimientos-correctivos', label: 'Correctivos', path: '/mantenimientos/correctivos', icon: 'build' },
             { id: 'mantenimientos-preventivos', label: 'Preventivos', path: '/mantenimientos/preventivos', icon: 'event_note' },
+            { id: 'mantenimientos-autonomos', label: 'Autónomos', path: '/mantenimientos/autonomos', icon: 'insights' },
             { id: 'mantenimientos-historico', label: 'Historial', path: '/mantenimientos/historico', icon: 'assignment' },
         ];
         return baseMenu.filter(item => {

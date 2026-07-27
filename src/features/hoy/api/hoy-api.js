@@ -1,8 +1,11 @@
 // src/features/hoy/api/hoy-api.js
 import api from '@/lib/axios';
 
-export const getHoyTickets = (params = {}) =>
-    api.get('/api/tickets', { params: { ...params, perteneceAHoy: true } });
+export const getHoyTickets = (params = {}, config = {}) =>
+    api.get('/api/tickets', {
+        ...config,
+        params: { ...params, perteneceAHoy: true },
+    });
 
 export const updateHoyTicket = (id, data) =>
     api.put(`/api/tickets/${id}`, data, {

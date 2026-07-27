@@ -18,6 +18,7 @@ export default function MantenimientosLayoutMobile() {
         const baseMenuOptions = [
             { configId: 'mantenimientos-correctivos', id: '/mantenimientos/correctivos', label: 'Correctivos', icon: 'build' },
             { configId: 'mantenimientos-preventivos', id: '/mantenimientos/preventivos', label: 'Preventivos', icon: 'event_note' },
+            { configId: 'mantenimientos-autonomos', id: '/mantenimientos/autonomos', label: 'Autónomos', icon: 'insights' },
             { configId: 'mantenimientos-historico', id: '/mantenimientos/historico', label: 'Historial', icon: 'history' }
         ];
  

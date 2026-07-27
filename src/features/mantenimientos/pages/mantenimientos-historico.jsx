@@ -12,6 +12,7 @@ import { MantenimientosDetailModal as TicketDetailModal } from '@/features/commo
 import { MantenimientosFechas } from '@/features/common/components/ticket-fechas';
 import { HoyAprobarPanel } from '@/features/hoy/components/common/hoy-aprobar-panel';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
+import { isQueuedResult, notifyQueuedResult } from '@/features/tickets/utils/offline-result';
 
 const LIMIT = 50;
 
@@ -131,6 +132,10 @@ export default function MantenimientosHistoricoPage({
         return fetchTickets(queryPayload).catch(() => notify.error('Error al cargar historial.'));
     }, [fetchTickets, queryPayload]);
 
+    const refreshAfterSuccess = useCallback(() => {
+        loadTickets().catch(() => {});
+    }, [loadTickets]);
+
     useEffect(() => {
         loadTickets();
     }, [loadTickets]);
@@ -146,14 +151,24 @@ export default function MantenimientosHistoricoPage({
                 // Es un mantenimiento recurrente que ya fue guardado en el formulario
                 notify.success('Mantenimiento recurrente creado con éxito.');
             } else if (Array.isArray(formData)) {
-                await createBatch(formData);
+                const result = await createBatch(formData);
+                if (isQueuedResult(result)) {
+                    notifyQueuedResult(result);
+                    setShowCreate(false);
+                    return;
+                }
                 notify.success(`${formData.length} mantenimiento${formData.length !== 1 ? 's' : ''} programado${formData.length !== 1 ? 's' : ''} con éxito.`);
             } else {
-                await createTicket(formData);
+                const result = await createTicket(formData);
+                if (isQueuedResult(result)) {
+                    notifyQueuedResult(result);
+                    setShowCreate(false);
+                    return;
+                }
                 notify.success('Mantenimiento programado creado con éxito.');
             }
             setShowCreate(false);
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             const errStr = err.response?.data?.error || err.response?.data?.message || '';
             const isConflict = err.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
@@ -162,7 +177,7 @@ export default function MantenimientosHistoricoPage({
             }
             throw err;
         }
-    }, [createBatch, createTicket, loadTickets]);
+    }, [createBatch, createTicket, refreshAfterSuccess]);
 
     const handleCloseCreate = useCallback(() => {
         setShowCreate(false);
@@ -172,7 +187,7 @@ export default function MantenimientosHistoricoPage({
         try {
             await updateTicket(id, payload);
             notify.success('Mantenimiento actualizado con éxito.');
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             const errStr = err.response?.data?.error || err.response?.data?.message || '';
             const isConflict = err.response?.status === 409 || errStr.includes('Conflicto') || errStr.includes('ya tiene programada');
@@ -181,17 +196,17 @@ export default function MantenimientosHistoricoPage({
             }
             throw err;
         }
-    }, [updateTicket, loadTickets]);
+    }, [updateTicket, refreshAfterSuccess]);
 
     const handleChangeStatus = useCallback(async (id, payload) => {
         try {
             await changeStatus(id, payload);
             notify.success('Estado actualizado correctamente.');
-            loadTickets();
+            refreshAfterSuccess();
         } catch (err) {
             notify.error(err.response?.data?.message || 'Error al cambiar estado.');
         }
-    }, [changeStatus, loadTickets]);
+    }, [changeStatus, refreshAfterSuccess]);
 
     const handleClearFilters = useCallback(() => {
         setQuery(''); setPage(1); setFiltroEstado('TODOS'); setFiltroTipo('');
