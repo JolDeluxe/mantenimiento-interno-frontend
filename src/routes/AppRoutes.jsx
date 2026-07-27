@@ -43,6 +43,7 @@ import DashboardArea from '@/features/dashboard/pages/dashboard-area';
 import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
 
 import CalendarioPage from '@/features/calendario/pages/calendario-page';
+import ConfiguracionAutonomosPage from '@/features/z_super-admin/config/pages/configuracion-autonomos-page';
 
 const ROLES = {
   dashboard: MODULES_CONFIG.find(m => m.id === 'dashboard')?.allowedRoles || [],
@@ -69,6 +70,7 @@ const ROLES = {
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
+  configuracion: MODULES_CONFIG.find(m => m.id === 'configuracion')?.allowedRoles || ['SUPER_ADMIN'],
 };
 
 export const AppRoutes = () => {
@@ -181,6 +183,11 @@ export const AppRoutes = () => {
           {/* Módulo: Notificaciones */}
           <Route element={<RoleGuard allowedRoles={ROLES.notificaciones} />}>
             <Route path="/notificaciones" element={<NotifyPage />} />
+          </Route>
+
+          {/* Módulo: Configuración */}
+          <Route element={<RoleGuard allowedRoles={ROLES.configuracion} />}>
+            <Route path="/configuracion" element={<ConfiguracionAutonomosPage />} />
           </Route>
 
           {/* Módulo: Reportes y KPIs */}
