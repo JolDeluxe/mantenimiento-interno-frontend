@@ -106,6 +106,11 @@ const PRIORIDAD_DOT = {
     CRITICA: 'bg-prioridad-critica',
 };
 
+const buildResponsablesSnapshot = (tecnicoId) => {
+    const id = tecnicoId == null ? '' : String(tecnicoId);
+    return id ? [id] : [];
+};
+
 const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
@@ -644,8 +649,8 @@ export const MantenimientosFormModal = ({
             if (esEdicion || !modoCarrito) {
                 if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
             } else {
-                // En modo creación/carrito, verificamos el técnico principal seleccionado
-                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico principal.';
+                // En modo creación/carrito, verificamos el técnico usado para nuevas tareas.
+                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico para las nuevas tareas.';
             }
         }
         return e;
@@ -671,13 +676,14 @@ export const MantenimientosFormModal = ({
         setSubmitted(true);
         const errors = getErrors();
         if (Object.keys(errors).length > 0) return;
+        const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
         setCarrito(prev => [...prev, {
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
             prioridad, clasificacion, tipo, fechaVencimiento,
             tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
-            responsables: tecnicoCartId ? [tecnicoCartId] : [],
+            responsables: responsablesSnapshot,
             maquinaId: maquinaId ? Number(maquinaId) : null,
             paroProduccion,
             impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
@@ -709,25 +715,28 @@ export const MantenimientosFormModal = ({
     };
 
     const handleAgregarTecnicoItem = (itemId, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === itemId
-                ? { ...item, responsables: [...new Set([...item.responsables, techId])] }
+                ? { ...item, responsables: [...new Set([...(item.responsables || []).map(String), normalizedTechId])] }
                 : item
         ));
     };
 
     const handleQuitarTecnicoItem = (itemId, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === itemId
-                ? { ...item, responsables: item.responsables.filter(id => id !== techId) }
+                ? { ...item, responsables: (item.responsables || []).map(String).filter(id => id !== normalizedTechId) }
                 : item
         ));
     };
 
     const handleCambiarTecnicoItem = (itemId, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === itemId
-                ? { ...item, responsables: [techId, ...(item.responsables || []).filter(id => id !== techId)] }
+                ? { ...item, responsables: [normalizedTechId, ...(item.responsables || []).map(String).filter(id => id !== normalizedTechId)] }
                 : item
         ));
     };
@@ -878,13 +887,14 @@ export const MantenimientosFormModal = ({
                 setBackendError("La tarea actual tiene errores. Corrígelos o limpia los campos.");
                 return;
             }
+            const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
                 titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
                 prioridad, clasificacion, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
-                responsables: tecnicoCartId ? [tecnicoCartId] : [],
+                responsables: responsablesSnapshot,
                 maquinaId: maquinaId ? Number(maquinaId) : null,
                 paroProduccion,
                 impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
@@ -1031,16 +1041,7 @@ export const MantenimientosFormModal = ({
                                 onDropdownToggle={setIsDropdownOpen}
                                 tecnicos={tecnicos}
                                 tecnicoCartId={tecnicoCartId}
-                                onTecnicoCartChange={(val) => {
-                                    setTecnicoCartId(val);
-                                    if (val) {
-                                        setCarrito(prev => prev.map(item => {
-                                            const currentResps = item.responsables || [];
-                                            const newResps = [val, ...currentResps.filter(id => id !== val)];
-                                            return { ...item, responsables: newResps };
-                                        }));
-                                    }
-                                }}
+                                onTecnicoCartChange={(val) => setTecnicoCartId(val)}
                                 deferCartClearSearch={true}
                                 responsables={responsables}
                                 tecnicoMapEdit={tecnicoMapEdit}

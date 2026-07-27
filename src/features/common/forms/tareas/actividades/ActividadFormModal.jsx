@@ -177,6 +177,11 @@ const PRIORIDAD_DOT = {
     CRITICA: 'bg-prioridad-critica',
 };
 
+const buildResponsablesSnapshot = (tecnicoId) => {
+    const id = tecnicoId == null ? '' : String(tecnicoId);
+    return id ? [id] : [];
+};
+
 const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = item.clasificacion ? (CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion) : null;
@@ -686,7 +691,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             } else if (!modoCarrito) {
                 if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
             } else {
-                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico principal.';
+                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico para las nuevas tareas.';
             }
         }
 
@@ -697,13 +702,14 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setSubmitted(true);
         const errors = getErrors();
         if (Object.keys(errors).length > 0) return;
+        const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
         setCarrito(prev => [...prev, {
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
             prioridad, clasificacion: null, tipo, fechaVencimiento,
             tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
-            responsables: tecnicoCartId ? [tecnicoCartId] : [],
+            responsables: responsablesSnapshot,
             maquinaId: null,
             modoRangoHoras,
             horaInicio: modoRangoHoras ? horaInicio : null,
@@ -729,25 +735,28 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     };
 
     const handleAgregarTecnicoItem = (_id, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === _id
-                ? { ...item, responsables: [...(item.responsables || []), techId] }
+                ? { ...item, responsables: [...new Set([...(item.responsables || []).map(String), normalizedTechId])] }
                 : item
         ));
     };
 
     const handleQuitarTecnicoItem = (_id, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === _id
-                ? { ...item, responsables: (item.responsables || []).filter(id => id !== techId) }
+                ? { ...item, responsables: (item.responsables || []).map(String).filter(id => id !== normalizedTechId) }
                 : item
         ));
     };
 
     const handleCambiarTecnicoItem = (_id, techId) => {
+        const normalizedTechId = String(techId);
         setCarrito(prev => prev.map(item =>
             item._id === _id
-                ? { ...item, responsables: [techId, ...(item.responsables || []).filter(id => id !== techId)] }
+                ? { ...item, responsables: [normalizedTechId, ...(item.responsables || []).map(String).filter(id => id !== normalizedTechId)] }
                 : item
         ));
     };
@@ -860,13 +869,14 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                 setBackendError("La tarea en el formulario tiene errores. Corrígelos o limpia los campos.");
                 return;
             }
+            const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
                 titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
                 prioridad, clasificacion: null, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
-                responsables: tecnicoCartId ? [tecnicoCartId] : [],
+                responsables: responsablesSnapshot,
                 maquinaId: null,
                 modoRangoHoras,
                 horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
@@ -1003,7 +1013,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                         <div className="flex items-center gap-2">
                                             <Icon name="engineering" size="sm" className={fe.responsables ? "text-rose-500" : "text-slate-500"} />
                                             <span className={cn("text-sm font-bold", fe.responsables ? "text-rose-700" : "text-slate-700")}>
-                                                Técnico principal *
+                                                Técnico para las nuevas tareas *
                                             </span>
                                         </div>
                                     </div>
@@ -1011,16 +1021,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                     <TecnicoCartSelector
                                         tecnicos={tecnicos}
                                         value={tecnicoCartId}
-                                        onChange={(val) => {
-                                            setTecnicoCartId(val);
-                                            if (val) {
-                                                setCarrito(prev => prev.map(item => {
-                                                    const currentResps = item.responsables || [];
-                                                    const newResps = [val, ...currentResps.filter(id => id !== val)];
-                                                    return { ...item, responsables: newResps };
-                                                }));
-                                            }
-                                        }}
+                                        onChange={(val) => setTecnicoCartId(val)}
                                         disabled={isSubmitting}
                                     />
                                     {fe.responsables && <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1"><Icon name="error" size="xs" /> {fe.responsables}</p>}

@@ -51,7 +51,7 @@ export const ResponsablesDesktopSection = ({
                     <div className="flex items-center gap-2">
                         <Icon name="engineering" size="sm" className={error ? "text-rose-500" : "text-slate-500"} />
                         <span className={cn("text-sm font-bold", error ? "text-rose-700" : "text-slate-700")}>
-                            Técnico principal *
+                            Técnico para las nuevas tareas *
                         </span>
                     </div>
                 </div>
