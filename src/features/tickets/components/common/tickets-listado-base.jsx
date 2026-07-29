@@ -87,7 +87,6 @@ export default function TicketsListadoBase({
     const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroClasificacion, setFiltroClasificacion] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
-    const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
@@ -120,7 +119,6 @@ export default function TicketsListadoBase({
         if (filtroPrioridad) params.prioridad = filtroPrioridad;
         if (filtroCategoria) params.categoria = filtroCategoria;
         if (filtroClasificacion) params.clasificacion = filtroClasificacion;
-        if (filtroPlanta) params.planta = filtroPlanta;
         if (filtroArea) params.area = filtroArea;
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
@@ -138,7 +136,7 @@ export default function TicketsListadoBase({
             params.tipoIn = params.tipoIn.join(',');
         }
         return params;
-    }, [page, scope, defaultFilters, query, year, month, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
+    }, [page, scope, defaultFilters, query, year, month, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
 
     const queryKey = useMemo(() => JSON.stringify(queryPayload), [queryPayload]);
 
@@ -168,7 +166,6 @@ export default function TicketsListadoBase({
     const handleSortChange = useCallback((key, dir) => { setSortConfig({ key, direction: dir }); setPage(1); }, []);
     const handleClasificacionChange = useCallback((c) => { setFiltroClasificacion(c); setPage(1); }, []);
     const handleResponsableChange = useCallback((r) => { setFiltroResponsable(r); setPage(1); }, []);
-    const handlePlantaChange = useCallback((p) => { setFiltroPlanta(p); setPage(1); }, []);
     const handleAreaChange = useCallback((a) => { setFiltroArea(a); setPage(1); }, []);
 
     const handleProgramacionChange = useCallback((val) => { setFiltroProgramacion(val); setPage(1); }, []);
@@ -201,7 +198,7 @@ export default function TicketsListadoBase({
     const handleExport = useCallback(() => {
         if (!sortedTickets || sortedTickets.length === 0) return notify.info('No hay datos para exportar.');
 
-        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creado', 'Vencimiento', 'Finalizado'];
+        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Área', 'Responsables', 'Creado', 'Vencimiento', 'Finalizado'];
         const rows = sortedTickets.map(t => [
             t.id,
             t.titulo,
@@ -209,7 +206,6 @@ export default function TicketsListadoBase({
             t.prioridad,
             t.tipo,
             t.clasificacion,
-            t.planta,
             t.area,
             t.responsables?.map(r => r.nombre).join(', ') || 'Sin asignar',
             formatFechaNumerica(t.createdAt),
@@ -322,14 +318,13 @@ export default function TicketsListadoBase({
             RECHAZADO: metricas?.totalRechazadas ?? metricas?.existenciaGlobal?.RECHAZADO ?? 0,
         },
         totalAtrasadasGlobal: metricas?.totalAtrasadas ?? metricas?.global?.backlogAtrasado ?? 0, sortConfig, query,
-        filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable,
-        filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion,
+        filtroArea, filtroProgramacion, filtroConclusion,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
         onFilterChange: handleFilterChange, onTipoChange: handleTipoChange, onPrioridadChange: handlePrioridadChange,
         onCategoriaChange: handleCategoriaChange,
         onClasificacionChange: handleClasificacionChange, onResponsableChange: handleResponsableChange,
-        onPlantaChange: handlePlantaChange, onAreaChange: handleAreaChange,
+        onAreaChange: handleAreaChange,
         onProgramacionChange: handleProgramacionChange, onConclusionChange: handleConclusionChange,
         onToggleRechazadas: handleToggleRechazadas,
         onTogglePapelera: handleTogglePapelera, onToggleAtrasadas: handleToggleAtrasadas,

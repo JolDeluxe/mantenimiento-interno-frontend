@@ -171,11 +171,11 @@ export const TicketCard = ({
                             </span>
                         </p>
                     )}
-                    {ticket.planta && (
+                    {ticket.area && (
                         <p className="flex items-center gap-2">
-                            <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
+                            <Icon name="location_on" size="xs" className="text-slate-300 shrink-0" />
                             <span className="text-xs text-slate-500">
-                                {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
+                                {ticket.area}
                             </span>
                         </p>
                     )}
