@@ -66,15 +66,14 @@ export const MaquinaCard = ({
       {/* Renglón Inferior: Ubicación */}
       <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[11px] font-bold text-slate-500">
         {(() => {
-          const showPlanta = maquina.planta !== 'BAJA' && maquina.planta !== 'VENTA';
-          const showArea = maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
-          if (!showPlanta && !showArea) {
-            return <span className="text-slate-400 font-semibold italic text-xs">-</span>;
+          const showArea = maquina.area && maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
+          if (!showArea) {
+            return <span />;
           }
           return (
             <span className="flex items-center gap-1">
               <Icon name="location_on" size="xxs" className="text-slate-400" />
-              {showPlanta && showArea ? `${maquina.planta} — ${maquina.area}` : (showPlanta ? maquina.planta : maquina.area)}
+              {maquina.area}
             </span>
           );
         })()}

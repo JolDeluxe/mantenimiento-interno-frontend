@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/z_index';
-import { MaquinaFilterBar, MaquinaFormModal, MaquinaDetailModal, MaquinaTable } from '../components';
+import { MaquinaFilterBar, MaquinaCriticidadModal, MaquinaDetailModal, MaquinaTable } from '../components';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { useQrPrintStore } from '../stores/qr-print-store';
 import { getMaquinas } from '../api/maquinaria-api';
@@ -12,10 +12,9 @@ export default function MaquinariaDesktop({
   submitting = false,
   pagination = {},
   filters = {},
-  catalogs = { plantas: [], areas: [], procesos: [] },
+  catalogs = { areas: [], procesos: [] },
   onFilterChange,
   onClearFilters,
-  createMaquina,
   updateMaquina,
   getKpis
 }) {
@@ -148,7 +147,7 @@ export default function MaquinariaDesktop({
       )}
 
       {/* Modal Formulario */}
-      <MaquinaFormModal
+      <MaquinaCriticidadModal
         isOpen={formOpen}
         onClose={() => setFormOpen(false)}
         maquina={selectedMaquina}

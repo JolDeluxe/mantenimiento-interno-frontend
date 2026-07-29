@@ -1,7 +1,6 @@
 import React from 'react';
 import { Table, Icon, TableActions, Skeleton } from '@/components/ui/z_index';
 import { useQrPrintStore } from '../stores/qr-print-store';
-import { getMaquinas } from '../api/maquinaria-api';
 
 const SelectionHeaderCheckbox = ({ maquinas, selectedMaquinas, selectAll }) => {
   const pageIds = (maquinas || []).filter(m => m && !m.isSkeleton).map(m => m.id);
@@ -93,7 +92,7 @@ export const MaquinaTable = ({
     {
       header: 'Código',
       accessorKey: 'codigo',
-      headerClassName: 'w-[10%] min-w-[90px]',
+      headerClassName: 'w-[8%] min-w-[82px]',
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-4 w-12 rounded-md" />;
         return (
@@ -104,9 +103,9 @@ export const MaquinaTable = ({
       }
     },
     {
-      header: 'Nombre de Máquina',
+      header: 'Máquina',
       accessorKey: 'nombre',
-      headerClassName: 'w-[25%] min-w-[200px]',
+      headerClassName: 'w-[24%] min-w-[170px]',
       cell: (row) => {
         if (row.isSkeleton) return (
           <div className="flex flex-col gap-1.5 py-1">
@@ -115,12 +114,12 @@ export const MaquinaTable = ({
           </div>
         );
         return (
-          <div className="flex flex-col">
-            <span className="font-extrabold text-slate-800 text-sm leading-tight">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate font-extrabold text-slate-800 text-sm leading-tight" title={row.nombre}>
               {row.nombre}
             </span>
             {row.numeroSerie && (
-              <span className="text-[10px] font-bold text-slate-400 mt-0.5">
+              <span className="truncate text-[10px] font-bold text-slate-400 mt-0.5" title={`S/N: ${row.numeroSerie}`}>
                 S/N: {row.numeroSerie}
               </span>
             )}
@@ -129,22 +128,25 @@ export const MaquinaTable = ({
       }
     },
     {
-      header: 'Proceso / Tipo',
+      header: 'Proceso',
       accessorKey: 'proceso',
-      headerClassName: 'w-[15%] min-w-[130px]',
+      headerClassName: 'w-[24%] min-w-[190px]',
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-5 w-20 rounded-md" />;
         return (
-          <span className="text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-full uppercase">
+          <span
+            className="block min-w-0 truncate whitespace-nowrap text-xs font-semibold text-slate-600 uppercase"
+            title={row.proceso}
+          >
             {row.proceso}
           </span>
         );
       }
     },
     {
-      header: 'Ubicación',
+      header: 'Área',
       accessorKey: 'ubicacion',
-      headerClassName: 'w-[20%] min-w-[180px]',
+      headerClassName: 'w-[18%] min-w-[150px]',
       cell: (row) => {
         if (row.isSkeleton) return (
           <div className="flex flex-col gap-1.5 py-1">
@@ -152,40 +154,32 @@ export const MaquinaTable = ({
             <Skeleton className="h-3 w-20 rounded-md" />
           </div>
         );
-        const showPlanta = row.planta !== 'BAJA' && row.planta !== 'VENTA';
-        const showArea = row.area !== 'BAJA' && row.area !== 'VENTA';
+        const showArea = row.area && row.area !== 'BAJA' && row.area !== 'VENTA';
 
-        if (!showPlanta && !showArea) {
-          return <span className="text-slate-400 font-semibold italic text-xs">-</span>;
+        if (!showArea) {
+          return null;
         }
         return (
-          <div className="flex flex-col gap-0.5">
-            {showArea && (
-              <span className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
-                <Icon name="store" size="xxs" className="text-slate-400 font-bold" />
-                {row.area}  
-              </span>
-            )}
-            {showPlanta && (
-              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                <Icon name="location_on" size="xxs" className="text-slate-300" />
-                {row.planta}
-              </span>
-            )}
-          </div>
+          <span
+            className="flex min-w-0 items-center gap-1 text-xs font-bold text-slate-700 uppercase"
+            title={row.area}
+          >
+            <Icon name="location_on" size="xxs" className="text-slate-400 font-bold shrink-0" />
+            <span className="block min-w-0 truncate whitespace-nowrap">{row.area}</span>
+          </span>
         );
       }
     },
     {
-      header: 'Criticidad',
+      header: 'Tipo',
       accessorKey: 'criticidad',
       align: 'center',
-      headerClassName: 'w-[10%] min-w-[80px]',
+      headerClassName: 'w-[9%] min-w-[92px]',
       cell: (row) => {
-        if (row.isSkeleton) return <Skeleton className="h-5 w-8 mx-auto rounded-md" />;
+        if (row.isSkeleton) return <Skeleton className="h-5 w-16 mx-auto rounded-md" />;
         return (
-          <span className={`inline-flex items-center justify-center font-black text-xs px-2.5 py-0.5 rounded border uppercase tracking-wider ${getCriticidadStyle(row.criticidad)}`}>
-            {row.criticidad}
+          <span className={`inline-flex min-w-[68px] items-center justify-center whitespace-nowrap font-black text-[10px] px-2.5 py-0.5 rounded border uppercase ${getCriticidadStyle(row.criticidad)}`}>
+            Clase {row.criticidad || 'C'}
           </span>
         );
       }
@@ -194,7 +188,7 @@ export const MaquinaTable = ({
       header: 'Estado',
       accessorKey: 'estado',
       align: 'center',
-      headerClassName: 'w-[10%] min-w-[100px]',
+      headerClassName: 'w-[12%] min-w-[120px]',
       cell: (row) => {
         if (row.isSkeleton) return <Skeleton className="h-5 w-16 mx-auto rounded-md" />;
         const label = row.estado === 'EN_REPARACION'
@@ -203,7 +197,7 @@ export const MaquinaTable = ({
             ? 'PARO PRODUCCIÓN'
             : (row.estado === 'BAJA_ERP' ? 'BAJA ERP' : row.estado);
         return (
-          <span className={`inline-flex items-center justify-center font-black text-[10px] px-2.5 py-0.5 rounded border uppercase tracking-wider ${getEstadoStyle(row.estado)}`}>
+          <span className={`inline-flex items-center justify-center whitespace-nowrap font-black text-[10px] px-2.5 py-0.5 rounded border uppercase ${getEstadoStyle(row.estado)}`}>
             {label}
           </span>
         );
@@ -213,7 +207,7 @@ export const MaquinaTable = ({
       header: 'Acciones',
       accessorKey: 'acciones',
       align: 'center',
-      headerClassName: 'w-[10%] min-w-[120px]',
+      headerClassName: 'w-[9%] min-w-[96px]',
       cell: (row) => {
         if (row.isSkeleton) return (
           <div className="flex gap-2 justify-center">
@@ -222,7 +216,7 @@ export const MaquinaTable = ({
           </div>
         );
         return (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div onClick={(e) => e.stopPropagation()} className="flex min-w-[76px] justify-center">
             <TableActions
               row={row}
               actions={[

@@ -1,8 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as api from '../api/maquinaria-api';
 import { notify } from '@/components/notification/adaptive-notify';
 
 export const useMaquinaria = () => {
+  const initialFilters = {
+    q: '',
+    estado: '',
+    criticidad: '',
+    area: '',
+    proceso: '',
+    page: 1,
+    limit: 20
+  };
   const [maquinas, setMaquinas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -14,24 +23,16 @@ export const useMaquinaria = () => {
     pages: 1
   });
   const [catalogs, setCatalogs] = useState({
-    plantas: [],
     areas: [],
     procesos: []
   });
-  const [filters, setFilters] = useState({
-    q: '',
-    estado: '',
-    criticidad: '',
-    planta: '',
-    area: '',
-    proceso: '',
-    page: 1,
-    limit: 20
-  });
+  const [filters, setFilters] = useState(initialFilters);
+  const filtersRef = useRef(initialFilters);
 
   const fetchMaquinas = useCallback(async (newFilters = {}, silent = false) => {
     if (!silent) setLoading(true);
-    const updatedFilters = { ...filters, ...newFilters };
+    const updatedFilters = { ...filtersRef.current, ...newFilters };
+    filtersRef.current = updatedFilters;
     setFilters(updatedFilters);
 
     try {
@@ -40,7 +41,6 @@ export const useMaquinaria = () => {
         setMaquinas(res.data || []);
         if (res.catalogs) {
           setCatalogs({
-            plantas: res.catalogs.plantas || [],
             areas: res.catalogs.areas || [],
             procesos: res.catalogs.procesos || []
           });
@@ -59,24 +59,7 @@ export const useMaquinaria = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [filters]);
-
-  const createMaquina = useCallback(async (data) => {
-    setSubmitting(true);
-    try {
-      const res = await api.createMaquina(data);
-      notify.success('Máquina registrada exitosamente.');
-      await fetchMaquinas();
-      return { success: true, data: res.data };
-    } catch (err) {
-      console.error(err);
-      const msg = err?.response?.data?.error || 'Error al registrar la máquina.';
-      notify.error(msg);
-      return { success: false, error: msg };
-    } finally {
-      setSubmitting(false);
-    }
-  }, [fetchMaquinas]);
+  }, []);
 
   const updateMaquina = useCallback(async (id, data) => {
     setSubmitting(true);
@@ -142,7 +125,6 @@ export const useMaquinaria = () => {
     filters,
     catalogs,
     fetchMaquinas,
-    createMaquina,
     updateMaquina,
     changeStatus,
     getKpis,

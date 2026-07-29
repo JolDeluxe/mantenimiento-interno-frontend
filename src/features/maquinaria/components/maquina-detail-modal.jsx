@@ -398,23 +398,16 @@ export const MaquinaDetailModal = ({
                   <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 space-y-3 flex flex-col">
                     <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-200/85 pb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
                       <Icon name="location_on" size="xs" className="text-slate-500" />
-                      Ubicación y Área
+                      Área / Ubicación
                     </h5>
                     <div className="space-y-3 grow">
                       {(() => {
-                        const showPlanta = maquina.planta !== 'BAJA' && maquina.planta !== 'VENTA';
-                        const showArea = maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
-                        if (!showPlanta && !showArea) {
-                          return <DataRow icon="store" label="Planta y Área" value="-" />;
+                        const showArea = maquina.area && maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
+                        if (!showArea) {
+                          return null;
                         }
-                        return (
-                          <>
-                            {showPlanta && <DataRow icon="store" label="Planta" value={maquina.planta} />}
-                            {showArea && <DataRow icon="place" label="Área / Ubicación" value={maquina.area} />}
-                          </>
-                        );
+                        return <DataRow icon="place" label="Área / Ubicación" value={maquina.area} />;
                       })()}
-
                       {maquina.ubicacionDetalle && 
                        maquina.ubicacionDetalle !== 'BAJA' && 
                        maquina.ubicacionDetalle !== 'VENTA' && 
