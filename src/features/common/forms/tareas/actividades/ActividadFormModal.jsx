@@ -6,7 +6,7 @@ import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, 
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import {
-    CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO
+    CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO, normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
 import {
     PrioridadField,
@@ -400,7 +400,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
     const [area, setArea] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem(storageKey('area')) || '';
+        return normalizeAreaName(localStorage.getItem(storageKey('area'))) || '';
     });
 
     const [prioridad, setPrioridad] = useState(() => {
@@ -749,11 +749,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             if (Object.keys(errors).length > 0) return;
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', '');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             fd.append('maquinaId', '');
 
@@ -797,11 +798,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             if (Object.keys(errors).length > 0) return;
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', '');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             fd.append('maquinaId', '');
 
@@ -850,7 +852,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
-                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area: normalizeAreaName(area) || area,
                 prioridad, clasificacion: null, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
                 responsables: responsablesSnapshot,
@@ -872,7 +874,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                     titulo: item.titulo,
                     descripcion: item.descripcion,
                     categoria: item.categoria,
-                    area: item.area,
+                    area: normalizeAreaName(item.area) || item.area,
                     prioridad: item.prioridad,
                     clasificacion: null,
                     tipo: item.tipo,
@@ -1119,7 +1121,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                             areasOptions={areasOptions}
                             errorArea={fe.area}
                             disabledArea={isSubmitting || lockBaseFields}
-                            onAreaChange={setArea}
+                            onAreaChange={(val) => setArea(normalizeAreaName(val) || '')}
                             layoutClassName="grid grid-cols-1 gap-3"
                         />
 

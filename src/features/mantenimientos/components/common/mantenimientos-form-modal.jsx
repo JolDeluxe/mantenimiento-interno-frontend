@@ -15,7 +15,7 @@ import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinari
 import api from '@/lib/axios';
 import {
     CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
-    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO
+    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO, normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 
@@ -748,11 +748,12 @@ export const MantenimientosFormModal = ({
             if (Object.keys(errors).length > 0) return;
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', clasificacion);
             if (categoria) fd.append('categoria', categoria);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             if (maquinaId) fd.append('maquinaId', maquinaId);
             fd.append('paroProduccion', paroProduccion ? 'true' : 'false');
@@ -820,10 +821,11 @@ export const MantenimientosFormModal = ({
             }
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             fd.append('clasificacion', clasificacion);
             if (maquinaId) fd.append('maquinaId', maquinaId);
@@ -877,7 +879,7 @@ export const MantenimientosFormModal = ({
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
-                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area: normalizeAreaName(area) || area,
                 prioridad, clasificacion, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
                 responsables: responsablesSnapshot,
@@ -904,7 +906,7 @@ export const MantenimientosFormModal = ({
                     descripcion: item.descripcion,
                     clasificacion: item.clasificacion,
                     categoria: item.categoria,
-                    area: item.area,
+                    area: normalizeAreaName(item.area) || item.area,
                     prioridad: item.prioridad,
                     maquinaId: item.maquinaId,
                     paroProduccion: item.paroProduccion,
@@ -1302,7 +1304,7 @@ export const MantenimientosFormModal = ({
                             errorArea={fe.area}
                             disabledArea={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}
                             onAreaChange={(val) => {
-                                setArea(val);
+                                setArea(normalizeAreaName(val) || '');
                             }}
                         />
 

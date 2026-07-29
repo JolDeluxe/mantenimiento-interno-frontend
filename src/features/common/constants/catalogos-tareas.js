@@ -47,36 +47,48 @@ export const CATEGORIAS_EQUIPO = [
 
 export const AREAS = [
     'ACABADO',
-    'ADMINISTRACION',
     'ADORNO',
-    'ALMACEN DE PT',
-    'ALMACEN MP',
     'ALMACEN PIEL',
     'AREAS COMUNES',
     'AVIOS',
-    'BAJA',
     'BETA 7',
-    'BILLETERAS',
-    'BOLSAS',
-    'BORDADO',
+    'BILLETERAS LAMBDA',
+    'BODEGA ANEXA',
+    'BOLSAS LAMBDA',
     'CAPITAL HUMANO',
     'CHAMARRAS',
     'CINTOS',
     'CORTE',
     'DESARROLLO',
     'DISEÑO',
-    'LASER',
-    'MAQUILA',
+    'MANTENIMIENTO (TALLER)',
     'MONTADO',
     'PESPUNTE',
-    'PRELIMINARES',
     'PREMONTADO',
-    'SALON',
-    'TALLER',
-    'TORRE 1',
-    'TRAFICO',
-    'VENTA',
+    'PT OMEGA',
+    'SALON AGUSTIN',
+    'SIGMA',
+    'TALLER 2',
 ];
+
+export const AREA_ALIASES = {
+    BILLETERAS: 'BILLETERAS LAMBDA',
+    BILLETEREAS: 'BILLETERAS LAMBDA',
+    BOLSAS: 'BOLSAS LAMBDA',
+    TALLER: 'MANTENIMIENTO (TALLER)',
+    TELLER: 'MANTENIMIENTO (TALLER)',
+    OMEGA: 'PT OMEGA',
+};
+
+export const normalizeAreaName = (value) => {
+    if (typeof value !== 'string') return null;
+
+    const normalized = value.trim().replace(/\s+/g, ' ').toUpperCase();
+
+    if (!normalized) return null;
+
+    return AREA_ALIASES[normalized] ?? normalized;
+};
 
 export const CLASIFICACION_ICONS = {
     PREVENTIVO: 'build_circle',

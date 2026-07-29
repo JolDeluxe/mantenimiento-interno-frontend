@@ -21,7 +21,8 @@ import {
     TIPOS_ADMIN,
     ROLES_ADMIN,
     AREAS,
-    CATEGORIAS_EQUIPO
+    CATEGORIAS_EQUIPO,
+    normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 import { cn } from '@/utils/cn';
@@ -432,7 +433,8 @@ export const MobileTicketFormModal = ({
         formData.append('clasificacion', clasificacion);
         if (categoria) formData.append('categoria', categoria);
 
-        if (area) formData.append('area', area);
+        const canonicalArea = normalizeAreaName(area) || area;
+        if (canonicalArea) formData.append('area', canonicalArea);
         formData.append('prioridad', prioridad);
         if (maquinaId) formData.append('maquinaId', maquinaId);
         formData.append('paroProduccion', paroProduccion ? 'true' : 'false');
@@ -737,7 +739,7 @@ export const MobileTicketFormModal = ({
                         disabledArea={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
                         layoutClassName="grid grid-cols-1 sm:grid-cols-2 gap-4"
                         onAreaChange={(val) => {
-                            setArea(val);
+                            setArea(normalizeAreaName(val) || '');
                         }}
                     />
 

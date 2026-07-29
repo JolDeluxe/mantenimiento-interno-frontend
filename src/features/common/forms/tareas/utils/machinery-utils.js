@@ -1,4 +1,5 @@
 // src/features/common/forms/tareas/utils/machinery-utils.js
+import { normalizeAreaName } from '@/features/common/constants/catalogos-tareas';
 
 /**
  * Determina si se debe mostrar el bloque de maquinaria.
@@ -34,7 +35,7 @@ export const canReportProductionHalt = ({ categoria, scope, maquinaId, clasifica
  */
 export const deriveLocationFromMachine = (maquina) => {
     return {
-        area: maquina?.area || '',
+        area: normalizeAreaName(maquina?.area) || '',
     };
 };
 
@@ -56,7 +57,7 @@ export const deriveCategoryFromTicket = (ticket, fallback = '') => {
 export const deriveLocationFromTicket = (ticket) => {
     const maquinaLocation = deriveLocationFromMachine(ticket?.maquina);
     return {
-        area: ticket?.area || maquinaLocation.area || '',
+        area: normalizeAreaName(ticket?.area) || maquinaLocation.area || '',
     };
 };
 
