@@ -83,9 +83,9 @@ export const BandejaTicketTable = ({
                             )}
                         </div>
                         <div className="flex flex-col gap-1 mt-1">
-                            {row.planta && (
+                            {row.area && (
                                 <span className="text-xs text-slate-500 font-semibold truncate">
-                                    {row.planta}{row.area ? ` — ${row.area}` : ''}
+                                    {row.area}
                                 </span>
                             )}
                             {(row.tipo || (row.clasificacion && row.categoria === 'MAQUINARIA')) && (
