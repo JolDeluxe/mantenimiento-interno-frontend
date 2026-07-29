@@ -28,13 +28,12 @@ export const canReportProductionHalt = ({ categoria, scope, maquinaId, clasifica
 };
 
 /**
- * Deriva la ubicación (planta y área) de una máquina dada.
+ * Deriva el área de una máquina dada.
  * @param {object} maquina
- * @returns {object} { planta, area }
+ * @returns {object} { area }
  */
 export const deriveLocationFromMachine = (maquina) => {
     return {
-        planta: maquina?.planta || null,
         area: maquina?.area || '',
     };
 };
@@ -57,7 +56,6 @@ export const deriveCategoryFromTicket = (ticket, fallback = '') => {
 export const deriveLocationFromTicket = (ticket) => {
     const maquinaLocation = deriveLocationFromMachine(ticket?.maquina);
     return {
-        planta: ticket?.planta || maquinaLocation.planta || null,
         area: ticket?.area || maquinaLocation.area || '',
     };
 };

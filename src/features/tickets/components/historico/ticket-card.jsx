@@ -73,11 +73,8 @@ export const TicketCard = ({
 
     const esAdmin = ROLES_ADMIN.includes(rol);
     const esSupervisor = ROLES_SUPERVISOR.includes(rol);
-    const esTecnico = rol === 'TECNICO';
     const esCliente = rol === 'CLIENTE_INTERNO';
     const esCreador = ticket.creadorId === userId;
-    const esResponsable = ticket.responsables?.some((r) => r.id === userId);
-    const tieneResponsables = ticket.responsables && ticket.responsables.length > 0;
     const vencida = isVencida(ticket);
 
     const puedeEditar =

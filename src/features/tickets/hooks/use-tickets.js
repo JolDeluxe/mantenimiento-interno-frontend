@@ -34,7 +34,6 @@ const ticketSignature = (ticket) => [
     ticket?.clasificacion,
     ticket?.categoria,
     ticket?.prioridad,
-    ticket?.planta,
     ticket?.area,
     ticket?.folio,
     ticket?.creadorId,

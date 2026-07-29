@@ -1,5 +1,3 @@
-export const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA'];
-
 export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
 export const TIPOS = [
@@ -47,49 +45,38 @@ export const CATEGORIAS_EQUIPO = [
     { value: 'RUTINA', label: 'Rutina', icon: 'sync' },
 ];
 
-export const AREAS_POR_PLANTA = {
-    OMEGA: ['ALMACEN DE PT'],
-    SIGMA: [
-        'AREAS COMUNES',
-        'PRELIMINARES',
-        'LASER',
-        'BORDADO'
-    ],
-    LAMBDA: [
-        'AREAS COMUNES',
-        'BILLETERAS',
-        'BOLSAS',
-        'TORRE 1'
-    ],
-    KAPPA: [
-        'ACABADO',
-        'ADMINISTRACION',
-        'ADORNO',
-        'ALMACEN MP',
-        'ALMACEN PIEL',
-        'AREAS COMUNES',
-        'AVIOS',
-        'BETA 7',
-        'CAPITAL HUMANO',
-        'CHAMARRAS',
-        'CINTOS',
-        'CORTE',
-        'DESARROLLO',
-        'DISEÑO',
-        'LASER',
-        'MAQUILA',
-        'MONTADO',
-        'PESPUNTE',
-        'PRELIMINARES',
-        'PREMONTADO',
-        'SALON',
-        'TALLER',
-        'TRAFICO'
-    ],
-    GENERAL: [],
-};
-
-export const AREAS = [...new Set(Object.values(AREAS_POR_PLANTA).flat())];
+export const AREAS = [
+    'ACABADO',
+    'ADMINISTRACION',
+    'ADORNO',
+    'ALMACEN DE PT',
+    'ALMACEN MP',
+    'ALMACEN PIEL',
+    'AREAS COMUNES',
+    'AVIOS',
+    'BAJA',
+    'BETA 7',
+    'BILLETERAS',
+    'BOLSAS',
+    'BORDADO',
+    'CAPITAL HUMANO',
+    'CHAMARRAS',
+    'CINTOS',
+    'CORTE',
+    'DESARROLLO',
+    'DISEÑO',
+    'LASER',
+    'MAQUILA',
+    'MONTADO',
+    'PESPUNTE',
+    'PRELIMINARES',
+    'PREMONTADO',
+    'SALON',
+    'TALLER',
+    'TORRE 1',
+    'TRAFICO',
+    'VENTA',
+];
 
 export const CLASIFICACION_ICONS = {
     PREVENTIVO: 'build_circle',

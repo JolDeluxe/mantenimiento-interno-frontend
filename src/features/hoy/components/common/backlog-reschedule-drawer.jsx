@@ -255,7 +255,7 @@ export const BacklogRescheduleDrawer = ({
                                 required
                                 value={motivo}
                                 onChange={(e) => setMotivo(e.target.value)}
-                                placeholder="Ej. Cambio de prioridades en planta o saturación de turno"
+                                placeholder="Ej. Cambio de prioridades o saturación de turno"
                                 className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
                             />
                             {motivo && motivo.length < 5 && (

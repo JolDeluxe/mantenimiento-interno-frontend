@@ -506,7 +506,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             'titulo',
             'descripcion',
             'categoria',
-            'planta',
             'area',
             'prioridad',
             'tipo',

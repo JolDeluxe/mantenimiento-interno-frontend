@@ -82,7 +82,6 @@ export const UserDetailModal = ({ isOpen, onClose, usuario }) => {
                         />
                         {usuario.departamento && (
                             <div className="pl-9 space-y-3">
-                                <DataRow icon="factory" label="Planta" value={usuario.departamento.planta} />
                                 <DataRow icon="category" label="Tipo de Área" value={usuario.departamento.tipo} />
                             </div>
                         )}

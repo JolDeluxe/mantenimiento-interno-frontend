@@ -3,22 +3,17 @@ import { Label, Select } from '@/components/form/z_index';
 import { Icon } from '@/components/ui/z_index';
 
 /**
- * PlantaAreaFields — campo visual/controlado para Planta y Área/Línea.
+ * PlantaAreaFields — campo visual/controlado para Área/Línea.
  *
  * Se encarga del layout responsive y de agrupar visualmente la ubicación
  * en una card elegante. Toda la lógica de cálculo de opciones, setters y
  * dependencias de maquinaria permanece en el componente padre.
  *
  * Props:
- *  - planta             {string}   — valor seleccionado de planta
  *  - area               {string}   — valor seleccionado de area
- *  - plantas            {array}    — catálogo de plantas
  *  - areasOptions       {array}    — opciones filtradas de áreas
- *  - errorPlanta        {string}   — mensaje de error de planta (fe.planta)
  *  - errorArea          {string}   — mensaje de error de área (fe.area)
- *  - disabledPlanta     {boolean}  — expresión de deshabilitado de planta
  *  - disabledArea       {boolean}  — expresión de deshabilitado de área
- *  - onPlantaChange     {function} — handler para onChange de planta (recibe string)
  *  - onAreaChange       {function} — handler para onChange de área (recibe string)
  *  - layoutClassName    {string}   — clases de grid/layout
  *  - sectionTitle       {string}   — título superior de la sección
@@ -38,7 +33,6 @@ export function PlantaAreaFields({
 }) {
     const hasErrorArea = Boolean(errorArea);
 
-    // Si ocultamos Planta, queremos que el campo de Área sea de ancho completo (1 columna)
     const adjustedLayoutClassName = layoutClassName
         .replace('md:grid-cols-2', 'md:grid-cols-1')
         .replace('grid-cols-2', 'grid-cols-1');

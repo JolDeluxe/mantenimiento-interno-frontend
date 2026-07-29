@@ -1,12 +1,11 @@
 // src/features/dashboard/views/dashboard-area-desktop.jsx
 import React from 'react';
 import { Icon, Skeleton } from '@/components/ui/z_index';
-import { PlantaRow } from '../components/area/planta-row';
-import { PlantaDetalle } from '../components/area/area-detalle-planta';
+import { AreaRow } from '../components/area/area-row';
 import { AreaDetalle } from '../components/area/area-detalle-area';
 import DashboardEmptyState from '../components/dashboard-empty-state';
 
-const SkeletonPlanta = () => (
+const SkeletonArea = () => (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="flex items-center gap-4 px-5 py-4">
             <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
@@ -26,18 +25,14 @@ const SkeletonPlanta = () => (
 
 export default function DashboardAreaDesktop({
     loading,
-    metricasPorPlanta = [],
-    plantaDetalle,
+    metricasPorArea = [],
     areaDetalle,
-    onOpenPlanta,
     onOpenArea,
-    onClosePlanta,
     onCloseArea,
 }) {
-    // Calculamos los totales primero
-    const totalTareas = metricasPorPlanta.reduce((acc, p) => acc + (p.totalTareas || 0), 0);
-    const totalActivas = metricasPorPlanta.reduce((acc, p) => acc + (p.tareasActivas || 0), 0);
-    const totalTickets = metricasPorPlanta.reduce((acc, p) => acc + (p.tiposTotales?.tickets || 0), 0);
+    const totalTareas = metricasPorArea.reduce((acc, item) => acc + (item.totalTareas || 0), 0);
+    const totalActivas = metricasPorArea.reduce((acc, item) => acc + (item.tareasActivas || 0), 0);
+    const totalTickets = metricasPorArea.reduce((acc, item) => acc + (item.tiposTotales?.tickets || 0), 0);
     const tieneDatos = totalTareas > 0;
 
     return (
@@ -53,7 +48,7 @@ export default function DashboardAreaDesktop({
                         </h3>
                     </div>
                     <p className="text-xs text-slate-400 font-medium">
-                        Volumen, tiempos y frecuencia de tareas por planta y área.
+                        Volumen, tiempos y frecuencia de tareas por área.
                     </p>
                 </div>
 
@@ -68,31 +63,26 @@ export default function DashboardAreaDesktop({
 
             <div className="flex flex-col gap-3">
                 {loading ? (
-                    Array.from({ length: 4 }).map((_, i) => <SkeletonPlanta key={i} />)
+                    Array.from({ length: 4 }).map((_, i) => <SkeletonArea key={i} />)
                 ) : tieneDatos ? (
-                    metricasPorPlanta.map((planta, idx) => (
-                        <PlantaRow
+                    metricasPorArea.map((areaGroup, idx) => (
+                        <AreaRow
                             key={idx}
-                            planta={planta}
-                            onOpenPlanta={onOpenPlanta}
+                            areaGroup={areaGroup}
                             onOpenArea={onOpenArea}
                         />
                     ))
                 ) : (
                     <DashboardEmptyState
                         mensaje="Centros Operativos sin datos"
-                        subtexto="No se registraron tareas en ninguna planta durante este periodo. Ajusta los filtros de fecha."
+                        subtexto="No se registraron tareas en ningún área durante este periodo. Ajusta los filtros de fecha."
                     />
                 )}
             </div>
 
-            {plantaDetalle && (
-                <PlantaDetalle planta={plantaDetalle} onClose={onClosePlanta} />
-            )}
             {areaDetalle && (
                 <AreaDetalle
                     area={areaDetalle}
-                    plantaName={areaDetalle.plantaName}
                     onClose={onCloseArea}
                 />
             )}

@@ -82,7 +82,7 @@ const Section = ({ title, icon, children, defaultOpen = true }) => {
     );
 };
 
-export const AreaDetalle = ({ area, plantaName, onClose }) => {
+export const AreaDetalle = ({ area, onClose }) => {
     if (!area) return null;
 
     const {
@@ -145,13 +145,6 @@ export const AreaDetalle = ({ area, plantaName, onClose }) => {
 
             <ModalBody className="p-0">
                 <div className="flex flex-col gap-4 p-5">
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold -mb-1">
-                        <Icon name="factory" size="xs" />
-                        <span className="uppercase tracking-wide">{plantaName}</span>
-                        <Icon name="chevron_right" size="xs" />
-                        <span className="text-slate-600 uppercase tracking-wide">{area.area}</span>
-                    </div>
-
                     <div className="grid grid-cols-3 gap-3">
                         <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Tareas</p>
