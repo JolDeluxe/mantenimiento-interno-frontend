@@ -34,7 +34,7 @@ export const canReportProductionHalt = ({ categoria, scope, maquinaId, clasifica
  */
 export const deriveLocationFromMachine = (maquina) => {
     return {
-        planta: maquina?.planta || '',
+        planta: maquina?.planta || null,
         area: maquina?.area || '',
     };
 };
@@ -57,7 +57,7 @@ export const deriveCategoryFromTicket = (ticket, fallback = '') => {
 export const deriveLocationFromTicket = (ticket) => {
     const maquinaLocation = deriveLocationFromMachine(ticket?.maquina);
     return {
-        planta: ticket?.planta || maquinaLocation.planta || '',
+        planta: ticket?.planta || maquinaLocation.planta || null,
         area: ticket?.area || maquinaLocation.area || '',
     };
 };

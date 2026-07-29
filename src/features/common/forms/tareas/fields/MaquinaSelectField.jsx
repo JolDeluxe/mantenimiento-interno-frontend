@@ -56,9 +56,9 @@ export function MaquinaSelectField({
             <p className="text-emerald-800">
               Máquina validada: <strong className="font-bold">{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})
             </p>
-            {(maquinaInfo.planta || maquinaInfo.area) && (
+            {maquinaInfo.area && (
               <p className="text-[10px] text-emerald-600 font-normal mt-0.5">
-                Ubicación: {[maquinaInfo.planta, maquinaInfo.area].filter(Boolean).join(' · ')}
+                Ubicación: {maquinaInfo.area}
               </p>
             )}
           </div>
