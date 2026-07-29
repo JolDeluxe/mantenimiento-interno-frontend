@@ -6,7 +6,7 @@ import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, 
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import {
-    PLANTAS, CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
+    CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO, normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
 import {
     PrioridadField,
@@ -75,18 +75,7 @@ const getDurationLabel = (inicio, fin) => {
     return `${diff} min`;
 };
 
-const deducirPlantaDeArea = (areaName, plantaActual) => {
-    if (!areaName) return '';
-    if (plantaActual && AREAS_POR_PLANTA[plantaActual]?.includes(areaName)) {
-        return plantaActual;
-    }
-    for (const [plantaKey, areasList] of Object.entries(AREAS_POR_PLANTA)) {
-        if (areasList.includes(areaName)) {
-            return plantaKey;
-        }
-    }
-    return '';
-};
+// deducirPlantaDeArea removida
 
 const DurationPicker = ({ valueMins, onChange, disabled, error }) => {
     const horas = Math.floor((valueMins || 0) / 60);
@@ -213,7 +202,7 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                             <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{clasificLabel}</span>
                         )}
                         <span className="text-slate-300 text-[10px]">·</span>
-                        <span className="text-[10px] text-slate-400">{item.planta}{item.area ? ` / ${item.area}` : ''}</span>
+                        {item.area && <span className="text-[10px] text-slate-400">{item.area}</span>}
                         {tipoLabel && (
                             <>
                                 <span className="text-slate-300 text-[10px]">·</span>
@@ -407,14 +396,11 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         return localStorage.getItem(storageKey('categoria')) || '';
     });
 
-    const [planta, setPlanta] = useState(() => {
-        if (esEdicion) return '';
-        return localStorage.getItem(storageKey('planta')) || '';
-    });
+
 
     const [area, setArea] = useState(() => {
         if (esEdicion) return '';
-        return localStorage.getItem(storageKey('area')) || '';
+        return normalizeAreaName(localStorage.getItem(storageKey('area'))) || '';
     });
 
     const [prioridad, setPrioridad] = useState(() => {
@@ -476,9 +462,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
     const tecnicoCart = tecnicos.find(t => String(t.id) === String(tecnicoCartId));
 
     const areasOptions = useMemo(() => {
-        const list = (planta && AREAS_POR_PLANTA[planta]) ? AREAS_POR_PLANTA[planta] : AREAS;
-        return list.map(a => ({ value: a, label: a }));
-    }, [planta]);
+        return AREAS.map(a => ({ value: a, label: a }));
+    }, []);
 
     const opcionesTecnicos = useMemo(() =>
         tecnicos.map(t => ({ value: String(t.id), tecnico: t })), [tecnicos]);
@@ -503,7 +488,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         localStorage.setItem(storageKey('titulo'), titulo);
         localStorage.setItem(storageKey('descripcion'), descripcion);
         localStorage.setItem(storageKey('categoria'), categoria);
-        localStorage.setItem(storageKey('planta'), planta);
         localStorage.setItem(storageKey('area'), area);
         localStorage.setItem(storageKey('prioridad'), prioridad);
         localStorage.setItem(storageKey('tipo'), tipo);
@@ -516,13 +500,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         localStorage.setItem(storageKey('carrito'), JSON.stringify(carrito));
         localStorage.setItem(storageKey('modoLista'), JSON.stringify(modoLista));
         localStorage.setItem(storageKey('responsables'), JSON.stringify(responsables));
-    }, [titulo, descripcion, categoria, planta, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storageKey]);
+    }, [titulo, descripcion, categoria, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storageKey]);
     const clearDraft = () => {
         [
             'titulo',
             'descripcion',
             'categoria',
-            'planta',
             'area',
             'prioridad',
             'tipo',
@@ -540,7 +523,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setDescripcion('');
         setMostrarDescripcion(false);
         setCategoria('');
-        setPlanta('');
         setArea('');
         setPrioridad('MEDIA');
         setTipo(defaultTipo);
@@ -568,7 +550,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
             setCategoria(ticketAEditar.categoria ?? '');
-            setPlanta(ticketAEditar.planta ?? '');
             setArea(ticketAEditar.area ?? '');
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setTipo(ticketAEditar.tipo ?? defaultTipo);
@@ -652,7 +633,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
-        if (!planta) e.planta = 'Selecciona la planta.';
         if (!area) e.area = 'Selecciona el área.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (esAdmin) {
@@ -706,7 +686,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
         setCarrito(prev => [...prev, {
             _id: `${Date.now()}-${Math.random()}`,
-            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
             prioridad, clasificacion: null, tipo, fechaVencimiento,
             tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
             responsables: responsablesSnapshot,
@@ -723,7 +703,6 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setTiempoEstimadoMins(0);
         setHoraInicio('');
         setHoraFin('');
-        setPlanta('');
         setArea('');
         setCategoria('');
         setSubmitted(false);
@@ -770,12 +749,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             if (Object.keys(errors).length > 0) return;
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', '');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('planta', planta);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             fd.append('maquinaId', '');
 
@@ -819,12 +798,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             if (Object.keys(errors).length > 0) return;
 
             const fd = new FormData();
+            const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', '');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('planta', planta);
-            fd.append('area', area);
+            fd.append('area', canonicalArea);
             fd.append('prioridad', prioridad);
             fd.append('maquinaId', '');
 
@@ -873,7 +852,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
-                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area: normalizeAreaName(area) || area,
                 prioridad, clasificacion: null, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
                 responsables: responsablesSnapshot,
@@ -895,8 +874,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                     titulo: item.titulo,
                     descripcion: item.descripcion,
                     categoria: item.categoria,
-                    planta: item.planta,
-                    area: item.area,
+                    area: normalizeAreaName(item.area) || item.area,
                     prioridad: item.prioridad,
                     clasificacion: null,
                     tipo: item.tipo,
@@ -1137,32 +1115,14 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
                         {/* ── FILA 2: Máquina removida para Actividades ── */}
 
-                        {/* ── FILA 3: Planta | Área ── */}
+                        {/* ── FILA 3: Área ── */}
                         <PlantaAreaFields
-                            planta={planta}
                             area={area}
-                            plantas={PLANTAS}
                             areasOptions={areasOptions}
-                            errorPlanta={fe.planta}
                             errorArea={fe.area}
-                            disabledPlanta={isSubmitting || lockBaseFields}
                             disabledArea={isSubmitting || lockBaseFields}
-                            onPlantaChange={(val) => {
-                                setPlanta(val);
-                                const posibles = AREAS_POR_PLANTA[val] || AREAS;
-                                setArea(posibles.length === 1 ? posibles[0] : '');
-                            }}
-                            onAreaChange={(val) => {
-                                setArea(val);
-                                if (val) {
-                                    const plantaDeducida = deducirPlantaDeArea(val, planta);
-                                    if (plantaDeducida) setPlanta(plantaDeducida);
-                                }
-                            }}
-                            layoutClassName={isMobile
-                                ? 'grid grid-cols-1 gap-3'
-                                : 'grid grid-cols-1 md:grid-cols-2 gap-3'
-                            }
+                            onAreaChange={(val) => setArea(normalizeAreaName(val) || '')}
+                            layoutClassName="grid grid-cols-1 gap-3"
                         />
 
                         {/* ── FILA 3: Fecha vencimiento | Rango de Horas ── */}

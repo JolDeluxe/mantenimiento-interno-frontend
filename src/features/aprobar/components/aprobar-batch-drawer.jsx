@@ -164,10 +164,10 @@ export const AprobarBatchDrawer = ({
                                                     <span className="text-slate-700 font-extrabold">{ticket.maquina.codigo}</span>
                                                 </>
                                             )}
-                                            {(ticket.planta || ticket.area) && (
+                                            {ticket.area && (
                                                 <>
                                                     <span>·</span>
-                                                    <span>{ticket.planta}{ticket.area ? ` / ${ticket.area}` : ''}</span>
+                                                    <span>{ticket.area}</span>
                                                 </>
                                             )}
                                         </div>

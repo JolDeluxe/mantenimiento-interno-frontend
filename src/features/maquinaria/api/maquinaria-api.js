@@ -24,11 +24,6 @@ export const getMaquinaById = (id) =>
 export const getMaquinaKpis = (id, params = {}) =>
   api.get(`/api/maquinas/${id}/kpis`, { params });
 
-/**
- * Crear una nueva máquina en el catálogo
- */
-export const createMaquina = (data) =>
-  api.post('/api/maquinas', data);
 
 /**
  * Actualizar datos de una máquina existente

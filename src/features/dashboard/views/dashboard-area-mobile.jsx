@@ -1,12 +1,11 @@
 import React from 'react';
 import { Icon, Skeleton, GlassFab } from '@/components/ui/z_index';
-import { PlantaRow } from '../components/area/planta-row';
-import { PlantaDetalle } from '../components/area/area-detalle-planta';
+import { AreaRow } from '../components/area/area-row';
 import { AreaDetalle } from '../components/area/area-detalle-area';
 import DashboardEmptyState from '../components/dashboard-empty-state';
 import { hardReload } from '@/utils/hard-reload';
 
-const SkeletonPlanta = () => (
+const SkeletonArea = () => (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="flex items-center gap-3 px-4 py-3.5">
             <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
@@ -25,16 +24,12 @@ const SkeletonPlanta = () => (
 
 export default function DashboardAreaMobile({
     loading,
-    metricasPorPlanta = [],
-    plantaDetalle,
+    metricasPorArea = [],
     areaDetalle,
-    onOpenPlanta,
     onOpenArea,
-    onClosePlanta,
     onCloseArea,
-    onRefresh
 }) {
-    const totalTareas = metricasPorPlanta.reduce((acc, p) => acc + (p.totalTareas || 0), 0);
+    const totalTareas = metricasPorArea.reduce((acc, item) => acc + (item.totalTareas || 0), 0);
     const tieneDatos = totalTareas > 0;
 
     return (
@@ -45,19 +40,18 @@ export default function DashboardAreaMobile({
                         Métricas Operativas
                     </span>
                     <p className="text-xs text-slate-400 mt-2">
-                        Rendimiento por planta y área de producción.
+                        Rendimiento por área de producción.
                     </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                     {loading ? (
-                        Array.from({ length: 3 }).map((_, i) => <SkeletonPlanta key={i} />)
+                        Array.from({ length: 3 }).map((_, i) => <SkeletonArea key={i} />)
                     ) : tieneDatos ? (
-                        metricasPorPlanta.map((planta, idx) => (
-                            <PlantaRow
+                        metricasPorArea.map((areaGroup, idx) => (
+                            <AreaRow
                                 key={idx}
-                                planta={planta}
-                                onOpenPlanta={onOpenPlanta}
+                                areaGroup={areaGroup}
                                 onOpenArea={onOpenArea}
                                 isMobile
                             />
@@ -71,13 +65,9 @@ export default function DashboardAreaMobile({
                     )}
                 </div>
 
-                {plantaDetalle && (
-                    <PlantaDetalle planta={plantaDetalle} onClose={onClosePlanta} />
-                )}
                 {areaDetalle && (
                     <AreaDetalle
                         area={areaDetalle}
-                        plantaName={areaDetalle.plantaName}
                         onClose={onCloseArea}
                     />
                 )}

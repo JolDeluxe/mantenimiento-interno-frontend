@@ -27,8 +27,6 @@ export const CalendarioDesktop = ({
     onScopeChange,
     filtroEstado,
     onFilterChange,
-    filtroTipo,
-    onTipoChange,
     filtroPrioridad,
     onPrioridadChange,
     filtroCategoria,
@@ -37,8 +35,6 @@ export const CalendarioDesktop = ({
     onClasificacionChange,
     filtroResponsable,
     onResponsableChange,
-    filtroPlanta,
-    onPlantaChange,
     filtroArea,
     onAreaChange,
     query,
@@ -53,8 +49,6 @@ export const CalendarioDesktop = ({
                 onScopeChange={onScopeChange}
                 filtroEstado={filtroEstado}
                 onFilterChange={onFilterChange}
-                filtroTipo={filtroTipo}
-                onTipoChange={onTipoChange}
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
@@ -63,8 +57,6 @@ export const CalendarioDesktop = ({
                 onClasificacionChange={onClasificacionChange}
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
-                filtroPlanta={filtroPlanta}
-                onPlantaChange={onPlantaChange}
                 filtroArea={filtroArea}
                 onAreaChange={onAreaChange}
                 query={query}

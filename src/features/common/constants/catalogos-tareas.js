@@ -1,5 +1,3 @@
-export const PLANTAS = ['KAPPA', 'OMEGA', 'SIGMA', 'LAMBDA'];
-
 export const ROLES_ADMIN = new Set(['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO']);
 
 export const TIPOS = [
@@ -47,49 +45,50 @@ export const CATEGORIAS_EQUIPO = [
     { value: 'RUTINA', label: 'Rutina', icon: 'sync' },
 ];
 
-export const AREAS_POR_PLANTA = {
-    OMEGA: ['ALMACEN DE PT'],
-    SIGMA: [
-        'AREAS COMUNES',
-        'PRELIMINARES',
-        'LASER',
-        'BORDADO'
-    ],
-    LAMBDA: [
-        'AREAS COMUNES',
-        'BILLETERAS',
-        'BOLSAS',
-        'TORRE 1'
-    ],
-    KAPPA: [
-        'ACABADO',
-        'ADMINISTRACION',
-        'ADORNO',
-        'ALMACEN MP',
-        'ALMACEN PIEL',
-        'AREAS COMUNES',
-        'AVIOS',
-        'BETA 7',
-        'CAPITAL HUMANO',
-        'CHAMARRAS',
-        'CINTOS',
-        'CORTE',
-        'DESARROLLO',
-        'DISEÑO',
-        'LASER',
-        'MAQUILA',
-        'MONTADO',
-        'PESPUNTE',
-        'PRELIMINARES',
-        'PREMONTADO',
-        'SALON',
-        'TALLER',
-        'TRAFICO'
-    ],
-    GENERAL: [],
+export const AREAS = [
+    'ACABADO',
+    'ADORNO',
+    'ALMACEN PIEL',
+    'AREAS COMUNES',
+    'AVIOS',
+    'BETA 7',
+    'BILLETERAS LAMBDA',
+    'BODEGA ANEXA',
+    'BOLSAS LAMBDA',
+    'CAPITAL HUMANO',
+    'CHAMARRAS',
+    'CINTOS',
+    'CORTE',
+    'DESARROLLO',
+    'DISEÑO',
+    'MANTENIMIENTO (TALLER)',
+    'MONTADO',
+    'PESPUNTE',
+    'PREMONTADO',
+    'PT OMEGA',
+    'SALON AGUSTIN',
+    'SIGMA',
+    'TALLER 2',
+];
+
+export const AREA_ALIASES = {
+    BILLETERAS: 'BILLETERAS LAMBDA',
+    BILLETEREAS: 'BILLETERAS LAMBDA',
+    BOLSAS: 'BOLSAS LAMBDA',
+    TALLER: 'MANTENIMIENTO (TALLER)',
+    TELLER: 'MANTENIMIENTO (TALLER)',
+    OMEGA: 'PT OMEGA',
 };
 
-export const AREAS = [...new Set(Object.values(AREAS_POR_PLANTA).flat())];
+export const normalizeAreaName = (value) => {
+    if (typeof value !== 'string') return null;
+
+    const normalized = value.trim().replace(/\s+/g, ' ').toUpperCase();
+
+    if (!normalized) return null;
+
+    return AREA_ALIASES[normalized] ?? normalized;
+};
 
 export const CLASIFICACION_ICONS = {
     PREVENTIVO: 'build_circle',

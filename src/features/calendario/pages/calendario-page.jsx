@@ -61,7 +61,6 @@ export default function CalendarioPage() {
         filtroEstado,
         setFiltroEstado,
         filtroTipo,
-        setFiltroTipo,
         filtroPrioridad,
         setFiltroPrioridad,
         filtroCategoria,
@@ -70,8 +69,6 @@ export default function CalendarioPage() {
         setFiltroClasificacion,
         filtroResponsable,
         setFiltroResponsable,
-        filtroPlanta,
-        setFiltroPlanta,
         filtroArea,
         setFiltroArea,
         query,
@@ -129,11 +126,10 @@ export default function CalendarioPage() {
             filtroCategoria !== '' ||
             filtroClasificacion !== '' ||
             filtroResponsable !== '' ||
-            filtroPlanta !== '' ||
             filtroArea !== '' ||
             query !== ''
         );
-    }, [scope, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, query]);
+    }, [scope, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroArea, query]);
 
     // ── Handlers de Escritura / Mutaciones ────────────────────────────────
     
@@ -242,8 +238,6 @@ export default function CalendarioPage() {
         onScopeChange: setScope,
         filtroEstado,
         onFilterChange: setFiltroEstado,
-        filtroTipo,
-        onTipoChange: setFiltroTipo,
         filtroPrioridad,
         onPrioridadChange: setFiltroPrioridad,
         filtroCategoria,
@@ -252,8 +246,6 @@ export default function CalendarioPage() {
         onClasificacionChange: setFiltroClasificacion,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
-        filtroPlanta,
-        onPlantaChange: setFiltroPlanta,
         filtroArea,
         onAreaChange: setFiltroArea,
         query,

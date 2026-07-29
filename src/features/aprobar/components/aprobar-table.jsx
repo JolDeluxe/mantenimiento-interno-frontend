@@ -127,12 +127,12 @@ export const AprobarTicketTable = ({
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
-                            <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />
-                            <span className="truncate">
-                                {row.planta}{row.area ? ` — ${row.area}` : ''}
-                            </span>
-                        </div>
+                        {row.area && (
+                            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
+                                <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />
+                                <span className="truncate">{row.area}</span>
+                            </div>
+                        )}
                     </div>
                 );
             },

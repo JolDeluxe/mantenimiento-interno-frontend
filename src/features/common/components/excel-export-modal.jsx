@@ -26,14 +26,6 @@ const CLASIFICACIONES = [
     { value: 'RUTINA', label: 'Rutina' },
 ];
 
-const PLANTAS = [
-    { value: 'TODAS', label: 'Todas las plantas' },
-    { value: 'KAPPA', label: 'Kappa' },
-    { value: 'OMEGA', label: 'Omega' },
-    { value: 'SIGMA', label: 'Sigma' },
-    { value: 'LAMBDA', label: 'Lambda' },
-];
-
 const TIPOS_FECHA = [
     { value: 'CREACION', label: 'Fecha de Creación' },
     { value: 'VENCIMIENTO', label: 'Fecha de Vencimiento' },
@@ -59,7 +51,6 @@ export const ExcelExportModal = ({
     // Filtros extra
     const [clasificacion, setClasificacion] = useState(defaultClasificacion || 'TODAS');
     const [estado, setEstado] = useState('TODOS');
-    const [planta, setPlanta] = useState('TODAS');
     const [isExporting, setIsExporting] = useState(false);
 
     // Actualizar clasificación si cambia la default
@@ -93,7 +84,6 @@ export const ExcelExportModal = ({
             // Filtros demográficos
             if (clasificacion && clasificacion !== 'TODAS') params.clasificacion = clasificacion;
             if (estado && estado !== 'TODOS') params.estado = estado;
-            if (planta && planta !== 'TODAS') params.planta = planta;
 
             // Tipo de fecha
             const dateKeyStart = dateType === 'CREACION' ? 'fechaInicio' : (dateType === 'VENCIMIENTO' ? 'vencimientoDesde' : 'finalizadoDesde');
@@ -145,7 +135,6 @@ export const ExcelExportModal = ({
                 'Tipo',
                 'Clasificación',
                 'Máquina',
-                'Planta',
                 'Área',
                 'Responsables',
                 'Creación',
@@ -163,7 +152,6 @@ export const ExcelExportModal = ({
                 t.tipo === 'TICKET' ? 'REPORTE' : (t.tipo || ''),
                 t.clasificacion || '',
                 t.maquina?.codigo || 'N/A',
-                t.planta || '',
                 t.area || '',
                 `"${(t.responsables?.map(r => r.nombre).join(', ') || 'Sin asignar').replace(/"/g, '""')}"`,
                 formatFechaNumerica(t.createdAt),
@@ -372,7 +360,7 @@ export const ExcelExportModal = ({
 
                 {/* 4. Filtros adicionales condicionales */}
                 {periodType !== 'ACTUAL' && (
-                    <div className="grid grid-cols-3 gap-4 border-t border-slate-100 pt-4 animate-in fade-in duration-300">
+                    <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 animate-in fade-in duration-300">
                         <div>
                             <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
                                 Clasificación
@@ -399,20 +387,6 @@ export const ExcelExportModal = ({
                             >
                                 {ESTADOS.map(es => (
                                     <option key={es.value} value={es.value}>{es.label}</option>
-                                ))}
-                            </Select>
-                        </div>
-                        <div>
-                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
-                                Planta
-                            </Label>
-                            <Select
-                                value={planta}
-                                onChange={(e) => setPlanta(e.target.value)}
-                                className="h-10 text-xs font-bold"
-                            >
-                                {PLANTAS.map(p => (
-                                    <option key={p.value} value={p.value}>{p.label}</option>
                                 ))}
                             </Select>
                         </div>

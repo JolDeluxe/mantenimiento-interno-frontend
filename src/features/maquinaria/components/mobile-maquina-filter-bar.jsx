@@ -110,14 +110,16 @@ const GlassNativeSelect = ({ icon, placeholder, options, value, onChange, disabl
 export const MobileMaquinaFilterBar = ({
   filters,
   onFilterChange,
-  catalogs = { plantas: [], areas: [], procesos: [] },
+  catalogs = { areas: [], procesos: [] },
   onClearFilters
 }) => {
   const [localValue, setLocalValue] = useState(filters.q || '');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    setLocalValue(filters.q || '');
+    queueMicrotask(() => {
+      setLocalValue(filters.q || '');
+    });
   }, [filters.q]);
 
   useEffect(() => {
@@ -130,11 +132,10 @@ export const MobileMaquinaFilterBar = ({
   }, [localValue, filters.q, onFilterChange]);
 
   const hasActiveFilters = Boolean(
-    filters.planta || filters.area || filters.criticidad || filters.estado || filters.proceso
+    filters.area || filters.criticidad || filters.estado || filters.proceso
   );
 
   const activeFiltersCount = [
-    filters.planta,
     filters.area,
     filters.criticidad,
     filters.estado,
@@ -179,16 +180,7 @@ export const MobileMaquinaFilterBar = ({
         >
           <GlassSheen />
           <div className="grid grid-cols-2 gap-2 relative z-10">
-            <div className="col-span-1">
-              <GlassNativeSelect
-                icon="domain"
-                placeholder="Planta"
-                options={normalizeOpts(catalogs.plantas)}
-                value={filters.planta}
-                onChange={(val) => onFilterChange({ planta: val, area: '', page: 1 })}
-              />
-            </div>
-            <div className="col-span-1">
+            <div className="col-span-2">
               <GlassNativeSelect
                 icon="place"
                 placeholder="Área"

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Icon, GlassPaginationPill, GlassFab, ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { MobileMaquinaFilterBar, MaquinaFormModal, MaquinaDetailModal, MaquinaCard } from '../components';
+import { MobileMaquinaFilterBar, MaquinaCriticidadModal, MaquinaDetailModal, MaquinaCard } from '../components';
 import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
@@ -22,7 +22,7 @@ export default function MaquinariaMobile({
   submitting = false,
   pagination = {},
   filters = {},
-  catalogs = { plantas: [], areas: [], procesos: [] },
+  catalogs = { areas: [], procesos: [] },
   onFilterChange,
   onClearFilters,
   updateMaquina,
@@ -132,7 +132,7 @@ export default function MaquinariaMobile({
       </div>
 
       {/* Modal Formulario */}
-      <MaquinaFormModal
+      <MaquinaCriticidadModal
         isOpen={formOpen}
         onClose={() => setFormOpen(false)}
         maquina={selectedMaquina}

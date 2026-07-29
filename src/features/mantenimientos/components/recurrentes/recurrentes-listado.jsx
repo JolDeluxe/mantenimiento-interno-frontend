@@ -40,7 +40,7 @@ export const RecurrentesListado = ({
             headerClassName: 'w-[15%] min-w-[150px]',
             cell: (row) => (
                 <span className="font-semibold text-slate-600">
-                    {row.maquina?.planta || '-'} / {row.maquina?.area || '-'}
+                    {row.maquina?.area || '-'}
                 </span>
             )
         },

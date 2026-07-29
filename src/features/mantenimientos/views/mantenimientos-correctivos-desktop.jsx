@@ -34,7 +34,6 @@ export const MantenimientosCorrectivosDesktop = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
@@ -56,7 +55,6 @@ export const MantenimientosCorrectivosDesktop = ({
     onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
-    onPlantaChange,
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
@@ -84,7 +82,6 @@ export const MantenimientosCorrectivosDesktop = ({
         prioridad: filtroPrioridad,
         categoria: filtroCategoria,
         clasificacion: filtroClasificacion,
-        planta: filtroPlanta,
         area: filtroArea,
         responsableId: filtroResponsable,
         vencidos: mostrarAtrasadas || undefined,
@@ -124,8 +121,6 @@ export const MantenimientosCorrectivosDesktop = ({
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
-                filtroPlanta={filtroPlanta}
-                onPlantaChange={onPlantaChange}
                 filtroArea={filtroArea}
                 onAreaChange={onAreaChange}
                 filtroProgramacion={filtroProgramacion}

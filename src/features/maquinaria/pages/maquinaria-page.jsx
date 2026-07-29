@@ -14,7 +14,6 @@ export default function MaquinariaPage() {
     filters,
     catalogs,
     fetchMaquinas,
-    createMaquina,
     updateMaquina,
     getKpis,
     getDetails
@@ -23,7 +22,7 @@ export default function MaquinariaPage() {
   // Carga inicial
   useEffect(() => {
     fetchMaquinas();
-  }, []);
+  }, [fetchMaquinas]);
 
   const handleFilterChange = (newFilters) => {
     fetchMaquinas(newFilters);
@@ -34,7 +33,6 @@ export default function MaquinariaPage() {
       q: '',
       estado: '',
       criticidad: '',
-      planta: '',
       area: '',
       proceso: '',
       page: 1
@@ -51,7 +49,6 @@ export default function MaquinariaPage() {
     onFilterChange: handleFilterChange,
     onClearFilters: handleClearFilters,
     onRefresh: fetchMaquinas,
-    createMaquina,
     updateMaquina,
     getKpis,
     getDetails

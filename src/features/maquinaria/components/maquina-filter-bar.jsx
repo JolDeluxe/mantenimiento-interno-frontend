@@ -49,15 +49,16 @@ const SearchInput = ({ localValue, onChange, onClear, className = "w-full" }) =>
 export const MaquinaFilterBar = ({
   filters,
   onFilterChange,
-  catalogs = { plantas: [], areas: [], procesos: [] },
-  onClearFilters,
-  onAddNewClick
+  catalogs = { areas: [], procesos: [] },
+  onClearFilters
 }) => {
   const [localValue, setLocalValue] = useState(filters.q || '');
   const { isPrintMode, togglePrintMode } = useQrPrintStore();
 
   useEffect(() => {
-    setLocalValue(filters.q || '');
+    queueMicrotask(() => {
+      setLocalValue(filters.q || '');
+    });
   }, [filters.q]);
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export const MaquinaFilterBar = ({
   }, [localValue, filters.q, onFilterChange]);
 
   const hasActiveFilters = Boolean(
-    filters.q || filters.planta || filters.area || filters.criticidad || filters.estado || filters.proceso
+    filters.q || filters.area || filters.criticidad || filters.estado || filters.proceso
   );
 
   return (
@@ -108,30 +109,10 @@ export const MaquinaFilterBar = ({
             {isPrintMode ? 'Salir Impresión' : 'Impresión'}
           </button>
 
-          {onAddNewClick && (
-            <Button
-              onClick={onAddNewClick}
-              className="bg-marca-primario hover:bg-marca-primario-oscuro text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm shrink-0 flex items-center gap-2 uppercase tracking-wide h-9.5"
-            >
-              <Icon name="add" size="sm" />
-              Añadir Máquina
-            </Button>
-          )}
         </div>
       </div>
 
       <div className="flex items-center gap-2.5 w-full flex-wrap">
-        <div className="min-w-40 flex-1 lg:flex-none">
-          <SearchableSelect
-            options={normalizeOpts(catalogs.plantas)}
-            value={filters.planta || ''}
-            onChange={(val) => onFilterChange({ planta: val, area: '', page: 1 })}
-            placeholder="PLANTA..."
-            icon="domain"
-            allOptionText="TODAS"
-            className="w-full font-bold text-[11px] uppercase tracking-wide"
-          />
-        </div>
 
         <div className="min-w-40 flex-1 lg:flex-none">
           <SearchableSelect

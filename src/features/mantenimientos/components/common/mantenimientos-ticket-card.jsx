@@ -71,11 +71,8 @@ export const TicketCard = ({
 
     const esAdmin = ROLES_ADMIN.includes(rol);
     const esSupervisor = ROLES_SUPERVISOR.includes(rol);
-    const esTecnico = rol === 'TECNICO';
     const esCliente = rol === 'CLIENTE_INTERNO';
     const esCreador = ticket.creadorId === userId;
-    const esResponsable = ticket.responsables?.some((r) => r.id === userId);
-    const tieneResponsables = ticket.responsables && ticket.responsables.length > 0;
     const vencida = isVencida(ticket);
 
     const puedeEditar =
@@ -175,11 +172,11 @@ export const TicketCard = ({
                             </span>
                         </p>
                     )}
-                    {ticket.planta && (
+                    {ticket.area && (
                         <p className="flex items-center gap-2">
-                            <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
+                            <Icon name="location_on" size="xs" className="text-slate-300 shrink-0" />
                             <span className="text-xs text-slate-500">
-                                {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
+                                {ticket.area}
                             </span>
                         </p>
                     )}

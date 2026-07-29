@@ -35,7 +35,6 @@ export const MantenimientosHistoricoDesktop = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
@@ -57,7 +56,6 @@ export const MantenimientosHistoricoDesktop = ({
     onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
-    onPlantaChange,
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
@@ -85,7 +83,6 @@ export const MantenimientosHistoricoDesktop = ({
         prioridad: filtroPrioridad,
         categoria: filtroCategoria,
         clasificacion: filtroClasificacion,
-        planta: filtroPlanta,
         area: filtroArea,
         responsableId: filtroResponsable,
         vencidos: mostrarAtrasadas || undefined,
@@ -125,8 +122,6 @@ export const MantenimientosHistoricoDesktop = ({
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
-                filtroPlanta={filtroPlanta}
-                onPlantaChange={onPlantaChange}
                 filtroArea={filtroArea}
                 onAreaChange={onAreaChange}
                 filtroProgramacion={filtroProgramacion}

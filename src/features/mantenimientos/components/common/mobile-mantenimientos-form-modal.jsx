@@ -15,15 +15,14 @@ import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMa
 import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import api from '@/lib/axios';
 import {
-    PLANTAS,
     CLASIFICACIONES_CLIENTE,
     CLASIFICACIONES_ADMIN,
     PRIORIDADES,
     TIPOS_ADMIN,
     ROLES_ADMIN,
-    AREAS_POR_PLANTA,
     AREAS,
-    CATEGORIAS_EQUIPO
+    CATEGORIAS_EQUIPO,
+    normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 import { cn } from '@/utils/cn';
@@ -31,20 +30,7 @@ import { cn } from '@/utils/cn';
 const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
 
-const deducirPlantaDeArea = (areaName, plantaActual) => {
-    if (!areaName || typeof areaName !== 'string') return '';
-    const areasMap = AREAS_POR_PLANTA || {};
 
-    if (plantaActual && Array.isArray(areasMap[plantaActual]) && areasMap[plantaActual].includes(areaName)) {
-        return plantaActual;
-    }
-    for (const [plantaKey, areasList] of Object.entries(areasMap)) {
-        if (Array.isArray(areasList) && areasList.includes(areaName)) {
-            return plantaKey;
-        }
-    }
-    return '';
-};
 
 const getSmartDefaultTimeRange = () => {
     const now = new Date();
@@ -113,7 +99,6 @@ export const MobileTicketFormModal = ({
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
     const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
-    const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('MEDIA');
     const [clasificacion, setClasificacion] = useState('');
@@ -198,9 +183,8 @@ export const MobileTicketFormModal = ({
     );
 
     const areasOptions = useMemo(() => {
-        const list = (planta && AREAS_POR_PLANTA?.[planta]) ? AREAS_POR_PLANTA[planta] : (AREAS || []);
-        return Array.isArray(list) ? list.map(a => ({ value: String(a), label: String(a) })) : [];
-    }, [planta]);
+        return Array.isArray(AREAS) ? AREAS.map(a => ({ value: String(a), label: String(a) })) : [];
+    }, []);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -214,7 +198,6 @@ export const MobileTicketFormModal = ({
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
             setCategoria(deriveCategoryFromTicket(ticketAEditar, scope === 'mantenimientos' ? 'MAQUINARIA' : ''));
-            setPlanta(loc.planta);
             setArea(loc.area);
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
@@ -232,7 +215,7 @@ export const MobileTicketFormModal = ({
         } else {
             setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
-            setPlanta(''); setArea(''); setPrioridad('MEDIA');
+            setArea(''); setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || 'PREVENTIVO'); setTipo('PLANEADA');
             setFechaVencimiento((defaultDate && defaultDate >= hoyLocal) ? defaultDate : hoyLocal); setTiempoEstimadoMins(0); setResponsables([]);
             setMaquinaId('');
@@ -297,13 +280,11 @@ export const MobileTicketFormModal = ({
                     const maq = response.data.data;
                     setMaquinaInfo(maq);
                     const loc = deriveLocationFromMachine(maq);
-                    setPlanta(loc.planta);
                     setArea(loc.area);
                 } else if (response?.data && !response.data.status) {
                     const maq = response.data;
                     setMaquinaInfo(maq);
                     const loc = deriveLocationFromMachine(maq);
-                    setPlanta(loc.planta);
                     setArea(loc.area);
                 } else {
                     setMaquinaInfo(null);
@@ -330,7 +311,7 @@ export const MobileTicketFormModal = ({
             if (!maquinaId) e.maquinaId = 'La máquina es obligatoria para mantenimiento recurrente.';
             if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
             if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
-            if (!planta.trim()) e.planta = 'Selecciona la planta.';
+
             if (!area.trim()) e.area = 'El área es obligatoria.';
             if (!frecuencia) e.frecuencia = 'Selecciona la frecuencia.';
             if (frecuencia === 'PERSONALIZADA_DIAS') {
@@ -357,7 +338,7 @@ export const MobileTicketFormModal = ({
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
-        if (!planta.trim()) e.planta = 'Selecciona la planta.';
+
 
         if (esAdmin) {
             if (modoRangoHoras) {
@@ -451,8 +432,9 @@ export const MobileTicketFormModal = ({
         formData.append('descripcion', descripcion.trim() || 'Sin descripción.');
         formData.append('clasificacion', clasificacion);
         if (categoria) formData.append('categoria', categoria);
-        if (planta) formData.append('planta', planta);
-        if (area) formData.append('area', area);
+
+        const canonicalArea = normalizeAreaName(area) || area;
+        if (canonicalArea) formData.append('area', canonicalArea);
         formData.append('prioridad', prioridad);
         if (maquinaId) formData.append('maquinaId', maquinaId);
         formData.append('paroProduccion', paroProduccion ? 'true' : 'false');
@@ -542,7 +524,7 @@ export const MobileTicketFormModal = ({
                                     if (val !== 'MAQUINARIA') {
                                         setMaquinaId('');
                                         setMaquinaInfo(null);
-                                        setPlanta('');
+
                                         setArea('');
                                     }
                                 }}
@@ -565,7 +547,7 @@ export const MobileTicketFormModal = ({
                                     if (!selectedId) {
                                         setMaquinaId('');
                                         setMaquinaInfo(null);
-                                        setPlanta('');
+
                                         setArea('');
                                         return;
                                     }
@@ -574,7 +556,7 @@ export const MobileTicketFormModal = ({
                                     if (maq) {
                                         setMaquinaInfo(maq);
                                         const loc = deriveLocationFromMachine(maq);
-                                        setPlanta(loc.planta);
+
                                         setArea(loc.area);
                                     }
                                 }}
@@ -750,30 +732,14 @@ export const MobileTicketFormModal = ({
                         )}
                     </div>
 
-                    {/* ── UBICACIÓN (Planta/Área) con PlantaAreaFields ── */}
                     <PlantaAreaFields
-                        planta={planta}
                         area={area}
-                        plantas={PLANTAS}
                         areasOptions={areasOptions}
-                        errorPlanta={fe.planta}
                         errorArea={fe.area}
-                        disabledPlanta={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
                         disabledArea={isSubmitting || shouldLockLocationByMachine(maquinaInfo)}
                         layoutClassName="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                        onPlantaChange={(val) => {
-                            setPlanta(val);
-                            const posibles = (AREAS_POR_PLANTA && AREAS_POR_PLANTA[val]) || AREAS || [];
-                            setArea(Array.isArray(posibles) && posibles.length === 1 ? posibles[0] : '');
-                        }}
                         onAreaChange={(val) => {
-                            setArea(val);
-                            if (val) {
-                                const plantaDeducida = deducirPlantaDeArea(val, planta);
-                                if (plantaDeducida) {
-                                    setPlanta(plantaDeducida);
-                                }
-                            }
+                            setArea(normalizeAreaName(val) || '');
                         }}
                     />
 

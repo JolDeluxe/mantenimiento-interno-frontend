@@ -3,22 +3,17 @@ import { Label, Select } from '@/components/form/z_index';
 import { Icon } from '@/components/ui/z_index';
 
 /**
- * PlantaAreaFields — campo visual/controlado para Planta y Área/Línea.
+ * PlantaAreaFields — campo visual/controlado para Área/Línea.
  *
  * Se encarga del layout responsive y de agrupar visualmente la ubicación
  * en una card elegante. Toda la lógica de cálculo de opciones, setters y
  * dependencias de maquinaria permanece en el componente padre.
  *
  * Props:
- *  - planta             {string}   — valor seleccionado de planta
  *  - area               {string}   — valor seleccionado de area
- *  - plantas            {array}    — catálogo de plantas
  *  - areasOptions       {array}    — opciones filtradas de áreas
- *  - errorPlanta        {string}   — mensaje de error de planta (fe.planta)
  *  - errorArea          {string}   — mensaje de error de área (fe.area)
- *  - disabledPlanta     {boolean}  — expresión de deshabilitado de planta
  *  - disabledArea       {boolean}  — expresión de deshabilitado de área
- *  - onPlantaChange     {function} — handler para onChange de planta (recibe string)
  *  - onAreaChange       {function} — handler para onChange de área (recibe string)
  *  - layoutClassName    {string}   — clases de grid/layout
  *  - sectionTitle       {string}   — título superior de la sección
@@ -26,23 +21,21 @@ import { Icon } from '@/components/ui/z_index';
  *  - showSectionHeader  {boolean}  — si debe pintar cabecera con icono
  */
 export function PlantaAreaFields({
-    planta,
     area,
-    plantas = [],
     areasOptions = [],
-    errorPlanta,
     errorArea,
-    disabledPlanta = false,
     disabledArea = false,
-    onPlantaChange,
     onAreaChange,
     layoutClassName = 'grid grid-cols-1 md:grid-cols-2 gap-3',
     sectionTitle = 'Ubicación de Atención',
-    sectionDescription = 'Especifica la planta y área/línea donde se requiere la intervención.',
+    sectionDescription = 'Especifica el área/línea donde se requiere la intervención.',
     showSectionHeader = true,
 }) {
-    const hasErrorPlanta = Boolean(errorPlanta);
     const hasErrorArea = Boolean(errorArea);
+
+    const adjustedLayoutClassName = layoutClassName
+        .replace('md:grid-cols-2', 'md:grid-cols-1')
+        .replace('grid-cols-2', 'grid-cols-1');
 
     return (
         <div className="rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -62,24 +55,7 @@ export function PlantaAreaFields({
                 </div>
             )}
             
-            <div className={layoutClassName}>
-                <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="tf-planta" error={hasErrorPlanta}>Planta *</Label>
-                    <Select
-                        id="tf-planta"
-                        value={planta}
-                        onChange={(e) => onPlantaChange(e.target.value)}
-                        error={hasErrorPlanta}
-                        helperText={errorPlanta}
-                        disabled={disabledPlanta}
-                    >
-                        <option value="" disabled hidden>Selecciona planta…</option>
-                        {plantas.map((p) => (
-                            <option key={p} value={p}>{p}</option>
-                        ))}
-                    </Select>
-                </div>
-
+            <div className={adjustedLayoutClassName}>
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="tf-area" error={hasErrorArea}>Área / Línea *</Label>
                     <Select

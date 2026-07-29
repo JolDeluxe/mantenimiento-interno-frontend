@@ -11,8 +11,6 @@ import { TicketActions } from './ticket-actions';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import {
-    getClasificacionIcon,
-    getTipoStyle,
     getCategoriaInfo
 } from '@/features/common/constants/catalogos-tareas';
 
@@ -89,7 +87,6 @@ export const TicketsTable = ({
     onSortChange,
     onSave,
     onChangeStatus,
-    onRefresh,
     submitting,
     hidePagination = false,
 }) => {
@@ -141,12 +138,12 @@ export const TicketsTable = ({
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
-                            <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />
-                            <span className="truncate">
-                                {row.planta}{row.area ? ` — ${row.area}` : ''}
-                            </span>
-                        </div>
+                        {row.area && (
+                            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
+                                <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />
+                                <span className="truncate">{row.area}</span>
+                            </div>
+                        )}
                     </div>
                 );
             },
@@ -340,15 +337,6 @@ export const TicketsTable = ({
     const tableData = loading
         ? Array.from({ length: 10 }).map((_, i) => ({ isSkeleton: true, id: `skel-${i}` }))
         : tickets;
-
-    const handleConfirmCancel = async () => {
-        if (!cancelTarget) return;
-        const formData = new FormData();
-        formData.append('estado', 'CANCELADA');
-        formData.append('nota', 'Ticket cancelado por el usuario.');
-        await onChangeStatus(cancelTarget.id, formData);
-        setCancelTarget(null);
-    };
 
     return (
         <div className="w-full">

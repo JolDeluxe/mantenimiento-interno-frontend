@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, AREAS, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
 const normalizeOpts = (opts = []) => opts.map(o => {
@@ -206,7 +206,6 @@ export const MobileTicketFilterBar = ({
     filtroPrioridad, onPrioridadChange,
     filtroCategoria, onCategoriaChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
-    filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
     filtroProgramacion, onProgramacionChange,
@@ -241,7 +240,7 @@ export const MobileTicketFilterBar = ({
 
     const hasActiveFilters = Boolean(
         filtroTipo || filtroPrioridad || filtroCategoria || filtroResponsable ||
-        filtroPlanta || filtroArea || filtroClasificacion ||
+        filtroArea || filtroClasificacion ||
         filtroProgramacion.type || filtroConclusion.type ||
         mostrarAtrasadas || mostrarRechazadas || mostrarPapelera
     );
@@ -251,7 +250,6 @@ export const MobileTicketFilterBar = ({
         if (filtroPrioridad) onPrioridadChange('');
         if (filtroCategoria) onCategoriaChange('');
         if (filtroResponsable) onResponsableChange('');
-        if (filtroPlanta) onPlantaChange('');
         if (filtroArea) onAreaChange('');
         if (filtroClasificacion) onClasificacionChange('');
         if (filtroProgramacion.type) onProgramacionChange({ type: '', start: '', end: '' });
@@ -260,15 +258,6 @@ export const MobileTicketFilterBar = ({
         if (mostrarPapelera) onTogglePapelera();
         if (mostrarRechazadas) onToggleRechazadas();
     };
-
-    const handlePlantaChange = (nuevaPlanta) => {
-        onPlantaChange(nuevaPlanta);
-        onAreaChange('');
-    };
-
-    const areasDisponibles = (filtroPlanta && AREAS_POR_PLANTA[filtroPlanta])
-        ? AREAS_POR_PLANTA[filtroPlanta]
-        : AREAS;
 
     const progOptions = [
         { label: 'HOY', value: 'HOY' },
@@ -287,8 +276,7 @@ export const MobileTicketFilterBar = ({
         { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
         { key: 'clasificacion', el: <GlassNativeSelect icon="style" placeholder="Clasificación" options={CLASIFICACIONES} value={filtroClasificacion} onChange={onClasificacionChange} />, span2: false },
         { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(opcionesResponsables)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
-        { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
-        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(areasDisponibles)} value={filtroArea} onChange={onAreaChange} />, span2: false },
+        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(AREAS)} value={filtroArea} onChange={onAreaChange} />, span2: false },
         { key: 'programacion', el: <GlassDateRangeSelect icon="event_note" placeholder="FECHA DE CONCLUCIÓN" value={filtroProgramacion} onChange={onProgramacionChange} quickOptions={progOptions} />, span2: true },
         { key: 'conclusion', el: <GlassDateRangeSelect icon="task_alt" placeholder="CONCLUIDAS" value={filtroConclusion} onChange={onConclusionChange} quickOptions={concOptions} />, span2: true },
         { key: 'canceladas', el: <GlassFilterToggleBtn icon="delete" label="Canceladas" isActive={mostrarPapelera} count={0} showBadge={false} onClick={onTogglePapelera} />, span2: true }

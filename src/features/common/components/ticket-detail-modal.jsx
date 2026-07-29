@@ -670,8 +670,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                 <Icon name="location_on" size="xs" className="text-slate-500" />
                 Ubicación
             </h4>
-            <div className="grid grid-cols-2 gap-3">
-                <DataRow icon="factory" label="Planta" value={ticket.planta} />
+            <div className="grid grid-cols-1">
                 <DataRow icon="place" label="Área" value={ticket.area} />
             </div>
             {ticket.maquina && (

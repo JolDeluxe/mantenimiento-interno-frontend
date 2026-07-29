@@ -189,8 +189,12 @@ export const BacklogRescheduleDrawer = ({
                                                     <span className="text-slate-700 font-extrabold">{ticket.maquina.codigo}</span>
                                                 </>
                                             )}
-                                            <span>·</span>
-                                            <span>{ticket.planta} / {ticket.area}</span>
+                                            {ticket.area && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span>{ticket.area}</span>
+                                                </>
+                                            )}
                                         </div>
                                         <h4 className="text-xs font-bold text-slate-800 mt-1 leading-snug break-words">
                                             {ticket.titulo}
@@ -251,7 +255,7 @@ export const BacklogRescheduleDrawer = ({
                                 required
                                 value={motivo}
                                 onChange={(e) => setMotivo(e.target.value)}
-                                placeholder="Ej. Cambio de prioridades en planta o saturación de turno"
+                                placeholder="Ej. Cambio de prioridades o saturación de turno"
                                 className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
                             />
                             {motivo && motivo.length < 5 && (

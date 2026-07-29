@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { Select, Input } from '@/components/form/z_index';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { TIPOS, PRIORIDADES, CLASIFICACIONES, AREAS, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { getDateRange, formatFechaNumerica } from '@/lib/date';
 
@@ -165,7 +165,6 @@ export const TicketFilterBar = ({
     filtroPrioridad, onPrioridadChange,
     filtroCategoria, onCategoriaChange,
     filtroResponsable, onResponsableChange, opcionesResponsables = [],
-    filtroPlanta, onPlantaChange,
     filtroArea, onAreaChange,
     filtroClasificacion, onClasificacionChange,
     filtroProgramacion, onProgramacionChange,
@@ -204,14 +203,7 @@ export const TicketFilterBar = ({
         onClear: () => setLocalValue(''),
     };
 
-    const handlePlantaChange = (nuevaPlanta) => {
-        onPlantaChange(nuevaPlanta);
-        onAreaChange('');
-    };
-
-    const areasDisponibles = (filtroPlanta && AREAS_POR_PLANTA[filtroPlanta])
-        ? AREAS_POR_PLANTA[filtroPlanta]
-        : AREAS;
+    const areasDisponibles = AREAS;
 
     const progOptions = [
         { label: 'HOY', value: 'HOY' },
@@ -347,17 +339,7 @@ export const TicketFilterBar = ({
                     />
                 </div>
 
-                <div className="min-w-40 flex-1 lg:flex-none">
-                    <SearchableSelect
-                        options={normalizeOpts(PLANTAS)}
-                        value={filtroPlanta ? String(filtroPlanta) : ''}
-                        onChange={handlePlantaChange}
-                        placeholder="PLANTA..."
-                        icon="domain"
-                        allOptionText="TODAS"
-                        className="w-full font-bold text-[11px] uppercase tracking-wide"
-                    />
-                </div>
+
 
                 <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect

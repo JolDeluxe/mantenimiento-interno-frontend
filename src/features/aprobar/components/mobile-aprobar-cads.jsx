@@ -65,11 +65,11 @@ export function MobileAprobarCard({ ticket, onReview, onViewDetails }) {
             </div>
 
             <div className="space-y-1.5 mb-3 ml-1 mt-2 flex-grow">
-                {(ticket.planta || ticket.area) && (
+                {ticket.area && (
                     <p className="flex items-center gap-2">
-                        <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
+                        <Icon name="location_on" size="xs" className="text-slate-300 shrink-0" />
                         <span className="text-xs text-slate-500">
-                            {ticket.planta || 'General'}{ticket.area ? ` — ${ticket.area}` : ''}
+                            {ticket.area}
                         </span>
                     </p>
                 )}

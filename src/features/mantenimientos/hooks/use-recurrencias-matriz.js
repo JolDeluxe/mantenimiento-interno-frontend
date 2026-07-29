@@ -77,7 +77,6 @@ export const useRecurrenciasMatriz = (initialYear = new Date().getFullYear()) =>
                 row.maquina?.codigo,
                 row.maquina?.nombre,
                 row.maquina?.area,
-                row.maquina?.planta,
                 row.regla?.titulo,
                 row.regla?.tecnicoResponsable?.nombre,
                 row.regla?.frecuencia,

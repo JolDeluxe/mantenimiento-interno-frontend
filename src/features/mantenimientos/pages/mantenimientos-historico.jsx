@@ -65,7 +65,6 @@ export default function MantenimientosHistoricoPage({
     const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroClasificacion, setFiltroClasificacion] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
-    const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
 
     const [filtroProgramacion, setFiltroProgramacion] = useState({ type: '', start: '', end: '' });
@@ -101,7 +100,6 @@ export default function MantenimientosHistoricoPage({
             params.clasificacion = filtroClasificacion;
         }
 
-        if (filtroPlanta) params.planta = filtroPlanta;
         if (filtroArea) params.area = filtroArea;
         if (filtroResponsable) params.responsableId = filtroResponsable;
         if (mostrarAtrasadas) params.vencidos = true;
@@ -116,7 +114,7 @@ export default function MantenimientosHistoricoPage({
             params.sort = JSON.stringify([{ [sortConfig.key]: sortConfig.direction }]);
         }
         return params;
-    }, [page, query, year, month, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroPlanta, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
+    }, [page, query, year, month, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, forcedClasificacion, filtroResponsable, filtroArea, sortConfig, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas, filtroProgramacion, filtroConclusion]);
 
     const handleYearChange = useCallback((value) => {
         setYear(value);
@@ -211,7 +209,7 @@ export default function MantenimientosHistoricoPage({
     const handleClearFilters = useCallback(() => {
         setQuery(''); setPage(1); setFiltroEstado('TODOS'); setFiltroTipo('');
         setFiltroPrioridad(''); setFiltroCategoria(''); setFiltroClasificacion('');
-        setFiltroResponsable(''); setFiltroPlanta(''); setFiltroArea('');
+        setFiltroResponsable(''); setFiltroArea('');
         setFiltroProgramacion({ type: '', start: '', end: '' });
         setFiltroConclusion({ type: '', start: '', end: '' });
         setMostrarRechazadas(false); setMostrarPapelera(false); setMostrarAtrasadas(false);
@@ -219,7 +217,7 @@ export default function MantenimientosHistoricoPage({
 
     const handleExport = useCallback(() => {
         if (!sortedTickets || sortedTickets.length === 0) return notify.info('No hay datos para exportar.');
-        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Planta', 'Área', 'Responsables', 'Creación', 'Vencimiento', 'Finalización'];
+        const headers = ['ID', 'Título', 'Estado', 'Prioridad', 'Tipo', 'Clasificación', 'Área', 'Responsables', 'Creación', 'Vencimiento', 'Finalización'];
         const formatFechaNumerica = (f) => f ? new Date(f).toLocaleDateString('es-MX') : '';
         const rows = sortedTickets.map(t => [
             t.id,
@@ -228,7 +226,6 @@ export default function MantenimientosHistoricoPage({
             t.prioridad,
             t.tipo,
             t.clasificacion,
-            t.planta,
             t.area,
             t.responsables?.map(r => r.nombre).join(', ') || 'Sin asignar',
             formatFechaNumerica(t.createdAt),
@@ -252,10 +249,10 @@ export default function MantenimientosHistoricoPage({
     const isFiltering = useMemo(() => {
         return query !== '' || filtroEstado !== 'TODOS' || filtroTipo !== '' ||
             filtroPrioridad !== '' || filtroCategoria !== '' || filtroClasificacion !== '' ||
-            filtroResponsable !== '' || filtroPlanta !== '' || filtroArea !== '' ||
+            filtroResponsable !== '' || filtroArea !== '' ||
             filtroProgramacion.type !== '' || filtroConclusion.type !== '' ||
             mostrarRechazadas || mostrarPapelera || mostrarAtrasadas;
-    }, [query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroPlanta, filtroArea, filtroProgramacion, filtroConclusion, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas]);
+    }, [query, filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable, filtroArea, filtroProgramacion, filtroConclusion, mostrarRechazadas, mostrarPapelera, mostrarAtrasadas]);
 
     const sharedProps = {
         tickets: sortedTickets,
@@ -291,8 +288,6 @@ export default function MantenimientosHistoricoPage({
         onClasificacionChange: setFiltroClasificacion,
         filtroResponsable,
         onResponsableChange: setFiltroResponsable,
-        filtroPlanta,
-        onPlantaChange: setFiltroPlanta,
         filtroArea,
         onAreaChange: setFiltroArea,
         filtroProgramacion,

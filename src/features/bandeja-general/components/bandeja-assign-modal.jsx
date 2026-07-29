@@ -504,10 +504,10 @@ export function BandejaAssignModal({ isOpen, onClose, ticket, onConfirm, isSubmi
                                 <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2">
                                     {ticket.titulo}
                                 </h3>
-                                {(ticket.planta || ticket.area) && (
+                                {ticket.area && (
                                     <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5">
-                                        <Icon name="factory" size="xs" className="shrink-0" />
-                                        {ticket.planta || 'General'}{ticket.area ? ` — ${ticket.area}` : ''}
+                                        <Icon name="location_on" size="xs" className="shrink-0" />
+                                        {ticket.area}
                                     </p>
                                 )}
                             </div>

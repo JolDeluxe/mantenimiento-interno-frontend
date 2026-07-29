@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon, Button, SearchableSelect } from '@/components/ui/z_index';
 import { Input } from '@/components/form/z_index';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { PRIORIDADES, CLASIFICACIONES, AREAS, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const SCOPE_OPTIONS = [
     { value: 'general', label: 'Todas las Tareas' },
@@ -29,8 +29,6 @@ export const CalendarioFilterBar = ({
     onClasificacionChange,
     filtroResponsable,
     onResponsableChange,
-    filtroPlanta,
-    onPlantaChange,
     filtroArea,
     onAreaChange,
     query,
@@ -53,8 +51,6 @@ export const CalendarioFilterBar = ({
         }, 300);
         return () => clearTimeout(timer);
     }, [localQuery, query, onSearchChange]);
-
-    const activeAreas = filtroPlanta ? (AREAS_POR_PLANTA[filtroPlanta] || []) : AREAS;
 
     const ESTADOS = [
         { value: 'PENDIENTE', label: 'Pendiente' },
@@ -124,32 +120,16 @@ export const CalendarioFilterBar = ({
 
             {/* Fila 2: Filtros Estructurales */}
             <div className="flex items-start gap-2.5 w-full flex-wrap">
-                {/* Planta */}
-                <div className="min-w-40 flex-1 lg:flex-none">
-                    <SearchableSelect
-                        options={normalizeOpts(PLANTAS)}
-                        value={filtroPlanta}
-                        onChange={(val) => {
-                            onPlantaChange(val);
-                            onAreaChange('');
-                        }}
-                        placeholder="PLANTA..."
-                        icon="domain"
-                        allOptionText="TODAS"
-                        className="w-full font-bold text-[11px] uppercase tracking-wide"
-                    />
-                </div>
-
                 {/* Área */}
                 <div className="min-w-40 flex-1 lg:flex-none">
                     <SearchableSelect
-                        options={normalizeOpts(activeAreas)}
+                        options={normalizeOpts(AREAS)}
                         value={filtroArea}
                         onChange={onAreaChange}
                         placeholder="ÁREA..."
                         icon="location_on"
                         allOptionText="TODAS"
-                        disabled={activeAreas.length === 0}
+                        disabled={AREAS.length === 0}
                         className="w-full font-bold text-[11px] uppercase tracking-wide"
                     />
                 </div>

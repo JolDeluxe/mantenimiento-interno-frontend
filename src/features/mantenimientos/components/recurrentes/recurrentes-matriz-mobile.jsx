@@ -47,7 +47,6 @@ export const RecurrentesMatrizMobile = ({
     filters,
     responsables,
     setFilters,
-    refresh,
     canManage,
     onGenerate,
     onMove,
@@ -195,7 +194,7 @@ export const RecurrentesMatrizMobile = ({
                             <div className="mb-3 grid grid-cols-1 gap-1.5 text-xs font-semibold text-slate-600">
                                 <div>Responsable: <strong>{row.regla?.tecnicoResponsable?.nombre || '-'}</strong></div>
                                 <div>Frecuencia: <strong>{frecuenciaLabel(row.regla)}</strong></div>
-                                <div>Ubicacion: <strong>{row.maquina?.planta || '-'} / {row.maquina?.area || '-'}</strong></div>
+                                <div>Área: <strong>{row.maquina?.area || '-'}</strong></div>
                                 {baja && <div className="font-black uppercase text-slate-400">Estado maquina: {row.maquina?.estado}</div>}
                             </div>
 

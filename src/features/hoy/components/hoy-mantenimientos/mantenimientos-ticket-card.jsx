@@ -274,13 +274,14 @@ export const MantenimientosTicketCard = ({
                         </h3>
                     </div>
 
-                    {/* Ubicación de la tarea */}
-                    <div className="flex items-start gap-1 mt-1 text-[11px] font-semibold text-slate-500">
-                        <Icon name="location_on" size="10px" className="text-slate-400 shrink-0 mt-0.5" />
-                        <span className="break-words">
-                            {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
-                        </span>
-                    </div>
+                    {ticket.area && (
+                        <div className="flex items-start gap-1 mt-1 text-[11px] font-semibold text-slate-500">
+                            <Icon name="location_on" size="10px" className="text-slate-400 shrink-0 mt-0.5" />
+                            <span className="break-words">
+                                {ticket.area}
+                            </span>
+                        </div>
+                    )}
 
                     {/* Información de la máquina si existe */}
                     {ticket.maquina && (
@@ -370,11 +371,11 @@ export const MantenimientosTicketCard = ({
 
             {isExpanded && (
                 <div className="flex flex-col gap-1.5 ml-1 flex-1 border-t border-slate-100/50 pt-2.5 animate-fadeIn">
-                    {ticket.planta && (
+                    {ticket.area && (
                         <p className="flex items-center gap-2">
-                            <Icon name="factory" size="xs" className="text-slate-300 shrink-0" />
+                            <Icon name="location_on" size="xs" className="text-slate-300 shrink-0" />
                             <span className="text-xs text-slate-500">
-                                {ticket.planta}{ticket.area ? ` — ${ticket.area}` : ''}
+                                {ticket.area}
                             </span>
                         </p>
                     )}

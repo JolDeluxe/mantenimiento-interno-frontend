@@ -10,7 +10,7 @@ import {
     omitirOcurrencia,
     quitarAjusteOcurrencia,
 } from '../../api/recurrencias-api';
-import { executionStatusClass, executionStatusLabel, formatDDMM } from './matriz-utils';
+import { executionStatusClass, executionStatusLabel } from './matriz-utils';
 
 const datePart = (value) => value ? String(value).split('T')[0] : '';
 
@@ -82,8 +82,6 @@ const DataRow = ({ icon, label, value, fallback = "No registrado" }) => (
 );
 
 export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
-    if (!regla) return null;
-
     const listRef = useRef(null);
 
     const [activeTab, setActiveTab] = useState('info');
@@ -151,16 +149,17 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     }, [ocurrencias, activeTab, selectedYear]);
 
     const fetchOcurrencias = useCallback(async () => {
+        if (!regla?.id) return;
         setLoadingOcurrencias(true);
         try {
             const res = await getProyeccionRegla(regla.id, { year: selectedYear });
             setOcurrencias(res?.data || res || []);
-        } catch (err) {
+        } catch {
             notify.error('Error al cargar ocurrencias.');
         } finally {
             setLoadingOcurrencias(false);
         }
-    }, [regla.id, selectedYear]);
+    }, [regla?.id, selectedYear]);
 
     useEffect(() => {
         if (isOpen && activeTab === 'history') {
@@ -170,6 +169,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     }, [isOpen, activeTab, fetchOcurrencias]);
 
     const handleSaveMove = async (originalDate) => {
+        if (!regla?.id) return;
         if (validationMessages.length > 0) return;
 
         setSubmittingAction(true);
@@ -190,6 +190,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     };
 
     const handleSaveSkip = async (originalDate) => {
+        if (!regla?.id) return;
         if (validationMessages.length > 0) return;
 
         setSubmittingAction(true);
@@ -209,6 +210,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
     };
 
     const handleRemove = async (originalDate) => {
+        if (!regla?.id) return;
         if (!window.confirm('¿Deseas restaurar esta ocurrencia a su fecha original?')) return;
         setSubmittingAction(true);
         try {
@@ -221,6 +223,8 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
             setSubmittingAction(false);
         }
     };
+
+    if (!regla) return null;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-3xl">
@@ -287,7 +291,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                     Máquina y Ubicación
                                 </h4>
                                 <DataRow icon="settings" label="Máquina / Equipo" value={`${regla.maquina?.codigo || '-'} · ${regla.maquina?.nombre || '-'}`} />
-                                <DataRow icon="location_on" label="Ubicación / Área" value={`${regla.maquina?.planta || '-'} / ${regla.maquina?.area || '-'}`} />
+                                <DataRow icon="location_on" label="Área" value={regla.maquina?.area || '-'} />
                                 <DataRow icon="person" label="Técnico Responsable" value={regla.tecnicoResponsable?.nombre || '-'} />
                             </div>
 
@@ -470,7 +474,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                             rows={2}
                                                             value={formData.motivo}
                                                             onChange={(e) => setFormData(prev => ({ ...prev, motivo: e.target.value }))}
-                                                            placeholder="Ej. Por falta de refacción o paro general de planta..."
+                                                            placeholder="Ej. Por falta de refacción o paro general del proceso..."
                                                             className={`w-full rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-marca-secundario focus:ring-1 focus:ring-marca-secundario/20 ${formData.motivo.length > 0 && motivoLimpio.length < 3 ? 'border-red-400' : 'border-slate-250'}`}
                                                         />
                                                         {formData.motivo.length > 0 && motivoLimpio.length < 3 && (

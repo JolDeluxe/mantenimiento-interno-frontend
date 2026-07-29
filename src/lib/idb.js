@@ -6,46 +6,96 @@
 //   perfil    → objeto usuario
 //   notificaciones → array
 //   metricas  → objeto de dashboard
+//   recurrencias → reglas de recurrencia por maquina
+//   preventivos_matriz → matriz anual de preventivos
 // Cada store guarda {data, timestamp} para saber qué tan fresco es el dato.
 
 const DB_NAME = 'CuadraPWA';
-const DB_VERSION = 3;
-const STORE_NAMES = ['tickets', 'tecnicos', 'perfil', 'notificaciones', 'metricas', 'sync_queue'];
+const DB_VERSION = 5;
+const STORE_SCHEMAS = {
+  tickets: { keyPath: 'key' },
+  tecnicos: { keyPath: 'key' },
+  perfil: { keyPath: 'key' },
+  notificaciones: { keyPath: 'key' },
+  metricas: { keyPath: 'key' },
+  sync_queue: { autoIncrement: true },
+  recurrencias: { keyPath: 'key' },
+  preventivos_matriz: { keyPath: 'key' },
+};
+const SNAPSHOT_STORES = ['tickets', 'tecnicos', 'perfil', 'notificaciones', 'metricas', 'recurrencias', 'preventivos_matriz'];
 
 let _db = null;
+let _openPromise = null;
+const loggedMessages = new Set();
+
+const logOnce = (level, key, message, detail) => {
+  if (loggedMessages.has(key)) return;
+  loggedMessages.add(key);
+  console[level](message, detail);
+};
+
+const createMissingStores = (db) => {
+  Object.entries(STORE_SCHEMAS).forEach(([name, options]) => {
+    if (!db.objectStoreNames.contains(name)) {
+      db.createObjectStore(name, options);
+    }
+  });
+};
+
+const attachVersionChangeHandler = (db) => {
+  db.onversionchange = (event) => {
+    logOnce(
+      'warn',
+      'versionchange',
+      `[IDB] ${DB_NAME} recibio versionchange (${event.oldVersion} -> ${event.newVersion ?? 'desconocida'}). Se cierra la conexion local.`,
+    );
+    db.close();
+    if (_db === db) _db = null;
+  };
+};
 
 const openDB = () => {
   if (_db) return Promise.resolve(_db);
+  if (_openPromise) return _openPromise;
 
-  return new Promise((resolve, reject) => {
+  _openPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onblocked = (event) => {
+      logOnce(
+        'warn',
+        'open-blocked',
+        `[IDB] Apertura bloqueada: db=${DB_NAME}, requestedVersion=${DB_VERSION}, oldVersion=${event.oldVersion}, newVersion=${event.newVersion}.`,
+        new Error('Cierra otras pestanas de esta aplicacion para permitir la migracion de IndexedDB.'),
+      );
+    };
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-
-      STORE_NAMES.forEach((name) => {
-        if (!db.objectStoreNames.contains(name)) {
-          // sync_queue usa autoIncrement para la cola de mutaciones offline
-          if (name === 'sync_queue') {
-            db.createObjectStore(name, { autoIncrement: true });
-          } else {
-            // Todos los demás stores usan 'key' como identificador
-            db.createObjectStore(name, { keyPath: 'key' });
-          }
-        }
-      });
+      createMissingStores(db);
     };
 
     request.onsuccess = (event) => {
       _db = event.target.result;
+      attachVersionChangeHandler(_db);
+      _openPromise = null;
       resolve(_db);
     };
 
     request.onerror = (event) => {
-      console.error('[IDB] Error al abrir la base de datos:', event.target.error);
-      reject(event.target.error);
+      const error = event.target.error;
+      logOnce(
+        'error',
+        `open-error-${error?.name || 'unknown'}`,
+        `[IDB] Error al abrir db=${DB_NAME}, requestedVersion=${DB_VERSION}.`,
+        error,
+      );
+      _openPromise = null;
+      reject(error);
     };
   });
+
+  return _openPromise;
 };
 
 // ── Primitivos ─────────────────────────────────────────────────────────────
@@ -61,21 +111,33 @@ export const idbSet = async (storeName, key, data) => {
       tx.onerror = (e) => reject(e.target.error);
     });
   } catch (error) {
-    console.warn('[IDB] idbSet falló silenciosamente:', error);
+    logOnce(
+      'warn',
+      `set-${storeName}-${error?.name || 'unknown'}`,
+      `[IDB] idbSet fallo: db=${DB_NAME}, version=${DB_VERSION}, store=${storeName}, key=${key}.`,
+      error,
+    );
+    return false;
   }
 };
 
 export const idbGet = async (storeName, key) => {
   try {
     const db = await openDB();
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
       const request = store.get(key);
       request.onsuccess = () => resolve(request.result ?? null);
-      request.onerror = () => resolve(null);
+      request.onerror = (e) => reject(e.target.error);
     });
-  } catch {
+  } catch (error) {
+    logOnce(
+      'warn',
+      `get-${storeName}-${error?.name || 'unknown'}`,
+      `[IDB] idbGet fallo: db=${DB_NAME}, version=${DB_VERSION}, store=${storeName}, key=${key}.`,
+      error,
+    );
     return null;
   }
 };
@@ -83,14 +145,21 @@ export const idbGet = async (storeName, key) => {
 export const idbDelete = async (storeName, key) => {
   try {
     const db = await openDB();
-    return new Promise((resolve) => {
+    await new Promise((resolve, reject) => {
       const tx = db.transaction(storeName, 'readwrite');
       tx.objectStore(storeName).delete(key);
       tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+      tx.onerror = (e) => reject(e.target.error);
     });
-  } catch {
-    // silencioso
+    return true;
+  } catch (error) {
+    logOnce(
+      'warn',
+      `delete-${storeName}-${error?.name || 'unknown'}`,
+      `[IDB] idbDelete fallo: db=${DB_NAME}, version=${DB_VERSION}, store=${storeName}, key=${key}.`,
+      error,
+    );
+    return false;
   }
 };
 
@@ -129,11 +198,16 @@ export const writeSnapshot = (storeName, data, key = 'default') => {
 export const clearAllSnapshots = async () => {
   try {
     const db = await openDB();
-    const tx = db.transaction(['tickets', 'tecnicos', 'perfil', 'notificaciones', 'metricas'], 'readwrite');
-    ['tickets', 'tecnicos', 'perfil', 'notificaciones', 'metricas'].forEach((name) => {
+    const tx = db.transaction(SNAPSHOT_STORES, 'readwrite');
+    SNAPSHOT_STORES.forEach((name) => {
       tx.objectStore(name).clear();
     });
-  } catch {
-    // silencioso
+  } catch (error) {
+    logOnce(
+      'warn',
+      `clear-snapshots-${error?.name || 'unknown'}`,
+      `[IDB] clearAllSnapshots fallo: db=${DB_NAME}, version=${DB_VERSION}.`,
+      error,
+    );
   }
 };
