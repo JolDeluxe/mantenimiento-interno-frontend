@@ -189,8 +189,12 @@ export const BacklogRescheduleDrawer = ({
                                                     <span className="text-slate-700 font-extrabold">{ticket.maquina.codigo}</span>
                                                 </>
                                             )}
-                                            <span>·</span>
-                                            <span>{ticket.planta} / {ticket.area}</span>
+                                            {ticket.area && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span>{ticket.area}</span>
+                                                </>
+                                            )}
                                         </div>
                                         <h4 className="text-xs font-bold text-slate-800 mt-1 leading-snug break-words">
                                             {ticket.titulo}
