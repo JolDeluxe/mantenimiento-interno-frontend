@@ -154,7 +154,7 @@ export const MaquinaTable = ({
             <Skeleton className="h-3 w-20 rounded-md" />
           </div>
         );
-        const showArea = row.area && row.area !== 'BAJA' && row.area !== 'VENTA';
+        const showArea = typeof row.area === 'string' ? row.area.trim() : row.area;
 
         if (!showArea) {
           return null;

@@ -54,10 +54,6 @@ export const MaquinaDetailModal = ({
   const currentUser = user?.data || user;
   const userRol = currentUser?.rol || currentUser?.role;
 
-  console.log('[DEBUG RECURRENCIAS] user raw:', user);
-  console.log('[DEBUG RECURRENCIAS] currentUser:', currentUser);
-  console.log('[DEBUG RECURRENCIAS] userRol:', userRol);
-
   const rolesPermitidos = ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'];
   const esAdminOrJefe = rolesPermitidos.includes(userRol);
   const esTecnico = userRol === 'TECNICO';
@@ -402,18 +398,21 @@ export const MaquinaDetailModal = ({
                     </h5>
                     <div className="space-y-3 grow">
                       {(() => {
-                        const showArea = maquina.area && maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
+                        const showArea = typeof maquina.area === 'string' ? maquina.area.trim() : maquina.area;
                         if (!showArea) {
                           return null;
                         }
                         return <DataRow icon="place" label="Área / Ubicación" value={maquina.area} />;
                       })()}
-                      {maquina.ubicacionDetalle && 
-                       maquina.ubicacionDetalle !== 'BAJA' && 
-                       maquina.ubicacionDetalle !== 'VENTA' && 
-                       maquina.ubicacionDetalle !== maquina.area && (
-                        <DataRow icon="map" label="Ubicación Específica" value={maquina.ubicacionDetalle} />
-                      )}
+                      {(() => {
+                        const showUbicacionDetalle = typeof maquina.ubicacionDetalle === 'string'
+                          ? maquina.ubicacionDetalle.trim()
+                          : maquina.ubicacionDetalle;
+                        if (!showUbicacionDetalle || maquina.ubicacionDetalle === maquina.area) {
+                          return null;
+                        }
+                        return <DataRow icon="map" label="Ubicación Específica" value={maquina.ubicacionDetalle} />;
+                      })()}
 
                       {maquina.departamento?.nombre && (
                         <DataRow icon="corporate_fare" label="Departamento Asignado" value={maquina.departamento.nombre} />

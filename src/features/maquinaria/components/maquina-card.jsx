@@ -66,7 +66,7 @@ export const MaquinaCard = ({
       {/* Renglón Inferior: Ubicación */}
       <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[11px] font-bold text-slate-500">
         {(() => {
-          const showArea = maquina.area && maquina.area !== 'BAJA' && maquina.area !== 'VENTA';
+          const showArea = typeof maquina.area === 'string' ? maquina.area.trim() : maquina.area;
           if (!showArea) {
             return <span />;
           }
