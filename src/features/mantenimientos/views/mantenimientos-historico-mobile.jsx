@@ -63,7 +63,6 @@ export const MantenimientosHistoricoMobile = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
@@ -81,7 +80,6 @@ export const MantenimientosHistoricoMobile = ({
     onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
-    onPlantaChange,
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
@@ -128,8 +126,6 @@ export const MantenimientosHistoricoMobile = ({
                     filtroResponsable={filtroResponsable}
                     onResponsableChange={onResponsableChange}
                     opcionesResponsables={tecnicos}
-                    filtroPlanta={filtroPlanta}
-                    onPlantaChange={onPlantaChange}
                     filtroArea={filtroArea}
                     onAreaChange={onAreaChange}
                     filtroProgramacion={filtroProgramacion}

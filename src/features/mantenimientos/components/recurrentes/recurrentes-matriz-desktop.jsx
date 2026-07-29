@@ -49,7 +49,6 @@ export const RecurrentesMatrizDesktop = ({
     filters,
     responsables,
     setFilters,
-    refresh,
     canManage,
     onGenerate,
     onMove,
@@ -257,7 +256,7 @@ export const RecurrentesMatrizDesktop = ({
                                                 <div className="max-w-[220px] truncate text-xs font-bold text-slate-800">{row.maquina?.nombre || '-'}</div>
                                                 <div className="max-w-[220px] truncate text-[10px] font-semibold text-slate-400">{row.regla?.titulo || '-'}</div>
                                                 <div className="max-w-[220px] truncate text-[10px] font-semibold text-slate-500">
-                                                    {row.maquina?.planta || '-'} / {row.maquina?.area || '-'}
+                                                    {row.maquina?.area || '-'}
                                                 </div>
                                                 {baja && <div className="text-[10px] font-black uppercase text-slate-400">{row.maquina?.estado}</div>}
                                             </td>

@@ -14,26 +14,15 @@ import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
-    PLANTAS, CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
-    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS_POR_PLANTA, AREAS, CATEGORIAS_EQUIPO
+    CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
+    PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO
 } from '@/features/common/constants/catalogos-tareas';
 import { isTodayYYYYMMDD, getRecurrenceSummary } from '../../helpers/fechas';
 
 const MAX_TITULO = 255;
 const MAX_DESCRIPCION = 500;
 
-const deducirPlantaDeArea = (areaName, plantaActual) => {
-    if (!areaName) return '';
-    if (plantaActual && AREAS_POR_PLANTA[plantaActual]?.includes(areaName)) {
-        return plantaActual;
-    }
-    for (const [plantaKey, areasList] of Object.entries(AREAS_POR_PLANTA)) {
-        if (areasList.includes(areaName)) {
-            return plantaKey;
-        }
-    }
-    return '';
-};
+
 
 
 
@@ -137,8 +126,12 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{clasificLabel}</span>
-                        <span className="text-slate-300 text-[10px]">·</span>
-                        <span className="text-[10px] text-slate-400">{item.planta}{item.area ? ` / ${item.area}` : ''}</span>
+                        {item.area && (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-slate-400">{item.area}</span>
+                            </>
+                        )}
                         {tipoLabel && (
                             <>
                                 <span className="text-slate-300 text-[10px]">·</span>
@@ -316,7 +309,6 @@ export const MantenimientosFormModal = ({
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
     const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
-    const [planta, setPlanta] = useState('');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('');
     const [clasificacion, setClasificacion] = useState('');
@@ -363,9 +355,8 @@ export const MantenimientosFormModal = ({
     const tecnicoCart = tecnicos.find(t => String(t.id) === tecnicoCartId);
 
     const areasOptions = useMemo(() => {
-        const list = (planta && AREAS_POR_PLANTA[planta]) ? AREAS_POR_PLANTA[planta] : AREAS;
-        return list.map(a => ({ value: a, label: a }));
-    }, [planta]);
+        return AREAS.map(a => ({ value: a, label: a }));
+    }, []);
 
     const opcionesTecnicos = useMemo(() =>
         tecnicos.map(t => ({ value: String(t.id), tecnico: t })), [tecnicos]);
@@ -450,7 +441,6 @@ export const MantenimientosFormModal = ({
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
             setCategoria(deriveCategoryFromTicket(ticketAEditar, scope === 'mantenimientos' ? 'MAQUINARIA' : ''));
-            setPlanta(loc.planta);
             setArea(loc.area);
             setPrioridad(ticketAEditar.prioridad ?? 'MEDIA');
             setClasificacion(ticketAEditar.clasificacion ?? '');
@@ -469,7 +459,7 @@ export const MantenimientosFormModal = ({
         } else {
             setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
-            setPlanta(''); setArea('');
+            setArea('');
             setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || (scope === 'mantenimientos' ? 'PREVENTIVO' : ''));
             setTipo('PLANEADA');
@@ -536,13 +526,11 @@ export const MantenimientosFormModal = ({
                     const maq = response.data.data;
                     setMaquinaInfo(maq);
                     const loc = deriveLocationFromMachine(maq);
-                    setPlanta(loc.planta);
                     setArea(loc.area);
                 } else if (response?.data && !response.data.status) {
                     const maq = response.data;
                     setMaquinaInfo(maq);
                     const loc = deriveLocationFromMachine(maq);
-                    setPlanta(loc.planta);
                     setArea(loc.area);
                 } else {
                     setMaquinaInfo(null);
@@ -569,7 +557,7 @@ export const MantenimientosFormModal = ({
             if (!maquinaId) e.maquinaId = 'La máquina es obligatoria para mantenimiento recurrente.';
             if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
             if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
-            if (!planta) e.planta = 'Selecciona la planta.';
+
             if (!area) e.area = 'Selecciona el área.';
             if (!frecuencia) e.frecuencia = 'Selecciona la frecuencia.';
             if (frecuencia === 'PERSONALIZADA_DIAS') {
@@ -594,7 +582,7 @@ export const MantenimientosFormModal = ({
         if (!titulo.trim() || titulo.length < 3) e.titulo = 'Mínimo 3 caracteres.';
         if (descripcion.trim() && descripcion.trim().length < 3) e.descripcion = 'Mínimo 3 caracteres.';
         if (!prioridad) e.prioridad = 'Selecciona la prioridad.';
-        if (!planta) e.planta = 'Selecciona la planta.';
+
         if (!area) e.area = 'Selecciona el área.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (maquinaId && !maquinaInfo && !validatingMaquina) {
@@ -659,7 +647,7 @@ export const MantenimientosFormModal = ({
     const resetFormFields = () => {
         setTitulo(''); setDescripcion(''); setCategoria('');
         setMostrarDescripcion(false);
-        setPlanta(''); setArea(''); setPrioridad('');
+        setArea(''); setPrioridad('');
         setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo(''); setFechaVencimiento('');
         setTiempoEstimadoMins(0); setSubmitted(false);
         setIsDropdownOpen(false);
@@ -680,7 +668,7 @@ export const MantenimientosFormModal = ({
 
         setCarrito(prev => [...prev, {
             _id: `${Date.now()}-${Math.random()}`,
-            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
             prioridad, clasificacion, tipo, fechaVencimiento,
             tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
             responsables: responsablesSnapshot,
@@ -694,7 +682,7 @@ export const MantenimientosFormModal = ({
             horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
         }]);
         
-        // Solo reseteamos lo que cambia por tarea. El contexto (planta, área, etc) se mantiene.
+        // Solo reseteamos lo que cambia por tarea. El contexto del área se mantiene.
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
@@ -764,7 +752,6 @@ export const MantenimientosFormModal = ({
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             fd.append('clasificacion', clasificacion);
             if (categoria) fd.append('categoria', categoria);
-            fd.append('planta', planta);
             fd.append('area', area);
             fd.append('prioridad', prioridad);
             if (maquinaId) fd.append('maquinaId', maquinaId);
@@ -836,7 +823,6 @@ export const MantenimientosFormModal = ({
             fd.append('titulo', titulo);
             fd.append('descripcion', descripcion.trim() || 'Sin descripción.');
             if (categoria) fd.append('categoria', categoria);
-            fd.append('planta', planta);
             fd.append('area', area);
             fd.append('prioridad', prioridad);
             fd.append('clasificacion', clasificacion);
@@ -891,7 +877,7 @@ export const MantenimientosFormModal = ({
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
-                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, planta, area,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
                 prioridad, clasificacion, tipo, fechaVencimiento,
                 tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
                 responsables: responsablesSnapshot,
@@ -918,7 +904,6 @@ export const MantenimientosFormModal = ({
                     descripcion: item.descripcion,
                     clasificacion: item.clasificacion,
                     categoria: item.categoria,
-                    planta: item.planta,
                     area: item.area,
                     prioridad: item.prioridad,
                     maquinaId: item.maquinaId,
@@ -1104,7 +1089,6 @@ export const MantenimientosFormModal = ({
                                         if (val !== 'MAQUINARIA') {
                                             setMaquinaId('');
                                             setMaquinaInfo(null);
-                                            setPlanta('');
                                             setArea('');
                                         }
                                     }}
@@ -1153,7 +1137,6 @@ export const MantenimientosFormModal = ({
                                     if (!selectedId) {
                                         setMaquinaId('');
                                         setMaquinaInfo(null);
-                                        setPlanta('');
                                         setArea('');
                                         return;
                                     }
@@ -1162,7 +1145,6 @@ export const MantenimientosFormModal = ({
                                     if (maq) {
                                         setMaquinaInfo(maq);
                                         const loc = deriveLocationFromMachine(maq);
-                                        setPlanta(loc.planta);
                                         setArea(loc.area);
                                     }
                                 }}
@@ -1314,29 +1296,13 @@ export const MantenimientosFormModal = ({
                             </div>
                         )}
 
-                        {/* ── UBICACIÓN (Planta/Área) con PlantaAreaFields ── */}
                         <PlantaAreaFields
-                            planta={planta}
                             area={area}
-                            plantas={PLANTAS}
                             areasOptions={areasOptions}
-                            errorPlanta={fe.planta}
                             errorArea={fe.area}
-                            disabledPlanta={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}
                             disabledArea={isSubmitting || lockBaseFields || shouldLockLocationByMachine(maquinaInfo)}
-                            onPlantaChange={(val) => {
-                                setPlanta(val);
-                                const posibles = AREAS_POR_PLANTA[val] || AREAS;
-                                setArea(posibles.length === 1 ? posibles[0] : '');
-                            }}
                             onAreaChange={(val) => {
                                 setArea(val);
-                                if (val) {
-                                    const plantaDeducida = deducirPlantaDeArea(val, planta);
-                                    if (plantaDeducida) {
-                                        setPlanta(plantaDeducida);
-                                    }
-                                }
                             }}
                         />
 

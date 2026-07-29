@@ -50,14 +50,12 @@ export const MantenimientosPreventivosMobile = ({
     currentUser,
     tecnicos,
     page,
-    limit,
     totalPages,
     totalParaSummary,
     totalParaPaginador,
     conteos,
     existenciaGlobal,
     totalAtrasadasGlobal,
-    sortConfig,
     query,
     filtroEstado,
     filtroTipo,
@@ -65,7 +63,6 @@ export const MantenimientosPreventivosMobile = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
@@ -76,7 +73,6 @@ export const MantenimientosPreventivosMobile = ({
     mostrarAtrasadas,
     onToggleAtrasadas,
     onPageChange,
-    onSortChange,
     onSearchChange,
     onFilterChange,
     onTipoChange,
@@ -84,7 +80,6 @@ export const MantenimientosPreventivosMobile = ({
     onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
-    onPlantaChange,
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
@@ -92,7 +87,6 @@ export const MantenimientosPreventivosMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -132,8 +126,6 @@ export const MantenimientosPreventivosMobile = ({
                     filtroResponsable={filtroResponsable}
                     onResponsableChange={onResponsableChange}
                     opcionesResponsables={tecnicos}
-                    filtroPlanta={filtroPlanta}
-                    onPlantaChange={onPlantaChange}
                     filtroArea={filtroArea}
                     onAreaChange={onAreaChange}
                     filtroProgramacion={filtroProgramacion}

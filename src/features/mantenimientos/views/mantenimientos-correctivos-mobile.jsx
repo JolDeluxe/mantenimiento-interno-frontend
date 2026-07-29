@@ -50,14 +50,12 @@ export const MantenimientosCorrectivosMobile = ({
     currentUser,
     tecnicos,
     page,
-    limit,
     totalPages,
     totalParaSummary,
     totalParaPaginador,
     conteos,
     existenciaGlobal,
     totalAtrasadasGlobal,
-    sortConfig,
     query,
     filtroEstado,
     filtroTipo,
@@ -65,7 +63,6 @@ export const MantenimientosCorrectivosMobile = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     filtroProgramacion,
     filtroConclusion,
@@ -76,7 +73,6 @@ export const MantenimientosCorrectivosMobile = ({
     mostrarAtrasadas,
     onToggleAtrasadas,
     onPageChange,
-    onSortChange,
     onSearchChange,
     onFilterChange,
     onTipoChange,
@@ -84,7 +80,6 @@ export const MantenimientosCorrectivosMobile = ({
     onCategoriaChange,
     onClasificacionChange,
     onResponsableChange,
-    onPlantaChange,
     onAreaChange,
     onProgramacionChange,
     onConclusionChange,
@@ -92,7 +87,6 @@ export const MantenimientosCorrectivosMobile = ({
     onChangeStatus,
     onOpenCreate,
     onRefresh,
-    toApproveCount = 0,
     isFiltering = false,
     onClearFilters
 }) => {
@@ -132,8 +126,6 @@ export const MantenimientosCorrectivosMobile = ({
                     filtroResponsable={filtroResponsable}
                     onResponsableChange={onResponsableChange}
                     opcionesResponsables={tecnicos}
-                    filtroPlanta={filtroPlanta}
-                    onPlantaChange={onPlantaChange}
                     filtroArea={filtroArea}
                     onAreaChange={onAreaChange}
                     filtroProgramacion={filtroProgramacion}
