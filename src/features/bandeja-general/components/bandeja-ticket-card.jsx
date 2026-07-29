@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
-import { formatFechaHora } from '@/lib/date';
+import { formatFechaHoraNumerica } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
@@ -148,7 +148,7 @@ export function BandejaTicketCard({ ticket, onAssign, onViewDetails }) {
                         {statusTheme.text}
                     </span>
                     <span className="text-[10px] font-medium text-slate-400 ml-auto uppercase tracking-wider">
-                        {formatFechaHora(ticket.createdAt)}
+                        {formatFechaHoraNumerica(ticket.createdAt)}
                     </span>
                 </div>
             </div>

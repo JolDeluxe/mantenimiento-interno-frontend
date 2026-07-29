@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Skeleton, Icon, Pagination, Table, Tooltip } from '@/components/ui/z_index';
 import { TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
-import { formatFechaHora } from '@/lib/date';
+import { formatFechaHoraNumerica } from '@/lib/date';
 import { cn } from '@/utils/cn';
 
 export const BandejaTicketTable = ({
@@ -145,7 +145,7 @@ export const BandejaTicketTable = ({
                 if (row.isSkeleton) return <Skeleton className="h-4 w-20 rounded-md" />;
                 return (
                     <span className="text-xs font-medium text-slate-600">
-                        {formatFechaHora(row.createdAt)}
+                        {formatFechaHoraNumerica(row.createdAt)}
                     </span>
                 );
             },
