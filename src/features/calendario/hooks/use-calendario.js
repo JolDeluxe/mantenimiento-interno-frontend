@@ -59,7 +59,6 @@ const buildCalendarioParams = ({
     filtroCategoria,
     filtroClasificacion,
     filtroResponsable,
-    filtroPlanta,
     filtroArea,
     query,
 }) => {
@@ -77,7 +76,6 @@ const buildCalendarioParams = ({
     if (filtroCategoria) params.categoria = filtroCategoria;
     if (filtroClasificacion) params.clasificacion = filtroClasificacion;
     if (filtroResponsable) params.responsableId = filtroResponsable;
-    if (filtroPlanta) params.planta = filtroPlanta;
     if (filtroArea) params.area = filtroArea;
     if (query) params.q = query;
 
@@ -131,7 +129,6 @@ export const useCalendario = () => {
     const [filtroCategoria, setFiltroCategoria] = useState('');
     const [filtroClasificacion, setFiltroClasificacion] = useState('');
     const [filtroResponsable, setFiltroResponsable] = useState('');
-    const [filtroPlanta, setFiltroPlanta] = useState('');
     const [filtroArea, setFiltroArea] = useState('');
     const [query, setQuery] = useState('');
 
@@ -291,7 +288,6 @@ export const useCalendario = () => {
             filtroCategoria,
             filtroClasificacion,
             filtroResponsable,
-            filtroPlanta,
             filtroArea,
             query,
         });
@@ -313,7 +309,6 @@ export const useCalendario = () => {
         filtroCategoria,
         filtroClasificacion,
         filtroResponsable,
-        filtroPlanta,
         filtroArea,
         query,
         fetchTickets,
@@ -333,7 +328,6 @@ export const useCalendario = () => {
         setFiltroCategoria('');
         setFiltroClasificacion('');
         setFiltroResponsable('');
-        setFiltroPlanta('');
         setFiltroArea('');
         setQuery('');
     }, []);
@@ -368,8 +362,6 @@ export const useCalendario = () => {
         setFiltroClasificacion,
         filtroResponsable,
         setFiltroResponsable,
-        filtroPlanta,
-        setFiltroPlanta,
         filtroArea,
         setFiltroArea,
         query,
@@ -386,7 +378,6 @@ export const useCalendario = () => {
                 filtroCategoria,
                 filtroClasificacion,
                 filtroResponsable,
-                filtroPlanta,
                 filtroArea,
                 query,
             });

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { glassBase, GlassSheen } from '@/components/ui/liquid-glass-mobile';
-import { TIPOS, PRIORIDADES, CLASIFICACIONES, PLANTAS, AREAS, AREAS_POR_PLANTA, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
+import { PRIORIDADES, CLASIFICACIONES, AREAS, CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
 
 const SCOPE_OPTIONS = [
     { value: 'mantenimientos', label: 'Mantenimientos' },
@@ -106,8 +106,6 @@ export const MobileCalendarioFilterBar = ({
     onClasificacionChange,
     filtroResponsable,
     onResponsableChange,
-    filtroPlanta,
-    onPlantaChange,
     filtroArea,
     onAreaChange,
     query,
@@ -130,13 +128,6 @@ export const MobileCalendarioFilterBar = ({
         return () => clearTimeout(timer);
     }, [localQuery, query, onSearchChange]);
 
-    const handlePlantaChange = (nuevaPlanta) => {
-        onPlantaChange(nuevaPlanta);
-        onAreaChange('');
-    };
-
-    const areasDisponibles = filtroPlanta ? (AREAS_POR_PLANTA[filtroPlanta] || []) : AREAS;
-
     const ESTADOS = [
         { value: 'PENDIENTE', label: 'Pendiente' },
         { value: 'ASIGNADA', label: 'Asignada' },
@@ -154,14 +145,12 @@ export const MobileCalendarioFilterBar = ({
         filtroCategoria !== '' ||
         filtroClasificacion !== '' ||
         filtroResponsable !== '' ||
-        filtroPlanta !== '' ||
         filtroArea !== '';
 
     const filterElements = [
         { key: 'scope', el: <GlassNativeSelect icon="assignment" placeholder="Todas las Tareas" options={SCOPE_OPTIONS} value={scope === 'general' ? '' : scope} onChange={(val) => onScopeChange(val || 'general')} />, span2: true },
         { key: 'estado', el: <GlassNativeSelect icon="swap_horiz" placeholder="Todos los Estados" options={ESTADOS} value={filtroEstado === 'TODOS' ? '' : filtroEstado} onChange={(val) => onFilterChange(val || 'TODOS')} />, span2: true },
-        { key: 'planta', el: <GlassNativeSelect icon="domain" placeholder="Planta" options={normalizeOpts(PLANTAS)} value={filtroPlanta} onChange={handlePlantaChange} />, span2: false },
-        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(areasDisponibles)} value={filtroArea} onChange={onAreaChange} />, span2: false },
+        { key: 'area', el: <GlassNativeSelect icon="place" placeholder="Área" options={normalizeOpts(AREAS)} value={filtroArea} onChange={onAreaChange} />, span2: false },
         { key: 'prioridad', el: <GlassNativeSelect icon="flag" placeholder="Prioridad" options={PRIORIDADES} value={filtroPrioridad} onChange={onPrioridadChange} />, span2: false },
         { key: 'responsable', el: <GlassNativeSelect icon="person" placeholder="Responsable" options={normalizeOpts(tecnicos)} value={filtroResponsable} onChange={onResponsableChange} />, span2: false },
         { key: 'categoria', el: <GlassNativeSelect icon="label" placeholder="Categoría" options={CATEGORIAS_EQUIPO} value={filtroCategoria} onChange={onCategoriaChange} />, span2: false },
