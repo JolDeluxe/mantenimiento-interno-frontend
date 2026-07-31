@@ -1,5 +1,4 @@
 // src/features/tickets/views/tickets-actividades-desktop.jsx
-import { Pagination } from '@/components/ui/z_index';
 import { HoyAddButton } from '@/features/hoy/components/common/hoy-add-button';
 import { TicketActividadFormModal } from '@/features/common/forms/tareas/actividades';
 import { ActividadesFilterBar } from '@/features/hoy/components/hoy-actividades/actividades-filter-bar';
@@ -7,6 +6,8 @@ import { ActividadesTicketTable } from '@/features/hoy/components/hoy-actividade
 import { TicketSummaryBar } from '@/features/common/components/ticket-summary-bar';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
+import { RecurrentesTabs } from '../components/recurrentes/recurrentes-tabs';
+import { RecurrentesWorkspace } from '../components/recurrentes/recurrentes-workspace';
 
 const VIEW_COPY = {
     actividades: {
@@ -69,9 +70,15 @@ export const TicketsActividadesDesktop = ({
     onRefresh,
     allowCreate = true,
     emptyState = {},
+    actividadTab = 'actividades',
+    canManageRecurrentes = false,
+    onActividadTabChange,
+    onActividadRecurrenteMaterialized,
+    dateFilterNode = null,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const copy = VIEW_COPY[mode] || VIEW_COPY.actividades;
+    const mostrandoRecurrentes = canManageRecurrentes && actividadTab === 'recurrentes';
     const isFilteringActive = Boolean(
         query?.trim() ||
         (filtroEstado && filtroEstado !== 'TODOS') ||
@@ -99,93 +106,101 @@ export const TicketsActividadesDesktop = ({
     };
 
     return (
-        <div className="flex flex-col gap-5 relative">
-            <div>
-                <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
-                    {copy.title}
-                </h2>
-                <p className="text-sm text-slate-555 mt-0.5">
-                    {loading ? 'Cargando...' : `${totalParaPaginador} registro${totalParaPaginador !== 1 ? 's' : ''}. ${copy.description}`}
-                </p>
-            </div>
+        <div className="flex w-full min-w-0 flex-col gap-5 relative">
+            {canManageRecurrentes && (
+                <RecurrentesTabs activeTab={actividadTab} onChange={onActividadTabChange} />
+            )}
+            {dateFilterNode}
 
-            <TicketSummaryBar
-                totalParaSummary={totalParaSummary}
-                conteos={conteos}
-                filtroActual={filtroEstado}
-                onFilterChange={onFilterChange}
-                loading={loading}
-                mostrarRechazadas={mostrarRechazadas}
-                mostrarPapelera={mostrarPapelera}
-            />
-
-            <div className="flex items-center justify-between w-full gap-4 flex-wrap">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Gestión de actividades
-                </div>
-                {allowCreate && puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
-            </div>
-
-            <ActividadesFilterBar
-                query={query}
-                onSearchChange={onSearchChange}
-                filtroEstado={filtroEstado}
-                onEstadoChange={onFilterChange}
-                filtroTipo={filtroTipo}
-                onTipoChange={onTipoChange}
-                filtroPrioridad={filtroPrioridad}
-                onPrioridadChange={onPrioridadChange}
-                filtroCategoria={filtroCategoria}
-                onCategoriaChange={onCategoriaChange}
-                filtroArea={filtroArea}
-                onAreaChange={onAreaChange}
-                filtroResponsable={filtroResponsable}
-                onResponsableChange={onResponsableChange}
-                opcionesResponsables={tecnicos}
-                filtroProgramacion={filtroProgramacion}
-                onProgramacionChange={onProgramacionChange}
-                filtroConclusion={filtroConclusion}
-                onConclusionChange={onConclusionChange}
-                mostrarAtrasadas={mostrarAtrasadas}
-                onToggleAtrasadas={onToggleAtrasadas}
-                mostrarRechazadas={mostrarRechazadas}
-                onToggleRechazadas={onToggleRechazadas}
-                existenciaGlobal={existenciaGlobal}
-                totalAtrasadasGlobal={totalAtrasadasGlobal}
-                currentUser={currentUser}
-            />
-
-            {!loading && tickets.length === 0 ? (
-                <div className="mt-8">
-                    <TicketsEmptyState
-                        isFiltering={isFilteringActive}
-                        onClearFilters={handleClearFilters}
-                        onRefresh={onRefresh}
-                        mensaje={emptyState.mensaje || copy.emptyMessage}
-                        subtexto={emptyState.subtexto || copy.emptySubtext}
-                        icon={emptyState.icon || copy.emptyIcon}
-                    />
-                </div>
+            {mostrandoRecurrentes ? (
+                <RecurrentesWorkspace
+                    isMobile={false}
+                    canManage={canManageRecurrentes}
+                    onMaterialized={onActividadRecurrenteMaterialized}
+                />
             ) : (
                 <>
-                    <ActividadesTicketTable
-                        tickets={tickets}
+                    <div>
+                        <h2 className="fuente-titulos text-2xl text-marca-primario uppercase tracking-wide">
+                            {copy.title}
+                        </h2>
+                        <p className="text-sm text-slate-555 mt-0.5">
+                            {loading ? 'Cargando...' : `${totalParaPaginador} registro${totalParaPaginador !== 1 ? 's' : ''}. ${copy.description}`}
+                        </p>
+                    </div>
+
+                    <TicketSummaryBar
+                        totalParaSummary={totalParaSummary}
+                        conteos={conteos}
+                        filtroActual={filtroEstado}
+                        onFilterChange={onFilterChange}
                         loading={loading}
-                        submitting={submitting}
-                        currentUser={currentUser}
-                        tecnicos={tecnicos}
-                        onSave={onSave}
-                        onChangeStatus={onChangeStatus}
-                        scope="actividades"
-                        FormModalComponent={TicketActividadFormModal}
+                        mostrarRechazadas={mostrarRechazadas}
+                        mostrarPapelera={mostrarPapelera}
                     />
-                    {totalPages > 1 && (
-                        <Pagination
+
+                    <div className="flex items-center justify-between w-full gap-4 flex-wrap">
+                        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                            Gestión de actividades
+                        </div>
+                        {allowCreate && puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
+                    </div>
+
+                    <ActividadesFilterBar
+                        query={query}
+                        onSearchChange={onSearchChange}
+                        filtroEstado={filtroEstado}
+                        onEstadoChange={onFilterChange}
+                        filtroTipo={filtroTipo}
+                        onTipoChange={onTipoChange}
+                        filtroPrioridad={filtroPrioridad}
+                        onPrioridadChange={onPrioridadChange}
+                        filtroCategoria={filtroCategoria}
+                        onCategoriaChange={onCategoriaChange}
+                        filtroArea={filtroArea}
+                        onAreaChange={onAreaChange}
+                        filtroResponsable={filtroResponsable}
+                        onResponsableChange={onResponsableChange}
+                        opcionesResponsables={tecnicos}
+                        filtroProgramacion={filtroProgramacion}
+                        onProgramacionChange={onProgramacionChange}
+                        filtroConclusion={filtroConclusion}
+                        onConclusionChange={onConclusionChange}
+                        mostrarAtrasadas={mostrarAtrasadas}
+                        onToggleAtrasadas={onToggleAtrasadas}
+                        mostrarRechazadas={mostrarRechazadas}
+                        onToggleRechazadas={onToggleRechazadas}
+                        existenciaGlobal={existenciaGlobal}
+                        totalAtrasadasGlobal={totalAtrasadasGlobal}
+                        currentUser={currentUser}
+                    />
+
+                    {!loading && tickets.length === 0 ? (
+                        <div className="mt-8">
+                            <TicketsEmptyState
+                                isFiltering={isFilteringActive}
+                                onClearFilters={handleClearFilters}
+                                onRefresh={onRefresh}
+                                mensaje={emptyState.mensaje || copy.emptyMessage}
+                                subtexto={emptyState.subtexto || copy.emptySubtext}
+                                icon={emptyState.icon || copy.emptyIcon}
+                            />
+                        </div>
+                    ) : (
+                        <ActividadesTicketTable
+                            tickets={tickets}
+                            loading={loading}
+                            submitting={submitting}
+                            currentUser={currentUser}
+                            tecnicos={tecnicos}
+                            onSave={onSave}
+                            onChangeStatus={onChangeStatus}
+                            scope="actividades"
+                            FormModalComponent={TicketActividadFormModal}
                             page={page}
                             totalPages={totalPages}
                             totalItems={totalParaPaginador}
                             onPageChange={onPageChange}
-                            loading={loading}
                         />
                     )}
                 </>

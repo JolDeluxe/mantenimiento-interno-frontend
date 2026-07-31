@@ -69,10 +69,8 @@ export const RecurrentesToolbarMobile = ({
     onActivoChange,
     mostrarBajaDesuso,
     onToggleBajaDesuso,
-    onRefresh,
     onCreate,
     canManage,
-    loading,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const [showFilters, setShowFilters] = useState(false);

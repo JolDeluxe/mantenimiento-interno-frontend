@@ -13,6 +13,8 @@ import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { GlobalTicketReviewModal as MobileTicketReviewModal } from '@/features/common/components/global-ticket-review-modal';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { hardReload } from '@/utils/hard-reload';
+import { RecurrentesTabs } from '../components/recurrentes/recurrentes-tabs';
+import { RecurrentesWorkspace } from '../components/recurrentes/recurrentes-workspace';
 
 
 const SKELETON_COUNT = 4;
@@ -89,6 +91,11 @@ export const TicketsActividadesMobile = ({
     onRefresh,
     allowCreate = true,
     emptyState = {},
+    actividadTab = 'actividades',
+    canManageRecurrentes = false,
+    onActividadTabChange,
+    onActividadRecurrenteMaterialized,
+    dateFilterNode = null,
 }) => {
     const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
     const [detailTarget, setDetailTarget] = useState(null);
@@ -100,12 +107,15 @@ export const TicketsActividadesMobile = ({
     const [adminCloseTarget, setAdminCloseTarget] = useState(null);
 
     const copy = VIEW_COPY[mode] || VIEW_COPY.actividades;
+    const mostrandoRecurrentes = canManageRecurrentes && actividadTab === 'recurrentes';
     const hasContent = !loading && tickets.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
     const showCreateFab = allowCreate && puedeCrear;
     const baseBottom = hasPaginator ? 104 : 84;
-    const addBottom = `${baseBottom}px`;
-    const fabRefreshBottom = showCreateFab ? `${baseBottom + 60}px` : `${baseBottom}px`;
+    const addBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
+    const fabRefreshBottom = showCreateFab
+        ? `calc(${baseBottom + 60}px + var(--safe-bottom-offset, 0px))`
+        : `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
 
     const isFilteringActive = Boolean(
         query?.trim() ||
@@ -134,115 +144,138 @@ export const TicketsActividadesMobile = ({
     };
 
     return (
-        <div className="flex flex-col gap-4 animate-fade-in pb-44">
-            <TicketSummaryBar
-                totalParaSummary={totalParaSummary}
-                conteos={conteos}
-                filtroActual={filtroEstado}
-                onFilterChange={onFilterChange}
-                loading={loading}
-                mostrarRechazadas={mostrarRechazadas}
-                mostrarPapelera={mostrarPapelera}
-            />
-
-            <MobileActividadesFilterBar
-                query={query}
-                onSearchChange={onSearchChange}
-                filtroEstado={filtroEstado}
-                onEstadoChange={onFilterChange}
-                filtroTipo={filtroTipo}
-                onTipoChange={onTipoChange}
-                filtroPrioridad={filtroPrioridad}
-                onPrioridadChange={onPrioridadChange}
-                filtroCategoria={filtroCategoria}
-                            filtroArea={filtroArea}
-                onCategoriaChange={onCategoriaChange}
-                            onAreaChange={onAreaChange}
-                filtroResponsable={filtroResponsable}
-                onResponsableChange={onResponsableChange}
-                opcionesResponsables={tecnicos}
-                filtroProgramacion={filtroProgramacion}
-                onProgramacionChange={onProgramacionChange}
-                filtroConclusion={filtroConclusion}
-                onConclusionChange={onConclusionChange}
-                mostrarAtrasadas={mostrarAtrasadas}
-                onToggleAtrasadas={onToggleAtrasadas}
-                mostrarRechazadas={mostrarRechazadas}
-                onToggleRechazadas={onToggleRechazadas}
-                existenciaGlobal={existenciaGlobal}
-                totalAtrasadasGlobal={totalAtrasadasGlobal}
-                currentUser={currentUser}
-            />
-
-            {loading ? (
-                <div className="flex flex-col gap-3">
-                    {Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)}
+        <>
+            {canManageRecurrentes && (
+                <div className="mb-3">
+                    <RecurrentesTabs activeTab={actividadTab} onChange={onActividadTabChange} />
                 </div>
-            ) : tickets.length === 0 ? (
-                <div className="mt-10">
-                    <TicketsEmptyState
-                        isMobile
-                        isFiltering={isFilteringActive}
-                        onClearFilters={handleClearFilters}
-                        onRefresh={onRefresh}
-                        mensaje={emptyState.mensaje || copy.emptyMessage}
-                        subtexto={emptyState.subtexto || copy.emptySubtext}
-                        icon={emptyState.icon || copy.emptyIcon}
-                    />
-                </div>
-            ) : (
-                <div className="flex flex-col gap-3">
-                    {tickets.map((ticket) => (
-                        <ActividadesTicketCard
-                            key={ticket.id}
-                            ticket={ticket}
-                            currentUser={currentUser}
-                            onViewDetail={setDetailTarget}
-                            onEdit={setEditTarget}
-                            onAssign={setAssignTarget}
-                            onChangeStatus={setStatusTarget}
-                            onAdminClose={setAdminCloseTarget}
-                            onReview={setReviewTarget}
-                            onCancel={setCancelTarget}
-                        />
-                    ))}
+            )}
+            {dateFilterNode && (
+                <div className="mb-3">
+                    {dateFilterNode}
                 </div>
             )}
 
-            {hasPaginator && (
-                <div className="lg:hidden">
-                    <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="calc(80px + var(--safe-bottom-offset, 0px))" />
-                </div>
-            )}
-
-            {showCreateFab && (
-                <div className="lg:hidden">
-                    <GlassFab onClick={onOpenCreate} icon="add" bottom={addBottom} />
-                </div>
-            )}
-            <div className="lg:hidden">
-                <GlassFab
-                    icon="refresh"
-                    onClick={hardReload}
-                    isLoading={loading}
-                    variant="neutral"
-                    size={50}
-                    bottom={fabRefreshBottom}
-                    right="20px"
+            {mostrandoRecurrentes ? (
+                <RecurrentesWorkspace
+                    isMobile
+                    canManage={canManageRecurrentes}
+                    onMaterialized={onActividadRecurrenteMaterialized}
                 />
-            </div>
-            <div className="lg:hidden">
-                <ScrollToTopButton bottom={addBottom} left="20px" />
-            </div>
+            ) : (
+                <>
+                    <div className="mb-3">
+                        <TicketSummaryBar
+                            totalParaSummary={totalParaSummary}
+                            conteos={conteos}
+                            filtroActual={filtroEstado}
+                            onFilterChange={onFilterChange}
+                            loading={loading}
+                            mostrarRechazadas={mostrarRechazadas}
+                            mostrarPapelera={mostrarPapelera}
+                        />
+                    </div>
 
-            <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
-            <TicketActividadFormModal scope="actividades" isMobile isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
-            <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
-            <TicketStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
-            <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
-            <TicketStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
-            <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
-        </div>
+                    <div className="mb-3 flex flex-col gap-2.5">
+                        <MobileActividadesFilterBar
+                            query={query}
+                            onSearchChange={onSearchChange}
+                            filtroEstado={filtroEstado}
+                            onEstadoChange={onFilterChange}
+                            filtroTipo={filtroTipo}
+                            onTipoChange={onTipoChange}
+                            filtroPrioridad={filtroPrioridad}
+                            onPrioridadChange={onPrioridadChange}
+                            filtroCategoria={filtroCategoria}
+                            filtroArea={filtroArea}
+                            onCategoriaChange={onCategoriaChange}
+                            onAreaChange={onAreaChange}
+                            filtroResponsable={filtroResponsable}
+                            onResponsableChange={onResponsableChange}
+                            opcionesResponsables={tecnicos}
+                            filtroProgramacion={filtroProgramacion}
+                            onProgramacionChange={onProgramacionChange}
+                            filtroConclusion={filtroConclusion}
+                            onConclusionChange={onConclusionChange}
+                            mostrarAtrasadas={mostrarAtrasadas}
+                            onToggleAtrasadas={onToggleAtrasadas}
+                            mostrarRechazadas={mostrarRechazadas}
+                            onToggleRechazadas={onToggleRechazadas}
+                            existenciaGlobal={existenciaGlobal}
+                            totalAtrasadasGlobal={totalAtrasadasGlobal}
+                            currentUser={currentUser}
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-3 px-1 pt-1 pb-44">
+                        {loading ? (
+                            Array.from({ length: SKELETON_COUNT }).map((_, i) => <CardSkeleton key={i} />)
+                        ) : tickets.length === 0 ? (
+                            <div className="mt-10">
+                                <TicketsEmptyState
+                                    isMobile
+                                    isFiltering={isFilteringActive}
+                                    onClearFilters={handleClearFilters}
+                                    onRefresh={onRefresh}
+                                    mensaje={emptyState.mensaje || copy.emptyMessage}
+                                    subtexto={emptyState.subtexto || copy.emptySubtext}
+                                    icon={emptyState.icon || copy.emptyIcon}
+                                />
+                            </div>
+                        ) : (
+                            tickets.map((ticket) => (
+                                <ActividadesTicketCard
+                                    key={ticket.id}
+                                    ticket={ticket}
+                                    currentUser={currentUser}
+                                    onViewDetail={setDetailTarget}
+                                    onEdit={setEditTarget}
+                                    onAssign={setAssignTarget}
+                                    onChangeStatus={setStatusTarget}
+                                    onAdminClose={setAdminCloseTarget}
+                                    onReview={setReviewTarget}
+                                    onCancel={setCancelTarget}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {hasPaginator && (
+                        <div className="lg:hidden">
+                            <GlassPaginationPill page={page} totalPages={totalPages} totalItems={totalParaPaginador} onPageChange={onPageChange} loading={loading} bottom="calc(80px + var(--safe-bottom-offset, 0px))" />
+                        </div>
+                    )}
+
+                    {showCreateFab && (
+                        <div className="lg:hidden">
+                            <GlassFab onClick={onOpenCreate} icon="add" variant="primary" size={56} bottom={addBottom} right="20px" />
+                        </div>
+                    )}
+                    <div className="lg:hidden">
+                        <GlassFab
+                            icon="refresh"
+                            onClick={hardReload}
+                            isLoading={loading}
+                            variant="neutral"
+                            size={50}
+                            bottom={fabRefreshBottom}
+                            right="20px"
+                        />
+                    </div>
+                    <div className="lg:hidden">
+                        <ScrollToTopButton bottom={addBottom} left="20px" />
+                    </div>
+
+                    <TicketDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />
+                    <TicketActividadFormModal scope="actividades" isMobile isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} ticketAEditar={editTarget} currentUser={currentUser} tecnicos={tecnicos} isSubmitting={submitting} onSuccess={async (payload) => { await onSave(editTarget.id, payload); setEditTarget(null); }} />
+                    <TicketAssignModal isOpen={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} ticket={assignTarget} tecnicos={tecnicos} isSubmitting={submitting} onConfirm={async (id, payload) => { await onSave(id, payload); setAssignTarget(null); }} />
+                    <TicketStatusModal isOpen={Boolean(statusTarget)} onClose={() => setStatusTarget(null)} ticket={statusTarget} currentUser={currentUser} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setStatusTarget(null); }} />
+                    <MobileTicketReviewModal isOpen={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} ticket={reviewTarget} isSubmitting={submitting} currentUser={currentUser} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setReviewTarget(null); }} />
+                    <TicketStatusModal isOpen={Boolean(cancelTarget)} onClose={() => setCancelTarget(null)} ticket={cancelTarget} currentUser={currentUser} isSubmitting={submitting} forcedEstado="CANCELADA" onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setCancelTarget(null); }} />
+                    <AdminCloseModal isOpen={Boolean(adminCloseTarget)} onClose={() => setAdminCloseTarget(null)} ticket={adminCloseTarget} isSubmitting={submitting} onConfirm={async (id, payload) => { await onChangeStatus(id, payload); setAdminCloseTarget(null); }} />
+                </>
+            )}
+        </>
     );
 };
 

@@ -51,7 +51,7 @@ export const AjusteOcurrenciaModal = ({
     }, [fechaOriginal, isOpen, item?.fechaProgramada, item?.fechaProgramadaPreventiva]);
 
     const isMove = mode === 'mover';
-    const title = isMove ? 'Mover este mes' : 'Omitir este mes';
+    const title = isMove ? 'Cambiar fecha programada' : 'Omitir fecha programada';
     const weekendWarning = useMemo(() => isMove && isWeekend(fechaNueva), [fechaNueva, isMove]);
     const motivoLimpio = motivo.trim();
     const motivoMuyLargo = motivoLimpio.length > 250;
@@ -168,7 +168,7 @@ export const AjusteOcurrenciaModal = ({
                 <ModalFooter>
                     <Button type="button" variant="cancelar" onClick={onClose} disabled={submitting}>Cancelar</Button>
                     <Button type="submit" variant="guardar" disabled={disabled} isLoading={submitting}>
-                        {isMove ? 'Mover este mes' : 'Omitir este mes'}
+                        {isMove ? 'Cambiar fecha' : 'Omitir fecha'}
                     </Button>
                 </ModalFooter>
             </form>

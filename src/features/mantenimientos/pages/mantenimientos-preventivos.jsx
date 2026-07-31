@@ -27,6 +27,7 @@ const TicketsPreventivos = () => (
             forcedClasificacion="PREVENTIVO"
             DesktopView={MantenimientosPreventivosDesktop}
             MobileView={MantenimientosPreventivosMobile}
+            showDateFilter
         />
     </div>
 );

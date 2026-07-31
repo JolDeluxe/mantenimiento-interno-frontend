@@ -46,6 +46,10 @@ export default function TicketsListadoBase({
     defaultFilters = EMPTY_DEFAULT_FILTERS,
     mode = 'historico',
     scope = 'actividades',
+    actividadTab = 'actividades',
+    canManageRecurrentes = false,
+    onActividadTabChange,
+    onActividadRecurrenteMaterialized,
 }) {
     const isDesktop = useIsDesktop();
     const { user } = useAuthStore();
@@ -296,6 +300,17 @@ export default function TicketsListadoBase({
     const toApproveCount = meta?.resumenEstados?.RESUELTO ?? 0;
     const CreateFormModal = mode === 'actividades' ? TicketActividadFormModal : TicketFormModal;
     const MobileCreateFormModal = mode === 'actividades' ? TicketActividadFormModal : MobileTicketFormModal;
+    const showDateFilter = !(mode === 'actividades' && canManageRecurrentes && actividadTab === 'recurrentes');
+    const dateFilterNode = showDateFilter ? (
+        <TicketFechas
+            year={year}
+            month={month}
+            onYearChange={handleYearChange}
+            onMonthChange={handleMonthChange}
+            existenciaGlobal={metricas?.existenciaGlobal || {}}
+            limitesFechas={metricas?.limitesFechas || null}
+        />
+    ) : null;
 
     const DesktopView = {
         actividades: TicketsActividadesDesktop,
@@ -318,6 +333,7 @@ export default function TicketsListadoBase({
             RECHAZADO: metricas?.totalRechazadas ?? metricas?.existenciaGlobal?.RECHAZADO ?? 0,
         },
         totalAtrasadasGlobal: metricas?.totalAtrasadas ?? metricas?.global?.backlogAtrasado ?? 0, sortConfig, query,
+        filtroEstado, filtroTipo, filtroPrioridad, filtroCategoria, filtroClasificacion, filtroResponsable,
         filtroArea, filtroProgramacion, filtroConclusion,
         mostrarRechazadas, mostrarPapelera, mostrarAtrasadas,
         onPageChange: setPage, onSortChange: handleSortChange, onSearchChange: handleSearchChange,
@@ -335,19 +351,17 @@ export default function TicketsListadoBase({
         allowCreate: canCreate,
         emptyState,
         toApproveCount,
+        actividadTab,
+        canManageRecurrentes,
+        onActividadTabChange,
+        onActividadRecurrenteMaterialized,
+        dateFilterNode,
     };
 
     return (
         <div className="max-w-full mx-auto flex flex-col gap-4">
             <HoyAprobarPanel toApproveCount={toApproveCount} currentUser={currentUser} isMobile={!isDesktop} />
-            <TicketFechas
-                year={year}
-                month={month}
-                onYearChange={handleYearChange}
-                onMonthChange={handleMonthChange}
-                existenciaGlobal={metricas?.existenciaGlobal || {}}
-                limitesFechas={metricas?.limitesFechas || null}
-            />
+            {mode !== 'actividades' && dateFilterNode}
             {isDesktop ? <DesktopView {...sharedViewProps} /> : <MobileView {...sharedViewProps} />}
             {canCreate && showCreate && (
                 isDesktop ? (

@@ -14,6 +14,7 @@ export const RecurrenteActions = ({
             onClick={() => onView(regla)}
             className="inline-flex rounded-md p-1.5 text-slate-600 transition-colors hover:bg-slate-600/10"
             title="Ver detalle"
+            aria-label="Ver detalle"
         >
             <Icon name="visibility" size="sm" />
         </button>
@@ -25,7 +26,8 @@ export const RecurrenteActions = ({
                     onClick={() => onEdit(regla)}
                     disabled={submitting}
                     className="inline-flex rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-500/10 disabled:opacity-50"
-                    title="Editar programacion"
+                    title="Editar regla"
+                    aria-label="Editar regla"
                 >
                     <Icon name="edit" size="sm" />
                 </button>
@@ -38,7 +40,8 @@ export const RecurrenteActions = ({
                             ? 'text-red-700 hover:bg-red-500/10'
                             : 'text-estado-resuelto hover:bg-estado-resuelto/10'
                     }`}
-                    title={regla.activo ? 'Pausar programacion' : 'Activar programacion'}
+                    title={regla.activo ? 'Pausar regla' : 'Reactivar regla'}
+                    aria-label={regla.activo ? 'Pausar regla' : 'Reactivar regla'}
                 >
                     <Icon name={regla.activo ? 'pause_circle' : 'play_circle'} size="sm" />
                 </button>

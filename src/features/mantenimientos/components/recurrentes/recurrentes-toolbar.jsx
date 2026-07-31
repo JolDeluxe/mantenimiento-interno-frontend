@@ -37,10 +37,8 @@ export const RecurrentesToolbar = ({
     onActivoChange,
     mostrarBajaDesuso,
     onToggleBajaDesuso,
-    onRefresh,
     onCreate,
     canManage,
-    loading,
 }) => {
     const [localValue, setLocalValue] = useState(query || '');
     const estadoValue = activo === 'true' ? '' : (activo || 'all');

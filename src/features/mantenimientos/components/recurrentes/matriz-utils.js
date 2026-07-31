@@ -74,7 +74,7 @@ export const executionStatusLabel = (estado = '') => {
     if (value === 'OMITIDO') return 'Omitido este mes';
     if (value === 'PENDIENTE_DEL_MES') return 'Pendiente del mes';
     if (value === 'SIN_MANTENIMIENTO_REGISTRADO') return 'Sin mantenimiento registrado';
-    if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'Programado por recurrencia';
+    if (value === 'PROGRAMADO_POR_RECURRENCIA') return 'Fecha programada';
     if (value === 'ASIGNADA') return 'Asignada';
     if (value === 'EN_PROGRESO') return 'En progreso';
     if (value === 'EN_PAUSA') return 'Pausada';
@@ -85,7 +85,7 @@ export const executionStatusLabel = (estado = '') => {
 };
 
 export const originLabel = (origen = '') => (
-    String(origen).toLowerCase() === 'ticket' ? 'Mantenimiento existente' : 'Programado por recurrencia'
+    String(origen).toLowerCase() === 'ticket' ? 'Mantenimiento existente' : 'Fecha programada'
 );
 
 export const summarizeExecutions = (ejecuciones = []) => {

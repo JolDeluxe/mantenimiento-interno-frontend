@@ -14,7 +14,6 @@ export const RecurrentesListado = ({
     onView,
     onEdit,
     onToggleActivo,
-    onMaterialize,
 }) => {
     const columns = [
         {
@@ -100,7 +99,6 @@ export const RecurrentesListado = ({
                     onView={onView}
                     onEdit={onEdit}
                     onToggleActivo={onToggleActivo}
-                    onMaterialize={onMaterialize}
                 />
             )
         }

@@ -24,7 +24,7 @@ export const QuitarAjusteModal = ({
                     <div className="mt-0.5 text-sm font-black text-slate-800">{formatDDMM(fechaOriginal)}</div>
                 </div>
                 <p className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
-                    Esta ocurrencia volverá a la programación base.
+                    Esta fecha programada volverá a la programación base.
                 </p>
             </ModalBody>
             <ModalFooter>

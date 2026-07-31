@@ -1,25 +1,44 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, SearchableSelect, Spinner } from '@/components/ui/z_index';
+import { Label } from '@/components/form/z_index';
 import { getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
+import { DurationPicker, PrioridadField } from '@/features/common/forms/tareas/fields';
+import { TecnicoCartSelector } from '@/features/common/forms/tareas/responsables';
 import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
+import { PRIORIDADES } from '@/features/common/constants/catalogos-tareas';
 import { getMinDateHoy } from '@/lib/date';
+import { cn } from '@/utils/cn';
 
 const FRECUENCIAS = [
-    { value: 'SEMANAL', label: 'Semanal' },
-    { value: 'QUINCENAL', label: 'Quincenal' },
-    { value: 'MENSUAL', label: 'Mensual' },
-    { value: 'PERSONALIZADA_DIAS', label: 'Personalizada por dias' },
-];
-
-const PRIORIDADES = [
-    { value: 'BAJA', label: 'Baja' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'ALTA', label: 'Alta' },
-    { value: 'CRITICA', label: 'Critica' },
+    { value: 'SEMANAL', label: 'Semanal', description: 'Cada semana', icon: 'view_week' },
+    { value: 'QUINCENAL', label: 'Quincenal', description: 'Cada 2 semanas', icon: 'date_range' },
+    { value: 'MENSUAL', label: 'Mensual', description: 'Cada mes', icon: 'calendar_month' },
+    { value: 'PERSONALIZADA_DIAS', label: 'Personalizada', description: 'Define intervalo', icon: 'tune' },
 ];
 
 const datePart = (value) => value ? String(value).split('T')[0] : '';
+const DESCRIPCION_PREVENTIVA = 'Mantenimiento preventivo de maquinaria.';
+
+const FrequencyOption = ({ option, selected, disabled, onClick }) => (
+    <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={cn(
+            'flex min-h-[74px] min-w-0 items-start gap-2 rounded-xl border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70',
+            selected
+                ? 'border-marca-primario bg-marca-primario/5 text-marca-primario shadow-sm'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+        )}
+    >
+        <Icon name={option.icon} size="18px" className="mt-0.5 shrink-0" />
+        <span className="min-w-0 flex-1">
+            <span className="block break-words text-xs font-black uppercase leading-tight">{option.label}</span>
+            <span className="mt-0.5 block text-[11px] font-semibold leading-tight opacity-80">{option.description}</span>
+        </span>
+    </button>
+);
 
 export const RecurrenteFormModal = ({
     isOpen,
@@ -32,10 +51,9 @@ export const RecurrenteFormModal = ({
     const [tecnicos, setTecnicos] = useState([]);
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
     const [formError, setFormError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const [maquinaId, setMaquinaId] = useState('');
-    const [titulo, setTitulo] = useState('');
-    const [descripcion, setDescripcion] = useState('');
     const [tecnicoResponsableId, setTecnicoResponsableId] = useState('');
     const [frecuencia, setFrecuencia] = useState('MENSUAL');
     const [intervaloDias, setIntervaloDias] = useState('');
@@ -65,9 +83,8 @@ export const RecurrenteFormModal = ({
         if (!isOpen) return;
         queueMicrotask(() => {
             setFormError('');
+            setFieldErrors({});
             setMaquinaId(regla?.maquinaId ? String(regla.maquinaId) : '');
-            setTitulo(regla?.titulo || '');
-            setDescripcion(regla?.descripcion || '');
             setTecnicoResponsableId(regla?.tecnicoResponsableId ? String(regla.tecnicoResponsableId) : regla?.tecnicoResponsable?.id ? String(regla.tecnicoResponsable.id) : '');
             setFrecuencia(regla?.frecuencia || 'MENSUAL');
             setIntervaloDias(regla?.intervaloDias ? String(regla.intervaloDias) : '');
@@ -84,28 +101,77 @@ export const RecurrenteFormModal = ({
         ...maquina,
     })), [maquinas]);
 
-    const tecnicoOptions = useMemo(() => tecnicos.map((tecnico) => ({
-        value: String(tecnico.id),
-        label: `${tecnico.nombre}${tecnico.cargo ? ` - ${tecnico.cargo}` : ''}`,
-    })), [tecnicos]);
+    const maquinaSeleccionada = useMemo(() => (
+        maquinas.find((maquina) => String(maquina.id) === String(maquinaId)) || regla?.maquina || null
+    ), [maquinaId, maquinas, regla]);
+
+    const tituloPreventivo = maquinaSeleccionada?.codigo
+        ? `${maquinaSeleccionada.codigo} Mantenimiento Preventivo`
+        : regla?.titulo || 'Mantenimiento Preventivo';
+
+    const clearFieldError = (...keys) => {
+        setFieldErrors((prev) => {
+            if (!keys.some((key) => prev[key])) return prev;
+            const next = { ...prev };
+            keys.forEach((key) => delete next[key]);
+            return next;
+        });
+    };
+
+    const handleMaquinaChange = (value) => {
+        setMaquinaId(value);
+        clearFieldError('maquinaId');
+    };
+
+    const handleTecnicoChange = (value) => {
+        setTecnicoResponsableId(value);
+        clearFieldError('tecnicoResponsableId');
+    };
+
+    const handleFrecuenciaChange = (value) => {
+        setFrecuencia(value);
+        clearFieldError('frecuencia', 'intervaloDias');
+    };
+
+    const handleIntervaloChange = (value) => {
+        setIntervaloDias(value);
+        clearFieldError('intervaloDias');
+    };
+
+    const handleFechaChange = (value) => {
+        setProximaFechaEjecucion(value);
+        clearFieldError('proximaFechaEjecucion');
+    };
+
+    const handleTiempoChange = (value) => {
+        setTiempoEstimado(String(value || ''));
+        clearFieldError('tiempoEstimado');
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setFormError('');
+        const errors = {};
+        const intervalo = Number(intervaloDias);
+        const duracion = Number(tiempoEstimado);
 
-        if (!maquinaId) return setFormError('Selecciona una maquina.');
-        if (titulo.trim().length < 3) return setFormError('El titulo debe tener al menos 3 caracteres.');
-        if (!tecnicoResponsableId) return setFormError('Selecciona responsable tecnico.');
-        if (!proximaFechaEjecucion) return setFormError('Selecciona fecha inicial programada.');
-        if (proximaFechaEjecucion < getMinDateHoy()) return setFormError('No se permiten fechas anteriores a hoy.');
-        if (frecuencia === 'PERSONALIZADA_DIAS' && (!intervaloDias || Number(intervaloDias) <= 0)) {
-            return setFormError('Indica intervalo de dias mayor a 0.');
+        if (!maquinaId) errors.maquinaId = 'Selecciona una maquina.';
+        if (!tecnicoResponsableId) errors.tecnicoResponsableId = 'Selecciona responsable tecnico.';
+        if (!frecuencia) errors.frecuencia = 'Selecciona frecuencia.';
+        if (!proximaFechaEjecucion) errors.proximaFechaEjecucion = 'Selecciona fecha inicial programada.';
+        if (proximaFechaEjecucion && proximaFechaEjecucion < getMinDateHoy()) errors.proximaFechaEjecucion = 'No se permiten fechas anteriores a hoy.';
+        if (frecuencia === 'PERSONALIZADA_DIAS' && (!Number.isInteger(intervalo) || intervalo <= 0)) {
+            errors.intervaloDias = 'Indica intervalo de dias mayor a 0.';
         }
+        if (tiempoEstimado && (!Number.isFinite(duracion) || duracion <= 0)) errors.tiempoEstimado = 'La duracion debe ser positiva.';
+
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) return;
 
         const payload = {
             maquinaId: Number(maquinaId),
-            titulo: titulo.trim(),
-            descripcion: descripcion.trim() || null,
+            titulo: tituloPreventivo,
+            descripcion: DESCRIPCION_PREVENTIVA,
             categoria: 'MAQUINARIA',
             prioridad,
             tiempoEstimado: tiempoEstimado ? Number(tiempoEstimado) : null,
@@ -125,7 +191,7 @@ export const RecurrenteFormModal = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-2xl">
+        <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-3xl">
             <ModalHeader onClose={onClose}>
                 <div className="flex items-center gap-2">
                     <Icon name="event_repeat" className="text-marca-primario" />
@@ -153,116 +219,108 @@ export const RecurrenteFormModal = ({
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="md:col-span-2">
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Maquina *</label>
+                            <Label error={!!fieldErrors.maquinaId}>Maquina *</Label>
                             <SearchableSelect
                                 options={maquinaOptions}
                                 value={maquinaId}
-                                onChange={setMaquinaId}
+                                onChange={handleMaquinaChange}
                                 placeholder={loadingCatalogos ? 'Cargando maquinas...' : 'Selecciona maquina'}
                                 searchPlaceholder="Buscar por codigo o nombre..."
                                 allOptionText={null}
                                 disabled={loadingCatalogos || submitting}
+                                className={fieldErrors.maquinaId ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : ''}
                             />
+                            {fieldErrors.maquinaId && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.maquinaId}</p>}
+                        </div>
+
+                        <div className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4">
+                                <Label>Titulo</Label>
+                                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+                                    {tituloPreventivo}
+                                </div>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/40 p-4">
+                                <Label>Descripcion</Label>
+                                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+                                    {DESCRIPCION_PREVENTIVA}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Titulo *</label>
-                            <input
-                                value={titulo}
-                                onChange={(event) => setTitulo(event.target.value)}
-                                maxLength={255}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
-                                placeholder="Ej. Preventivo semanal de centro robotizado"
-                            />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Descripcion</label>
-                            <textarea
-                                value={descripcion}
-                                onChange={(event) => setDescripcion(event.target.value)}
-                                rows={3}
-                                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
-                                placeholder="Checklist o instrucciones para el mantenimiento..."
-                            />
-                        </div>
-
-                        <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Responsable tecnico *</label>
-                            <select
+                            <Label error={!!fieldErrors.tecnicoResponsableId}>Responsable tecnico *</Label>
+                            <TecnicoCartSelector
+                                tecnicos={tecnicos}
                                 value={tecnicoResponsableId}
-                                onChange={(event) => setTecnicoResponsableId(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
+                                onChange={handleTecnicoChange}
                                 disabled={loadingCatalogos || submitting}
-                            >
-                                <option value="">Selecciona tecnico</option>
-                                {tecnicoOptions.map((tecnico) => (
-                                    <option key={tecnico.value} value={tecnico.value}>{tecnico.label}</option>
-                                ))}
-                            </select>
+                                placeholder={loadingCatalogos ? 'Cargando tecnicos...' : 'Buscar y seleccionar tecnico...'}
+                            />
+                            {fieldErrors.tecnicoResponsableId && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.tecnicoResponsableId}</p>}
                         </div>
 
-                        <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Frecuencia *</label>
-                            <select
-                                value={frecuencia}
-                                onChange={(event) => setFrecuencia(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
-                                disabled={submitting}
-                            >
+                        <div className="md:col-span-2">
+                            <Label error={!!fieldErrors.frecuencia}>Frecuencia *</Label>
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                                 {FRECUENCIAS.map((item) => (
-                                    <option key={item.value} value={item.value}>{item.label}</option>
+                                    <FrequencyOption
+                                        key={item.value}
+                                        option={item}
+                                        selected={frecuencia === item.value}
+                                        disabled={submitting}
+                                        onClick={() => handleFrecuenciaChange(item.value)}
+                                    />
                                 ))}
-                            </select>
+                            </div>
+                            {fieldErrors.frecuencia && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.frecuencia}</p>}
                         </div>
 
                         {frecuencia === 'PERSONALIZADA_DIAS' && (
                             <div>
-                                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Intervalo dias *</label>
+                                <Label error={!!fieldErrors.intervaloDias}>Intervalo dias *</Label>
                                 <input
                                     type="number"
                                     min="1"
                                     value={intervaloDias}
-                                    onChange={(event) => setIntervaloDias(event.target.value)}
-                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
+                                    onChange={(event) => handleIntervaloChange(event.target.value)}
+                                    className={cn('w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none', fieldErrors.intervaloDias ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : 'border-slate-200 focus:border-marca-primario')}
                                 />
+                                {fieldErrors.intervaloDias && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.intervaloDias}</p>}
                             </div>
                         )}
 
                         <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Fecha inicial programada *</label>
+                            <Label error={!!fieldErrors.proximaFechaEjecucion}>Fecha inicial programada *</Label>
                             <input
                                 type="date"
                                 min={getMinDateHoy()}
                                 value={proximaFechaEjecucion}
-                                onChange={(event) => setProximaFechaEjecucion(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
+                                onChange={(event) => handleFechaChange(event.target.value)}
+                                className={cn('w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none', fieldErrors.proximaFechaEjecucion ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : 'border-slate-200 focus:border-marca-primario')}
                             />
+                            {fieldErrors.proximaFechaEjecucion && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.proximaFechaEjecucion}</p>}
                         </div>
 
                         <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Prioridad</label>
-                            <select
+                            <PrioridadField
+                                id="preventivo-prioridad"
                                 value={prioridad}
-                                onChange={(event) => setPrioridad(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
-                            >
-                                {PRIORIDADES.map((item) => (
-                                    <option key={item.value} value={item.value}>{item.label}</option>
-                                ))}
-                            </select>
+                                onChange={setPrioridad}
+                                options={PRIORIDADES}
+                                label="Prioridad"
+                            />
                         </div>
 
                         <div>
-                            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tiempo estimado min</label>
-                            <input
-                                type="number"
-                                min="1"
-                                value={tiempoEstimado}
-                                onChange={(event) => setTiempoEstimado(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-marca-primario"
-                                placeholder="60"
+                            <Label>Tiempo estimado</Label>
+                            <DurationPicker
+                                valueMins={Number(tiempoEstimado) || 0}
+                                onChange={handleTiempoChange}
+                                disabled={submitting}
+                                error={!!fieldErrors.tiempoEstimado}
                             />
+                            {fieldErrors.tiempoEstimado && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.tiempoEstimado}</p>}
                         </div>
 
                         <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">

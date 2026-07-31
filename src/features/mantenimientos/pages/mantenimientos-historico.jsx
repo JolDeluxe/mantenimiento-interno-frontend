@@ -19,6 +19,7 @@ const LIMIT = 50;
 export default function MantenimientosHistoricoPage({
     forcedClasificacion,
     allowCreate = true,
+    showDateFilter = true,
     // eslint-disable-next-line no-unused-vars
     DesktopView = MantenimientosHistoricoDesktop,
     // eslint-disable-next-line no-unused-vars
@@ -316,14 +317,16 @@ export default function MantenimientosHistoricoPage({
     return (
         <div className="w-full max-w-full mx-auto flex flex-col gap-4">
             <HoyAprobarPanel toApproveCount={meta?.resumenEstados?.RESUELTO ?? 0} currentUser={currentUser} isMobile={!isDesktop} />
-            <MantenimientosFechas
-                year={year}
-                month={month}
-                onYearChange={handleYearChange}
-                onMonthChange={handleMonthChange}
-                existenciaGlobal={metricas?.existenciaGlobal || {}}
-                limitesFechas={metricas?.limitesFechas || null}
-            />
+            {showDateFilter && (
+                <MantenimientosFechas
+                    year={year}
+                    month={month}
+                    onYearChange={handleYearChange}
+                    onMonthChange={handleMonthChange}
+                    existenciaGlobal={metricas?.existenciaGlobal || {}}
+                    limitesFechas={metricas?.limitesFechas || null}
+                />
+            )}
             {isDesktop ? (
                 <DesktopView {...sharedProps} />
             ) : (

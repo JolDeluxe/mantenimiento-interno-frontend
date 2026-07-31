@@ -45,7 +45,7 @@ export const AjusteOcurrenciaActions = ({
                     className="inline-flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-0.5 text-[9px] font-black uppercase text-sky-700 disabled:opacity-50"
                 >
                     <Icon name="event_repeat" size="10px" />
-                    Mover este mes
+                    Cambiar fecha
                 </button>
             )}
             {!hasAdjustment && (

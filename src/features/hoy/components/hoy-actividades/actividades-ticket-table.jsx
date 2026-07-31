@@ -85,6 +85,10 @@ export const ActividadesTicketTable = ({
     onSave,
     onChangeStatus,
     scope = 'actividades',
+    page,
+    totalPages,
+    totalItems,
+    onPageChange,
 }) => {
     const [detailTarget, setDetailTarget] = useState(null);
     const [editTarget, setEditTarget] = useState(null);
@@ -397,7 +401,11 @@ export const ActividadesTicketTable = ({
                     if (row.estado === 'RECHAZADO') return `bg-red-100/50 hover:bg-red-100/80 border-l-4 ${borderCls}`;
                     return `bg-white hover:bg-slate-50 border-l-4 ${borderCls}`;
                 }}
-                hidePagination={true}
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={onPageChange}
+                hidePagination={!(page && totalPages > 1 && onPageChange)}
             />
 
             <HoyDetailModal isOpen={Boolean(detailTarget)} onClose={() => setDetailTarget(null)} ticket={detailTarget} />

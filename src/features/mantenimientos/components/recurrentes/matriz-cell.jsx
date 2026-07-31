@@ -75,7 +75,7 @@ export const MatrizCell = ({
                             )}
                             {movida && (
                                 <span className="rounded-md bg-white/70 px-1.5 py-0.5 text-sky-700">
-                                    Movido este mes · Original {formatDDMM(item.fechaOriginal || item.fechaInicio)} · Nueva fecha {formatDDMM(fechaProgramada)}
+                                    Fecha ajustada · Original {formatDDMM(item.fechaOriginal || item.fechaInicio)} · Nueva fecha {formatDDMM(fechaProgramada)}
                                 </span>
                             )}
                             {omitida && (

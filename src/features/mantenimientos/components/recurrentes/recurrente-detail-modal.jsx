@@ -155,7 +155,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
             const res = await getProyeccionRegla(regla.id, { year: selectedYear });
             setOcurrencias(res?.data || res || []);
         } catch {
-            notify.error('Error al cargar ocurrencias.');
+            notify.error('Error al cargar fechas programadas.');
         } finally {
             setLoadingOcurrencias(false);
         }
@@ -179,11 +179,11 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                 fechaNueva: formData.fechaNueva,
                 motivo: formData.motivo.trim()
             });
-            notify.success('Ocurrencia reprogramada con éxito.');
+            notify.success('Fecha programada actualizada con éxito.');
             setActiveAction(null);
             fetchOcurrencias();
         } catch (err) {
-            notify.error(err?.response?.data?.error || 'Error al mover ocurrencia.');
+            notify.error(err?.response?.data?.error || 'Error al cambiar la fecha programada.');
         } finally {
             setSubmittingAction(false);
         }
@@ -199,11 +199,11 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                 fechaOriginal: originalDate,
                 motivo: formData.motivo.trim()
             });
-            notify.success('Ocurrencia omitida con éxito.');
+            notify.success('Fecha programada omitida con éxito.');
             setActiveAction(null);
             fetchOcurrencias();
         } catch (err) {
-            notify.error(err?.response?.data?.error || 'Error al omitir ocurrencia.');
+            notify.error(err?.response?.data?.error || 'Error al omitir la fecha programada.');
         } finally {
             setSubmittingAction(false);
         }
@@ -211,7 +211,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
 
     const handleRemove = async (originalDate) => {
         if (!regla?.id) return;
-        if (!window.confirm('¿Deseas restaurar esta ocurrencia a su fecha original?')) return;
+        if (!window.confirm('¿Deseas restaurar esta fecha programada a su fecha original?')) return;
         setSubmittingAction(true);
         try {
             await quitarAjusteOcurrencia(regla.id, { fechaOriginal: originalDate });
@@ -269,7 +269,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                         className={`flex-1 py-2 text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1.5 rounded-lg transition-all cursor-pointer ${activeTab === 'history' ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <Icon name="calendar_month" size="xs" />
-                        Historial y Ocurrencias
+                        Historial y programacion
                     </button>
                 </div>
 
@@ -315,7 +315,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                     <div className="space-y-4 animate-in fade-in duration-200">
                         {/* Selector de Año */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <div className="text-xs font-black uppercase tracking-wide text-slate-500">Cronograma de Ocurrencias</div>
+                            <div className="text-xs font-black uppercase tracking-wide text-slate-500">Fechas programadas</div>
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
@@ -335,7 +335,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                             </div>
                         </div>
 
-                        {/* Listado de Ocurrencias */}
+                        {/* Listado de fechas programadas */}
                         {loadingOcurrencias ? (
                             <div className="flex items-center justify-center py-12 text-slate-500">
                                 <Spinner size="sm" className="mr-2" />
@@ -343,7 +343,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                             </div>
                         ) : ocurrencias.length === 0 ? (
                             <div className="text-center py-8 text-xs font-semibold text-slate-400">
-                                Sin ocurrencias proyectadas para el año {selectedYear}.
+                                Sin fechas programadas para el año {selectedYear}.
                             </div>
                         ) : (
                             <div ref={listRef} className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
@@ -397,7 +397,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                 </div>
                                             </div>
 
-                                            {/* Acciones para ocurrencias pendientes */}
+                                            {/* Acciones para fechas programadas pendientes */}
                                             {!hasTicket && !periodClosed && !isFormOpen && (
                                                 <div className="mt-3 flex items-center justify-end gap-3 border-t border-black/5 pt-2.5">
                                                     {!isOmitted && (
@@ -444,7 +444,7 @@ export const RecurrenteDetailModal = ({ regla, isOpen, onClose }) => {
                                                 <div className="mt-3.5 p-3.5 bg-white border border-slate-200 rounded-xl space-y-3 shadow-inner animate-in slide-in-from-top-1 duration-150 text-slate-800">
                                                     <div className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1 border-b border-slate-100 pb-1.5">
                                                         <Icon name={activeAction.type === 'mover' ? 'event_repeat' : 'event_busy'} size="12px" className="text-marca-primario" />
-                                                        {activeAction.type === 'mover' ? 'Reprogramar Ocurrencia' : 'Omitir Ocurrencia'}
+                                                        {activeAction.type === 'mover' ? 'Cambiar fecha programada' : 'Omitir fecha programada'}
                                                     </div>
 
                                                     {activeAction.type === 'mover' && (
