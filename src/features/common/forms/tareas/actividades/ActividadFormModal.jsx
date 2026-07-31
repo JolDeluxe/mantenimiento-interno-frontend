@@ -5,9 +5,11 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/comp
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime, format12h } from '@/lib/date';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
+import api from '@/lib/axios';
 import {
     CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO, normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
+
 import {
     PrioridadField,
     TituloField,
@@ -237,7 +239,18 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                         {item.fechaVencimiento && (
                             <>
                                 <span className="text-slate-300 text-[10px]">·</span>
-                                <span className="text-[10px] text-estado-asignada font-bold">{item.fechaVencimiento}</span>
+                                <span className="text-[10px] text-estado-asignada font-bold">
+                                    {item.esRecurrente ? `Inicio: ${item.fechaVencimiento}` : item.fechaVencimiento}
+                                </span>
+                            </>
+                        )}
+                        {item.esRecurrente && (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] font-bold text-marca-primario bg-marca-primario/5 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                    <Icon name="event_repeat" style={{ fontSize: '10px' }} className="shrink-0 text-marca-primario" />
+                                    Recurrente: {item.frecuencia === 'PERSONALIZADA' ? `${item.intervalo} ${item.unidad === 'DIA' ? 'Días' : item.unidad === 'SEMANA' ? 'Semanas' : 'Meses'}` : item.frecuencia}
+                                </span>
                             </>
                         )}
                     </div>
@@ -450,16 +463,47 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         return localStorage.getItem(storageKey('tecnicoCartId')) || '';
     });
 
+    const modoCarrito = !esEdicion && esAdmin && !isMobile && modoLista;
+    const tecnicoCart = tecnicos.find(t => String(t.id) === String(tecnicoCartId));
+
     const [backendError, setBackendError] = useState('');
     const [conflictError, setConflictError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+
+    // --- ESTADOS DE RECURRENCIA ---
+    const enableRecurrencia = rules?.enableRecurrencia || false;
+    const [esRecurrente, setEsRecurrente] = useState(false);
+    const [frecuencia, setFrecuencia] = useState('DIARIA');
+    const [unidad, setUnidad] = useState('DIA');
+    const [intervalo, setIntervalo] = useState('1');
+
+    const buildFrecuenciaFields = (frec, uni, inter) => {
+        if (frec === 'PERSONALIZADA') {
+            return {
+                unidad: uni || 'DIA',
+                intervalo: Number(inter || 1),
+            };
+        }
+        const presets = {
+            DIARIA: { unidad: 'DIA', intervalo: 1 },
+            SEMANAL: { unidad: 'SEMANA', intervalo: 1 },
+            QUINCENAL: { unidad: 'SEMANA', intervalo: 2 },
+            MENSUAL: { unidad: 'MES', intervalo: 1 },
+        };
+        return presets[frec] || { unidad: 'DIA', intervalo: 1 };
+    };
+
+
+    useEffect(() => {
+        if (tipo !== 'PLANEADA') {
+            setEsRecurrente(false);
+        }
+    }, [tipo]);
+
     useEffect(() => {
         setConflictError('');
     }, [horaInicio, horaFin, fechaVencimiento, responsables]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-    const modoCarrito = !esEdicion && esAdmin && !isMobile && modoLista;
-    const tecnicoCart = tecnicos.find(t => String(t.id) === String(tecnicoCartId));
 
     const areasOptions = useMemo(() => {
         return AREAS.map(a => ({ value: a, label: a }));
@@ -537,6 +581,10 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setResponsables([]);
         setSubmitted(false);
         setIsDropdownOpen(false);
+        setEsRecurrente(false);
+        setFrecuencia('DIARIA');
+        setUnidad('DIA');
+        setIntervalo('1');
     };
 
     useEffect(() => {
@@ -546,6 +594,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setIsDropdownOpen(false);
 
         if (esEdicion) {
+            setEsRecurrente(false);
             setTitulo(ticketAEditar.titulo ?? '');
             setDescripcion(ticketAEditar.descripcion ?? '');
             setMostrarDescripcion(Boolean(ticketAEditar.descripcion && ticketAEditar.descripcion !== 'Sin descripción.'));
@@ -570,6 +619,10 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                 setTiempoEstimadoMins(ticketAEditar.tiempoEstimado ?? ticketAEditar.tiempoEstimadoMins ?? 0);
             }
         } else {
+            setEsRecurrente(false);
+            setFrecuencia('DIARIA');
+            setUnidad('DIA');
+            setIntervalo('1');
             setMostrarDescripcion(Boolean(descripcion && descripcion.trim() !== ''));
             if (defaultDate) {
                 setFechaVencimiento(defaultDate >= hoyLocal ? defaultDate : hoyLocal);
@@ -636,14 +689,29 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         if (!area) e.area = 'Selecciona el área.';
         if (!categoria.trim()) e.categoria = 'La categoría es obligatoria.';
         if (esAdmin) {
-            if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
-
-            if (!fechaVencimiento) {
-                e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
-            } else if (fechaVencimiento < hoyLocal) {
-                const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
-                if (!esEdicion || fechaVencimiento !== fechaOriginal)
+            if (esRecurrente) {
+                if (!fechaVencimiento) {
+                    e.fechaVencimiento = 'La fecha inicial es obligatoria.';
+                } else if (fechaVencimiento < hoyLocal) {
                     e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                }
+                if (frecuencia === 'PERSONALIZADA') {
+                    if (!unidad) e.unidad = 'Selecciona la unidad.';
+                    const intVal = parseInt(intervalo, 10);
+                    if (isNaN(intVal) || intVal <= 0) {
+                        e.intervalo = 'El intervalo debe ser mayor que 0.';
+                    }
+                }
+            } else {
+                if (!tipo) e.tipo = 'El tipo de tarea es obligatorio.';
+
+                if (!fechaVencimiento) {
+                    e.fechaVencimiento = 'La fecha de vencimiento es obligatoria.';
+                } else if (fechaVencimiento < hoyLocal) {
+                    const fechaOriginal = isoToDateInput(ticketAEditar?.fechaVencimiento);
+                    if (!esEdicion || fechaVencimiento !== fechaOriginal)
+                        e.fechaVencimiento = 'No se permiten fechas anteriores a hoy.';
+                }
             }
 
             if (modoRangoHoras) {
@@ -666,12 +734,14 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                 }
             }
 
-            if (esEdicion) {
-                if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
-            } else if (!modoCarrito) {
-                if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
-            } else {
-                if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico para las nuevas tareas.';
+            if (!esRecurrente) {
+                if (esEdicion) {
+                    if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
+                } else if (!modoCarrito) {
+                    if (responsables.length === 0) e.responsables = 'Asigna al menos un técnico.';
+                } else {
+                    if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico para las nuevas tareas.';
+                }
             }
         }
 
@@ -684,6 +754,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         if (Object.keys(errors).length > 0) return;
         const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
+        const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
+
         setCarrito(prev => [...prev, {
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
@@ -695,7 +767,12 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             horaInicio: modoRangoHoras ? horaInicio : null,
             horaFin: modoRangoHoras ? horaFin : null,
             horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
-            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
+            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+            // Recurrente fields
+            esRecurrente,
+            frecuencia,
+            unidad: esRecurrente ? freq.unidad : null,
+            intervalo: esRecurrente ? Number(freq.intervalo) : null
         }]);
 
         setTitulo('');
@@ -705,6 +782,10 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setHoraFin('');
         setArea('');
         setCategoria('');
+        setEsRecurrente(false);
+        setFrecuencia('DIARIA');
+        setUnidad('DIA');
+        setIntervalo('1');
         setSubmitted(false);
         setIsDropdownOpen(false);
     };
@@ -797,6 +878,37 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             const errors = getErrors();
             if (Object.keys(errors).length > 0) return;
 
+            if (esRecurrente) {
+                const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
+                const payload = {
+                    titulo: titulo.trim(),
+                    descripcion: descripcion.trim() || null,
+                    categoria: categoria,
+                    area: normalizeAreaName(area) || area,
+                    prioridad: prioridad,
+                    fechaInicio: fechaVencimiento,
+                    fechaFin: null,
+                    horaInicio: modoRangoHoras ? (horaInicio || null) : null,
+                    horaFin: modoRangoHoras ? (horaFin || null) : null,
+                    tiempoEstimado: modoRangoHoras ? null : (tiempoEstimadoMins > 0 ? tiempoEstimadoMins : null),
+                    unidad: freq.unidad,
+                    intervalo: freq.intervalo,
+                    responsables: responsables.map(Number),
+                };
+
+                try {
+                    await api.post('/api/actividades-recurrentes', payload);
+                    await onSuccess(null);
+                    clearDraft();
+                    onClose();
+                } catch (err) {
+                    const data = err?.response?.data;
+                    let msg = data?.error || data?.message || 'Error al guardar actividad recurrente.';
+                    setBackendError(msg);
+                }
+                return;
+            }
+
             const fd = new FormData();
             const canonicalArea = normalizeAreaName(area) || area;
             fd.append('titulo', titulo);
@@ -849,6 +961,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                 return;
             }
             const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
+            const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
 
             finalCarrito.push({
                 _id: `${Date.now()}-${Math.random()}`,
@@ -858,8 +971,15 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                 responsables: responsablesSnapshot,
                 maquinaId: null,
                 modoRangoHoras,
+                horaInicio: modoRangoHoras ? horaInicio : null,
+                horaFin: modoRangoHoras ? horaFin : null,
                 horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
-                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                // Recurrente fields
+                esRecurrente,
+                frecuencia,
+                unidad: esRecurrente ? freq.unidad : null,
+                intervalo: esRecurrente ? Number(freq.intervalo) : null
             });
         }
 
@@ -869,28 +989,56 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         }
 
         try {
-            const batchPayloads = finalCarrito.map(item => {
+            const normalItems = finalCarrito.filter(item => !item.esRecurrente);
+            const recurrentItems = finalCarrito.filter(item => item.esRecurrente);
+
+            for (const item of recurrentItems) {
+                const freq = buildFrecuenciaFields(item.frecuencia, item.unidad, item.intervalo);
                 const payload = {
                     titulo: item.titulo,
                     descripcion: item.descripcion,
                     categoria: item.categoria,
                     area: normalizeAreaName(item.area) || item.area,
                     prioridad: item.prioridad,
-                    clasificacion: null,
-                    tipo: item.tipo,
-                    fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
+                    fechaInicio: item.fechaVencimiento,
+                    fechaFin: null,
+                    horaInicio: item.modoRangoHoras ? (item.horaInicio || null) : null,
+                    horaFin: item.modoRangoHoras ? (item.horaFin || null) : null,
+                    tiempoEstimado: item.modoRangoHoras ? null : (item.tiempoEstimado > 0 ? item.tiempoEstimado : null),
+                    unidad: freq.unidad,
+                    intervalo: freq.intervalo,
                     responsables: item.responsables.map(Number),
-                    maquinaId: null
                 };
-                if (item.modoRangoHoras) {
-                    payload.horaInicioProgramada = item.horaInicioProgramada;
-                    payload.horaFinProgramada = item.horaFinProgramada;
-                } else {
-                    payload.tiempoEstimado = item.tiempoEstimado;
-                }
-                return payload;
-            });
-            await onSuccess(batchPayloads);
+                await api.post('/api/actividades-recurrentes', payload);
+            }
+
+            if (normalItems.length > 0) {
+                const batchPayloads = normalItems.map(item => {
+                    const payload = {
+                        titulo: item.titulo,
+                        descripcion: item.descripcion,
+                        categoria: item.categoria,
+                        area: normalizeAreaName(item.area) || item.area,
+                        prioridad: item.prioridad,
+                        clasificacion: null,
+                        tipo: item.tipo,
+                        fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
+                        responsables: item.responsables.map(Number),
+                        maquinaId: null
+                    };
+                    if (item.modoRangoHoras) {
+                        payload.horaInicioProgramada = item.horaInicioProgramada;
+                        payload.horaFinProgramada = item.horaFinProgramada;
+                    } else {
+                        payload.tiempoEstimado = item.tiempoEstimado;
+                    }
+                    return payload;
+                });
+                await onSuccess(batchPayloads);
+            } else {
+                await onSuccess(null);
+            }
+
             clearDraft();
         } catch (err) {
             const data = err?.response?.data;
@@ -1130,7 +1278,9 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1.5 overflow-hidden">
                                     <div className="flex justify-between items-center">
-                                        <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>Fecha vencimiento *</Label>
+                                        <Label htmlFor="tf-fecha" error={!!fe.fechaVencimiento}>
+                                            {esRecurrente ? 'Fecha inicial *' : 'Fecha vencimiento *'}
+                                        </Label>
                                         <div className="flex items-center gap-1.5">
                                             <button type="button" onClick={setToday} disabled={isSubmitting}
                                                 className={cn("text-xs font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50 cursor-pointer",
@@ -1151,6 +1301,11 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                         }}
                                         error={!!fe.fechaVencimiento} helperText={fe.fechaVencimiento}
                                         disabled={isSubmitting} style={{ minWidth: 0 }} />
+                                    {esRecurrente && (
+                                        <p className="text-[10px] text-slate-500 mt-1 leading-normal font-semibold">
+                                            Esta fecha define cuándo inicia la programación. Si eliges hoy, se generará la primera actividad inmediatamente. Si eliges una fecha futura, solo se guardará la programación.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
@@ -1240,6 +1395,107 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                     )}
                                 </div>
                             </div>
+                        )}
+
+                        {esAdmin && enableRecurrencia && tipo === 'PLANEADA' && (
+                            <div className="flex items-center justify-between border border-slate-100 bg-slate-50/50 rounded-xl px-4 py-3 mt-3">
+                                <div className="flex flex-col flex-1">
+                                    <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                        <Icon name="event_repeat" className="text-marca-primario" size="sm" />
+                                        Actividad recurrente
+                                    </span>
+                                    <span className="text-[10px] font-medium text-slate-500 mt-1 leading-normal">
+                                        {esRecurrente
+                                            ? "Este formulario creará una actividad recurrente, no una actividad única."
+                                            : "Actívalo si esta actividad debe repetirse automáticamente."}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isSubmitting}
+                                    onClick={() => setEsRecurrente(prev => !prev)}
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-marca-primario focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 animate-all",
+                                        esRecurrente ? "bg-marca-primario" : "bg-slate-200"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                            esRecurrente ? "translate-x-5" : "translate-x-0"
+                                        )}
+                                    />
+                                </button>
+                            </div>
+                        )}
+
+                        {esRecurrente && (
+                            <>
+                                <div className="text-[10px] font-bold text-marca-primario bg-marca-primario/[0.04] px-3 py-2 rounded-xl border border-marca-primario/10 flex items-center gap-1.5 mt-2 animate-in fade-in duration-200">
+                                    <Icon name="info" size="xs" />
+                                    <span>
+                                        {fechaVencimiento === hoyLocal
+                                            ? "Como la fecha inicial es hoy, el sistema también generará la primera actividad."
+                                            : "La primera actividad se generará automáticamente cuando llegue la fecha."}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="rec-frecuencia" error={!!fe.frecuencia}>Frecuencia de la actividad *</Label>
+                                        <Select
+                                            id="rec-frecuencia"
+                                            value={frecuencia}
+                                            onChange={(e) => setFrecuencia(e.target.value)}
+                                            error={!!fe.frecuencia}
+                                            helperText={fe.frecuencia}
+                                            disabled={isSubmitting}
+                                        >
+                                            <option value="DIARIA">Diaria</option>
+                                            <option value="SEMANAL">Semanal</option>
+                                            <option value="QUINCENAL">Quincenal</option>
+                                            <option value="MENSUAL">Mensual</option>
+                                            <option value="PERSONALIZADA">Personalizada</option>
+                                        </Select>
+                                    </div>
+
+                                    {frecuencia === 'PERSONALIZADA' && (
+                                        <>
+                                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                <Label htmlFor="rec-unidad" error={!!fe.unidad}>Unidad personalizada *</Label>
+                                                <Select
+                                                    id="rec-unidad"
+                                                    value={unidad}
+                                                    onChange={(e) => setUnidad(e.target.value)}
+                                                    error={!!fe.unidad}
+                                                    helperText={fe.unidad}
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <option value="DIA">Días</option>
+                                                    <option value="SEMANA">Semanas</option>
+                                                    <option value="MES">Meses</option>
+                                                </Select>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                <Label htmlFor="rec-intervalo" error={!!fe.intervalo}>Intervalo *</Label>
+                                                <Input
+                                                    id="rec-intervalo"
+                                                    type="number"
+                                                    min="1"
+                                                    value={intervalo}
+                                                    onChange={(e) => setIntervalo(e.target.value)}
+                                                    error={!!fe.intervalo}
+                                                    helperText={fe.intervalo}
+                                                    placeholder="Ej. 3"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+
+                                </div>
+                            </>
                         )}
 
                         {/* ── DESCRIPCIÓN ── */}

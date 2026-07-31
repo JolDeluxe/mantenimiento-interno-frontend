@@ -9,11 +9,13 @@ import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/
 import { PRIORIDADES } from '@/features/common/constants/catalogos-tareas';
 import { getMinDateHoy } from '@/lib/date';
 import { cn } from '@/utils/cn';
+import { notify } from '@/components/notification/adaptive-notify';
 
 const FRECUENCIAS = [
     { value: 'SEMANAL', label: 'Semanal', description: 'Cada semana', icon: 'view_week' },
     { value: 'QUINCENAL', label: 'Quincenal', description: 'Cada 2 semanas', icon: 'date_range' },
     { value: 'MENSUAL', label: 'Mensual', description: 'Cada mes', icon: 'calendar_month' },
+    { value: 'TRIMESTRAL', label: 'Trimestral', description: 'Cada 3 meses', icon: 'event_repeat' },
     { value: 'PERSONALIZADA_DIAS', label: 'Personalizada', description: 'Define intervalo', icon: 'tune' },
 ];
 
@@ -131,6 +133,9 @@ export const RecurrenteFormModal = ({
     const handleFrecuenciaChange = (value) => {
         setFrecuencia(value);
         clearFieldError('frecuencia', 'intervaloDias');
+        if (value !== 'PERSONALIZADA_DIAS') {
+            setIntervaloDias('');
+        }
     };
 
     const handleIntervaloChange = (value) => {
@@ -186,7 +191,28 @@ export const RecurrenteFormModal = ({
             await onSubmit(payload);
             onClose();
         } catch (err) {
-            setFormError(err?.message || 'Error al guardar programacion preventiva.');
+            const backendError = err.response?.data;
+            const fallbackMessage = err.message || 'Error al guardar programacion preventiva.';
+            let displayMessage = fallbackMessage;
+
+            if (backendError?.details && Array.isArray(backendError.details)) {
+                const specificErrors = {};
+                backendError.details.forEach((d) => {
+                    const fieldName = d.path.join('.');
+                    specificErrors[fieldName] = d.message;
+                });
+                setFieldErrors(specificErrors);
+                displayMessage = backendError.details.map(d => d.message).join('. ');
+            }
+
+            setFormError(displayMessage);
+
+            notify.error(
+                <div className="flex flex-col gap-0.5 font-sans">
+                    <span className="font-bold text-xs">No se pudo crear la programación</span>
+                    <span className="text-[11px] leading-normal opacity-90">{displayMessage}</span>
+                </div>
+            );
         }
     };
 
@@ -262,7 +288,7 @@ export const RecurrenteFormModal = ({
 
                         <div className="md:col-span-2">
                             <Label error={!!fieldErrors.frecuencia}>Frecuencia *</Label>
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
                                 {FRECUENCIAS.map((item) => (
                                     <FrequencyOption
                                         key={item.value}
@@ -275,6 +301,12 @@ export const RecurrenteFormModal = ({
                             </div>
                             {fieldErrors.frecuencia && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.frecuencia}</p>}
                         </div>
+
+                        {frecuencia === 'TRIMESTRAL' && (
+                            <div className="rounded-xl border border-sky-100 bg-sky-50/50 px-3 py-2 text-[11px] font-semibold text-sky-700 leading-normal font-sans">
+                                <strong>Trimestral:</strong> Se repite cada 3 meses conservando el día original cuando sea posible.
+                            </div>
+                        )}
 
                         {frecuencia === 'PERSONALIZADA_DIAS' && (
                             <div>

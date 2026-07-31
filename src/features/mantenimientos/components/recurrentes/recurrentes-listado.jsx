@@ -82,10 +82,10 @@ export const RecurrentesListado = ({
             cell: (row) => <RecurrenteStatusBadge activo={row.activo} />
         },
         {
-            header: 'Observación mensual',
+            header: 'Observación',
             accessorKey: 'observacion',
             headerClassName: 'w-[10%] min-w-[150px]',
-            cell: () => <span className="font-semibold text-slate-400">Generación mensual automática</span>
+            cell: () => <span className="font-semibold text-slate-400">-</span>
         },
         {
             header: 'Acciones',

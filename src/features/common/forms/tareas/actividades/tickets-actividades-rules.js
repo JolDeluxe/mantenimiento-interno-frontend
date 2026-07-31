@@ -5,7 +5,7 @@ export const ticketsActividadesRules = {
     defaultTipo: 'PLANEADA',
     clasificacion: null,
     enableMaquinaria: false,
-    enableRecurrencia: false,
+    enableRecurrencia: true,
     enableBatch: true,
     enableModoListaDesktop: true,
     enableModoListaMobile: false,

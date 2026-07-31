@@ -5,6 +5,7 @@ export const frecuenciaLabel = (regla) => {
         SEMANAL: 'Semanal',
         QUINCENAL: 'Quincenal',
         MENSUAL: 'Mensual',
+        TRIMESTRAL: 'Trimestral',
     };
     return labels[regla.frecuencia] || regla.frecuencia || '-';
 };

@@ -279,7 +279,6 @@ export const RecurrenteFormModal = ({
         if (form.responsables.length === 0) errors.responsables = 'Selecciona al menos un responsable.';
         if (!esEdicion && !form.fechaInicio) errors.fechaInicio = 'Selecciona fecha inicial.';
         if (!esEdicion && form.fechaInicio && form.fechaInicio < getMinDateHoy()) errors.fechaInicio = 'No se permiten fechas iniciales anteriores a hoy.';
-        if (form.fechaFin && form.fechaInicio && form.fechaFin < form.fechaInicio) errors.fechaFin = 'La fecha final debe ser posterior o igual a la fecha inicial.';
         if (!esEdicion && !form.frecuencia) errors.frecuencia = 'Selecciona la frecuencia.';
         if (!esEdicion && form.frecuencia === 'PERSONALIZADA' && !form.unidad) errors.unidad = 'Selecciona la unidad de la frecuencia personalizada.';
         if (!esEdicion && (!Number.isInteger(intervalo) || intervalo < 1)) errors.intervalo = 'El intervalo debe ser un entero mayor a 0.';
@@ -314,7 +313,7 @@ export const RecurrenteFormModal = ({
             area: normalizeAreaName(form.area) || form.area,
             prioridad: form.prioridad,
             responsables: form.responsables.map(Number),
-            fechaFin: form.fechaFin || null,
+            fechaFin: null,
             horaInicio: form.usarHorario ? form.horaInicio || null : null,
             horaFin: form.usarHorario ? form.horaFin || null : null,
             tiempoEstimado: form.tiempoEstimado ? Number(form.tiempoEstimado) : null,
@@ -480,11 +479,7 @@ export const RecurrenteFormModal = ({
                                 <TextInput type="date" min={getMinDateHoy()} disabled={esEdicion} value={form.fechaInicio} onChange={(value) => update('fechaInicio', value)} error={!!fieldErrors.fechaInicio} />
                                 {fieldErrors.fechaInicio && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.fechaInicio}</p>}
                             </div>
-                            <div>
-                                <Label error={!!fieldErrors.fechaFin}>Fecha final</Label>
-                                <TextInput type="date" min={form.fechaInicio || getMinDateHoy()} value={form.fechaFin} onChange={(value) => update('fechaFin', value)} error={!!fieldErrors.fechaFin} />
-                                {fieldErrors.fechaFin && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.fechaFin}</p>}
-                            </div>
+
                             <div className="md:col-span-2">
                                 <Label error={!!fieldErrors.frecuencia}>Frecuencia *</Label>
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">

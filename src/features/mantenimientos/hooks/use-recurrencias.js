@@ -24,7 +24,8 @@ export const useRecurrencias = (initialFilters = {}) => {
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20 });
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    const [listError, setListError] = useState(null);
+    const [mutationError, setMutationError] = useState(null);
     const lastFilters = useRef(filters);
 
     const fetchReglas = useCallback(async (nextFilters = lastFilters.current) => {
@@ -33,7 +34,7 @@ export const useRecurrencias = (initialFilters = {}) => {
         );
 
         setLoading(true);
-        setError(null);
+        setListError(null);
         lastFilters.current = cleanFilters;
 
         try {
@@ -44,7 +45,7 @@ export const useRecurrencias = (initialFilters = {}) => {
             return parsed;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al cargar reglas recurrentes.';
-            setError(message);
+            setListError(message);
             throw err;
         } finally {
             setLoading(false);
@@ -61,15 +62,17 @@ export const useRecurrencias = (initialFilters = {}) => {
 
     const createRegla = useCallback(async (payload) => {
         setSubmitting(true);
-        setError(null);
+        setMutationError(null);
         try {
             const res = await createReglaRecurrencia(payload);
             await fetchReglas();
             return res;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al crear programacion preventiva.';
-            setError(message);
-            throw new Error(message);
+            setMutationError(message);
+            const errorObj = new Error(message);
+            errorObj.response = err.response;
+            throw errorObj;
         } finally {
             setSubmitting(false);
         }
@@ -77,15 +80,17 @@ export const useRecurrencias = (initialFilters = {}) => {
 
     const updateRegla = useCallback(async (id, payload) => {
         setSubmitting(true);
-        setError(null);
+        setMutationError(null);
         try {
             const res = await updateReglaRecurrencia(id, payload);
             await fetchReglas();
             return res;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al actualizar programacion preventiva.';
-            setError(message);
-            throw new Error(message);
+            setMutationError(message);
+            const errorObj = new Error(message);
+            errorObj.response = err.response;
+            throw errorObj;
         } finally {
             setSubmitting(false);
         }
@@ -93,7 +98,7 @@ export const useRecurrencias = (initialFilters = {}) => {
 
     const toggleActivo = useCallback(async (regla) => {
         setSubmitting(true);
-        setError(null);
+        setMutationError(null);
         try {
             const res = regla.activo
                 ? await deleteReglaRecurrencia(regla.id)
@@ -102,8 +107,10 @@ export const useRecurrencias = (initialFilters = {}) => {
             return res;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al cambiar estado de regla.';
-            setError(message);
-            throw new Error(message);
+            setMutationError(message);
+            const errorObj = new Error(message);
+            errorObj.response = err.response;
+            throw errorObj;
         } finally {
             setSubmitting(false);
         }
@@ -111,15 +118,17 @@ export const useRecurrencias = (initialFilters = {}) => {
 
     const materializeRegla = useCallback(async (regla) => {
         setSubmitting(true);
-        setError(null);
+        setMutationError(null);
         try {
             const res = await materializeReglaCiclo(regla.id);
             await fetchReglas();
             return res;
         } catch (err) {
             const message = err?.response?.data?.error || err?.response?.data?.message || 'Error al generar mantenimiento.';
-            setError(message);
-            throw new Error(message);
+            setMutationError(message);
+            const errorObj = new Error(message);
+            errorObj.response = err.response;
+            throw errorObj;
         } finally {
             setSubmitting(false);
         }
@@ -131,7 +140,9 @@ export const useRecurrencias = (initialFilters = {}) => {
         pagination,
         loading,
         submitting,
-        error,
+        error: listError,
+        listError,
+        mutationError,
         fetchReglas,
         createRegla,
         updateRegla,

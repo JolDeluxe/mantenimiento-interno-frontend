@@ -5,7 +5,7 @@ export const calendarioActividadesRules = {
     defaultTipo: 'PLANEADA',
     clasificacion: null,
     enableMaquinaria: false,
-    enableRecurrencia: false,
+    enableRecurrencia: true,
     enableBatch: false,
     enableModoListaDesktop: false,
     enableModoListaMobile: false,

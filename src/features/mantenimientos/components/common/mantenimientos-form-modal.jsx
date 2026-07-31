@@ -1205,7 +1205,13 @@ export const MantenimientosFormModal = ({
                                                 <Select
                                                     id="rec-frecuencia"
                                                     value={frecuencia}
-                                                    onChange={(e) => setFrecuencia(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setFrecuencia(val);
+                                                        if (val !== 'PERSONALIZADA_DIAS') {
+                                                            setIntervaloDias('');
+                                                        }
+                                                    }}
                                                     error={!!fe.frecuencia}
                                                     helperText={fe.frecuencia}
                                                     disabled={isSubmitting}
@@ -1213,6 +1219,7 @@ export const MantenimientosFormModal = ({
                                                     <option value="SEMANAL">Semanal</option>
                                                     <option value="QUINCENAL">Quincenal</option>
                                                     <option value="MENSUAL">Mensual</option>
+                                                    <option value="TRIMESTRAL">Trimestral</option>
                                                     <option value="PERSONALIZADA_DIAS">Personalizada por días</option>
                                                 </Select>
                                             </div>
