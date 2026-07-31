@@ -57,7 +57,7 @@ export const MaquinaTable = ({
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
       BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
-      // BAJA_ERP: 'bg-red-50 text-red-700 border-red-200'
+      // BAJA: 'bg-red-50 text-red-700 border-red-200'
     };
     return map[est] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
@@ -195,7 +195,7 @@ export const MaquinaTable = ({
           ? 'REPARACIÓN'
           : row.estado === 'PARO_PRODUCCION'
             ? 'PARO PRODUCCIÓN'
-            : (row.estado === 'BAJA_ERP' ? 'BAJA ERP' : row.estado);
+            : (row.estado === 'BAJA' ? 'BAJA ERP' : row.estado);
         return (
           <span className={`inline-flex items-center justify-center whitespace-nowrap font-black text-[10px] px-2.5 py-0.5 rounded border uppercase ${getEstadoStyle(row.estado)}`}>
             {label}

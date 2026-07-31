@@ -13,7 +13,7 @@ export const MESES_MATRIZ = [
     { key: '12', label: 'Diciembre', short: 'Dic' },
 ];
 
-export const ESTADOS_BAJA = new Set(['BAJA', 'BAJA_ERP', 'DESUSO', 'INACTIVA']);
+export const ESTADOS_BAJA = new Set(['BAJA', 'BAJA', 'DESUSO', 'INACTIVA']);
 
 export const MATRIX_VIEW_MODES = [
     { value: 'mes', label: 'Mes' },

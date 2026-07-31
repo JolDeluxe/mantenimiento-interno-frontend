@@ -72,7 +72,7 @@ const getEstadoMaquinaStyle = (estado) => {
 const formatEstadoMaquina = (estado) => {
     if (estado === 'PARO_PRODUCCION') return 'PARO PRODUCCIÓN';
     if (estado === 'EN_REPARACION') return 'EN REPARACIÓN';
-    if (estado === 'BAJA_ERP') return 'BAJA ERP';
+    if (estado === 'BAJA') return 'BAJA ERP';
     return estado || 'Sin estado';
 };
 

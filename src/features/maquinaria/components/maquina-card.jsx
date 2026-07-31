@@ -22,7 +22,7 @@ export const MaquinaCard = ({
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
       BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
-      BAJA_ERP: 'bg-red-50 text-red-700 border-red-200'
+      BAJA: 'bg-red-50 text-red-700 border-red-200'
     };
     return map[est] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
@@ -31,7 +31,7 @@ export const MaquinaCard = ({
     ? 'REPARACIÓN'
     : maquina.estado === 'PARO_PRODUCCION'
       ? 'PARO PRODUCCIÓN'
-      : (maquina.estado === 'BAJA_ERP' ? 'BAJA ERP' : maquina.estado);
+      : (maquina.estado === 'BAJA' ? 'BAJA ERP' : maquina.estado);
 
   return (
     <div

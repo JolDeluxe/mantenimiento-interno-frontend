@@ -1,4 +1,4 @@
-const ESTADOS_MAQUINA_NO_OPERATIVA = new Set(['BAJA', 'BAJA_ERP', 'DESUSO', 'INACTIVA']);
+const ESTADOS_MAQUINA_NO_OPERATIVA = new Set(['BAJA', 'INACTIVA']);
 
 export const isMaquinaOperativaParaMantenimiento = (maquina) => {
     const estado = String(maquina?.estado || '').trim().toUpperCase();

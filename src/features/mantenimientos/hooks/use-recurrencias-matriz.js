@@ -7,7 +7,7 @@ import {
     quitarAjusteOcurrencia,
 } from '../api/recurrencias-api';
 
-const ESTADOS_BAJA = new Set(['BAJA', 'BAJA_ERP', 'DESUSO', 'INACTIVA']);
+const ESTADOS_BAJA = new Set(['BAJA', 'BAJA', 'DESUSO', 'INACTIVA']);
 
 const normalizeMatrizResponse = (res) => {
     const root = res?.data && !Array.isArray(res.data) ? res.data : res;
