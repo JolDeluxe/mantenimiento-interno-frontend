@@ -50,11 +50,14 @@ export const UsersMobile = ({
     const hasContent = !loading && users.length > 0;
     const hasPaginator = hasContent && totalPages > 1;
 
-    const handleStatusConfirm = async () => {
+    const handleStatusConfirm = async (payload) => {
         if (!statusTarget) return;
-        const nuevoEstado = statusTarget.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-        await onToggleStatus(statusTarget.id, nuevoEstado);
-        setStatusTarget(null);
+        try {
+            await onToggleStatus(statusTarget.id, payload);
+            setStatusTarget(null);
+        } catch (error) {
+            throw error;
+        }
     };
 
     const fabAddBottom = hasPaginator ? '104px' : '84px';
@@ -207,7 +210,7 @@ export const UsersMobile = ({
                 onClose={() => setStatusTarget(null)}
                 onConfirm={handleStatusConfirm}
                 usuario={statusTarget}
-                submitting={submitting}
+                isSubmitting={submitting}
             />
 
             <UserDetailModal

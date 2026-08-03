@@ -15,8 +15,11 @@ export const updateUser = (id, data) =>
       headers: { 'Content-Type': 'multipart/form-data' }
   });
 
-export const updateUserStatus = (id, estado) =>
-  api.patch(`/api/usuarios/${id}`, { estado }).then((r) => r.data);
+export const updateUserStatus = (id, payload) =>
+  api.patch(`/api/usuarios/${id}`, payload).then((r) => r.data);
+
+export const getBajaImpacto = (id) =>
+  api.get(`/api/usuarios/${id}/baja-impacto`);
 
 export const getDepartamentos = () =>
   api.get('/api/departamentos', { params: { limit: 1000 } });

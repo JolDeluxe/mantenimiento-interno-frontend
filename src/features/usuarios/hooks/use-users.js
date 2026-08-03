@@ -79,9 +79,9 @@ export const useUsers = () => {
     finally { setSubmitting(false); }
   }, []);
 
-  const handleToggleStatus = useCallback(async (id, estado) => {
+  const handleToggleStatus = useCallback(async (id, payload) => {
     setSubmitting(true);
-    try { return await updateUserStatus(id, estado); }
+    try { return await updateUserStatus(id, payload); }
     finally { setSubmitting(false); }
   }, []);
 

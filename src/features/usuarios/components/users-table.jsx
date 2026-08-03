@@ -43,20 +43,18 @@ export const UsersTable = ({
 
   const esSuperAdmin = currentUser?.rol === 'SUPER_ADMIN';
 
-  const handleConfirmarEstatus = async () => {
+  const handleConfirmarEstatus = async (payload) => {
     if (!usuarioAConfirmar) return;
     setIsConfirming(true);
 
-    const currentStatus = usuarioAConfirmar.estado || usuarioAConfirmar.estatus;
-    const nuevoEstatus = currentStatus === "ACTIVO" ? "INACTIVO" : "ACTIVO";
-
     try {
-      await updateUserStatus(usuarioAConfirmar.id, nuevoEstatus);
+      await updateUserStatus(usuarioAConfirmar.id, payload);
       toast.success("Estatus actualizado exitosamente.");
       onRecargar?.();
       setOpenModalConfirm(false);
     } catch (error) {
       toast.error(error.response?.data?.error || "Error al procesar la solicitud.");
+      throw error;
     } finally {
       setIsConfirming(false);
     }
