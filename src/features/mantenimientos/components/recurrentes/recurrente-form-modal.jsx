@@ -163,8 +163,8 @@ export const RecurrenteFormModal = ({
         if (!maquinaId) errors.maquinaId = 'Selecciona una maquina.';
         if (!tecnicoResponsableId) errors.tecnicoResponsableId = 'Selecciona responsable tecnico.';
         if (!frecuencia) errors.frecuencia = 'Selecciona frecuencia.';
-        if (!proximaFechaEjecucion) errors.proximaFechaEjecucion = 'Selecciona fecha inicial programada.';
-        if (proximaFechaEjecucion && proximaFechaEjecucion < getMinDateHoy()) errors.proximaFechaEjecucion = 'No se permiten fechas anteriores a hoy.';
+        if (!regla && !proximaFechaEjecucion) errors.proximaFechaEjecucion = 'Selecciona fecha inicial programada.';
+        if (!regla && proximaFechaEjecucion && proximaFechaEjecucion < getMinDateHoy()) errors.proximaFechaEjecucion = 'No se permiten fechas anteriores a hoy.';
         if (frecuencia === 'PERSONALIZADA_DIAS' && (!Number.isInteger(intervalo) || intervalo <= 0)) {
             errors.intervaloDias = 'Indica intervalo de dias mayor a 0.';
         }
@@ -327,9 +327,10 @@ export const RecurrenteFormModal = ({
                             <input
                                 type="date"
                                 min={getMinDateHoy()}
+                                disabled={loadingCatalogos || submitting || !!regla}
                                 value={proximaFechaEjecucion}
                                 onChange={(event) => handleFechaChange(event.target.value)}
-                                className={cn('w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none', fieldErrors.proximaFechaEjecucion ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : 'border-slate-200 focus:border-marca-primario')}
+                                className={cn('w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none disabled:bg-slate-50 disabled:text-slate-400', fieldErrors.proximaFechaEjecucion ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : 'border-slate-200 focus:border-marca-primario')}
                             />
                             {fieldErrors.proximaFechaEjecucion && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.proximaFechaEjecucion}</p>}
                         </div>

@@ -90,10 +90,7 @@ const INITIAL_FORM = {
     frecuencia: 'DIARIA',
     unidad: 'DIA',
     intervalo: '1',
-    horaInicio: '',
-    horaFin: '',
     tiempoEstimado: '',
-    usarHorario: false,
     responsables: [],
 };
 
@@ -104,22 +101,8 @@ const isSundayInputDate = (value) => {
     return new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 0;
 };
 
-const getDurationLabel = (inicio, fin) => {
-    if (!inicio || !fin) return null;
-    const [h1, m1] = inicio.split(':').map(Number);
-    const [h2, m2] = fin.split(':').map(Number);
-    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-    if (diff <= 0) return null;
-    const hours = Math.floor(diff / 60);
-    const minutes = diff % 60;
-    if (hours > 0) return `${hours} h${minutes > 0 ? ` ${minutes} min` : ''}`;
-    return `${diff} min`;
-};
-
 const buildFormFromRule = (regla) => {
     if (!regla) return INITIAL_FORM;
-    const horaInicio = regla.horaInicio || minutesToHHmm(regla.horaInicioMinutos);
-    const horaFin = regla.horaFin || minutesToHHmm(regla.horaFinMinutos);
     return {
         titulo: regla.titulo || '',
         descripcion: regla.descripcion || '',
@@ -131,10 +114,7 @@ const buildFormFromRule = (regla) => {
         frecuencia: getFrecuenciaFromRule(regla),
         unidad: regla.unidad || 'DIA',
         intervalo: String(regla.intervalo || 1),
-        horaInicio,
-        horaFin,
         tiempoEstimado: regla.tiempoEstimado ? String(regla.tiempoEstimado) : '',
-        usarHorario: Boolean(horaInicio && horaFin),
         responsables: (regla.responsables || []).map((user) => Number(user.id)).filter(Boolean),
     };
 };
@@ -218,24 +198,11 @@ export const RecurrenteFormModal = ({
     };
     const update = (key, value) => {
         setForm((prev) => ({ ...prev, [key]: value }));
-        if (key === 'horaInicio' || key === 'horaFin') {
-            clearFieldError('horaInicio', 'horaFin');
-            return;
-        }
         if (key === 'fechaInicio' || key === 'fechaFin') {
             clearFieldError('fechaInicio', 'fechaFin');
             return;
         }
         clearFieldError(key);
-    };
-    const updateUsarHorario = (value) => {
-        setForm((prev) => ({
-            ...prev,
-            usarHorario: value,
-            horaInicio: value ? prev.horaInicio : '',
-            horaFin: value ? prev.horaFin : '',
-        }));
-        clearFieldError('tiempoEstimado', 'horaInicio', 'horaFin');
     };
     const updateFrecuencia = (value) => {
         setForm((prev) => ({
@@ -265,9 +232,6 @@ export const RecurrenteFormModal = ({
         const descripcion = form.descripcion.trim();
         const intervalo = Number(form.intervalo);
         const tiempoEstimado = Number(form.tiempoEstimado);
-        const usaHorario = Boolean(form.usarHorario);
-        const hasHoraInicio = usaHorario && Boolean(form.horaInicio);
-        const hasHoraFin = usaHorario && Boolean(form.horaFin);
         const errors = {};
 
         if (titulo.length < 3) errors.titulo = 'El titulo debe tener al menos 3 caracteres.';
@@ -288,10 +252,9 @@ export const RecurrenteFormModal = ({
                 errors.fechaInicio = 'Selecciona otra fecha inicial para esta frecuencia.';
             }
         }
-        if (usaHorario && hasHoraInicio !== hasHoraFin) errors.horaInicio = 'Indica hora inicial y final, o desactiva el horario especifico.';
-        if (hasHoraInicio && hasHoraFin && form.horaFin <= form.horaInicio) errors.horaFin = 'La hora final debe ser posterior a la hora inicial.';
-        if (!usaHorario && (!Number.isFinite(tiempoEstimado) || tiempoEstimado <= 0)) errors.tiempoEstimado = 'Indica una duracion estimada positiva.';
-        if (form.tiempoEstimado && (!Number.isFinite(tiempoEstimado) || tiempoEstimado <= 0)) errors.tiempoEstimado = 'La duracion debe ser positiva.';
+        if (!form.tiempoEstimado || !Number.isFinite(tiempoEstimado) || tiempoEstimado <= 0) {
+            errors.tiempoEstimado = 'Indica una duracion estimada positiva.';
+        }
 
         return errors;
     };
@@ -314,8 +277,8 @@ export const RecurrenteFormModal = ({
             prioridad: form.prioridad,
             responsables: form.responsables.map(Number),
             fechaFin: null,
-            horaInicio: form.usarHorario ? form.horaInicio || null : null,
-            horaFin: form.usarHorario ? form.horaFin || null : null,
+            horaInicio: null,
+            horaFin: null,
             tiempoEstimado: form.tiempoEstimado ? Number(form.tiempoEstimado) : null,
         };
 
@@ -534,87 +497,18 @@ export const RecurrenteFormModal = ({
                         </h4>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="md:col-span-2">
-                                <div className="mb-1 flex min-h-[24px] flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                    <Label error={!!fieldErrors.tiempoEstimado || !!fieldErrors.horaInicio || !!fieldErrors.horaFin}>
-                                        {form.usarHorario ? 'Rango horario *' : 'Tiempo estimado *'}
-                                    </Label>
-
-                                    <div className="flex items-center gap-2">
-                                        <span className="inline-flex shrink-0 select-none items-center gap-0.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                                            <Icon name="schedule" style={{ fontSize: '8px' }} className="shrink-0" /> Rango Horario
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => updateUsarHorario(!form.usarHorario)}
-                                            disabled={submitting}
-                                            className={cn(
-                                                'relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer rounded-full border border-slate-300 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-1 focus:ring-marca-secundario/30 disabled:opacity-60',
-                                                form.usarHorario ? 'border-marca-primario bg-marca-primario' : 'bg-slate-200'
-                                            )}
-                                        >
-                                            <span
-                                                className={cn(
-                                                    'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
-                                                    form.usarHorario ? 'translate-x-3.5' : 'translate-x-0.5'
-                                                )}
-                                            />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {form.usarHorario ? (
-                                    <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Inicio</span>
-                                                <input
-                                                    type="time"
-                                                    value={form.horaInicio}
-                                                    onChange={(event) => update('horaInicio', event.target.value)}
-                                                    disabled={submitting}
-                                                    step="300"
-                                                    className={cn(
-                                                        'w-full rounded-sm border bg-white px-3 py-[7px] text-sm font-semibold text-slate-700 outline-none transition-colors focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100',
-                                                        fieldErrors.horaInicio ? 'border-rose-500 focus:ring-rose-200' : 'border-slate-300 focus:ring-marca-secundario/30'
-                                                    )}
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fin</span>
-                                                <input
-                                                    type="time"
-                                                    value={form.horaFin}
-                                                    onChange={(event) => update('horaFin', event.target.value)}
-                                                    disabled={submitting}
-                                                    step="300"
-                                                    className={cn(
-                                                        'w-full rounded-sm border bg-white px-3 py-[7px] text-sm font-semibold text-slate-700 outline-none transition-colors focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100',
-                                                        fieldErrors.horaFin ? 'border-rose-500 focus:ring-rose-200' : 'border-slate-300 focus:ring-marca-secundario/30'
-                                                    )}
-                                                />
-                                            </div>
-                                        </div>
-                                        {(() => {
-                                            const label = getDurationLabel(form.horaInicio, form.horaFin);
-                                            if (!label) return null;
-                                            return (
-                                                <p className="mt-0.5 flex items-center gap-1 text-[11px] font-bold text-slate-400">
-                                                    <Icon name="timer" size="xs" /> Duracion: {label}
-                                                </p>
-                                            );
-                                        })()}
-                                    </div>
-                                ) : (
-                                    <DurationPicker
-                                        valueMins={Number(form.tiempoEstimado) || 0}
-                                        onChange={(value) => update('tiempoEstimado', String(value || ''))}
-                                        disabled={submitting}
-                                        error={!!fieldErrors.tiempoEstimado}
-                                    />
-                                )}
-                                {(fieldErrors.tiempoEstimado || fieldErrors.horaInicio || fieldErrors.horaFin) && (
+                                <Label error={!!fieldErrors.tiempoEstimado}>
+                                    Tiempo estimado *
+                                </Label>
+                                <DurationPicker
+                                    valueMins={Number(form.tiempoEstimado) || 0}
+                                    onChange={(value) => update('tiempoEstimado', String(value || ''))}
+                                    disabled={submitting}
+                                    error={!!fieldErrors.tiempoEstimado}
+                                />
+                                {fieldErrors.tiempoEstimado && (
                                     <p className="mt-1 text-[10px] font-bold text-rose-600">
-                                        {fieldErrors.tiempoEstimado || fieldErrors.horaInicio || fieldErrors.horaFin}
+                                        {fieldErrors.tiempoEstimado}
                                     </p>
                                 )}
                             </div>
