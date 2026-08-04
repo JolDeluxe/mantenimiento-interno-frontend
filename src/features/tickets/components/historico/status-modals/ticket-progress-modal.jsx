@@ -7,6 +7,21 @@ import { isoToDateInput, fechaInputToISOLocal, localMXTimeToISO, isoToLocalMXTim
 import { RefaccionesSection } from '@/features/common/components/status-modals/refacciones-section';
 import { hasValidRefacciones, sanitizeRefacciones } from '@/features/common/components/status-modals/refacciones-utils';
 
+const isoToDatetimeLocal = (iso) => {
+    if (!iso) return '';
+    const datePart = isoToDateInput(iso);
+    const timePart = isoToLocalMXTime(iso);
+    if (!datePart || !timePart) return '';
+    return `${datePart}T${timePart}`;
+};
+
+const datetimeLocalToISO = (datetimeLocalStr) => {
+    if (!datetimeLocalStr) return null;
+    const parts = datetimeLocalStr.split('T');
+    if (parts.length !== 2) return null;
+    return localMXTimeToISO(parts[0], parts[1]);
+};
+
 // ── Constantes ─────────────────────────────────────────────────────────────
 const MIN_TECNICO = 5;
 const MAX_EXTRA_ESTIMADO = 60;
@@ -342,6 +357,14 @@ export const TicketProgressModal = ({
     const [refacciones, setRefacciones] = useState([]);
     const [maquinaOperativaAlResolver, setMaquinaOperativaAlResolver] = useState(false);
 
+    // BI MAQUINARIA FASE 1: Estados del formulario técnico
+    const [decisionDiagnostico, setDecisionDiagnostico] = useState(''); // '', 'CONFIRMAR_FALLA', 'NO_ERA_FALLA'
+    const [impactoConfirmado, setImpactoConfirmado] = useState('');     // '', 'SIN_PARO', 'PARO_PARCIAL', 'PARO_TOTAL'
+    const [fechaFallaConfirmada, setFechaFallaConfirmada] = useState('');
+    const [inicioParo, setInicioParo] = useState('');
+    const [porcentajeAfectacion, setPorcentajeAfectacion] = useState('');
+    const [maquinaOperativa, setMaquinaOperativa] = useState(false);
+
     useEffect(() => {
         return () => {
             archivos.forEach((item) => URL.revokeObjectURL(item.preview));
@@ -365,6 +388,14 @@ export const TicketProgressModal = ({
                 setUsaRefacciones(false);
                 setRefacciones([]);
                 setMaquinaOperativaAlResolver(false);
+
+                // BI MAQUINARIA FASE 1: Reinicios sin respuestas automáticas
+                setDecisionDiagnostico('');
+                setImpactoConfirmado('');
+                setFechaFallaConfirmada('');
+                setInicioParo('');
+                setPorcentajeAfectacion('');
+                setMaquinaOperativa(false);
             });
         }
     }, [isOpen]);
@@ -439,6 +470,8 @@ export const TicketProgressModal = ({
         return fd;
     };
 
+    const esCorrectivoDeMaquina = ticket?.clasificacion === 'CORRECTIVO' && ticket?.maquinaId !== null;
+
     const buildFdResolver = () => {
         const fd = new FormData();
         fd.append('estado', 'RESUELTO');
@@ -448,8 +481,23 @@ export const TicketProgressModal = ({
         if (usaRefacciones) {
             fd.append('refacciones', JSON.stringify(sanitizeRefacciones(refacciones)));
         }
-        if (ticket?.paroProduccion && ticket?.maquinaId) {
-            fd.append('maquinaOperativaAlResolver', maquinaOperativaAlResolver ? 'true' : 'false');
+
+        if (esCorrectivoDeMaquina) {
+            // BI MAQUINARIA FASE 1: serializar datos de resolución de falla
+            const esDescarte = decisionDiagnostico === 'NO_ERA_FALLA';
+            const fr = {
+                descartar: esDescarte,
+                impactoConfirmado: esDescarte ? undefined : (impactoConfirmado || undefined),
+                fechaFallaConfirmada: esDescarte ? undefined : (fechaFallaConfirmada ? datetimeLocalToISO(fechaFallaConfirmada) : undefined),
+                inicioParo: (esDescarte || impactoConfirmado === 'SIN_PARO') ? undefined : (inicioParo ? datetimeLocalToISO(inicioParo) : undefined),
+                porcentajeAfectacion: (esDescarte || impactoConfirmado !== 'PARO_PARCIAL' || !porcentajeAfectacion) ? null : Number(porcentajeAfectacion)
+            };
+            fd.append('fallaResolucion', JSON.stringify(fr));
+            fd.append('maquinaOperativaAlResolver', (!esDescarte && maquinaOperativa) ? 'true' : 'false');
+        } else {
+            if (ticket?.paroProduccion && ticket?.maquinaId) {
+                fd.append('maquinaOperativaAlResolver', maquinaOperativaAlResolver ? 'true' : 'false');
+            }
         }
 
         // Fix: Construcción segura del payload para Zod
@@ -492,17 +540,26 @@ export const TicketProgressModal = ({
         tiempoDisplay = formatMinsFull(tiempoManualMins);
     }
 
-    // Se eliminó la variable isInvalidRange que causaba el ReferenceError 
-    // y se dejó la lógica robusta con `tiempoManualMins`.
-
     const requiereConfirmacionOperativa = Boolean(ticket?.paroProduccion && ticket?.maquinaId);
+
+    // BI MAQUINARIA FASE 1: Deshabilitar si faltan datos obligatorios en correctivos (Formulario sin pre-selección)
+    const esConfirmado = decisionDiagnostico === 'CONFIRMAR_FALLA';
+    const isFase1Invalido = esCorrectivoDeMaquina && (
+        !decisionDiagnostico ||
+        (esConfirmado && !fechaFallaConfirmada) ||
+        (esConfirmado && !maquinaOperativa) ||
+        (esConfirmado && (!impactoConfirmado || impactoConfirmado === 'NO_CONFIRMADO')) ||
+        (esConfirmado && (impactoConfirmado === 'PARO_PARCIAL' || impactoConfirmado === 'PARO_TOTAL') && !inicioParo) ||
+        (esConfirmado && impactoConfirmado === 'PARO_PARCIAL' && porcentajeAfectacion !== '' && (Number(porcentajeAfectacion) < 1 || Number(porcentajeAfectacion) > 99))
+    );
 
     const resolverDisabled =
         timePhase === 'preguntando' ||
         ((timePhase === 'manual' || timePhase === 'atrasada_fecha') && (tiempoManualMins === 0 || tiempoManualMins > MAX_DURATION_MINS)) ||
         (timePhase === 'confirmado' && (elapsedMins === 0 || elapsedMins > MAX_DURATION_MINS)) ||
         (timePhase === 'atrasada_fecha' && !isFechaFinValida) ||
-        (requiereConfirmacionOperativa && !maquinaOperativaAlResolver) ||
+        (!esCorrectivoDeMaquina && requiereConfirmacionOperativa && !maquinaOperativaAlResolver) ||
+        isFase1Invalido ||
         (ticket?.maquinaId !== null && ticket?.maquinaId !== undefined && !hasValidRefacciones(usaRefacciones, refacciones));
 
     const isAtrasada = evaluacion?.tipo === 'alto';
@@ -821,13 +878,154 @@ export const TicketProgressModal = ({
                                         onEliminar={handleEliminar}
                                     />
 
-                                    {requiereConfirmacionOperativa && (
+                                    {esCorrectivoDeMaquina && (
+                                        <div className="flex flex-col gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl animate-in fade-in duration-200">
+                                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                                                <Icon name="engineering" size="sm" className="text-marca-primario" />
+                                                <p className="text-sm font-bold text-slate-800">Diagnóstico BI de Maquinaria</p>
+                                            </div>
+
+                                            {/* 1. Diagnóstico de la falla */}
+                                            <div className="flex flex-col gap-2">
+                                                <Label>¿Se confirmó una avería o falla real en el equipo? *</Label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDecisionDiagnostico('CONFIRMAR_FALLA');
+                                                            // Inicializar sugerencia de fechaFallaConfirmada e inicioParo si están vacíos
+                                                            if (!fechaFallaConfirmada && ticket) {
+                                                                setFechaFallaConfirmada(isoToDatetimeLocal(ticket.fechaParoProduccion || ticket.createdAt));
+                                                            }
+                                                            if (!inicioParo && ticket && ticket.fechaParoProduccion) {
+                                                                setInicioParo(isoToDatetimeLocal(ticket.fechaParoProduccion));
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "py-2 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer",
+                                                            decisionDiagnostico === 'CONFIRMAR_FALLA'
+                                                                ? "bg-emerald-600 border-emerald-600 text-white shadow-sm"
+                                                                : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        Sí, falla confirmada
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDecisionDiagnostico('NO_ERA_FALLA')}
+                                                        className={cn(
+                                                            "py-2 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer",
+                                                            decisionDiagnostico === 'NO_ERA_FALLA'
+                                                                ? "bg-red-600 border-red-600 text-white shadow-sm"
+                                                                : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                                                        )}
+                                                    >
+                                                        No, descartar (Falsa alarma)
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {decisionDiagnostico === 'CONFIRMAR_FALLA' && (
+                                                <div className="flex flex-col gap-4 mt-2 animate-in fade-in duration-200">
+                                                    {/* Fecha y hora confirmada de la falla */}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label htmlFor="fecha-falla-confirmada">Fecha y hora confirmada de la falla *</Label>
+                                                        <input
+                                                            id="fecha-falla-confirmada"
+                                                            type="datetime-local"
+                                                            value={fechaFallaConfirmada}
+                                                            onChange={(e) => setFechaFallaConfirmada(e.target.value)}
+                                                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
+                                                        />
+                                                        <span className="text-[10px] text-slate-400">
+                                                            Especifica cuándo comenzó o se detectó la falla en el equipo (alimenta el MTTR y MTBF).
+                                                        </span>
+                                                    </div>
+
+                                                    {/* 2. Máquina funcional y probada */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setMaquinaOperativa(prev => !prev)}
+                                                        className={cn(
+                                                            "flex items-start gap-3 p-3 rounded-lg border text-left transition-colors cursor-pointer",
+                                                            maquinaOperativa
+                                                                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                                                : "bg-red-50 border-red-200 text-red-800"
+                                                        )}
+                                                    >
+                                                        <span className={cn(
+                                                            "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0",
+                                                            maquinaOperativa ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-red-300 text-transparent"
+                                                        )}>
+                                                            <Icon name="check" size="xs" />
+                                                        </span>
+                                                        <span className="flex flex-col gap-0.5">
+                                                            <span className="text-xs font-bold">Máquina funcional y probada *</span>
+                                                            <span className="text-[10px] leading-tight text-slate-500">
+                                                                Confirmar que se realizaron pruebas y la máquina quedó operativa.
+                                                            </span>
+                                                        </span>
+                                                    </button>
+
+                                                    {/* 3. Impacto en producción */}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label htmlFor="impacto-confirmado">Impacto en producción *</Label>
+                                                        <Select
+                                                            id="impacto-confirmado"
+                                                            value={impactoConfirmado}
+                                                            onChange={(e) => setImpactoConfirmado(e.target.value)}
+                                                        >
+                                                            <option value="" disabled hidden>Selecciona el impacto...</option>
+                                                            <option value="SIN_PARO">SIN PARO (Falla funcional menor)</option>
+                                                            <option value="PARO_PARCIAL">PARO PARCIAL (Detención o merma parcial)</option>
+                                                            <option value="PARO_TOTAL">PARO TOTAL (Línea o equipo detenido 100%)</option>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* 4. Campos dinámicos de paro */}
+                                                    {(impactoConfirmado === 'PARO_PARCIAL' || impactoConfirmado === 'PARO_TOTAL') && (
+                                                        <div className="flex flex-col gap-3 p-3 bg-white border border-slate-200 rounded-lg animate-in slide-in-from-top-2 duration-200">
+                                                            <div className="flex flex-col gap-1.5">
+                                                                <Label htmlFor="inicio-paro">Inicio real del paro físico *</Label>
+                                                                <input
+                                                                    id="inicio-paro"
+                                                                    type="datetime-local"
+                                                                    value={inicioParo}
+                                                                    onChange={(e) => setInicioParo(e.target.value)}
+                                                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
+                                                                />
+                                                            </div>
+
+                                                            {impactoConfirmado === 'PARO_PARCIAL' && (
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <Label htmlFor="porcentaje-afectacion">Porcentaje de afectación (opcional)</Label>
+                                                                    <input
+                                                                        id="porcentaje-afectacion"
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max="99"
+                                                                        placeholder="Ej: 50"
+                                                                        value={porcentajeAfectacion}
+                                                                        onChange={(e) => setPorcentajeAfectacion(e.target.value)}
+                                                                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30"
+                                                                    />
+                                                                    <span className="text-[10px] text-slate-400">Dejar en blanco si no se dispone de la estimación.</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {!esCorrectivoDeMaquina && requiereConfirmacionOperativa && (
                                         <button
                                             type="button"
                                             onClick={() => setMaquinaOperativaAlResolver(prev => !prev)}
                                             disabled={isSubmitting}
                                             className={cn(
-                                                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors disabled:opacity-60",
+                                                "flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors disabled:opacity-60 cursor-pointer",
                                                 maquinaOperativaAlResolver
                                                     ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                                                     : "bg-red-50 border-red-200 text-red-800"
