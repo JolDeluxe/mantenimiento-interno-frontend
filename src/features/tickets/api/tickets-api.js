@@ -2,6 +2,10 @@
 import api from '@/lib/axios';
 import { QUEUE_OPERATIONS, sendOrQueueMutation } from '@/lib/offline-mutation-queue';
 
+const notifyBIInvalidated = () => {
+    window.dispatchEvent(new Event('bi-maquinaria-invalidada'));
+};
+
 // ── Listado y detalle ──────────────────────────────────────────────────────
 
 export const getTickets = (params = {}) =>
@@ -32,10 +36,13 @@ export const updateTicket = (id, data) =>
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-export const changeTicketStatus = (id, data) =>
-    api.patch(`/api/tickets/${id}/status`, data, {
+export const changeTicketStatus = async (id, data) => {
+    const response = await api.patch(`/api/tickets/${id}/status`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
+    notifyBIInvalidated();
+    return response;
+};
 
 export const createTicketsBatch = (tareas) =>
     sendOrQueueMutation({

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Icon, GlassPaginationPill, GlassFab, ScrollToTopButton } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { MobileMaquinaFilterBar, MaquinaCriticidadModal, MaquinaDetailModal, MaquinaCard } from '../components';
+import { MaquinariaBIView } from '../components/maquinaria-bi-view';
+import { MaquinariaViewTabs } from '../components/maquinaria-view-tabs';
 import { hardReload } from '@/utils/hard-reload';
 import { cn } from '@/utils/cn';
 
@@ -26,7 +28,14 @@ export default function MaquinariaMobile({
   onFilterChange,
   onClearFilters,
   updateMaquina,
-  getKpis
+  getKpis,
+  biSummaryById = {},
+  biSummaryLoading = false,
+  biSummaryError = '',
+  activeView = 'MAQUINAS',
+  onViewChange,
+  bi,
+  onBIDrilldown
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -52,6 +61,28 @@ export default function MaquinariaMobile({
   const baseBottom = hasPaginator ? 104 : 84;
   const fabRefreshBottom = `${baseBottom}px`;
 
+  if (activeView !== 'MAQUINAS') {
+    return (
+      <div className="flex flex-col gap-4 px-1 pb-8 animate-in fade-in duration-200">
+        <div className="px-1 mb-1">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight fuente-titulos uppercase">
+            Catálogo de Maquinaria
+          </h1>
+          <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
+            Indicadores internos por equipo, familia y ubicación.
+          </p>
+        </div>
+        <MaquinariaViewTabs value={activeView} onChange={onViewChange} mobile />
+        <MaquinariaBIView
+          bi={bi}
+          agrupacion={activeView}
+          mobile
+          onDrilldown={onBIDrilldown}
+        />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className={cn("flex flex-col gap-4 px-1 animate-in fade-in duration-200", hasPaginator ? "pb-36" : "pb-28")}>
@@ -66,6 +97,8 @@ export default function MaquinariaMobile({
           </p>
         </div>
 
+        <MaquinariaViewTabs value={activeView} onChange={onViewChange} mobile />
+
         {/* Barra de Filtros In-place (Mobile) */}
         <MobileMaquinaFilterBar
           filters={filters}
@@ -75,6 +108,11 @@ export default function MaquinariaMobile({
         />
 
         {/* Lista de Tarjetas */}
+        {biSummaryError && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+            {biSummaryError}
+          </div>
+        )}
         <div className="flex flex-col gap-3 pt-1">
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
@@ -85,6 +123,8 @@ export default function MaquinariaMobile({
                 maquina={m}
                 onViewDetail={handleOpenDetail}
                 onEdit={handleOpenEdit}
+                biSummary={biSummaryById[String(m.id)]}
+                biSummaryLoading={biSummaryLoading}
               />
             ))
           ) : (

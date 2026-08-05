@@ -1,5 +1,6 @@
 import { Label } from '@/components/form/z_index';
 import { Icon, SearchableSelect } from '@/components/ui/z_index';
+import { MaquinaBIContext } from './MaquinaBIContext';
 
 /**
  * MaquinaSelectField — campo visual/controlado del selector de maquinaria.
@@ -27,6 +28,7 @@ export function MaquinaSelectField({
   disabled,
   validating,
   maquinaInfo,
+  showBIContext = true,
 }) {
   return (
     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -63,6 +65,9 @@ export function MaquinaSelectField({
             )}
           </div>
         </div>
+      )}
+      {showBIContext && maquinaInfo?.id && (
+        <MaquinaBIContext maquinaId={maquinaInfo.id} />
       )}
     </div>
   );

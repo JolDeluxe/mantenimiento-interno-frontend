@@ -41,6 +41,7 @@ import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
 import DashboardEquipo from '@/features/dashboard/pages/dashboard-equipo';
 import DashboardArea from '@/features/dashboard/pages/dashboard-area';
 import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
+import DashboardMaquinaria from '@/features/dashboard/pages/dashboard-maquinaria';
 
 import CalendarioPage from '@/features/calendario/pages/calendario-page';
 import ConfiguracionAutonomosPage from '@/features/z_super-admin/config/pages/configuracion-autonomos-page';
@@ -69,6 +70,7 @@ const ROLES = {
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
+  reportesMaquinaria: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-maquinaria')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
   configuracion: MODULES_CONFIG.find(m => m.id === 'configuracion')?.allowedRoles || ['SUPER_ADMIN'],
 };
@@ -205,6 +207,9 @@ export const AppRoutes = () => {
               </Route>
               <Route element={<RoleGuard allowedRoles={ROLES.reportesCliente} />}>
                 <Route path="cliente" element={<DashboardReportes />} />
+              </Route>
+              <Route element={<RoleGuard allowedRoles={ROLES.reportesMaquinaria} />}>
+                <Route path="maquinaria" element={<DashboardMaquinaria />} />
               </Route>
             </Route>
           </Route>

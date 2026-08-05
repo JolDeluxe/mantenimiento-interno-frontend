@@ -128,6 +128,7 @@ export const DashboardLayout = () => {
       if (data?.module === "tickets") {
         triggerSync();
         window.dispatchEvent(new Event('refrescar-conteos'));
+        window.dispatchEvent(new Event('bi-maquinaria-invalidada'));
       }
     };
 

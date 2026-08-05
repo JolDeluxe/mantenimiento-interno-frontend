@@ -21,6 +21,8 @@ const obtenerTiempoManual = (nota) => {
   return match ? match[1] : null;
 };
 
+const formatCount = (value) => (value === null || value === undefined ? '—' : value);
+
 const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = '' }) => (
   <div className="flex gap-2.5 items-start">
     <div className="mt-0.5 text-slate-400 shrink-0">
@@ -29,7 +31,7 @@ const DataRow = ({ icon, label, value, fallback = 'No registrado', colorClass = 
     <div className="flex flex-col min-w-0">
       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">{label}</span>
       <span className={`text-xs font-semibold text-slate-800 wrap-break-word ${colorClass}`}>
-        {value || <span className="text-slate-400 italic font-normal">{fallback}</span>}
+        {value !== null && value !== undefined && value !== '' ? value : <span className="text-slate-400 italic font-normal">{fallback}</span>}
       </span>
     </div>
   </div>
@@ -127,7 +129,7 @@ export const MaquinaDetailModal = ({
   if (!maquina) return null;
 
   const formatMTTR = (min) => {
-    if (min === null || min === undefined) return 'Sin datos';
+    if (min === null || min === undefined) return '—';
     if (min < 60) return `${min} minutos`;
     const h = Math.floor(min / 60);
     const m = min % 60;
@@ -135,8 +137,15 @@ export const MaquinaDetailModal = ({
   };
 
   const formatMTBF = (days) => {
-    if (days === null || days === undefined) return 'Sin datos';
+    if (days === null || days === undefined) return '—';
     return `Cada ${days} ${days === 1 ? 'día' : 'días'}`;
+  };
+
+  const getFallasReportadasSubtext = () => {
+    const activas = kpis?.resumen?.fallasActivas;
+    const resueltas = kpis?.resumen?.fallasResueltas;
+    if (activas === undefined && resueltas === undefined) return 'Total acumulado';
+    return `${formatCount(activas)} activas · ${formatCount(resueltas)} resueltas`;
   };
 
   const getCriticidadLabel = (crit) => {
@@ -296,8 +305,8 @@ export const MaquinaDetailModal = ({
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Fallas Reportadas</span>
-                      <span className="text-lg font-black text-slate-800 leading-snug">{kpis?.resumen?.totalFallas ?? 0}</span>
-                      <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Total acumulado</span>
+                      <span className="text-lg font-black text-slate-800 leading-snug">{formatCount(kpis?.resumen?.totalFallas)}</span>
+                      <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{getFallasReportadasSubtext()}</span>
                     </div>
                   </div>
 
@@ -347,7 +356,7 @@ export const MaquinaDetailModal = ({
                     <div className="flex flex-col min-w-0">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Último Mantenimiento</span>
                       <span className="text-sm font-black text-slate-800 leading-snug break-words">
-                        {kpis?.resumen?.fechaUltimoServicio ? formatFecha(kpis?.resumen?.fechaUltimoServicio) : 'Sin datos'}
+                        {kpis?.resumen?.fechaUltimoServicio ? formatFecha(kpis?.resumen?.fechaUltimoServicio) : '—'}
                       </span>
                       <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Fecha de servicio</span>
                     </div>

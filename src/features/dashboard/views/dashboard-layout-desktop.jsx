@@ -30,6 +30,7 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                {!location.pathname.includes('/reportes/maquinaria') && (
                 <div>
                     <div className="w-full m-5 xl:w-auto shrink-0">
                         <DashboardFechas
@@ -40,6 +41,7 @@ export default function DashboardLayoutDesktop({ children, contextData }) {
                         />
                     </div>
                 </div>
+                )}
             </div>
 
             {menu.length > 0 && (

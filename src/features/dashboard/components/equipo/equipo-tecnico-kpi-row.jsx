@@ -90,11 +90,7 @@ export const TecnicoKpiRow = ({ tecnico, rank, onViewDetail }) => {
                         <div className="mt-1 text-[9px] font-black text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
                             Sin tareas
                         </div>
-                    ) : !tecnico.calificaRanking && (
-                        <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                            Muestra insuficiente
-                        </div>
-                    )}
+                    ) : null}
                 </div>
             </div>
 

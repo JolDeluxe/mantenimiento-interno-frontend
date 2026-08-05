@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useMetricas } from '../hooks/use-area';
 import { getMinDateHoy } from '@/lib/date';
@@ -12,7 +12,9 @@ const getCurrentMonth = () => Number(getMinDateHoy().split('-')[1]);
 
 export default function DashboardPage() {
     const isDesktop = useIsDesktop();
+    const location = useLocation();
     const { data, loading, fetchMetricas } = useMetricas();
+    const isMaquinariaBI = location.pathname.includes('/reportes/maquinaria');
 
     const [filtro, setFiltro] = useState({
         year: getCurrentYear(),
@@ -22,6 +24,7 @@ export default function DashboardPage() {
     });
 
     const load = useCallback(() => {
+        if (isMaquinariaBI) return;
         const params = {};
         if (filtro.fechaInicio && filtro.fechaFin) {
             params.fechaInicio = filtro.fechaInicio;
@@ -31,7 +34,7 @@ export default function DashboardPage() {
             if (filtro.month) params.month = filtro.month;
         }
         fetchMetricas(params);
-    }, [filtro, fetchMetricas]);
+    }, [filtro, fetchMetricas, isMaquinariaBI]);
 
     useEffect(() => { load(); }, [load]);
 

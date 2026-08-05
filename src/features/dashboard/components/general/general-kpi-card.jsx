@@ -104,17 +104,10 @@ export const TarjetaKpi = ({
 
             {/* Footer: Notas y Alertas */}
             <div className="mt-4 min-h-[1.5rem]">
-                {!datosSuficientes && !isEmpty ? (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-amber-200 text-[9px] font-bold text-amber-700 uppercase tracking-tighter shadow-sm">
-                        <Icon name="warning" size="xs" />
-                        Muestra insuficiente
+                {notaPie && !isEmpty && datosSuficientes && (
+                    <div className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 transition-colors uppercase tracking-tight">
+                        {notaPie}
                     </div>
-                ) : (
-                    notaPie && !isEmpty && (
-                        <div className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 transition-colors uppercase tracking-tight">
-                            {notaPie}
-                        </div>
-                    )
                 )}
             </div>
         </div>

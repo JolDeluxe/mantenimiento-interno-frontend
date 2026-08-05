@@ -1,12 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getTecnicoDetalle } from '../../../api/metricas-api';
 import { Icon, Skeleton } from '@/components/ui/z_index';
 import { getMinDateHoy } from '@/lib/date';
 import { cn } from '@/utils/cn';
-import { TecnicoTareasHoy } from './tecnico-tareas-hoy';
-
-// IMPORTAMOS EL MODAL EN EL PADRE
-import { PrincipalDetailModal } from '../principal-detail-modal';
 
 // --- Sub-componentes modulares privados (Pure UI) ---
 const EvolucionBadge = ({ scoreActual = 0, scorePrevio = null }) => {
@@ -59,12 +55,11 @@ export const PrincipalTecnicoDetalle = ({ tecnicoId, loadingState, errorState })
     const [loadingData, setLoadingData] = useState(true);
     const [errorData, setErrorData] = useState(null);
 
-    // 🧠 ESTADO DEL MODAL EN EL PADRE
-    const [ticketDetalleId, setTicketDetalleId] = useState(null);
-
     useEffect(() => {
         if (!tecnicoId) return;
-        setLoadingData(true);
+        queueMicrotask(() => {
+            setLoadingData(true);
+        });
         const [year, month] = getMinDateHoy().split('-');
         getTecnicoDetalle(tecnicoId, { year: Number(year), month: Number(month) })
             .then(res => setDetalle(res?.data ?? null))
@@ -115,7 +110,6 @@ export const PrincipalTecnicoDetalle = ({ tecnicoId, loadingState, errorState })
                     <div className="flex flex-col items-end shrink-0 bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Volumen Evaluado</span>
                         <span className="text-2xl font-black font-mono text-slate-800 leading-none">{r.totalTerminadas || 0} <span className="text-xs text-slate-500 font-bold ml-0.5">tareas</span></span>
-                        {(r.totalTerminadas < 3 && r.totalTerminadas > 0) && <div className="mt-2 flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-100/50 border border-amber-200 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider"><Icon name="warning" size="xs" className="scale-75" /> Muestra insuficiente</div>}
                     </div>
                 </div>
 

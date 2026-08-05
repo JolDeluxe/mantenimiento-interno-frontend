@@ -41,6 +41,7 @@ export default function DashboardLayoutMobile({ children, contextData }) {
                 </p>
             </div>
 
+            {!location.pathname.includes('/reportes/maquinaria') && (
             <div className="mb-4">
                 <DashboardFechas
                     year={contextData.filtro.year}
@@ -49,6 +50,7 @@ export default function DashboardLayoutMobile({ children, contextData }) {
                     onChange={contextData.onFiltroChange}
                 />
             </div>
+            )}
 
             {menuOptions.length > 0 && (
                 <div className="sticky top-0 z-30 mb-3 py-1 flex items-center justify-center transition-all">
