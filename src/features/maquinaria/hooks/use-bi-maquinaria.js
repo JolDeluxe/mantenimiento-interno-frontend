@@ -27,8 +27,8 @@ const getInitialFilters = (agrupacion = 'EQUIPO') => {
     buscar: '',
     pagina: 1,
     limite: DEFAULT_LIMIT,
-    ordenarPor: 'FRECUENCIA',
-    direccion: 'DESC',
+    ordenarPor: 'DISPONIBILIDAD',
+    direccion: 'ASC',
   };
 };
 

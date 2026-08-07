@@ -60,6 +60,9 @@ export default function MaquinariaBIDesktop({ bi, agrupacion }) {
           agrupacion={agrupacion}
           onPageChange={bi.setPage}
           onOpenDetail={bi.openDetail}
+          ordenarPor={bi.filters.ordenarPor}
+          direccion={bi.filters.direccion}
+          onSortChange={bi.updateFilters}
         />
       </div>
 

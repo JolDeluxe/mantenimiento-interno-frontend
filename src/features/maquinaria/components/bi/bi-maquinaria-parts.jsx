@@ -437,42 +437,36 @@ export const BIMaquinariaSummary = ({ resumen, metadata }) => (
   </section>
 );
 
-const getPosition = (row, index, metadata) => (
-  row._position || (((metadata?.paginacion?.pagina || 1) - 1) * (metadata?.paginacion?.limite || 25)) + index + 1
-);
+/**
+ * Determina si la disponibilidad de un registro es calculable (no null).
+ */
+const hasDispCalculable = (row) =>
+  row.metricas?.disponibilidad?.valorPorcentaje !== null &&
+  row.metricas?.disponibilidad?.valorPorcentaje !== undefined;
 
-const hasActionableBIData = (row) => {
-  const frecuencia = row.metricas?.frecuencia || {};
-  const mttr = row.metricas?.mttr || {};
-  const disponibilidad = row.metricas?.disponibilidad || {};
-
-  return [
-    frecuencia.valor,
-    frecuencia.fallasAbiertas,
-    frecuencia.fallasRestauradas,
-    mttr.sumaMinutosTrabajoTecnico,
-    mttr.fallasRestauradasUsadas,
-    mttr.fallasAbiertasExcluidas,
-    disponibilidad.minutosParoEquivalentes,
-    disponibilidad.minutosParcialesSinPorcentaje,
-    disponibilidad.intervalosAbiertos,
-  ].some((value) => Number(value) > 0);
-};
-
+/**
+ * Asigna posición y badge Top usando el ranking global devuelto por el backend.
+ * - _position: posición global (1-based), preferentemente row.ranking del backend;
+ *   si no está, se calcula desde la página actual × limite + índice.
+ * - _priority: Top 10 → sólo filas con disponibilidad calculable cuyo ranking ≤ 10.
+ *
+ * El tooltip en la columna # explica el criterio: menor disponibilidad = más crítico.
+ */
 const withPositions = (rows, metadata) => {
-  let actionableRank = 0;
-
   return rows.map((row, index) => {
-    const position = getPosition(row, index, metadata);
-    const hasData = hasActionableBIData(row);
-    const rank = hasData ? actionableRank + 1 : null;
-    if (hasData) actionableRank += 1;
+    // Preferir ranking global del backend; fallback a cálculo local
+    const position =
+      row.ranking != null
+        ? row.ranking
+        : (((metadata?.paginacion?.pagina || 1) - 1) * (metadata?.paginacion?.limite || 25)) + index + 1;
+
+    const dispCalculable = hasDispCalculable(row);
+    const isTop = dispCalculable && position <= 10;
 
     return {
       ...row,
       _position: position,
-      _topRank: rank,
-      _priority: Boolean(rank && rank <= 10),
+      _priority: isTop,
     };
   });
 };
@@ -480,23 +474,59 @@ const withPositions = (rows, metadata) => {
 const PositionBadge = ({ position, priority }) => {
   if (!position) {
     return (
-      <span className="inline-flex h-8 min-w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-xs font-black text-slate-400">
+      <span
+        className="inline-flex h-8 min-w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-xs font-black text-slate-400"
+        title="Sin datos de disponibilidad"
+      >
         —
       </span>
     );
   }
 
   return (
-  <span className={cn(
-    'inline-flex h-8 min-w-10 items-center justify-center gap-1 rounded-full border px-2.5 text-xs font-black tabular-nums',
-    priority
-      ? 'border-marca-primario/25 bg-marca-primario/10 text-marca-primario'
-      : 'border-slate-200 bg-slate-50 text-slate-500'
-  )}>
-    <span className="text-[10px] opacity-70">#</span>
-    {position}
-    {priority && <span className="ml-1 rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] uppercase tracking-wide">Top</span>}
-  </span>
+    <span
+      className={cn(
+        'inline-flex h-8 min-w-10 items-center justify-center gap-1 rounded-full border px-2.5 text-xs font-black tabular-nums',
+        priority
+          ? 'border-marca-primario/25 bg-marca-primario/10 text-marca-primario'
+          : 'border-slate-200 bg-slate-50 text-slate-500'
+      )}
+      title={priority
+        ? 'Top 10 de menor disponibilidad — Los equipos con menor disponibilidad se muestran primero.'
+        : 'Los equipos con menor disponibilidad se muestran primero.'}
+    >
+      <span className="text-[10px] opacity-70">#</span>
+      {position}
+      {priority && (
+        <span className="ml-1 rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] uppercase tracking-wide">
+          Top
+        </span>
+      )}
+    </span>
+  );
+};
+
+/** Encabezado de columna clicable para ordenar. */
+const SortHeader = ({ label, sortKey, ordenarPor, direccion, onSortChange }) => {
+  const isActive = ordenarPor === sortKey;
+  const nextDireccion = isActive && direccion === 'ASC' ? 'DESC' : 'ASC';
+  return (
+    <button
+      type="button"
+      onClick={() => onSortChange({ ordenarPor: sortKey, direccion: nextDireccion })}
+      className={cn(
+        'inline-flex items-center gap-1 whitespace-nowrap font-black uppercase tracking-wide transition-colors',
+        isActive ? 'text-marca-primario' : 'text-slate-500 hover:text-slate-800'
+      )}
+      title={`Ordenar por ${label} ${
+        isActive ? (direccion === 'ASC' ? '↑ Ascendente' : '↓ Descendente') : ''
+      }`}
+    >
+      {label}
+      <span className={cn('text-[11px]', isActive ? 'opacity-100' : 'opacity-0')}>
+        {isActive && direccion === 'ASC' ? '↑' : '↓'}
+      </span>
+    </button>
   );
 };
 
@@ -550,6 +580,33 @@ const formatMTBFDays = (mtbf) => {
   return formatDays(mtbf?.valorDias, null);
 };
 
+const MTBF_SIN_FALLAS_TOOLTIP =
+  'No se registraron fallas confirmadas durante el periodo seleccionado, ' +
+  'por lo que no es posible calcular el tiempo promedio entre fallas.';
+
+/**
+ * Celda MTBF con lógica de presentación:
+ * - frecuencia === 0 → "No calculable" con tooltip explicativo.
+ * - MTBF censurado   → "≥ X días".
+ * - Sin datos        → guión (EmptyMetric).
+ */
+const MtbfCell = ({ mtbf, frecuencia }) => {
+  if (frecuencia === 0) {
+    return (
+      <span
+        className="inline-flex min-w-[78px] items-center justify-center"
+        title={MTBF_SIN_FALLAS_TOOLTIP}
+        aria-label={MTBF_SIN_FALLAS_TOOLTIP}
+      >
+        <span className="cursor-help text-xs font-semibold italic text-slate-400 underline decoration-dotted underline-offset-2">
+          No calculable
+        </span>
+      </span>
+    );
+  }
+  return <MetricText metric={mtbf}>{formatMTBFDays(mtbf)}</MetricText>;
+};
+
 const MetricText = ({ children, metric }) => {
   void metric;
   const hasValue = children !== null && children !== undefined && children !== '—';
@@ -586,78 +643,94 @@ const getTechnicalWorkMinutes = (metricas) => (
 
 const getPlannedDowntimeMinutes = (metricas) => metricas?.disponibilidad?.minutosParoPlanificado;
 
-const commonMetricColumns = () => [
-  {
-    header: 'Tiempo reparación',
-    accessorKey: 'restauracion',
-    align: 'center',
-    headerClassName: 'min-w-[150px]',
-    cell: (row) => <AccumulatedRestoration minutes={getTechnicalWorkMinutes(row.metricas)} />,
-  },
-  {
-    header: 'Frecuencia',
-    accessorKey: 'frecuencia',
-    align: 'center',
-    headerClassName: 'min-w-[95px]',
-    cell: (row) => <MetricText>{formatInteger(row.metricas?.frecuencia?.valor)}</MetricText>,
-  },
-  {
-    header: 'MTTR (min)',
-    accessorKey: 'mttr',
-    align: 'center',
-    headerClassName: 'min-w-[95px]',
-    cell: (row) => <MetricText metric={row.metricas?.mttr}>{formatMetricMinutes(row.metricas?.mttr?.valorMinutos)}</MetricText>,
-  },
-  {
-    header: 'MTBF (días)',
-    accessorKey: 'mtbf',
-    align: 'center',
-    headerClassName: 'min-w-[95px]',
-    cell: (row) => <MetricText metric={row.metricas?.mtbf}>{formatMTBFDays(row.metricas?.mtbf)}</MetricText>,
-  },
-  {
-    header: 'Disponibilidad',
-    accessorKey: 'disponibilidad',
-    align: 'center',
-    headerClassName: 'min-w-[120px]',
-    cell: (row) => (
-      <AvailabilityText
-        value={row.metricas?.disponibilidad?.valorPorcentaje}
-        agrupacion={row.agrupacion}
-      />
-    ),
-  },
-  {
-    header: 'Confiabilidad día',
-    accessorKey: 'r1',
-    align: 'center',
-    headerClassName: 'min-w-[125px]',
-    cell: (row) => <MetricText metric={row.metricas?.confiabilidad}>{formatPercent(row.metricas?.confiabilidad?.r1DiaPorcentaje, null)}</MetricText>,
-  },
-  {
-    header: 'Confiabilidad semana',
-    accessorKey: 'r7',
-    align: 'center',
-    headerClassName: 'min-w-[145px]',
-    cell: (row) => <MetricText>{formatPercent(row.metricas?.confiabilidad?.r7DiasPorcentaje, null)}</MetricText>,
-  },
-  {
-    header: 'Confiabilidad mes',
-    accessorKey: 'r30',
-    align: 'center',
-    headerClassName: 'min-w-[130px]',
-    cell: (row) => <MetricText>{formatPercent(row.metricas?.confiabilidad?.r30DiasPorcentaje, null)}</MetricText>,
-  },
-];
+const commonMetricColumns = (ordenarPor, direccion, onSortChange) => {
+  const sh = (label, key) =>
+    onSortChange
+      ? <SortHeader label={label} sortKey={key} ordenarPor={ordenarPor} direccion={direccion} onSortChange={onSortChange} />
+      : label;
 
-const getColumns = (agrupacion, onOpenDetail) => {
+  return [
+    {
+      header: sh('T. Reparación', 'TIEMPO_REPARACION'),
+      accessorKey: 'restauracion',
+      align: 'center',
+      headerClassName: 'min-w-[150px]',
+      cell: (row) => <AccumulatedRestoration minutes={getTechnicalWorkMinutes(row.metricas)} />,
+    },
+    {
+      header: sh('Frecuencia', 'FRECUENCIA'),
+      accessorKey: 'frecuencia',
+      align: 'center',
+      headerClassName: 'min-w-[95px]',
+      cell: (row) => <MetricText>{formatInteger(row.metricas?.frecuencia?.valor)}</MetricText>,
+    },
+    {
+      header: sh('MTTR (min)', 'MTTR'),
+      accessorKey: 'mttr',
+      align: 'center',
+      headerClassName: 'min-w-[95px]',
+      cell: (row) => <MetricText metric={row.metricas?.mttr}>{formatMetricMinutes(row.metricas?.mttr?.valorMinutos)}</MetricText>,
+    },
+    {
+      header: sh('MTBF (días)', 'MTBF'),
+      accessorKey: 'mtbf',
+      align: 'center',
+      headerClassName: 'min-w-[95px]',
+      cell: (row) => <MtbfCell mtbf={row.metricas?.mtbf} frecuencia={row.metricas?.frecuencia?.valor} />,
+    },
+    {
+      header: sh('Disponibilidad', 'DISPONIBILIDAD'),
+      accessorKey: 'disponibilidad',
+      align: 'center',
+      headerClassName: 'min-w-[120px]',
+      cell: (row) => (
+        <AvailabilityText
+          value={row.metricas?.disponibilidad?.valorPorcentaje}
+          agrupacion={row.agrupacion}
+        />
+      ),
+    },
+    {
+      header: sh('Conf. día', 'CONFIABILIDAD_1D'),
+      accessorKey: 'r1',
+      align: 'center',
+      headerClassName: 'min-w-[100px]',
+      cell: (row) => <MetricText metric={row.metricas?.confiabilidad}>{formatPercent(row.metricas?.confiabilidad?.r1DiaPorcentaje, null)}</MetricText>,
+    },
+    {
+      header: sh('Conf. semana', 'CONFIABILIDAD_7D'),
+      accessorKey: 'r7',
+      align: 'center',
+      headerClassName: 'min-w-[110px]',
+      cell: (row) => <MetricText>{formatPercent(row.metricas?.confiabilidad?.r7DiasPorcentaje, null)}</MetricText>,
+    },
+    {
+      header: sh('Conf. mes', 'CONFIABILIDAD_30D'),
+      accessorKey: 'r30',
+      align: 'center',
+      headerClassName: 'min-w-[100px]',
+      cell: (row) => <MetricText>{formatPercent(row.metricas?.confiabilidad?.r30DiasPorcentaje, null)}</MetricText>,
+    },
+  ];
+};
+
+const getColumns = (agrupacion, onOpenDetail, ordenarPor, direccion, onSortChange) => {
   const positionColumn = {
-    header: '#',
+    header: (
+      <span
+        className="inline-flex items-center gap-1 text-xs font-black text-slate-500"
+        title="Los equipos con menor disponibilidad se muestran primero."
+      >
+        #
+      </span>
+    ),
     accessorKey: 'posicion',
     align: 'center',
     headerClassName: 'min-w-[90px]',
     cell: (row) => <PositionBadge position={row._position} priority={row._priority} />,
   };
+
+  const metrics = commonMetricColumns(ordenarPor, direccion, onSortChange);
 
   if (agrupacion === 'PROCESO') {
     return [
@@ -668,7 +741,7 @@ const getColumns = (agrupacion, onOpenDetail) => {
         headerClassName: 'min-w-[220px]',
         cell: (row) => <span className="font-black uppercase text-slate-800">{row.proceso || '—'}</span>,
       },
-      ...commonMetricColumns(),
+      ...metrics,
     ];
   }
 
@@ -681,14 +754,16 @@ const getColumns = (agrupacion, onOpenDetail) => {
         headerClassName: 'min-w-[220px]',
         cell: (row) => <span className="font-black uppercase text-slate-800">{row.area || '—'}</span>,
       },
-      ...commonMetricColumns(),
+      ...metrics,
     ];
   }
 
   return [
     positionColumn,
     {
-      header: 'Equipo TPM',
+      header: onSortChange
+        ? <SortHeader label="Equipo" sortKey="CODIGO" ordenarPor={ordenarPor} direccion={direccion} onSortChange={onSortChange} />
+        : 'Equipo TPM',
       accessorKey: 'equipo',
       headerClassName: 'min-w-[130px]',
       cell: (row) => (
@@ -705,24 +780,50 @@ const getColumns = (agrupacion, onOpenDetail) => {
         )
       ),
     },
-    ...commonMetricColumns(),
+    ...metrics,
   ];
 };
 
-export const BIMaquinariaTable = ({ rows, loading, metadata, agrupacion, onPageChange, onOpenDetail, onDrilldown }) => {
+/** Leyenda discreta que aparece debajo de la tabla cuando alguna fila no tiene fallas. */
+const MTBFLeyenda = ({ rows }) => {
+  const hasSinFallas = rows?.some((r) => (r.metricas?.frecuencia?.valor ?? 0) === 0);
+  if (!hasSinFallas) return null;
+  return (
+    <p className="mt-2 px-1 text-[11px] font-medium text-slate-400">
+      <span className="font-bold">MTBF no calculable:</span>{' '}
+      no hubo fallas confirmadas en el periodo seleccionado.
+    </p>
+  );
+};
+
+export const BIMaquinariaTable = ({
+  rows,
+  loading,
+  metadata,
+  agrupacion,
+  onPageChange,
+  onOpenDetail,
+  onDrilldown,
+  ordenarPor,
+  direccion,
+  onSortChange,
+}) => {
   const tableRows = withPositions(rows, metadata);
   return (
-    <Table
-      data={tableRows}
-      columns={getColumns(agrupacion, onOpenDetail, onDrilldown)}
-      loading={loading}
-      emptyMessage="No hay indicadores para los filtros seleccionados."
-      page={metadata?.paginacion?.pagina}
-      totalPages={metadata?.paginacion?.totalPaginas}
-      totalItems={metadata?.paginacion?.totalRegistros}
-      onPageChange={onPageChange}
-      rowClassName={(row) => row._priority ? 'bg-marca-primario/[0.03] hover:bg-marca-primario/[0.06]' : 'bg-white hover:bg-slate-50'}
-    />
+    <>
+      <Table
+        data={tableRows}
+        columns={getColumns(agrupacion, onOpenDetail, ordenarPor, direccion, onSortChange)}
+        loading={loading}
+        emptyMessage="No hay indicadores para los filtros seleccionados."
+        page={metadata?.paginacion?.pagina}
+        totalPages={metadata?.paginacion?.totalPaginas}
+        totalItems={metadata?.paginacion?.totalRegistros}
+        onPageChange={onPageChange}
+        rowClassName={(row) => row._priority ? 'bg-marca-primario/[0.03] hover:bg-marca-primario/[0.06]' : 'bg-white hover:bg-slate-50'}
+      />
+      <MTBFLeyenda rows={rows} />
+    </>
   );
 };
 
