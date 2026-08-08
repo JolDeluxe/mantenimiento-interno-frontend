@@ -45,6 +45,7 @@ import DashboardMaquinaria from '@/features/dashboard/pages/dashboard-maquinaria
 
 import CalendarioPage from '@/features/calendario/pages/calendario-page';
 import ConfiguracionAutonomosPage from '@/features/z_super-admin/config/pages/configuracion-autonomos-page';
+import DiasLaboradosPage from '@/features/dias-laborados/pages/dias-laborados-page';
 
 const ROLES = {
   dashboard: MODULES_CONFIG.find(m => m.id === 'dashboard')?.allowedRoles || [],
@@ -73,6 +74,7 @@ const ROLES = {
   reportesMaquinaria: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-maquinaria')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
   configuracion: MODULES_CONFIG.find(m => m.id === 'configuracion')?.allowedRoles || ['SUPER_ADMIN'],
+  diasLaborados: MODULES_CONFIG.find(m => m.id === 'dias_laborados')?.allowedRoles || ['SUPER_ADMIN'],
 };
 
 export const AppRoutes = () => {
@@ -159,6 +161,10 @@ export const AppRoutes = () => {
 
           <Route element={<RoleGuard allowedRoles={ROLES.calendario} />}>
             <Route path="/calendario" element={<CalendarioPage />} />
+          </Route>
+
+          <Route element={<RoleGuard allowedRoles={ROLES.diasLaborados} />}>
+            <Route path="/dias_laborados" element={<DiasLaboradosPage />} />
           </Route>
 
           {/* Módulo: Por Aprobar Global */}

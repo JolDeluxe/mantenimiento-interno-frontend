@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, Pagination, SearchableSelect, Spinner, Table } from '@/components/ui/z_index';
 import { cn } from '@/utils/cn';
 import { getISOWeekInfo, getSemanasInYear, getWeekRange } from '@/lib/date';
+import { toast } from 'react-toastify';
+import { generarBIMaquinariaReporte, enviarBIMaquinariaReporte } from '../../api/bi-maquinaria-api';
 import {
   addDaysToDateInput,
   formatDays,
@@ -12,6 +14,8 @@ import {
   labelEstadoAnalitico,
   monthStartInputMX,
   toDateInputMX,
+  dateInputToBIStart,
+  dateInputToBIEndExclusive,
 } from '../../utils/bi-maquinaria-format';
 
 const MESES_CORTOS = [
@@ -239,6 +243,7 @@ export const BIMaquinariaFilters = ({
   onRefresh,
   refreshing,
   mobile = false,
+  onExport,
 }) => {
   const periodInfo = useMemo(() => getSelectedPeriodInfo(filters), [filters]);
   const hastaVisibleInput = useMemo(
@@ -323,6 +328,11 @@ export const BIMaquinariaFilters = ({
           <Button size="sm" variant="light" icon="refresh" isLoading={refreshing} onClick={onRefresh}>
             Reintentar
           </Button>
+          {onExport && (
+            <Button size="sm" variant="marca" icon="cloud_download" onClick={onExport} className="font-bold">
+              Exportar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -561,12 +571,63 @@ const RepairValue = ({ minutes, align = 'center' }) => {
       align === 'left' && 'items-start text-left',
       align === 'center' && 'items-center text-center'
     )}>
-      <span className="font-black text-slate-900">{formatted.time}</span>
+      <span
+        className="font-black text-slate-900 cursor-help border-b border-dashed border-slate-300"
+        title="Tiempo técnico real dedicado a reparaciones correctivas."
+      >
+        {formatted.time}
+      </span>
     </span>
   );
 };
 
-const AccumulatedRestoration = ({ minutes }) => <RepairValue minutes={minutes} />;
+const DowntimeValue = ({ minutes, align = 'center' }) => {
+  if (minutes === null || minutes === undefined) {
+    return <EmptyMetric />;
+  }
+
+  const total = Math.round(minutes);
+
+  return (
+    <span className={cn(
+      'inline-flex flex-col',
+      align === 'right' && 'items-end text-right',
+      align === 'left' && 'items-start text-left',
+      align === 'center' && 'items-center text-center'
+    )}>
+      <span
+        className="font-black text-slate-900 cursor-help flex items-center gap-1.5"
+        title="Tiempo durante el cual la máquina estuvo indisponible para producción. Este valor es el utilizado para calcular la disponibilidad."
+      >
+        {total > 0 && <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" aria-hidden="true" />}
+        <span>{formatInteger(total, '0')} min</span>
+      </span>
+    </span>
+  );
+};
+
+const AccumulatedRestoration = ({ row }) => {
+  const total = row.metricas?.mttr?.sumaMinutosTrabajoTecnico;
+  const sinParo = row.metricas?.minutosReparacionSinParo ?? 0;
+  const conParo = Math.max(0, (total ?? 0) - sinParo);
+
+  if (total === null || total === undefined) {
+    return <EmptyMetric />;
+  }
+
+  const tooltipText = `Total: ${Math.round(total)} min\n• Con paro productivo: ${Math.round(conParo)} min\n• Sin paro productivo: ${Math.round(sinParo)} min`;
+
+  return (
+    <span className="inline-flex flex-col items-center text-center">
+      <span
+        className="font-black text-slate-900 cursor-help border-b border-dashed border-slate-300 whitespace-nowrap"
+        title={tooltipText}
+      >
+        {Math.round(total)} min
+      </span>
+    </span>
+  );
+};
 
 const formatMetricMinutes = (minutes) => (
   minutes === null || minutes === undefined ? null : `${formatInteger(Math.round(minutes))} min`
@@ -654,8 +715,15 @@ const commonMetricColumns = (ordenarPor, direccion, onSortChange) => {
       header: sh('T. Reparación', 'TIEMPO_REPARACION'),
       accessorKey: 'restauracion',
       align: 'center',
-      headerClassName: 'min-w-[150px]',
-      cell: (row) => <AccumulatedRestoration minutes={getTechnicalWorkMinutes(row.metricas)} />,
+      headerClassName: 'min-w-[120px]',
+      cell: (row) => <AccumulatedRestoration row={row} />,
+    },
+    {
+      header: 'Paro producción',
+      accessorKey: 'minutosParoProduccion',
+      align: 'center',
+      headerClassName: 'min-w-[130px]',
+      cell: (row) => <DowntimeValue minutes={row.metricas?.disponibilidad?.minutosParoEquivalentes} />,
     },
     {
       header: sh('Frecuencia', 'FRECUENCIA'),
@@ -796,6 +864,214 @@ const MTBFLeyenda = ({ rows }) => {
   );
 };
 
+export const EquipmentKpiSummary = ({ summary, filters, onChange }) => {
+  const periodInfo = useMemo(() => getSelectedPeriodInfo(filters), [filters]);
+  const activePeriod = periodInfo.isWeek ? 'semana' : periodInfo.isMonth ? 'mes' : periodInfo.isYear ? 'anio' : null;
+
+  if (!summary) return null;
+
+  const colorMap = {
+    CUMPLE: { text: 'text-emerald-600', bg: 'bg-emerald-500' },
+    ADVERTENCIA: { text: 'text-amber-500', bg: 'bg-amber-500' },
+    CRITICO: { text: 'text-rose-600', bg: 'bg-rose-500' },
+    NO_CALCULABLE: { text: 'text-slate-400', bg: 'bg-slate-400' }
+  };
+  const dispState = summary.disponibilidad?.estado || 'NO_CALCULABLE';
+  const dispColor = colorMap[dispState];
+
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      {/* Fila superior: Selector de Período segmentado */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Resumen Operativo por:</span>
+          <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => onChange(PERIOD_PRESETS.find(p => p.id === 'semana').build())}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-black transition-all cursor-pointer select-none active:scale-95',
+                activePeriod === 'semana'
+                  ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                  : 'text-slate-500 hover:text-slate-800 border border-transparent'
+              )}
+            >
+              Semana
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(PERIOD_PRESETS.find(p => p.id === 'mes').build())}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-black transition-all cursor-pointer select-none active:scale-95',
+                activePeriod === 'mes'
+                  ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                  : 'text-slate-500 hover:text-slate-800 border border-transparent'
+              )}
+            >
+              Mes
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(PERIOD_PRESETS.find(p => p.id === 'anio').build())}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-black transition-all cursor-pointer select-none active:scale-95',
+                activePeriod === 'anio'
+                  ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                  : 'text-slate-500 hover:text-slate-800 border border-transparent'
+              )}
+            >
+              Año
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">
+          <Icon name="date_range" size="xs" className="text-slate-400" />
+          <span>{periodInfo.label}</span>
+        </div>
+      </div>
+
+      <div className="border-t border-slate-100" />
+
+      {/* Grid de Métricas */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {/* CORRECTIVOS */}
+        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col justify-between">
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider text-slate-400 cursor-help"
+            title="Cantidad de fallas correctivas registradas en el periodo."
+          >
+            Correctivos
+          </span>
+          <div className="mt-2">
+            <span className="text-3xl font-black text-slate-800 tabular-nums">
+              {summary.correctivos?.total ?? 0}
+            </span>
+            <div className="flex gap-1.5 text-[10px] font-bold text-slate-500 mt-1 flex-wrap">
+              <span className="cursor-help" title="Correctivos originados por reportes.">
+                {summary.correctivos?.reportes ?? 0} reportes
+              </span>
+              <span>·</span>
+              <span className="cursor-help" title="Correctivos createdos directamente por mantenimiento.">
+                {summary.correctivos?.internos ?? 0} internos
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* DISPONIBILIDAD */}
+        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col justify-between">
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider text-slate-400 cursor-help animate-pulse"
+            title="Disponibilidad consolidada de equipos"
+          >
+            Disponibilidad
+          </span>
+          <div className="mt-2 space-y-1.5">
+            {/* General */}
+            <div className="flex items-center justify-between">
+              <span
+                className="text-[10px] font-bold text-slate-400 cursor-help"
+                title="Disponibilidad considerando todos los equipos que cumplen los filtros actuales."
+              >
+                General
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn("text-base font-black tabular-nums",
+                  summary.disponibilidad?.general
+                    ? colorMap[summary.disponibilidad.general.estado || 'NO_CALCULABLE'].text
+                    : dispColor.text
+                )}>
+                  {summary.disponibilidad?.general?.porcentaje !== undefined
+                    ? formatPercent(summary.disponibilidad.general.porcentaje, 'No calculable')
+                    : summary.disponibilidad?.porcentaje !== null
+                    ? formatPercent(summary.disponibilidad.porcentaje, 'No calculable')
+                    : 'No calculable'}
+                </span>
+                <span className={cn("h-1.5 w-1.5 rounded-full shrink-0",
+                  summary.disponibilidad?.general
+                    ? colorMap[summary.disponibilidad.general.estado || 'NO_CALCULABLE'].bg
+                    : dispColor.bg
+                )} />
+              </div>
+            </div>
+
+            {/* Top 10 */}
+            {summary.disponibilidad?.top && (
+              <div className="flex items-center justify-between border-t border-slate-200/50 pt-1.5">
+                <span
+                  className="text-[10px] font-bold text-slate-400 cursor-help"
+                  title={`Disponibilidad considerando únicamente los primeros ${summary.disponibilidad.top.cantidadEquipos} equipos del ranking actual.`}
+                >
+                  Top {summary.disponibilidad.top.cantidadEquipos}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={cn("text-sm font-bold tabular-nums",
+                    colorMap[summary.disponibilidad.top.estado || 'NO_CALCULABLE'].text
+                  )}>
+                    {formatPercent(summary.disponibilidad.top.porcentaje, 'No calculable')}
+                  </span>
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0",
+                    colorMap[summary.disponibilidad.top.estado || 'NO_CALCULABLE'].bg
+                  )} />
+                </div>
+              </div>
+            )}
+
+            {/* Meta */}
+            <div
+              className="text-[9px] font-bold text-slate-400 border-t border-slate-200/50 pt-1 cursor-help"
+              title="Objetivo mínimo de disponibilidad: 98 %."
+            >
+              Meta &ge; 98%
+            </div>
+          </div>
+        </div>
+
+        {/* PARO PRODUCCIÓN */}
+        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col justify-between">
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider text-slate-400 cursor-help"
+            title="Tiempo total de indisponibilidad productiva utilizado en el cálculo de disponibilidad."
+          >
+            Paro producción
+          </span>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-black text-slate-800 tabular-nums">
+                {formatInteger(Math.round(summary.minutosParoProduccion ?? 0), '0')}
+              </span>
+              <span className="text-xs font-bold text-slate-400">min</span>
+              {summary.minutosParoProduccion > 0 && (
+                <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+              )}
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 block mt-1">Tiempo de paro</span>
+          </div>
+        </div>
+
+        {/* TIEMPO DE REPARACIÓN */}
+        <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 flex flex-col justify-between">
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider text-slate-400 cursor-help"
+            title="Tiempo técnico total dedicado a reparaciones correctivas."
+          >
+            Tiempo reparación
+          </span>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-black text-slate-800 tabular-nums">
+                {formatInteger(Math.round(summary.minutosReparacion ?? 0), '0')}
+              </span>
+              <span className="text-xs font-bold text-slate-400">min</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 block mt-1">Trabajo técnico activo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const BIMaquinariaTable = ({
   rows,
   loading,
@@ -879,7 +1155,8 @@ export const BIMaquinariaMobileCards = ({ rows, loading, metadata, agrupacion, o
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <InfoPill label="Tiempo reparación" value={<RepairValue minutes={getTechnicalWorkMinutes(row.metricas)} />} />
+                <InfoPill label="T. Reparación" value={<AccumulatedRestoration row={row} />} />
+                <InfoPill label="Paro producción" value={<DowntimeValue minutes={row.metricas?.disponibilidad?.minutosParoEquivalentes} align="right" />} />
                 <InfoPill label="Frecuencia" value={formatInteger(row.metricas?.frecuencia?.valor)} />
                 <InfoPill label="MTTR (min)" value={formatMetricMinutes(row.metricas?.mttr?.valorMinutos)} metric={row.metricas?.mttr} />
                 <InfoPill label="MTBF (días)" value={formatMTBFDays(row.metricas?.mtbf)} metric={row.metricas?.mtbf} />
@@ -1075,6 +1352,420 @@ export const BIDetailModal = ({ detailState, onClose, onPageChange }) => {
       </ModalBody>
       <ModalFooter>
         <Button variant="cancelar" onClick={onClose}>Cerrar</Button>
+      </ModalFooter>
+    </Modal>
+  );
+};
+
+export const BIExportModal = ({ isOpen, onClose, filters, catalogs }) => {
+  const [format, setFormat] = useState('PDF'); // 'PDF' | 'EXCEL'
+  const [agrupacion, setAgrupacion] = useState(filters.agrupacion || 'EQUIPO'); // 'EQUIPO' | 'PROCESO' | 'AREA'
+  const [periodType, setPeriodType] = useState('MES'); // 'DIA' | 'SEMANA' | 'MES' | 'ANIO' | 'CUSTOM'
+
+  // Fechas y selectores temporales locales
+  const todayStr = toDateInputMX();
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const currentYear = getCurrentYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+
+  const currentWeekInfo = getISOWeekInfo();
+  const [selectedWeek, setSelectedWeek] = useState(currentWeekInfo.week);
+
+  const [customDesde, setCustomDesde] = useState(monthStartInputMX());
+  const [customHasta, setCustomHasta] = useState(todayStr);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const yearOptions = useMemo(() => buildBiYearOptions(), []);
+  const availableWeeks = useMemo(() => getAvailableWeeks(selectedYear), [selectedYear]);
+
+  // Resolver fechas según pestaña
+  const resolvedPeriod = useMemo(() => {
+    let desdeInput = '';
+    let hastaInput = '';
+
+    if (periodType === 'DIA') {
+      desdeInput = selectedDate;
+      hastaInput = addDaysToDateInput(selectedDate, 1);
+    } else if (periodType === 'SEMANA') {
+      const { startDate, endDate } = getWeekRange(selectedYear, selectedWeek);
+      desdeInput = startDate;
+      hastaInput = addDaysToDateInput(endDate, 1);
+    } else if (periodType === 'MES') {
+      const range = buildMonthRange(selectedYear, selectedMonth);
+      desdeInput = range.desdeInput;
+      hastaInput = range.hastaInput;
+    } else if (periodType === 'ANIO') {
+      const range = buildYearRange(selectedYear);
+      desdeInput = range.desdeInput;
+      hastaInput = range.hastaInput;
+    } else {
+      desdeInput = customDesde;
+      hastaInput = addDaysToDateInput(customHasta, 1);
+    }
+
+    return { desdeInput, hastaInput };
+  }, [periodType, selectedDate, selectedYear, selectedWeek, selectedMonth, customDesde, customHasta]);
+
+  // Filtros activos formateados para vista previa
+  const activeFiltersLabel = useMemo(() => {
+    const labels = [];
+    if (filters.area) labels.push(`Ubicación: ${filters.area}`);
+    if (filters.proceso) labels.push(`Familia: ${filters.proceso}`);
+    if (filters.criticidad) labels.push(`Criticidad: ${filters.criticidad}`);
+    if (filters.buscar) labels.push(`Búsqueda: "${filters.buscar}"`);
+    return labels.join(', ') || 'Todos los equipos';
+  }, [filters]);
+
+  const handleExport = async () => {
+    setErrorMsg('');
+    setLoading(true);
+
+    const { desdeInput, hastaInput } = resolvedPeriod;
+
+    // Validación de fechas
+    if (!desdeInput || !hastaInput || desdeInput > hastaInput) {
+      setErrorMsg('El rango de fechas seleccionado es inválido.');
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      formato: format,
+      agrupacion: agrupacion,
+      periodoTipo: periodType === 'CUSTOM' ? 'PERSONALIZADO' : periodType,
+      desde: dateInputToBIStart(desdeInput),
+      hasta: dateInputToBIEndExclusive(hastaInput),
+      maquinaId: filters.maquinaId || undefined,
+      proceso: filters.proceso || undefined,
+      area: filters.area || undefined,
+      criticidad: filters.criticidad || undefined,
+      estadoMaquina: filters.estadoMaquina || undefined,
+      buscar: filters.buscar?.trim() || undefined,
+      calidad: filters.calidad || undefined,
+      incluirHistoricos: filters.incluirHistoricos,
+      incluirAreaNula: filters.incluirAreaNula,
+      ordenarPor: filters.ordenarPor,
+      direccion: filters.direccion,
+    };
+
+    try {
+      const res = await generarBIMaquinariaReporte(payload); // res es directamente el Blob de datos
+      // Construir nombre de archivo profesional según parámetros
+      const labelMap = { EQUIPO: 'Equipos', PROCESO: 'Familias', AREA: 'Ubicaciones' };
+      const gName = labelMap[agrupacion] || 'Equipos';
+      const ext = format === 'PDF' ? 'pdf' : 'xlsx';
+      let filename = '';
+
+      if (periodType === 'ANIO') {
+        filename = `KPI_${gName}_${selectedYear}.${ext}`;
+      } else if (periodType === 'MES') {
+        const mesStr = String(selectedMonth).padStart(2, '0');
+        filename = `KPI_${gName}_${selectedYear}-${mesStr}.${ext}`;
+      } else {
+        filename = `KPI_${gName}_${desdeInput}_a_${hastaInput}.${ext}`;
+      }
+
+      const url = window.URL.createObjectURL(res);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Reporte generado y descargado correctamente.');
+      onClose();
+    } catch (err) {
+      console.error('Error al exportar reporte:', err);
+      const serverMsg = err.response?.data?.error?.message || 'Ocurrió un error inesperado al procesar el reporte.';
+      setErrorMsg(serverMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const contentLabelMap = { EQUIPO: 'Equipos', PROCESO: 'Familias', AREA: 'Ubicaciones' };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} className="w-full md:max-w-xl">
+      <ModalHeader onClose={onClose}>
+        <div className="flex items-center gap-2">
+          <Icon name="cloud_download" className="text-marca-primario" />
+          <span className="font-black text-slate-800">Exportar Reporte de Maquinaria</span>
+        </div>
+      </ModalHeader>
+      <ModalBody className="max-h-[76vh] overflow-y-auto p-5 space-y-4">
+        {errorMsg && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-700">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* 1. TIPO DE REPORTE */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">1. Tipo de Reporte</label>
+          <div className="flex rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 w-full justify-between">
+            {[
+              { id: 'EQUIPO', label: 'Equipos' },
+              { id: 'PROCESO', label: 'Familias' },
+              { id: 'AREA', label: 'Ubicaciones' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={loading}
+                onClick={() => setAgrupacion(t.id)}
+                className={cn(
+                  'flex-1 rounded-lg py-1.5 text-[10px] font-black transition-all cursor-pointer select-none text-center',
+                  agrupacion === t.id
+                    ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 2. FORMATO */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">2. Formato de Descarga</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setFormat('PDF')}
+              className={cn(
+                'flex flex-col items-center justify-center p-3 rounded-xl border-2 text-center transition-all cursor-pointer select-none',
+                format === 'PDF'
+                  ? 'border-marca-primario bg-slate-50/50 text-slate-900 shadow-sm'
+                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+              )}
+            >
+              <Icon name="picture_as_pdf" size="sm" className={format === 'PDF' ? 'text-marca-primario' : 'text-slate-400'} />
+              <span className="font-black text-xs mt-1">Documento PDF</span>
+              <span className="text-[9px] text-slate-400 font-bold mt-0.5">Listo para imprimir</span>
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setFormat('EXCEL')}
+              className={cn(
+                'flex flex-col items-center justify-center p-3 rounded-xl border-2 text-center transition-all cursor-pointer select-none',
+                format === 'EXCEL'
+                  ? 'border-marca-primario bg-slate-50/50 text-slate-900 shadow-sm'
+                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+              )}
+            >
+              <Icon name="table_view" size="sm" className={format === 'EXCEL' ? 'text-marca-primario' : 'text-slate-400'} />
+              <span className="font-black text-xs mt-1">Hoja Excel (XLSX)</span>
+              <span className="text-[9px] text-slate-400 font-bold mt-0.5">Datos estructurados</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3. PERIODO */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">3. Período del Reporte</label>
+          <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200/60 w-full justify-between">
+            {['DIA', 'SEMANA', 'MES', 'ANIO', 'CUSTOM'].map((t) => (
+              <button
+                key={t}
+                type="button"
+                disabled={loading}
+                onClick={() => setPeriodType(t)}
+                className={cn(
+                  'flex-1 rounded-lg py-1.5 text-[10px] font-black transition-all cursor-pointer select-none text-center',
+                  periodType === t
+                    ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                )}
+              >
+                {t === 'DIA' ? 'Día' : t === 'SEMANA' ? 'Sem.' : t === 'MES' ? 'Mes' : t === 'ANIO' ? 'Año' : 'Pers.'}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-slate-200/60 bg-slate-50/40 p-3">
+            {periodType === 'DIA' && (
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase">Seleccione un día</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  disabled={loading}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                />
+              </div>
+            )}
+
+            {periodType === 'SEMANA' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Año</span>
+                  <select
+                    value={selectedYear}
+                    disabled={loading}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Semana</span>
+                  <select
+                    value={selectedWeek}
+                    disabled={loading}
+                    onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  >
+                    {availableWeeks.map((w) => (
+                      <option key={w} value={w}>Semana {w}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {periodType === 'MES' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Mes</span>
+                  <select
+                    value={selectedMonth}
+                    disabled={loading}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  >
+                    {MESES_FULL.map((m) => (
+                      <option key={m.num} value={m.num}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Año</span>
+                  <select
+                    value={selectedYear}
+                    disabled={loading}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  >
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {periodType === 'ANIO' && (
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase">Seleccione un año</span>
+                <select
+                  value={selectedYear}
+                  disabled={loading}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                >
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>Año {y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {periodType === 'CUSTOM' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Desde</span>
+                  <input
+                    type="date"
+                    value={customDesde}
+                    disabled={loading}
+                    onChange={(e) => setCustomDesde(e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Hasta</span>
+                  <input
+                    type="date"
+                    value={customHasta}
+                    disabled={loading}
+                    onChange={(e) => setCustomHasta(e.target.value)}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-marca-secundario"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* UX de año informativo */}
+          {periodType === 'ANIO' && (
+            <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 text-[11px] font-bold text-blue-700 flex items-start gap-2">
+              <Icon name="info" className="text-blue-500 mt-0.5 shrink-0" size="xs" />
+              <span>El reporte anual incluye el Top 10 general del año y el Top 10 correspondiente a cada mes de forma independiente.</span>
+            </div>
+          )}
+        </div>
+
+        {/* 4. RESUMEN DE SELECCIÓN */}
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 space-y-1.5">
+          <span className="text-[9px] font-bold text-slate-400 uppercase">Vista previa de la selección</span>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-bold text-slate-600">
+            <div>
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase">Reporte</span>
+              <span>KPI {contentLabelMap[agrupacion] || 'Equipos'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase">Formato</span>
+              <span>{format}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase">Periodo</span>
+              <span>
+                {formatDateInputLabel(resolvedPeriod.desdeInput)} -{' '}
+                {formatDateInputLabel(addDaysToDateInput(resolvedPeriod.hastaInput, -1))}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase">Filtros Activos</span>
+              <span className="truncate block" title={activeFiltersLabel}>
+                {activeFiltersLabel}
+              </span>
+            </div>
+            <div className="col-span-2 border-t border-slate-200/60 pt-1.5">
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase">Contenido del Reporte</span>
+              <span className="text-slate-800">
+                Resumen operativo y Top 10 de {contentLabelMap[agrupacion] || 'Equipos'}{' '}
+                {periodType === 'ANIO' ? ' (Global + Desglose de 12 meses)' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+      </ModalBody>
+      <ModalFooter className="flex justify-between items-center gap-2">
+        <Button variant="cancelar" disabled={loading} onClick={onClose}>
+          Cerrar
+        </Button>
+        <Button
+          variant="marca"
+          isLoading={loading}
+          onClick={handleExport}
+          className="px-6 font-black"
+        >
+          {loading ? 'Procesando...' : 'Descargar Reporte'}
+        </Button>
       </ModalFooter>
     </Modal>
   );

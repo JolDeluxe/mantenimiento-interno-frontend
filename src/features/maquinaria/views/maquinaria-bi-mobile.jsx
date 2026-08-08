@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import {
   BIDetailModal,
   BIErrorState,
   BIMaquinariaFilters,
   BIMaquinariaMobileCards,
+  EquipmentKpiSummary,
+  BIExportModal,
 } from '../components/bi/bi-maquinaria-parts';
 
 export default function MaquinariaBIMobile({ bi, agrupacion }) {
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
   if (!bi.canUseBI) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -27,9 +31,18 @@ export default function MaquinariaBIMobile({ bi, agrupacion }) {
         onRefresh={bi.refresh}
         refreshing={bi.refreshing}
         mobile
+        onExport={() => setIsExportOpen(true)}
       />
 
       <BIErrorState errorInfo={bi.errorInfo} onRetry={bi.refresh} />
+
+      {agrupacion === 'EQUIPO' && bi.summary && (
+        <EquipmentKpiSummary
+          summary={bi.summary}
+          filters={bi.filters}
+          onChange={bi.updateFilters}
+        />
+      )}
 
       <BIMaquinariaMobileCards
         rows={bi.data}
@@ -44,6 +57,13 @@ export default function MaquinariaBIMobile({ bi, agrupacion }) {
         detailState={bi.detailState}
         onClose={bi.closeDetail}
         onPageChange={(page) => bi.openDetail(bi.detailState.maquinaId, page)}
+      />
+
+      <BIExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        filters={bi.filters}
+        catalogs={bi.catalogs}
       />
     </div>
   );

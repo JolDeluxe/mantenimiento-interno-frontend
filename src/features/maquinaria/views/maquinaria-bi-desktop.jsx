@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import {
   BIDetailModal,
   BIErrorState,
   BIMaquinariaFilters,
   BIMaquinariaTable,
+  EquipmentKpiSummary,
+  BIExportModal,
 } from '../components/bi/bi-maquinaria-parts';
 
 const VIEW_COPY = {
@@ -24,6 +26,7 @@ const VIEW_COPY = {
 
 export default function MaquinariaBIDesktop({ bi, agrupacion }) {
   const copy = VIEW_COPY[agrupacion] || VIEW_COPY.EQUIPO;
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   if (!bi.canUseBI) {
     return (
@@ -48,11 +51,28 @@ export default function MaquinariaBIDesktop({ bi, agrupacion }) {
         onChange={bi.updateFilters}
         onRefresh={bi.refresh}
         refreshing={bi.refreshing}
+        onExport={() => setIsExportOpen(true)}
       />
 
       <BIErrorState errorInfo={bi.errorInfo} onRetry={bi.refresh} />
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      {agrupacion === 'EQUIPO' && bi.summary && (
+        <EquipmentKpiSummary
+          summary={bi.summary}
+          filters={bi.filters}
+          onChange={bi.updateFilters}
+        />
+      )}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm bi-table-container relative">
+        <style>{`
+          .bi-table-container [class*="max-h-"] {
+            max-h: calc(100vh - 480px) !important;
+          }
+          .bi-table-container thead {
+            z-index: 10 !important;
+          }
+        `}</style>
         <BIMaquinariaTable
           rows={bi.data}
           loading={bi.loading}
@@ -70,6 +90,13 @@ export default function MaquinariaBIDesktop({ bi, agrupacion }) {
         detailState={bi.detailState}
         onClose={bi.closeDetail}
         onPageChange={(page) => bi.openDetail(bi.detailState.maquinaId, page)}
+      />
+
+      <BIExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        filters={bi.filters}
+        catalogs={bi.catalogs}
       />
     </div>
   );

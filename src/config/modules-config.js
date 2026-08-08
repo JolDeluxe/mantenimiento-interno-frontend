@@ -207,7 +207,6 @@ export const MODULES_CONFIG = [
     icon: 'calendar_clock',
     route: '/dias_laborados',
     allowedRoles: ['SUPER_ADMIN'],
-    hideInMenu: true,
   },
   {
     id: 'departamentos',

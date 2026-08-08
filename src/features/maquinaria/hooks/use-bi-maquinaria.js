@@ -79,6 +79,7 @@ export const useBIMaquinaria = ({ userRole, enabled = true, fixedAgrupacion = nu
   const [data, setData] = useState([]);
   const [metadata, setMetadata] = useState(null);
   const [resumen, setResumen] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -156,12 +157,13 @@ export const useBIMaquinaria = ({ userRole, enabled = true, fixedAgrupacion = nu
     setError('');
     setErrorInfo(null);
 
-    getBIMaquinariaKPIs(params, { signal: controller.signal })
+        getBIMaquinariaKPIs(params, { signal: controller.signal })
       .then((response) => {
         const payload = unwrapApiResponse(response);
         setData(payload?.data || []);
         setMetadata(payload?.metadata || null);
         setResumen(payload?.resumen || null);
+        setSummary(payload?.summary || null);
       })
       .catch((err) => {
         if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
@@ -293,6 +295,7 @@ export const useBIMaquinaria = ({ userRole, enabled = true, fixedAgrupacion = nu
     data,
     metadata,
     resumen,
+    summary,
     loading,
     refreshing,
     error,
