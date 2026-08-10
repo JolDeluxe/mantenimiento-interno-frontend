@@ -1,10 +1,13 @@
 import React from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
+import { formatDays, formatInteger, formatMinutes, formatPercent } from '../utils/bi-maquinaria-format';
 
 export const MaquinaCard = ({
   maquina,
   onViewDetail,
-  onEdit
+  onEdit,
+  biSummary,
+  biSummaryLoading = false
 }) => {
   const getCriticidadStyle = (crit) => {
     const map = {
@@ -21,7 +24,6 @@ export const MaquinaCard = ({
       PARO_PRODUCCION: 'bg-red-50 text-red-700 border-red-200',
       EN_REPARACION: 'bg-amber-50 text-amber-700 border-amber-200',
       INACTIVA: 'bg-slate-50 text-slate-700 border-slate-200',
-      BAJA: 'bg-rose-50 text-rose-700 border-rose-200',
       BAJA: 'bg-red-50 text-red-700 border-red-200'
     };
     return map[est] || 'bg-slate-100 text-slate-700 border-slate-200';
@@ -61,6 +63,24 @@ export const MaquinaCard = ({
         <span className="text-[10px] font-bold text-slate-400 uppercase">
           {maquina.proceso}
         </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2 text-[10px] font-bold text-slate-500">
+        {biSummaryLoading ? (
+          <>
+            <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+            <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+          </>
+        ) : biSummary ? (
+          <>
+            <span className="rounded-lg bg-slate-50 px-2 py-1">Fallas <strong className="text-slate-900">{formatInteger(biSummary.metricas?.frecuencia?.valor)}</strong></span>
+            <span className="rounded-lg bg-slate-50 px-2 py-1">Disp. <strong className="text-slate-900">{formatPercent(biSummary.metricas?.disponibilidad?.valorPorcentaje)}</strong></span>
+            <span className="rounded-lg bg-slate-50 px-2 py-1">MTTR técnico <strong className="text-slate-900">{formatMinutes(biSummary.metricas?.mttr?.valorMinutos)}</strong></span>
+            <span className="rounded-lg bg-slate-50 px-2 py-1">MTBF <strong className="text-slate-900">{formatDays(biSummary.metricas?.mtbf?.valorDias)}</strong></span>
+          </>
+        ) : (
+          <span className="col-span-2 rounded-lg bg-slate-50 px-2 py-1 text-slate-400">Indicadores no disponibles</span>
+        )}
       </div>
 
       {/* Renglón Inferior: Ubicación */}

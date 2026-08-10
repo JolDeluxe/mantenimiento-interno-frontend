@@ -203,6 +203,26 @@ export const MaquinaTable = ({
         );
       }
     },
+    // {
+    //   header: 'Indicadores',
+    //   accessorKey: 'bi',
+    //   headerClassName: 'w-[18%] min-w-[210px]',
+    //   cell: (row) => {
+    //     if (row.isSkeleton || biSummaryLoading) return <Skeleton className="h-8 w-44 rounded-md" />;
+    //     const bi = biSummaryById[String(row.id)];
+    //     if (!bi) {
+    //       return <span className="text-[11px] font-bold text-slate-400">—</span>;
+    //     }
+    //     return (
+    //       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] font-bold text-slate-600">
+    //         <span>Fallas: <strong className="text-slate-900">{formatInteger(bi.metricas?.frecuencia?.valor)}</strong></span>
+    //         <span>Disp: <strong className="text-slate-900">{formatPercent(bi.metricas?.disponibilidad?.valorPorcentaje)}</strong></span>
+    //         <span>MTTR técnico: <strong className="text-slate-900">{formatMinutes(bi.metricas?.mttr?.valorMinutos)}</strong></span>
+    //         <span>MTBF: <strong className="text-slate-900">{formatDays(bi.metricas?.mtbf?.valorDias)}</strong></span>
+    //       </div>
+    //     );
+    //   }
+    // },
     {
       header: 'Acciones',
       accessorKey: 'acciones',

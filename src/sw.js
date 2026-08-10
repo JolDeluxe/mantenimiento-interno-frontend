@@ -34,6 +34,17 @@ self.addEventListener('sync', (event) => {
     );
 });
 
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then((windowClients) => {
+                windowClients.forEach((client) => {
+                    client.postMessage({ type: 'CUADRA_PUSH_SUBSCRIPTION_CHANGE' });
+                });
+            })
+    );
+});
+
 // ── SPA Fallback (crítico para React Router) ──────────────────────────────────
 registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/index.html'), {

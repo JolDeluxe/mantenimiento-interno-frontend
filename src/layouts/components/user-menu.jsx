@@ -3,12 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/icon';
 import { useAuthStore } from '@/stores/auth-store';
+import { authService } from '@/features/auth/api/auth-api';
 
 export const UserMenu = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState(null);
   const menuRef = useRef(null);
 
   const currentUser = user?.data || user;
@@ -23,6 +24,7 @@ export const UserMenu = () => {
   };
 
   const imageUrl = resolveImageUrl(currentUser?.imagen);
+  const imageFailed = imageUrl && failedImageUrl === imageUrl;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,13 +36,8 @@ export const UserMenu = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageUrl]);
-
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    authService.logout();
   };
 
   const handleProfile = () => {
@@ -74,7 +71,7 @@ export const UserMenu = () => {
               src={imageUrl} 
               alt={`Avatar de ${currentUser?.nombre}`} 
               className="w-full h-full object-cover animate-in fade-in duration-300"
-              onError={() => setImageFailed(true)}
+              onError={() => setFailedImageUrl(imageUrl)}
               referrerPolicy="no-referrer"
             />
           ) : (

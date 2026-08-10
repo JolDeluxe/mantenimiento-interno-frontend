@@ -201,8 +201,10 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
 
     useEffect(() => {
         if (!tecnico) return;
-        setLoading(true);
-        setError(null);
+        queueMicrotask(() => {
+            setLoading(true);
+            setError(null);
+        });
 
         const params = {};
         if (filtro?.fechaInicio && filtro?.fechaFin) {
@@ -302,12 +304,6 @@ export const TecnicoDetalleModal = ({ tecnico, filtro, onClose }) => {
                                 <span className="text-lg font-black font-mono text-slate-800 leading-none">
                                     {r.totalTerminadas} <span className="text-xs text-slate-500 font-bold">tareas</span>
                                 </span>
-                                {r.totalTerminadas < 3 && r.totalTerminadas > 0 && (
-                                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-100/50 border border-amber-200 px-1.5 py-0.5 rounded shadow-sm uppercase tracking-wider">
-                                        <Icon name="warning" size="xs" className="scale-75" />
-                                        Muestra insuficiente
-                                    </div>
-                                )}
                             </div>
                         </div>
 

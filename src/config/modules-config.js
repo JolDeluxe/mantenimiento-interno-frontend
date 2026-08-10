@@ -151,7 +151,7 @@ export const MODULES_CONFIG = [
     //     allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
     //   }
     // ],
-    allowedRoles: ['SUPER_ADMIN'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
     children: [
       {
         id: 'reportes-general',
@@ -176,6 +176,13 @@ export const MODULES_CONFIG = [
         name: 'Cliente',
         route: '/reportes/cliente',
         allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+      },
+      {
+        id: 'reportes-maquinaria',
+        name: 'Maquinaria',
+        route: '/reportes/maquinaria',
+        allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
+        hideInMenu: true,
       }
     ]
   },
@@ -199,8 +206,7 @@ export const MODULES_CONFIG = [
     name: 'Días Laborados',
     icon: 'calendar_clock',
     route: '/dias_laborados',
-    allowedRoles: ['SUPER_ADMIN'],
-    hideInMenu: true,
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'departamentos',

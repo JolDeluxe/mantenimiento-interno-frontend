@@ -41,9 +41,11 @@ import DashboardGeneral from '@/features/dashboard/pages/dashboard-general';
 import DashboardEquipo from '@/features/dashboard/pages/dashboard-equipo';
 import DashboardArea from '@/features/dashboard/pages/dashboard-area';
 import DashboardReportes from '@/features/dashboard/pages/dashboard-reportes';
+import DashboardMaquinaria from '@/features/dashboard/pages/dashboard-maquinaria';
 
 import CalendarioPage from '@/features/calendario/pages/calendario-page';
 import ConfiguracionAutonomosPage from '@/features/z_super-admin/config/pages/configuracion-autonomos-page';
+import DiasLaboradosPage from '@/features/dias-laborados/pages/dias-laborados-page';
 
 const ROLES = {
   dashboard: MODULES_CONFIG.find(m => m.id === 'dashboard')?.allowedRoles || [],
@@ -69,8 +71,10 @@ const ROLES = {
   reportesEquipo: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-equipo')?.allowedRoles || [],
   reportesArea: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-area')?.allowedRoles || [],
   reportesCliente: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-cliente')?.allowedRoles || [],
+  reportesMaquinaria: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-maquinaria')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
   configuracion: MODULES_CONFIG.find(m => m.id === 'configuracion')?.allowedRoles || ['SUPER_ADMIN'],
+  diasLaborados: MODULES_CONFIG.find(m => m.id === 'dias_laborados')?.allowedRoles || ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
 };
 
 export const AppRoutes = () => {
@@ -159,6 +163,10 @@ export const AppRoutes = () => {
             <Route path="/calendario" element={<CalendarioPage />} />
           </Route>
 
+          <Route element={<RoleGuard allowedRoles={ROLES.diasLaborados} />}>
+            <Route path="/dias_laborados" element={<DiasLaboradosPage />} />
+          </Route>
+
           {/* Módulo: Por Aprobar Global */}
           <Route element={<RoleGuard allowedRoles={ROLES.aprobar} />}>
             <Route path="/aprobar" element={<AprobarPage />} />
@@ -205,6 +213,9 @@ export const AppRoutes = () => {
               </Route>
               <Route element={<RoleGuard allowedRoles={ROLES.reportesCliente} />}>
                 <Route path="cliente" element={<DashboardReportes />} />
+              </Route>
+              <Route element={<RoleGuard allowedRoles={ROLES.reportesMaquinaria} />}>
+                <Route path="maquinaria" element={<DashboardMaquinaria />} />
               </Route>
             </Route>
           </Route>

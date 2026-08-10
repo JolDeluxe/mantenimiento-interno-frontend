@@ -71,6 +71,9 @@ export const App = () => {
 
     const handleServiceWorkerMessage = (event) => {
       if (event.data?.type === 'CUADRA_SYNC_OFFLINE_QUEUE') runQueue();
+      if (event.data?.type === 'CUADRA_PUSH_SUBSCRIPTION_CHANGE') {
+        window.dispatchEvent(new CustomEvent('cuadra-push-subscription-change'));
+      }
     };
 
     const handleQueueChanged = () => {

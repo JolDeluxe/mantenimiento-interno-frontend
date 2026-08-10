@@ -6,11 +6,12 @@ import { useUIStore } from '@/stores/ui-store';
 import { GlassSheen } from '@/components/ui/liquid-glass-mobile';
 import { useNotifyStore } from '@/stores/notify-store';
 import { NotifyBadge } from '@/features/notificaciones/components/notify-badge';
+import { authService } from '@/features/auth/api/auth-api';
 
 // Recibe la prop showBurger para decidir si renderiza el botón del menú lateral
 export const MobileHeader = ({ showBurger = false }) => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { toggleMobileMenu, badgeCounts } = useUIStore();
   const { noLeidas } = useNotifyStore();
 
@@ -32,7 +33,7 @@ export const MobileHeader = ({ showBurger = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [profileOpen]);
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => { authService.logout(); };
   const handleNavigateProfile = () => { navigate('/perfil'); setProfileOpen(false); };
 
   const resolveImageUrl = (path) => {

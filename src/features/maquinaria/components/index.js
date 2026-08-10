@@ -5,3 +5,5 @@ export { MaquinaDetailModal } from './maquina-detail-modal';
 export { MaquinaTable } from './maquina-table';
 export { MaquinaCard } from './maquina-card';
 export { QrCodeCard } from './qr-code-card';
+export { MaquinariaBIView } from './maquinaria-bi-view';
+export { MaquinariaViewTabs } from './maquinaria-view-tabs';
