@@ -1,7 +1,6 @@
 import React from 'react';
 import { Table, Icon, TableActions, Skeleton } from '@/components/ui/z_index';
 import { useQrPrintStore } from '../stores/qr-print-store';
-import { formatDays, formatInteger, formatMinutes, formatPercent } from '../utils/bi-maquinaria-format';
 
 const SelectionHeaderCheckbox = ({ maquinas, selectedMaquinas, selectAll }) => {
   const pageIds = (maquinas || []).filter(m => m && !m.isSkeleton).map(m => m.id);
@@ -39,9 +38,7 @@ export const MaquinaTable = ({
   totalItems,
   onPageChange,
   onViewDetail,
-  onEdit,
-  biSummaryById = {},
-  biSummaryLoading = false
+  onEdit
 }) => {
   const { selectedMaquinas, toggleSelect, selectAll, isPrintMode } = useQrPrintStore();
   const getCriticidadStyle = (crit) => {

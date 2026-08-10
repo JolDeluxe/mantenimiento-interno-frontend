@@ -72,7 +72,7 @@ const InlineSelect = ({ options = [], value, onChange, icon, placeholder, classN
 export function PeriodoSelector({ value, onChange, disabled = false }) {
   const currentWeek = getISOWeekInfo();
   const today = getTodayMX();
-  
+
   const years = useMemo(() => {
     return Array.from({ length: Math.max(7, today.year - 2019) }, (_, index) => today.year - index);
   }, [today.year]);
