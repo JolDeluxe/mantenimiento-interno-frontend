@@ -9,7 +9,7 @@ import { useNotifyStore } from '@/stores/notify-store';
 import { getUnreadCount } from '@/features/notificaciones/api/notificaciones-api';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { OfflinePendingBadge } from '@/components/ui/offline-pending-badge';
-import { subscribeToPush } from '@/lib/push';
+import { ensurePushSubscription } from '@/lib/push';
 import { notify } from '@/components/notification/adaptive-notify';
 import socket from '@/lib/socket';
 import { useSyncStore } from '@/stores/sync-store';
@@ -47,11 +47,35 @@ export const DashboardLayout = () => {
 
   // Registro de Push Notifications
   useEffect(() => {
+    if (!currentUser?.id) return undefined;
+
+    const repairPushSubscription = ({ force = false } = {}) => {
+      ensurePushSubscription({ force, minIntervalMs: 60000 }).catch((error) => {
+        console.warn('[Push] Reparación de suscripción fallida:', error);
+      });
+    };
+
     const timeout = setTimeout(() => {
-      subscribeToPush();
+      repairPushSubscription();
     }, 2000);
-    return () => clearTimeout(timeout);
-  }, []);
+
+    const handleFocus = () => repairPushSubscription();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') repairPushSubscription();
+    };
+    const handleSubscriptionChange = () => repairPushSubscription({ force: true });
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('cuadra-push-subscription-change', handleSubscriptionChange);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('cuadra-push-subscription-change', handleSubscriptionChange);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentUser?.id]);
 
   // Conteos globales para badges en layouts
   const setBadgeCounts = useUIStore((s) => s.setBadgeCounts);

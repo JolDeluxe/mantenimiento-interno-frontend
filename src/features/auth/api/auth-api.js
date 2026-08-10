@@ -1,5 +1,6 @@
 import api, { handleError } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth-store';
+import { getCurrentPushEndpoint } from '@/lib/push';
 
 export const authService = {
   /**
@@ -56,7 +57,11 @@ export const authService = {
       const refreshToken = useAuthStore.getState().refreshToken;
       
       if (refreshToken) {
-        await api.post('/api/auth/logout', { refreshToken });
+        const endpoint = await getCurrentPushEndpoint();
+        await api.post('/api/auth/logout', {
+          refreshToken,
+          ...(endpoint ? { endpoint } : {}),
+        });
       }
     } catch (error) {
       console.error('Error al notificar logout al backend', error);
