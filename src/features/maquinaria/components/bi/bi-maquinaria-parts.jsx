@@ -3,7 +3,7 @@ import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, Pagination, S
 import { cn } from '@/utils/cn';
 import { getISOWeekInfo, getSemanasInYear, getWeekRange } from '@/lib/date';
 import { toast } from 'react-toastify';
-import { generarBIMaquinariaReporte, enviarBIMaquinariaReporte } from '../../api/bi-maquinaria-api';
+import { generarBIMaquinariaReporte } from '../../api/bi-maquinaria-api';
 import {
   addDaysToDateInput,
   formatDays,
@@ -421,11 +421,12 @@ const SummaryCard = ({ icon, label, value, hint, tone = 'slate' }) => {
     emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     amber: 'bg-amber-50 text-amber-700 border-amber-200',
     sky: 'bg-sky-50 text-sky-700 border-sky-200',
+    rose: 'bg-rose-50 text-rose-700 border-rose-200',
   };
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl border', colors[tone])}>
+        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border', colors[tone])}>
           <Icon name={icon} size="sm" />
         </div>
         <div className="min-w-0">
@@ -438,14 +439,77 @@ const SummaryCard = ({ icon, label, value, hint, tone = 'slate' }) => {
   );
 };
 
-export const BIMaquinariaSummary = ({ resumen, metadata }) => (
-  <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-    <SummaryCard icon="precision_manufacturing" label="Maquinas observadas" value={formatInteger(resumen?.maquinasObservadas)} hint={`${formatInteger(metadata?.totalMaquinasFiltradas)} maquinas filtradas`} />
-    <SummaryCard icon="report_problem" label="Frecuencia total" value={formatInteger(resumen?.frecuenciaTotal)} hint={`${formatInteger(resumen?.fallasAbiertas)} abiertas`} tone="amber" />
-    <SummaryCard icon="task_alt" label="Fallas restauradas" value={formatInteger(resumen?.fallasRestauradas)} hint={`${formatInteger(resumen?.intervalosMTBFValidos)} intervalos MTBF validos`} tone="emerald" />
-    <SummaryCard icon="warning" label="Paros incompletos" value={formatMinutes(resumen?.minutosParcialesSinPorcentaje)} hint={metadata?.periodoRecortadoAHoy ? 'Periodo recortado al dia actual' : 'Periodo solicitado completo'} tone="sky" />
-  </section>
-);
+const getSummaryAvailabilityTone = (value, agrupacion) => {
+  const tone = getDisponibilidadTone(value, agrupacion);
+  if (tone.text.includes('emerald')) return 'emerald';
+  if (tone.text.includes('amber')) return 'amber';
+  if (tone.text.includes('rose')) return 'rose';
+  return 'slate';
+};
+
+export const BIMaquinariaSummary = ({ resumen, metadata, summary, agrupacion = 'EQUIPO' }) => {
+  const paroProduccionMinutos = summary?.minutosParoProduccion ?? resumen?.minutosParoEquivalentesConfirmados;
+  const frecuencia = summary?.frecuencia?.valor ?? summary?.correctivos?.total ?? resumen?.frecuenciaTotal;
+  const porcentajeParticipacion = summary?.participacionSolicitudes?.porcentaje;
+  const disponibilidadGeneral = summary?.disponibilidad?.general?.porcentaje
+    ?? summary?.disponibilidad?.porcentaje
+    ?? summary?.disponibilidad?.valorPorcentaje;
+  const disponibilidadTop = summary?.disponibilidad?.top;
+  const disponibilidadTone = getSummaryAvailabilityTone(disponibilidadGeneral, agrupacion);
+  const disponibilidadTopTone = getSummaryAvailabilityTone(disponibilidadTop?.porcentaje, agrupacion);
+  const metaDisponibilidad = summary?.metaDisponibilidadPorcentaje ?? 98;
+
+  if (!summary && !resumen) return null;
+
+  return (
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <SummaryCard
+        icon="assignment"
+        label="Solicitudes"
+        value={formatInteger(frecuencia, '0')}
+        hint="Total del periodo"
+        tone={(frecuencia ?? 0) > 0 ? 'amber' : 'emerald'}
+      />
+      <SummaryCard
+        icon="pie_chart"
+        label="% Part"
+        value={formatPercent(porcentajeParticipacion, '—')}
+        hint={summary?.participacionSolicitudes
+          ? `${formatInteger(summary.participacionSolicitudes.solicitudesFiltro, '0')} de ${formatInteger(summary.participacionSolicitudes.solicitudesTotal, '0')}`
+          : 'Del total general'}
+        tone="sky"
+      />
+      <SummaryCard
+        icon="verified"
+        label="Disp. Eq. Promedio"
+        value={formatPercent(disponibilidadGeneral, '—')}
+        hint="Todas las máquinas filtradas"
+        tone={disponibilidadTone}
+      />
+      <SummaryCard
+        icon="leaderboard"
+        label="Disp. Top 10"
+        value={formatPercent(disponibilidadTop?.porcentaje, '—')}
+        hint={disponibilidadTop ? `${disponibilidadTop.cantidadEquipos} equipos del ranking` : 'Sin ranking'}
+        tone={disponibilidadTopTone}
+      />
+      <SummaryCard
+        icon="flag"
+        label="Meta"
+        value={formatPercent(metaDisponibilidad, '98%')}
+        hint="Objetivo mínimo"
+        tone="slate"
+      />
+      <SummaryCard
+        icon="timer_off"
+        label="Mins de Paro"
+        value={formatMinutes(paroProduccionMinutos, '0 min')}
+        hint={metadata?.periodoRecortadoAHoy ? 'Periodo recortado al día actual' : 'Total del periodo'}
+        tone={(paroProduccionMinutos ?? 0) > 0 ? 'rose' : 'emerald'}
+      />
+    </section>
+  );
+};
 
 /**
  * Determina si la disponibilidad de un registro es calculable (no null).
@@ -1079,7 +1143,6 @@ export const BIMaquinariaTable = ({
   agrupacion,
   onPageChange,
   onOpenDetail,
-  onDrilldown,
   ordenarPor,
   direccion,
   onSortChange,
@@ -1357,7 +1420,7 @@ export const BIDetailModal = ({ detailState, onClose, onPageChange }) => {
   );
 };
 
-export const BIExportModal = ({ isOpen, onClose, filters, catalogs }) => {
+export const BIExportModal = ({ isOpen, onClose, filters }) => {
   const [format, setFormat] = useState('PDF'); // 'PDF' | 'EXCEL'
   const [agrupacion, setAgrupacion] = useState(filters.agrupacion || 'EQUIPO'); // 'EQUIPO' | 'PROCESO' | 'AREA'
   const [periodType, setPeriodType] = useState('MES'); // 'DIA' | 'SEMANA' | 'MES' | 'ANIO' | 'CUSTOM'

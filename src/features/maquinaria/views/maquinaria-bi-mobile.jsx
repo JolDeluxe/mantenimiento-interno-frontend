@@ -4,8 +4,8 @@ import {
   BIDetailModal,
   BIErrorState,
   BIMaquinariaFilters,
+  BIMaquinariaSummary,
   BIMaquinariaMobileCards,
-  EquipmentKpiSummary,
   BIExportModal,
 } from '../components/bi/bi-maquinaria-parts';
 
@@ -36,11 +36,12 @@ export default function MaquinariaBIMobile({ bi, agrupacion }) {
 
       <BIErrorState errorInfo={bi.errorInfo} onRetry={bi.refresh} />
 
-      {agrupacion === 'EQUIPO' && bi.summary && (
-        <EquipmentKpiSummary
+      {bi.resumen && (
+        <BIMaquinariaSummary
+          resumen={bi.resumen}
+          metadata={bi.metadata}
           summary={bi.summary}
-          filters={bi.filters}
-          onChange={bi.updateFilters}
+          agrupacion={agrupacion}
         />
       )}
 
