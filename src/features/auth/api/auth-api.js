@@ -2,6 +2,24 @@ import api, { handleError } from '@/lib/axios';
 import { useAuthStore } from '@/stores/auth-store';
 import { getCurrentPushEndpoint } from '@/lib/push';
 
+const LOGOUT_BACKEND_TIMEOUT_MS = 3000;
+const LOGOUT_TOTAL_TIMEOUT_MS = 3500;
+
+const withLogoutTimeout = (promise) => {
+  let timeoutId;
+
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(
+      () => reject(new Error('El cierre remoto de sesión tardó demasiado.')),
+      LOGOUT_TOTAL_TIMEOUT_MS
+    );
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+};
+
 export const authService = {
   /**
    * Iniciar sesión
@@ -54,15 +72,21 @@ export const authService = {
    */
   logout: async () => {
     try {
-      const refreshToken = useAuthStore.getState().refreshToken;
-      
-      if (refreshToken) {
-        const endpoint = await getCurrentPushEndpoint();
-        await api.post('/api/auth/logout', {
-          refreshToken,
-          ...(endpoint ? { endpoint } : {}),
-        });
-      }
+      await withLogoutTimeout((async () => {
+        const refreshToken = useAuthStore.getState().refreshToken;
+        const token = useAuthStore.getState().token;
+
+        if (refreshToken) {
+          const endpoint = await getCurrentPushEndpoint();
+          await api.post('/api/auth/logout', {
+            refreshToken,
+            ...(endpoint ? { endpoint } : {}),
+          }, {
+            timeout: LOGOUT_BACKEND_TIMEOUT_MS,
+            ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+          });
+        }
+      })());
     } catch (error) {
       console.error('Error al notificar logout al backend', error);
     } finally {

@@ -74,7 +74,7 @@ const ROLES = {
   reportesMaquinaria: MODULES_CONFIG.find(m => m.id === 'reportes')?.children?.find(c => c.id === 'reportes-maquinaria')?.allowedRoles || [],
   calendario: MODULES_CONFIG.find(m => m.id === 'calendario')?.allowedRoles || [],
   configuracion: MODULES_CONFIG.find(m => m.id === 'configuracion')?.allowedRoles || ['SUPER_ADMIN'],
-  diasLaborados: MODULES_CONFIG.find(m => m.id === 'dias_laborados')?.allowedRoles || ['SUPER_ADMIN'],
+  diasLaborados: MODULES_CONFIG.find(m => m.id === 'dias_laborados')?.allowedRoles || ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
 };
 
 export const AppRoutes = () => {

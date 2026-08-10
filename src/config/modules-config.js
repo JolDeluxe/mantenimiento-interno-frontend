@@ -206,7 +206,7 @@ export const MODULES_CONFIG = [
     name: 'Días Laborados',
     icon: 'calendar_clock',
     route: '/dias_laborados',
-    allowedRoles: ['SUPER_ADMIN'],
+    allowedRoles: ['SUPER_ADMIN', 'JEFE_MTTO', 'COORDINADOR_MTTO'],
   },
   {
     id: 'departamentos',

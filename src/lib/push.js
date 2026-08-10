@@ -2,6 +2,19 @@ import api from '@/lib/axios';
 
 let ensurePushSubscriptionPromise = null;
 let lastEnsureAttemptAt = 0;
+const SERVICE_WORKER_READY_TIMEOUT_MS = 1500;
+
+const withTimeout = (promise, timeoutMs, message) => {
+    let timeoutId;
+
+    const timeout = new Promise((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => {
+        window.clearTimeout(timeoutId);
+    });
+};
 
 /**
  * Convierte la VAPID public key de Base64Url a Uint8Array,
@@ -44,7 +57,11 @@ export const getCurrentPushEndpoint = async () => {
     try {
         if (!supportsPush() || Notification.permission !== 'granted') return null;
 
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await withTimeout(
+            navigator.serviceWorker.ready,
+            SERVICE_WORKER_READY_TIMEOUT_MS,
+            'Service Worker no estuvo listo a tiempo.'
+        );
         const subscription = await registration.pushManager.getSubscription();
 
         return subscription?.endpoint || null;
