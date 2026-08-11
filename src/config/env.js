@@ -52,13 +52,26 @@ validateEnv();
 
 const connection = import.meta.env.VITE_CONNECTION;
 
+const getRuntimeHostname = () => (
+  typeof window !== 'undefined' ? window.location.hostname : ''
+);
+
+const isLocalHostname = (hostname) => (
+  hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
+);
+
+const resolveApiUrl = () => {
+  if (connection === 'prod') {
+    return import.meta.env.VITE_API_URL_PROD;
+  }
+
+  return isLocalHostname(getRuntimeHostname())
+    ? import.meta.env.VITE_API_URL_LOCAL
+    : import.meta.env.VITE_API_URL_NETWORK;
+};
+
 export const ENV = {
-  API_URL:
-    connection === 'network'
-      ? import.meta.env.VITE_API_URL_NETWORK
-      : connection === 'prod'
-      ? import.meta.env.VITE_API_URL_PROD
-      : import.meta.env.VITE_API_URL_LOCAL,
+  API_URL: resolveApiUrl(),
 
 
   
