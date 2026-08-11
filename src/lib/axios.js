@@ -127,6 +127,14 @@ export const isSessionInvalidError = (error) => (
   error?.response?.status === 401 || error?.response?.status === 403
 );
 
+export const isDefinitiveAuthError = (error) => (
+  isSessionInvalidError(error) ||
+  (
+    error?.response?.status === 400 &&
+    error?.config?.url?.includes('/auth/refresh')
+  )
+);
+
 export const isTemporaryAuthError = (error) => (
   isConnectivityError(error) ||
   error?.response?.status === 502 ||
@@ -231,11 +239,11 @@ const refreshAccessToken = async () => {
     return true;
 
   } catch (error) {
-    if (legacyRefreshToken && isSessionInvalidError(error)) {
+    if (legacyRefreshToken && isDefinitiveAuthError(error)) {
       clearLegacyTokens();
     }
 
-    if (isSessionInvalidError(error)) {
+    if (isDefinitiveAuthError(error)) {
       console.error('🔴 Refresh inválido, purgando sesión global');
       useAuthStore.getState().logout();
       if (window.location.pathname !== '/login') {
@@ -295,15 +303,15 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (isDefinitiveAuthError(error) && originalRequest?.url?.includes('/auth/refresh')) {
+      console.error('🔴 Refresh inválido, cerrando sesión...');
+      useAuthStore.getState().logout();
+      window.location.href = '/login?session=expired';
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register')) {
-        return Promise.reject(error);
-      }
-
-      if (originalRequest.url?.includes('/auth/refresh')) {
-        console.error('🔴 Refresh inválido, cerrando sesión...');
-        useAuthStore.getState().logout();
-        window.location.href = '/login?session=expired';
         return Promise.reject(error);
       }
 

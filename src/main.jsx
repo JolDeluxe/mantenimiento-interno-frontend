@@ -6,11 +6,15 @@ import './index.css';
 // En producción, vite-plugin-pwa genera este módulo virtual
 if (import.meta.env.PROD) {
   import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({
-      // Recarga silenciosa cuando hay nueva versión
+    const updateSW = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        updateSW(true);
+      },
       onRegisteredSW(swUrl, r) {
         // Polling de actualizaciones cada hora en producción
         setInterval(async () => {
+          if (!r) return;
           if (!r.installing && navigator) {
             if ('connection' in navigator && !navigator.onLine) return;
             const resp = await fetch(swUrl, {

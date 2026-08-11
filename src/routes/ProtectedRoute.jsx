@@ -13,16 +13,18 @@ export const ProtectedRoute = () => {
     : '';
 
   useEffect(() => {
-    if (isAuthenticated) {
-      return;
-    }
-
     let active = true;
-    setAuthChecking();
-    api.post('/api/auth/refresh', {})
+    if (!isAuthenticated) setAuthChecking();
+
+    const sessionCheck = isAuthenticated
+      ? api.get('/api/auth/me')
+      : api.post('/api/auth/refresh', {});
+
+    sessionCheck
       .then((payload) => {
-        if (!active || !payload?.user) return;
-        useAuthStore.getState().setAuth(payload.user);
+        if (!active) return;
+        const verifiedUser = payload?.user || payload?.data || payload;
+        if (verifiedUser) useAuthStore.getState().setAuth(verifiedUser);
       })
       .catch((error) => {
         if (!active) return;

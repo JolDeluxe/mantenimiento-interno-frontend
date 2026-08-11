@@ -7,6 +7,9 @@ import { clientsClaim } from 'workbox-core';
 
 /* global clients */
 
+// Activa la versión nueva tan pronto se instala para PWAs abiertas con bundle viejo.
+self.skipWaiting();
+
 // Toma control inmediato de todos los clientes abiertos
 clientsClaim();
 
