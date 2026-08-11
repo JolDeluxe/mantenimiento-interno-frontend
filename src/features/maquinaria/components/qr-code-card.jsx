@@ -2,6 +2,8 @@ import React from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { buildMachineQrPayload } from '../utils/qr-payload';
 
+const PUBLIC_PORTAL_LINK = 'https://cuadra-mbc-mantenimiento-publico.netlify.app/';
+
 export const QrCodeCard = ({ maquina, onLoad }) => {
   if (!maquina) return null;
 
@@ -40,9 +42,14 @@ export const QrCodeCard = ({ maquina, onLoad }) => {
           No se puede generar el QR porque la URL del portal público no está configurada correctamente.
         </div>
       )}
-      <div className="flex items-center justify-center gap-1.5 text-[9px] text-slate-400 font-bold mt-2.5 leading-tight uppercase tracking-wider print:text-slate-500 print:text-xs print:mt-3">
+      <div className="flex items-start justify-center gap-1.5 text-[9px] text-slate-400 font-bold mt-2.5 leading-tight tracking-wider print:text-slate-500 print:text-xs print:mt-3">
         <Icon name="photo_camera" size="13px" className="shrink-0 print:text-slate-500" />
-        <span>Para reportar incidentes, escanea con la cámara del celular</span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="uppercase">Escanee con la cámara del celular o ingrese a este link</span>
+          <span className="font-mono text-[7px] normal-case tracking-normal text-slate-500 print:text-[9px]">
+            {PUBLIC_PORTAL_LINK}
+          </span>
+        </span>
       </div>
     </div>
   );
