@@ -10,6 +10,7 @@ export const UserMenu = () => {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef(null);
 
   const currentUser = user?.data || user;
@@ -36,8 +37,15 @@ export const UserMenu = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+    } catch (error) {
+      alert(error.message || 'No fue posible cerrar sesión. Intenta nuevamente.');
+      setIsLoggingOut(false);
+    }
   };
 
   const handleProfile = () => {
@@ -117,11 +125,13 @@ export const UserMenu = () => {
 
             <button
               onClick={handleLogout}
+              disabled={isLoggingOut}
               className="
                 cursor-pointer
                 w-full px-4 py-2 text-left text-sm font-medium
                 hover:bg-red-50 transition-colors
                 flex items-center gap-3 text-red-600
+                disabled:opacity-60 disabled:cursor-not-allowed
               "
             >
               <Icon name="logout" size="20px" />

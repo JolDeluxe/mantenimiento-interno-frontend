@@ -6,22 +6,26 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
-      refreshToken: null,
       isAuthenticated: false,
+      authStatus: 'CHECKING',
 
-      setAuth: (user, token, refreshToken) => {
+      setAuth: (user) => {
         set({
           user,
-          token,
-          refreshToken,
           isAuthenticated: true,
+          authStatus: 'AUTHENTICATED',
         });
       },
 
-      setToken: (token) => {
-        set({ token });
-      },
+      setAuthChecking: () => set({ authStatus: 'CHECKING' }),
+
+      setAuthTemporarilyUnavailable: () => set({ authStatus: 'TEMPORARILY_UNAVAILABLE' }),
+
+      setUnauthenticated: () => set({
+        user: null,
+        isAuthenticated: false,
+        authStatus: 'UNAUTHENTICATED',
+      }),
 
       setUser: (updatedUser) => {
         set((state) => ({
@@ -35,9 +39,8 @@ export const useAuthStore = create(
 
       set({
           user: null,
-          token: null,
-          refreshToken: null,
           isAuthenticated: false,
+          authStatus: 'UNAUTHENTICATED',
       });
       
       localStorage.removeItem('token');
@@ -46,17 +49,21 @@ export const useAuthStore = create(
   },
 
       getUser: () => get().user,
-      getToken: () => get().token,
-      getRefreshToken: () => get().refreshToken,
       isAuth: () => get().isAuthenticated,
     }),
     {
       name: 'auth-storage', 
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+      }),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        user: persistedState?.user ?? null,
+        isAuthenticated: Boolean(persistedState?.isAuthenticated && persistedState?.user),
+        authStatus: persistedState?.isAuthenticated && persistedState?.user
+          ? 'AUTHENTICATED'
+          : 'CHECKING',
       }),
     }
   )

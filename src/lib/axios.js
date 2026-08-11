@@ -123,6 +123,17 @@ const isConnectivityError = (error) => (
   (error.message === 'Network Error' || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED')
 );
 
+export const isSessionInvalidError = (error) => (
+  error?.response?.status === 401 || error?.response?.status === 403
+);
+
+export const isTemporaryAuthError = (error) => (
+  isConnectivityError(error) ||
+  error?.response?.status === 502 ||
+  error?.response?.status === 503 ||
+  error?.response?.status === 504
+);
+
 const attachMutationDedupe = (config, mutationKey) => {
   const originalAdapter = config.adapter;
 
@@ -144,6 +155,7 @@ const attachMutationDedupe = (config, mutationKey) => {
 const api = axios.create({
   baseURL: ENV.API_URL,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -151,40 +163,84 @@ const api = axios.create({
 
 let isRefreshing = false;
 let failedQueue = [];
+let legacyRefreshChecked = false;
 
-const processQueue = (error, token = null) => {
+const processQueue = (error) => {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve();
     }
   });
   failedQueue = [];
 };
 
-const refreshAccessToken = async () => {
-  try {
-    const refreshToken = useAuthStore.getState().getRefreshToken();
-    if (!refreshToken) throw new Error('No refresh token available');
+const getLegacyRefreshToken = () => {
+  if (legacyRefreshChecked || typeof window === 'undefined') return null;
+  legacyRefreshChecked = true;
 
+  try {
+    const rawStorage = window.localStorage.getItem('auth-storage');
+    if (!rawStorage) return null;
+
+    const storage = JSON.parse(rawStorage);
+    const refreshToken = storage?.state?.refreshToken;
+    if (!refreshToken) return null;
+
+    return refreshToken;
+  } catch {
+    return null;
+  }
+};
+
+const clearLegacyTokens = () => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const rawStorage = window.localStorage.getItem('auth-storage');
+    if (rawStorage) {
+      const storage = JSON.parse(rawStorage);
+      if (storage?.state) {
+        delete storage.state.token;
+        delete storage.state.refreshToken;
+        window.localStorage.setItem('auth-storage', JSON.stringify(storage));
+      }
+    }
+  } catch {
+    // No bloquear la recuperación de sesión por un storage corrupto.
+  }
+
+  window.localStorage.removeItem('token');
+  window.localStorage.removeItem('refreshToken');
+};
+
+const refreshAccessToken = async () => {
+  const legacyRefreshToken = getLegacyRefreshToken();
+  try {
     const response = await axios.post(
       `${ENV.API_URL}/api/auth/refresh`,
-      { refreshToken },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }
+      legacyRefreshToken ? { refreshToken: legacyRefreshToken } : {},
+      { headers: { 'Content-Type': 'application/json' }, timeout: 10000, withCredentials: true }
     );
 
-    const { accessToken } = response.data;
-    if (!accessToken) throw new Error('No access token in refresh response');
+    const { user } = response.data;
+    if (user) useAuthStore.getState().setAuth(user);
+    if (legacyRefreshToken) clearLegacyTokens();
 
-    useAuthStore.getState().setToken(accessToken);
-    return accessToken;
+    return true;
 
   } catch (error) {
-    console.error('🔴 Fallo el refresh, purgando sesión global');
-    useAuthStore.getState().logout();
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login?session=expired';
+    if (legacyRefreshToken && isSessionInvalidError(error)) {
+      clearLegacyTokens();
+    }
+
+    if (isSessionInvalidError(error)) {
+      console.error('🔴 Refresh inválido, purgando sesión global');
+      useAuthStore.getState().logout();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?session=expired';
+      }
     }
     throw error;
   }
@@ -192,10 +248,7 @@ const refreshAccessToken = async () => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
-    if (token && !config.url?.includes('/auth/login') && !config.url?.includes('/auth/register')) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    config.withCredentials = true;
 
     const mutationKey = getMutationKey(config);
     if (mutationKey) {
@@ -209,8 +262,8 @@ api.interceptors.request.use(
 
     if (ENV.IS_DEV) {
       console.log(`🌐 [${config.method?.toUpperCase()}] ${config.url}`, {
-        hasToken: !!token,
-        data: config.data,
+        hasCookieSession: true,
+        hasBody: Boolean(config.data),
       });
     }
     return config;
@@ -248,7 +301,7 @@ api.interceptors.response.use(
       }
 
       if (originalRequest.url?.includes('/auth/refresh')) {
-        console.error('🔴 Refresh token inválido, cerrando sesión...');
+        console.error('🔴 Refresh inválido, cerrando sesión...');
         useAuthStore.getState().logout();
         window.location.href = '/login?session=expired';
         return Promise.reject(error);
@@ -258,8 +311,7 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+          .then(() => {
             return api(originalRequest);
           })
           .catch(err => Promise.reject(err));
@@ -269,12 +321,11 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const newToken = await refreshAccessToken();
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        await refreshAccessToken();
+        processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError);
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

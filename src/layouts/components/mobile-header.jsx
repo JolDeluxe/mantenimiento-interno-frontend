@@ -19,6 +19,7 @@ export const MobileHeader = ({ showBurger = false }) => {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const profileRef = useRef(null);
 
   const currentUser = user?.data || user;
@@ -33,7 +34,16 @@ export const MobileHeader = ({ showBurger = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [profileOpen]);
 
-  const handleLogout = () => { authService.logout(); };
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+    } catch (error) {
+      alert(error.message || 'No fue posible cerrar sesión. Intenta nuevamente.');
+      setIsLoggingOut(false);
+    }
+  };
   const handleNavigateProfile = () => { navigate('/perfil'); setProfileOpen(false); };
 
   const resolveImageUrl = (path) => {
@@ -98,7 +108,8 @@ export const MobileHeader = ({ showBurger = false }) => {
       
       <button 
         onClick={handleLogout} 
-        className="w-full px-4 py-3 text-left text-sm font-bold hover:bg-red-500/20 active:bg-red-500/30 transition-all flex items-center gap-3 text-red-100/90 rounded-xl outline-none group"
+        disabled={isLoggingOut}
+        className="w-full px-4 py-3 text-left text-sm font-bold hover:bg-red-500/20 active:bg-red-500/30 transition-all flex items-center gap-3 text-red-100/90 rounded-xl outline-none group disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <Icon name="logout" size="20px" className="text-red-300/80 group-hover:text-red-200 transition-colors" />
         <span>Cerrar Sesión</span>
