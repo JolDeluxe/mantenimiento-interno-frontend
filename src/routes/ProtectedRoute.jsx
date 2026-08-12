@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import api, { isSessionInvalidError, isTemporaryAuthError } from '@/lib/axios';
 
 export const ProtectedRoute = () => {
-  const { isAuthenticated, user, authStatus, setAuthChecking, setAuthTemporarilyUnavailable, setUnauthenticated } = useAuthStore();
+  const { isAuthenticated, user, authStatus, setAuthChecking, setAuthTemporarilyUnavailable, resetAuthOnly } = useAuthStore();
   const currentUser = user?.data || user;
   let urlDestino = import.meta.env.VITE_URL_PORTAL_CLIENTE || 'http://localhost:5001';
   if (urlDestino.endsWith('/')) urlDestino = urlDestino.slice(0, -1);
@@ -31,7 +31,7 @@ export const ProtectedRoute = () => {
         if (isTemporaryAuthError(error)) {
           setAuthTemporarilyUnavailable();
         } else if (isSessionInvalidError(error)) {
-          setUnauthenticated();
+          resetAuthOnly();
         } else {
           setAuthTemporarilyUnavailable();
         }
@@ -40,7 +40,7 @@ export const ProtectedRoute = () => {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, setAuthChecking, setAuthTemporarilyUnavailable, setUnauthenticated]);
+  }, [isAuthenticated, setAuthChecking, setAuthTemporarilyUnavailable, resetAuthOnly]);
 
   useEffect(() => {
     if (isAuthenticated && currentUser?.rol === 'CLIENTE_INTERNO') {

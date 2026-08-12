@@ -54,8 +54,14 @@ export const authService = {
         throw new Error('El backend no devolvió las credenciales correctamente');
       }
 
-      // Guardar en el store global (Zustand)
-      useAuthStore.getState().setAuth(userToSave);
+      const verifiedPayload = await api.get('/api/auth/me', { _skipAuthRedirect: true });
+      const verifiedUser = verifiedPayload?.user || verifiedPayload?.data || verifiedPayload;
+
+      if (!verifiedUser) {
+        throw new Error('No se pudo verificar la sesión iniciada.');
+      }
+
+      useAuthStore.getState().setAuth(verifiedUser);
 
       return payload;
     } catch (error) {

@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import api, { isTemporaryAuthError } from '@/lib/axios';
 
+const SSO_RECOVERY_KEY = 'cuadra:sso-recovery-failed';
+
 export const SsoReceiver = () => {
   const [errorLog, setErrorLog] = useState(null);
   const [temporaryError, setTemporaryError] = useState(false);
@@ -17,6 +19,7 @@ export const SsoReceiver = () => {
           throw new Error('No se pudo reanudar la sesión.');
         }
 
+        sessionStorage.removeItem(SSO_RECOVERY_KEY);
         useAuthStore.getState().setAuth(payload.user);
         window.history.replaceState(null, '', window.location.pathname);
         window.location.href = '/';
@@ -24,6 +27,13 @@ export const SsoReceiver = () => {
       .catch((error) => {
         const temporary = isTemporaryAuthError(error);
         setTemporaryError(temporary);
+        if (!temporary) {
+          sessionStorage.setItem(SSO_RECOVERY_KEY, '1');
+          useAuthStore.getState().resetAuthOnly();
+          window.location.replace('/login');
+          return;
+        }
+
         setErrorLog(temporary
           ? 'No se pudo verificar la sesión porque el servidor no está disponible. Intenta recargar en unos momentos.'
           : (error.response?.data?.message || error.message || 'Sesión no disponible.'));

@@ -3,6 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './index.css';
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (sessionStorage.getItem('cuadra:sw-controller-reloaded') === '1') return;
+    sessionStorage.setItem('cuadra:sw-controller-reloaded', '1');
+    window.location.reload();
+  });
+}
+
 // En producción, vite-plugin-pwa genera este módulo virtual
 if (import.meta.env.PROD) {
   import('virtual:pwa-register').then(({ registerSW }) => {
