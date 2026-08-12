@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, SearchableSelect, Spinner } from '@/components/ui/z_index';
 import { Label } from '@/components/form/z_index';
-import { getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
+import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
 import { DurationPicker, PrioridadField } from '@/features/common/forms/tareas/fields';
 import { TecnicoCartSelector } from '@/features/common/forms/tareas/responsables';
-import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
+import { buildMaquinaOptions, filterMaquinasParaMantenimiento, normalizeMaquinasResponse } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import { PRIORIDADES } from '@/features/common/constants/catalogos-tareas';
 import { getMinDateHoy } from '@/lib/date';
 import { cn } from '@/utils/cn';
@@ -52,6 +52,7 @@ export const RecurrenteFormModal = ({
     const [maquinas, setMaquinas] = useState([]);
     const [tecnicos, setTecnicos] = useState([]);
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [buscandoMaquinas, setBuscandoMaquinas] = useState(false);
     const [formError, setFormError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
 
@@ -64,22 +65,47 @@ export const RecurrenteFormModal = ({
     const [tiempoEstimado, setTiempoEstimado] = useState('');
     const [activo, setActivo] = useState(true);
 
+    const aplicarCatalogoMaquinas = useCallback((rawList) => {
+        setMaquinas(filterMaquinasParaMantenimiento(rawList, regla?.maquinaId));
+    }, [regla?.maquinaId]);
+
+    const buscarMaquinasRemoto = useCallback(async (query = '') => {
+        setBuscandoMaquinas(true);
+        try {
+            const params = { limit: 50 };
+            if (query.trim()) params.q = query.trim();
+            const response = await getMaquinas(params);
+            const maquinasData = normalizeMaquinasResponse(response);
+
+            const selectedId = regla?.maquinaId;
+            if (selectedId && !query.trim() && !maquinasData.some((maquina) => String(maquina.id) === String(selectedId))) {
+                const selectedResponse = await getMaquinaById(selectedId);
+                const selectedMaquina = selectedResponse?.data?.data || selectedResponse?.data;
+                if (selectedMaquina?.id) maquinasData.unshift(selectedMaquina);
+            }
+
+            aplicarCatalogoMaquinas(maquinasData);
+        } catch {
+            setFormError('Error al cargar maquinas.');
+        } finally {
+            setBuscandoMaquinas(false);
+        }
+    }, [aplicarCatalogoMaquinas, regla?.maquinaId]);
+
     useEffect(() => {
         if (!isOpen) return;
         queueMicrotask(() => setLoadingCatalogos(true));
         Promise.all([
-            getMaquinas({ limit: 500 }),
+            buscarMaquinasRemoto(''),
             getAsignables(),
         ])
-            .then(([maquinasRes, tecnicosRes]) => {
-                const maquinasData = Array.isArray(maquinasRes?.data) ? maquinasRes.data : Array.isArray(maquinasRes?.data?.data) ? maquinasRes.data.data : Array.isArray(maquinasRes) ? maquinasRes : [];
+            .then(([, tecnicosRes]) => {
                 const tecnicosData = Array.isArray(tecnicosRes) ? tecnicosRes : Array.isArray(tecnicosRes?.data) ? tecnicosRes.data : [];
-                setMaquinas(filterMaquinasParaMantenimiento(maquinasData, regla?.maquinaId));
                 setTecnicos(tecnicosData);
             })
             .catch(() => setFormError('Error al cargar catalogos.'))
             .finally(() => setLoadingCatalogos(false));
-    }, [isOpen, regla]);
+    }, [buscarMaquinasRemoto, isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -97,11 +123,7 @@ export const RecurrenteFormModal = ({
         });
     }, [isOpen, regla]);
 
-    const maquinaOptions = useMemo(() => maquinas.map((maquina) => ({
-        value: String(maquina.id),
-        label: `${maquina.codigo || 'SIN CODIGO'} - ${maquina.nombre || 'Sin nombre'}`,
-        ...maquina,
-    })), [maquinas]);
+    const maquinaOptions = useMemo(() => buildMaquinaOptions(maquinas), [maquinas]);
 
     const maquinaSeleccionada = useMemo(() => (
         maquinas.find((maquina) => String(maquina.id) === String(maquinaId)) || regla?.maquina || null
@@ -254,6 +276,8 @@ export const RecurrenteFormModal = ({
                                 searchPlaceholder="Buscar por codigo o nombre..."
                                 allOptionText={null}
                                 disabled={loadingCatalogos || submitting}
+                                isSearching={buscandoMaquinas}
+                                onSearchChange={buscarMaquinasRemoto}
                                 className={fieldErrors.maquinaId ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : ''}
                             />
                             {fieldErrors.maquinaId && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.maquinaId}</p>}

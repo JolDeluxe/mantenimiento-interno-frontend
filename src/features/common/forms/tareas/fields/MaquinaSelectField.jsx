@@ -27,8 +27,10 @@ export function MaquinaSelectField({
   error,
   disabled,
   validating,
+  searching,
   maquinaInfo,
   showBIContext = true,
+  onSearchChange,
 }) {
   return (
     <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -49,6 +51,8 @@ export function MaquinaSelectField({
         allOptionText={null}
         disabled={disabled}
         icon="precision_manufacturing"
+        isSearching={searching}
+        onSearchChange={onSearchChange}
       />
       {error && <p className="text-[10px] text-rose-600 font-bold mt-0.5">{error}</p>}
       {maquinaInfo && (

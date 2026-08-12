@@ -1,6 +1,6 @@
 // src/features/tickets/components/historico/ticket-form-modal.jsx
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
@@ -10,7 +10,7 @@ import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/for
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine, deriveCategoryFromTicket, deriveLocationFromTicket, deriveTimeModeFromTicket } from '@/features/common/forms/tareas/utils/machinery-utils';
-import { filterMaquinasParaMantenimiento } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
+import { buildMaquinaOptions, filterMaquinasParaMantenimiento, normalizeMaquinasResponse } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
 import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
@@ -337,6 +337,7 @@ export const MantenimientosFormModal = ({
     const [validatingMaquina, setValidatingMaquina] = useState(false);
     const [opcionesMaquinas, setOpcionesMaquinas] = useState([]);
     const [maquinasRaw, setMaquinasRaw] = useState([]);
+    const [buscandoMaquinas, setBuscandoMaquinas] = useState(false);
 
     const [backendError, setBackendError] = useState('');
     const [conflictError, setConflictError] = useState('');
@@ -487,29 +488,47 @@ export const MantenimientosFormModal = ({
         }
     }, [puedeReportarParoProduccion]);
 
-    // Cargar catálogo de máquinas al abrir el modal (Thin Client: se consulta la API)
+    const aplicarCatalogoMaquinas = useCallback((rawList, selectedId) => {
+        const list = filterMaquinasParaMantenimiento(rawList, selectedId);
+        setMaquinasRaw(list);
+        setOpcionesMaquinas(buildMaquinaOptions(list));
+    }, []);
+
+    const buscarMaquinasRemoto = useCallback(async (query = '') => {
+        const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
+        setBuscandoMaquinas(true);
+        try {
+            const params = { limit: 50 };
+            if (query.trim()) params.q = query.trim();
+            const res = await getMaquinas(params);
+            const rawList = normalizeMaquinasResponse(res);
+            if (selectedId && !query.trim() && !rawList.some((maquina) => String(maquina.id) === String(selectedId))) {
+                if (ticketAEditar?.maquina?.id) {
+                    rawList.unshift(ticketAEditar.maquina);
+                } else {
+                    const selectedResponse = await getMaquinaById(Number(selectedId));
+                    const selectedMaquina = selectedResponse?.data?.data || selectedResponse?.data;
+                    if (selectedMaquina?.id) rawList.unshift(selectedMaquina);
+                }
+            }
+            aplicarCatalogoMaquinas(rawList, selectedId);
+        } catch (err) {
+            console.error("Error al buscar máquinas en modal:", err);
+        } finally {
+            setBuscandoMaquinas(false);
+        }
+    }, [aplicarCatalogoMaquinas, ticketAEditar]);
+
+    // Cargar catálogo inicial de máquinas al abrir el modal; búsquedas posteriores consultan la API.
     useEffect(() => {
         if (!isOpen) return;
 
         const cargarCatalogoMaquinas = async () => {
-            try {
-                const res = await getMaquinas({ limit: 500 });
-                const rawList = res?.data?.data || res?.data || [];
-                const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
-                const list = filterMaquinasParaMantenimiento(rawList, selectedId);
-                setMaquinasRaw(list);
-                const opts = list.map(m => ({
-                    value: String(m.id),
-                    label: `${m.codigo} - ${m.nombre}`
-                }));
-                setOpcionesMaquinas(opts);
-            } catch (err) {
-                console.error("Error al cargar máquinas en modal:", err);
-            }
+            await buscarMaquinasRemoto('');
         };
 
         cargarCatalogoMaquinas();
-    }, [isOpen, ticketAEditar]);
+    }, [buscarMaquinasRemoto, isOpen]);
 
     // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
     useEffect(() => {
@@ -1134,7 +1153,9 @@ export const MantenimientosFormModal = ({
                                 error={fe.maquinaId}
                                 disabled={isSubmitting || lockBaseFields}
                                 validating={validatingMaquina}
+                                searching={buscandoMaquinas}
                                 maquinaInfo={maquinaInfo}
+                                onSearchChange={buscarMaquinasRemoto}
                                 onChange={(selectedId) => {
                                     if (!selectedId) {
                                         setMaquinaId('');

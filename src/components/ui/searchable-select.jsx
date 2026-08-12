@@ -15,6 +15,8 @@ export const SearchableSelect = ({
     className,
     menuClassName,
     onToggle,
+    onSearchChange,
+    isSearching = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -32,19 +34,30 @@ export const SearchableSelect = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [onToggle]);
 
+    useEffect(() => {
+        if (!onSearchChange || !isOpen) return undefined;
+        const timeoutId = window.setTimeout(() => {
+            onSearchChange(searchQuery);
+        }, 300);
+        return () => window.clearTimeout(timeoutId);
+    }, [isOpen, onSearchChange, searchQuery]);
+
     const selectedOption = useMemo(() => {
         if (!options || !Array.isArray(options)) return null;
         return options.find(opt => opt && String(opt.value ?? '') === String(value ?? ''));
     }, [options, value]);
 
+    const usesRemoteSearch = typeof onSearchChange === 'function';
+
     const filteredOptions = useMemo(() => {
         if (!options || !Array.isArray(options)) return [];
+        if (usesRemoteSearch) return options.filter(Boolean);
         return options.filter(opt => {
             if (!opt) return false;
             const labelStr = String(opt.label ?? opt.value ?? '');
             return labelStr.toLowerCase().includes((searchQuery ?? '').toLowerCase());
         });
-    }, [options, searchQuery]);
+    }, [options, searchQuery, usesRemoteSearch]);
 
     const handleSelect = (val) => {
         onChange(val);
@@ -118,7 +131,9 @@ export const SearchableSelect = ({
                                 type="text"
                                 placeholder={searchPlaceholder}
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                }}
                                 className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-marca-secundario bg-white"
                                 autoFocus
                             />
@@ -139,7 +154,11 @@ export const SearchableSelect = ({
                             </button>
                         )}
 
-                        {filteredOptions.length > 0 ? (
+                        {isSearching ? (
+                            <div className="px-4 py-3 text-sm text-slate-500 text-center italic">
+                                Buscando...
+                            </div>
+                        ) : filteredOptions.length > 0 ? (
                             filteredOptions.map((opt) => {
                                 const valStr = opt.value !== undefined && opt.value !== null ? String(opt.value) : '';
                                 return (
