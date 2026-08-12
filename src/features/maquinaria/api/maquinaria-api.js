@@ -6,6 +6,28 @@ import api from '@/lib/axios';
 export const getMaquinas = (params = {}) =>
   api.get('/api/maquinas', { params });
 
+export const getAllMaquinas = async (params = {}) => {
+  const limit = 1000;
+  const firstResponse = await getMaquinas({ ...params, page: 1, limit });
+  const firstPayload = firstResponse?.data || {};
+  const firstData = Array.isArray(firstPayload.data) ? firstPayload.data : [];
+  const totalPages = Number(firstPayload.pagination?.totalPages || 1);
+
+  if (totalPages <= 1) return firstData;
+
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getMaquinas({ ...params, page: index + 2, limit })
+    )
+  );
+
+  return rest.reduce((acc, response) => {
+    const pageData = response?.data?.data;
+    if (Array.isArray(pageData)) acc.push(...pageData);
+    return acc;
+  }, [...firstData]);
+};
+
 /**
  * Obtener detalles de pre-llenado de una máquina a partir de su código QR
  */

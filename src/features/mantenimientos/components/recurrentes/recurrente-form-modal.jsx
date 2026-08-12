@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Icon, Modal, ModalBody, ModalFooter, ModalHeader, SearchableSelect, Spinner } from '@/components/ui/z_index';
 import { Label } from '@/components/form/z_index';
-import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
+import { getAllMaquinas, getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 import { getAsignables } from '@/features/mantenimientos/api/mantenimientos-api';
 import { DurationPicker, PrioridadField } from '@/features/common/forms/tareas/fields';
 import { TecnicoCartSelector } from '@/features/common/forms/tareas/responsables';
@@ -72,9 +72,9 @@ export const RecurrenteFormModal = ({
     const buscarMaquinasRemoto = useCallback(async (query = '') => {
         setBuscandoMaquinas(true);
         try {
-            const params = { limit: 50 };
+            const params = {};
             if (query.trim()) params.q = query.trim();
-            const response = await getMaquinas(params);
+            const response = await getAllMaquinas(params);
             const maquinasData = normalizeMaquinasResponse(response);
 
             const selectedId = regla?.maquinaId;

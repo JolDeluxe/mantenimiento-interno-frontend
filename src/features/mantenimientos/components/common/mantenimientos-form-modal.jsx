@@ -11,7 +11,7 @@ import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
 import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine, deriveCategoryFromTicket, deriveLocationFromTicket, deriveTimeModeFromTicket } from '@/features/common/forms/tareas/utils/machinery-utils';
 import { buildMaquinaOptions, filterMaquinasParaMantenimiento, normalizeMaquinasResponse } from '@/features/common/forms/tareas/utils/maquinas-filter-utils';
-import { getMaquinaById, getMaquinas } from '@/features/maquinaria/api/maquinaria-api';
+import { getAllMaquinas, getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 import api from '@/lib/axios';
 import {
     CLASIFICACIONES_CLIENTE, CLASIFICACIONES_ADMIN,
@@ -498,9 +498,9 @@ export const MantenimientosFormModal = ({
         const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
         setBuscandoMaquinas(true);
         try {
-            const params = { limit: 50 };
+            const params = {};
             if (query.trim()) params.q = query.trim();
-            const res = await getMaquinas(params);
+            const res = await getAllMaquinas(params);
             const rawList = normalizeMaquinasResponse(res);
             if (selectedId && !query.trim() && !rawList.some((maquina) => String(maquina.id) === String(selectedId))) {
                 if (ticketAEditar?.maquina?.id) {
