@@ -246,9 +246,6 @@ const refreshAccessToken = async () => {
     if (isDefinitiveAuthError(error)) {
       console.error('🔴 Refresh inválido, purgando sesión global');
       useAuthStore.getState().logout();
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login?session=expired';
-      }
     }
     throw error;
   }
@@ -303,10 +300,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (isDefinitiveAuthError(error) && originalRequest?.url?.includes('/auth/refresh')) {
+    if (
+      isDefinitiveAuthError(error) &&
+      originalRequest?.url?.includes('/auth/refresh') &&
+      !originalRequest?._skipAuthRedirect
+    ) {
       console.error('🔴 Refresh inválido, cerrando sesión...');
       useAuthStore.getState().logout();
-      window.location.href = '/login?session=expired';
       return Promise.reject(error);
     }
 

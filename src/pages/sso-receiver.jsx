@@ -11,7 +11,7 @@ export const SsoReceiver = () => {
     if (processed.current) return;
     processed.current = true;
 
-    api.post('/api/auth/refresh', {})
+    api.post('/api/auth/refresh', {}, { _skipAuthRedirect: true })
       .then((payload) => {
         if (!payload?.user) {
           throw new Error('No se pudo reanudar la sesión.');
