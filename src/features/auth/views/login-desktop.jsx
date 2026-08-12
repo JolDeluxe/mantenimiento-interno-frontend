@@ -2,6 +2,7 @@ import React from 'react';
 import { LoginForm } from '../components/login-form';
 import { ForgotPasswordForm } from '../components/forgot-password-form';
 import { RegisterForm } from '../components/register-form';
+import { HardReloadButton } from '@/components/ui/hard-reload-button';
 
 export const LoginDesktop = ({ view, bgImage, onBack, ...formProps }) => {
   return (
@@ -12,6 +13,8 @@ export const LoginDesktop = ({ view, bgImage, onBack, ...formProps }) => {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
       <div className="relative bg-white rounded-lg shadow-2xl w-112.5 p-8 text-slate-800">
+        <HardReloadButton className="absolute right-4 top-4" />
+
         <div className="flex justify-center mb-8">
           <img src="/img/01_Cuadra_Mantnimento.webp" alt="Logo Cuadra" className="w-70 h-auto object-contain" />
         </div>

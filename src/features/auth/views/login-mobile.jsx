@@ -2,6 +2,7 @@ import React from 'react';
 import { LoginForm } from '../components/login-form';
 import { ForgotPasswordForm } from '../components/forgot-password-form';
 import { RegisterForm } from '../components/register-form';
+import { HardReloadButton } from '@/components/ui/hard-reload-button';
 
 export const LoginMobile = ({ view, bgImage, onBack, ...formProps }) => {
   return (
@@ -12,6 +13,8 @@ export const LoginMobile = ({ view, bgImage, onBack, ...formProps }) => {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-xs"></div>
 
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-100 p-6 sm:p-8 text-slate-800">
+        <HardReloadButton className="absolute right-4 top-4" />
+
         <div className="flex justify-center mb-6">
           <img src="/img/01_Cuadra_Mantnimento.webp" alt="Logo Cuadra" className="w-60 h-auto object-contain" />
         </div>
