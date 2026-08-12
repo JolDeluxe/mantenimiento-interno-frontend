@@ -61,13 +61,17 @@ const isLocalHostname = (hostname) => (
 );
 
 const resolveApiUrl = () => {
+  const normalizeApiUrl = (value) => (value || '').replace(/\/+$/, '');
+
   if (connection === 'prod') {
-    return import.meta.env.VITE_API_URL_PROD;
+    return normalizeApiUrl(import.meta.env.VITE_API_URL_PROD);
   }
 
-  return isLocalHostname(getRuntimeHostname())
+  const apiUrl = isLocalHostname(getRuntimeHostname())
     ? import.meta.env.VITE_API_URL_LOCAL
     : import.meta.env.VITE_API_URL_NETWORK;
+
+  return normalizeApiUrl(apiUrl);
 };
 
 export const ENV = {
