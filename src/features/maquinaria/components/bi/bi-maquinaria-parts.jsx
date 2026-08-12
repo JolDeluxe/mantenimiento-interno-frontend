@@ -1520,7 +1520,7 @@ export const BIExportModal = ({ isOpen, onClose, filters }) => {
       // Construir nombre de archivo profesional según parámetros
       const labelMap = { EQUIPO: 'Equipos', PROCESO: 'Familias', AREA: 'Ubicaciones' };
       const gName = labelMap[agrupacion] || 'Equipos';
-      const ext = format === 'PDF' ? 'pdf' : 'xlsx';
+      const ext = format === 'PDF' ? 'pdf' : 'xls';
       let filename = '';
 
       if (periodType === 'ANIO') {
