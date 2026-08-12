@@ -1,3 +1,4 @@
+/* global process, __dirname */
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         // Pasamos a injectManifest para poder manejar push nativamente
         strategies: 'injectManifest',
+        registerType: 'autoUpdate',
         srcDir: 'src',
         filename: 'sw.js',
 

@@ -7,8 +7,52 @@ import { clientsClaim } from 'workbox-core';
 
 /* global clients */
 
+const SAFE_AUTO_UPDATE_PATHS = new Set(['/', '/login', '/sso-receiver']);
+
+const isSafeAutoUpdateClient = (clientUrl) => {
+    try {
+        const { pathname } = new URL(clientUrl);
+        const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+        return SAFE_AUTO_UPDATE_PATHS.has(normalizedPath);
+    } catch {
+        return false;
+    }
+};
+
+const notifyUpdateReady = (client, payload = {}) => {
+    if ('postMessage' in client) {
+        client.postMessage({ type: 'CUADRA_SW_UPDATE_READY', ...payload });
+    }
+};
+
+// El nuevo SW no debe quedarse esperando a que React le mande SKIP_WAITING.
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
+
 // Toma control inmediato de todos los clientes abiertos
 clientsClaim();
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        self.clients.claim()
+            .then(() => clients.matchAll({ type: 'window', includeUncontrolled: true }))
+            .then((windowClients) => {
+                windowClients.forEach((client) => {
+                    if (!isSafeAutoUpdateClient(client.url)) {
+                        notifyUpdateReady(client, { safeToAutoNavigate: false });
+                        return;
+                    }
+
+                    notifyUpdateReady(client, { safeToAutoNavigate: true, autoNavigating: true });
+
+                    if ('navigate' in client) {
+                        client.navigate(client.url).catch(() => undefined);
+                    }
+                });
+            })
+    );
+});
 
 // vite-plugin-pwa inyecta el manifest real aquí en build
 precacheAndRoute(self.__WB_MANIFEST);
