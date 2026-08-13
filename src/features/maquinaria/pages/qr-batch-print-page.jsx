@@ -4,7 +4,7 @@ import { useQrPrintStore } from '../stores/qr-print-store';
 import { QrCodeCard } from '../components';
 import { Button, Icon, Spinner } from '@/components/ui/z_index';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
-import { getMaquinas } from '../api/maquinaria-api';
+import { getAllMaquinas } from '../api/maquinaria-api';
 import { notify } from '@/components/notification/adaptive-notify';
 
 const QR_POR_HOJA = 4;
@@ -30,10 +30,9 @@ export default function QrBatchPrintPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Carga masiva (hasta 1000 máquinas) para poder buscar en memoria del cliente (Thin Client)
-    getMaquinas({ limit: 1000 })
-      .then((res) => {
-        setMaquinas(res?.data || []);
+    getAllMaquinas()
+      .then((maquinasData) => {
+        setMaquinas(maquinasData);
       })
       .catch((err) => {
         console.error(err);

@@ -13,25 +13,32 @@ const extractMaquinasPage = (response) => {
   return [];
 };
 
+const extractPagination = (response) => response?.data?.pagination || response?.pagination || {};
+
 export const getAllMaquinas = async (params = {}) => {
   const limit = 1000;
-  const firstResponse = await getMaquinas({ ...params, page: 1, limit });
-  const firstPayload = firstResponse?.data?.pagination ? firstResponse.data : firstResponse || {};
-  const firstData = extractMaquinasPage(firstResponse);
-  const totalPages = Number(firstPayload.pagination?.totalPages || 1);
+  const allMaquinas = [];
+  let page = 1;
+  let totalPages = null;
 
-  if (totalPages <= 1) return firstData;
+  while (totalPages === null || page <= totalPages) {
+    const response = await getMaquinas({ ...params, page, limit });
+    const pageData = extractMaquinasPage(response);
+    const pagination = extractPagination(response);
+    const parsedTotalPages = Number(pagination.totalPages || pagination.pages);
 
-  const rest = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, index) =>
-      getMaquinas({ ...params, page: index + 2, limit })
-    )
-  );
+    allMaquinas.push(...pageData);
 
-  return rest.reduce((acc, response) => {
-    acc.push(...extractMaquinasPage(response));
-    return acc;
-  }, [...firstData]);
+    if (Number.isFinite(parsedTotalPages) && parsedTotalPages > 0) {
+      totalPages = parsedTotalPages;
+    } else if (pageData.length < limit) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return allMaquinas;
 };
 
 /**

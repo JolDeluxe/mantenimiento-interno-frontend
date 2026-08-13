@@ -6,7 +6,7 @@ import { MaquinariaBIView } from '../components/maquinaria-bi-view';
 import { MaquinariaViewTabs } from '../components/maquinaria-view-tabs';
 import { TicketsEmptyState } from '@/features/common/components/tickets-empty-state';
 import { useQrPrintStore } from '../stores/qr-print-store';
-import { getMaquinas } from '../api/maquinaria-api';
+import { getAllMaquinas } from '../api/maquinaria-api';
 
 export default function MaquinariaDesktop({
   maquinas = [],
@@ -35,8 +35,8 @@ export default function MaquinariaDesktop({
 
   const handleSelectAllSystem = async () => {
     try {
-      const res = await getMaquinas({ limit: 1000 });
-      const allIds = (res?.data || []).map(m => m.id);
+      const maquinasSistema = await getAllMaquinas();
+      const allIds = maquinasSistema.map(m => m.id);
       selectAll(allIds);
     } catch (err) {
       console.error('Error al seleccionar todas las máquinas:', err);
