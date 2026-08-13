@@ -6,11 +6,18 @@ import api from '@/lib/axios';
 export const getMaquinas = (params = {}) =>
   api.get('/api/maquinas', { params });
 
+const extractMaquinasPage = (response) => {
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response)) return response;
+  return [];
+};
+
 export const getAllMaquinas = async (params = {}) => {
   const limit = 1000;
   const firstResponse = await getMaquinas({ ...params, page: 1, limit });
-  const firstPayload = firstResponse?.data || {};
-  const firstData = Array.isArray(firstPayload.data) ? firstPayload.data : [];
+  const firstPayload = firstResponse?.data?.pagination ? firstResponse.data : firstResponse || {};
+  const firstData = extractMaquinasPage(firstResponse);
   const totalPages = Number(firstPayload.pagination?.totalPages || 1);
 
   if (totalPages <= 1) return firstData;
@@ -22,8 +29,7 @@ export const getAllMaquinas = async (params = {}) => {
   );
 
   return rest.reduce((acc, response) => {
-    const pageData = response?.data?.data;
-    if (Array.isArray(pageData)) acc.push(...pageData);
+    acc.push(...extractMaquinasPage(response));
     return acc;
   }, [...firstData]);
 };

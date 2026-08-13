@@ -248,15 +248,13 @@ export const MobileTicketFormModal = ({
         setOpcionesMaquinas(buildMaquinaOptions(list));
     }, []);
 
-    const buscarMaquinasRemoto = useCallback(async (query = '') => {
+    const cargarCatalogoMaquinas = useCallback(async () => {
         const selectedId = ticketAEditar?.maquinaId ?? ticketAEditar?.maquina?.id;
         setBuscandoMaquinas(true);
         try {
-            const params = {};
-            if (query.trim()) params.q = query.trim();
-            const res = await getAllMaquinas(params);
+            const res = await getAllMaquinas();
             const rawList = normalizeMaquinasResponse(res);
-            if (selectedId && !query.trim() && !rawList.some((maquina) => String(maquina.id) === String(selectedId))) {
+            if (selectedId && !rawList.some((maquina) => String(maquina.id) === String(selectedId))) {
                 if (ticketAEditar?.maquina?.id) {
                     rawList.unshift(ticketAEditar.maquina);
                 } else {
@@ -273,16 +271,11 @@ export const MobileTicketFormModal = ({
         }
     }, [aplicarCatalogoMaquinas, ticketAEditar]);
 
-    // Cargar catálogo inicial de máquinas al abrir el modal; búsquedas posteriores consultan la API.
+    // Cargar todo el catálogo al abrir; el select filtra localmente sobre esta lista.
     useEffect(() => {
         if (!isOpen) return;
-
-        const cargarCatalogoMaquinas = async () => {
-            await buscarMaquinasRemoto('');
-        };
-
         cargarCatalogoMaquinas();
-    }, [buscarMaquinasRemoto, isOpen]);
+    }, [cargarCatalogoMaquinas, isOpen]);
 
     // Efecto que observa el cambio en maquinaId y realiza validación/autocompletado (Thin Client)
     useEffect(() => {
@@ -563,7 +556,6 @@ export const MobileTicketFormModal = ({
                                 validating={validatingMaquina}
                                 searching={buscandoMaquinas}
                                 maquinaInfo={maquinaInfo}
-                                onSearchChange={buscarMaquinasRemoto}
                                 onChange={(selectedId) => {
                                     if (!selectedId) {
                                         setMaquinaId('');

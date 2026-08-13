@@ -69,16 +69,14 @@ export const RecurrenteFormModal = ({
         setMaquinas(filterMaquinasParaMantenimiento(rawList, regla?.maquinaId));
     }, [regla?.maquinaId]);
 
-    const buscarMaquinasRemoto = useCallback(async (query = '') => {
+    const cargarCatalogoMaquinas = useCallback(async () => {
         setBuscandoMaquinas(true);
         try {
-            const params = {};
-            if (query.trim()) params.q = query.trim();
-            const response = await getAllMaquinas(params);
+            const response = await getAllMaquinas();
             const maquinasData = normalizeMaquinasResponse(response);
 
             const selectedId = regla?.maquinaId;
-            if (selectedId && !query.trim() && !maquinasData.some((maquina) => String(maquina.id) === String(selectedId))) {
+            if (selectedId && !maquinasData.some((maquina) => String(maquina.id) === String(selectedId))) {
                 const selectedResponse = await getMaquinaById(selectedId);
                 const selectedMaquina = selectedResponse?.data?.data || selectedResponse?.data;
                 if (selectedMaquina?.id) maquinasData.unshift(selectedMaquina);
@@ -96,7 +94,7 @@ export const RecurrenteFormModal = ({
         if (!isOpen) return;
         queueMicrotask(() => setLoadingCatalogos(true));
         Promise.all([
-            buscarMaquinasRemoto(''),
+            cargarCatalogoMaquinas(),
             getAsignables(),
         ])
             .then(([, tecnicosRes]) => {
@@ -105,7 +103,7 @@ export const RecurrenteFormModal = ({
             })
             .catch(() => setFormError('Error al cargar catalogos.'))
             .finally(() => setLoadingCatalogos(false));
-    }, [buscarMaquinasRemoto, isOpen]);
+    }, [cargarCatalogoMaquinas, isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -277,7 +275,6 @@ export const RecurrenteFormModal = ({
                                 allOptionText={null}
                                 disabled={loadingCatalogos || submitting}
                                 isSearching={buscandoMaquinas}
-                                onSearchChange={buscarMaquinasRemoto}
                                 className={fieldErrors.maquinaId ? 'border-rose-500 focus:ring-2 focus:ring-rose-200' : ''}
                             />
                             {fieldErrors.maquinaId && <p className="mt-1 text-[10px] font-bold text-rose-600">{fieldErrors.maquinaId}</p>}
