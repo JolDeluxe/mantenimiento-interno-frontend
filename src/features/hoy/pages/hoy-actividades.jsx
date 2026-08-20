@@ -117,6 +117,12 @@ export default function HoyActividadesPage() {
     const totalParaSummary = totalVistaActiva;
 
     const handleCreate = async (payloads) => {
+        if (payloads === null) {
+            notify.success('Actividad recurrente creada con éxito.');
+            setShowCreate(false);
+            refreshAfterSuccess();
+            return;
+        }
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 const result = await createTicketsBatch(payloads);

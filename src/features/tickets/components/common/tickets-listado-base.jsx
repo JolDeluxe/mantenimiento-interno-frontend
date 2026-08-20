@@ -231,6 +231,15 @@ export default function TicketsListadoBase({
     }, [mode, sortedTickets]);
 
     const handleCreate = async (payloads) => {
+        if (payloads === null) {
+            const msg = mode === 'actividades'
+                ? 'Actividad recurrente creada con éxito.'
+                : 'Mantenimiento recurrente creado con éxito.';
+            notify.success(msg);
+            setShowCreate(false);
+            refreshAfterSuccess();
+            return;
+        }
         if (!canCreate) return;
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
