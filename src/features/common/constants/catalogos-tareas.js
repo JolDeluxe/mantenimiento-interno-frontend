@@ -49,6 +49,7 @@ export const AREAS = [
     'ACABADO',
     'ADORNO',
     'ALMACEN PIEL',
+    'ALMACEN MP',
     'AREAS COMUNES',
     'AVIOS',
     'BETA 7',
