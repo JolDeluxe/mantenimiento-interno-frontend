@@ -756,7 +756,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
 
         const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
 
-        setCarrito(prev => [...prev, {
+        const newItem = {
             _id: `${Date.now()}-${Math.random()}`,
             titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
             prioridad, clasificacion: null, tipo, fechaVencimiento,
@@ -773,7 +773,9 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             frecuencia,
             unidad: esRecurrente ? freq.unidad : null,
             intervalo: esRecurrente ? Number(freq.intervalo) : null
-        }]);
+        };
+
+        setCarrito(prev => [...prev, newItem]);
 
         setTitulo('');
         setDescripcion('');
@@ -988,10 +990,11 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             return;
         }
 
-        try {
-            const normalItems = finalCarrito.filter(item => !item.esRecurrente);
-            const recurrentItems = finalCarrito.filter(item => item.esRecurrente);
+        const normalItems = finalCarrito.filter(item => !item.esRecurrente);
+        const recurrentItems = finalCarrito.filter(item => item.esRecurrente);
 
+        try {
+            let recurrentesExitosas = 0;
             for (const item of recurrentItems) {
                 const freq = buildFrecuenciaFields(item.frecuencia, item.unidad, item.intervalo);
                 const payload = {
@@ -1007,9 +1010,15 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                     tiempoEstimado: item.modoRangoHoras ? null : (item.tiempoEstimado > 0 ? item.tiempoEstimado : null),
                     unidad: freq.unidad,
                     intervalo: freq.intervalo,
-                    responsables: item.responsables.map(Number),
+                    responsables: (item.responsables || []).map(Number),
                 };
-                await api.post('/api/actividades-recurrentes', payload);
+
+                try {
+                    await api.post('/api/actividades-recurrentes', payload);
+                    recurrentesExitosas++;
+                } catch (recErr) {
+                    throw recErr;
+                }
             }
 
             if (normalItems.length > 0) {
@@ -1023,7 +1032,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                         clasificacion: null,
                         tipo: item.tipo,
                         fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
-                        responsables: item.responsables.map(Number),
+                        responsables: (item.responsables || []).map(Number),
                         maquinaId: null
                     };
                     if (item.modoRangoHoras) {
@@ -1034,9 +1043,9 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                     }
                     return payload;
                 });
-                await onSuccess(batchPayloads);
+                await onSuccess(batchPayloads, { recurrentesExitosas });
             } else {
-                await onSuccess(null);
+                await onSuccess(null, { recurrentesExitosas });
             }
 
             clearDraft();

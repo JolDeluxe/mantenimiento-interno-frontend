@@ -18,7 +18,7 @@ export const AdminCloseModal = ({
     if (!ticket) return null;
 
     const notaLimpia = nota.trim();
-    const puedeConfirmar = notaLimpia.length > 0 && !isSubmitting;
+    const puedeConfirmar = !isSubmitting;
 
     const handleConfirmar = () => {
         if (!puedeConfirmar) return;
@@ -26,7 +26,9 @@ export const AdminCloseModal = ({
         const fd = new FormData();
         fd.append('estado', 'CERRADO');
         fd.append('cierreAdministrativo', 'true');
-        fd.append('nota', notaLimpia);
+        if (notaLimpia) {
+            fd.append('nota', notaLimpia);
+        }
 
         onConfirm(ticket.id, fd);
     };
@@ -54,7 +56,7 @@ export const AdminCloseModal = ({
 
                     <div className="w-full flex flex-col gap-1.5 text-left">
                         <Label htmlFor="admin-close-nota">
-                            Motivo del cierre <span className="text-red-500">*</span>
+                            Motivo del cierre
                         </Label>
                         <Input
                             id="admin-close-nota"
@@ -64,11 +66,6 @@ export const AdminCloseModal = ({
                             placeholder="Explica por que se cierra administrativamente..."
                             disabled={isSubmitting}
                         />
-                        {!notaLimpia && (
-                            <p className="text-[11px] font-medium text-slate-400">
-                                La nota es obligatoria para dejar historial del cierre.
-                            </p>
-                        )}
                     </div>
                 </div>
             </ModalBody>

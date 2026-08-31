@@ -110,7 +110,6 @@ export const TicketsActividadesDesktop = ({
             {canManageRecurrentes && (
                 <RecurrentesTabs activeTab={actividadTab} onChange={onActividadTabChange} />
             )}
-            {dateFilterNode}
 
             {mostrandoRecurrentes ? (
                 <RecurrentesWorkspace

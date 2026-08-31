@@ -230,11 +230,14 @@ export default function TicketsListadoBase({
         notify.success('Exportación generada correctamente (CSV).');
     }, [mode, sortedTickets]);
 
-    const handleCreate = async (payloads) => {
+    const handleCreate = async (payloads, meta = {}) => {
+        const recurrentesExitosas = meta?.recurrentesExitosas || 0;
+
         if (payloads === null) {
-            const msg = mode === 'actividades'
-                ? 'Actividad recurrente creada con éxito.'
-                : 'Mantenimiento recurrente creado con éxito.';
+            const totalCalculado = recurrentesExitosas;
+            const msg = totalCalculado === 1
+                ? '1 actividad creada correctamente.'
+                : `${totalCalculado} actividades creadas correctamente.`;
             notify.success(msg);
             setShowCreate(false);
             refreshAfterSuccess();
@@ -244,12 +247,19 @@ export default function TicketsListadoBase({
         if (Array.isArray(payloads) && payloads.length > 0 && !(payloads[0] instanceof FormData)) {
             try {
                 const result = await createBatch(payloads);
+
                 if (isQueuedResult(result)) {
                     notifyQueuedResult(result);
                     setShowCreate(false);
                     return;
                 }
-                notify.success(`${payloads.length} tarea${payloads.length !== 1 ? 's' : ''} creada${payloads.length !== 1 ? 's' : ''} correctamente.`);
+
+                const totalCalculado = payloads.length + recurrentesExitosas;
+                const msg = totalCalculado === 1
+                    ? '1 actividad creada correctamente.'
+                    : `${totalCalculado} actividades creadas correctamente.`;
+
+                notify.success(msg);
                 setShowCreate(false);
                 refreshAfterSuccess();
             } catch (err) {
@@ -270,7 +280,11 @@ export default function TicketsListadoBase({
                 setShowCreate(false);
                 return;
             }
-            notify.success(items.length > 1 ? `${items.length} tareas creadas correctamente.` : 'Tarea creada correctamente.');
+
+            const totalCalculado = items.length + recurrentesExitosas;
+            const msg = totalCalculado === 1 ? '1 actividad creada correctamente.' : `${totalCalculado} actividades creadas correctamente.`;
+
+            notify.success(msg);
             setShowCreate(false);
             refreshAfterSuccess();
         } catch (err) {

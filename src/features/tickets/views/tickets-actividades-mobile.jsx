@@ -150,11 +150,6 @@ export const TicketsActividadesMobile = ({
                     <RecurrentesTabs activeTab={actividadTab} onChange={onActividadTabChange} />
                 </div>
             )}
-            {dateFilterNode && (
-                <div className="mb-3">
-                    {dateFilterNode}
-                </div>
-            )}
 
             {mostrandoRecurrentes ? (
                 <RecurrentesWorkspace
