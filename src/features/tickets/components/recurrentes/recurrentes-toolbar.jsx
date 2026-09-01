@@ -167,7 +167,7 @@ export const RecurrentesToolbar = ({
                     onClick={() => onFiltersChange(updateFilter(filters, 'incluirArchivadas', !filters.incluirArchivadas))}
                     className={`h-9.5 ${filters.incluirArchivadas ? 'bg-slate-700 text-white hover:bg-slate-800' : ''}`}
                 >
-                    Archivadas
+                    Canceladas
                 </Button>
                 <Button
                     type="button"

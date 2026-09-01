@@ -202,7 +202,7 @@ export const RecurrentesToolbarMobile = ({
                             <GlassSheen />
                             <span className="relative z-10 inline-flex items-center gap-1.5">
                                 <Icon name={filters.incluirArchivadas ? 'close' : 'archive'} size="xs" />
-                                Incluir archivadas
+                                Canceladas
                             </span>
                         </button>
                     </div>

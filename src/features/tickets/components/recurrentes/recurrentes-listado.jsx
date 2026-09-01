@@ -11,6 +11,8 @@ export const RecurrentesListado = ({
     onView,
     onEdit,
     onToggleActivo,
+    onCancel,
+    onRestore,
 }) => {
     const columns = [
         {
@@ -82,6 +84,8 @@ export const RecurrentesListado = ({
                     onView={onView}
                     onEdit={onEdit}
                     onToggleActivo={onToggleActivo}
+                    onCancel={onCancel}
+                    onRestore={onRestore}
                 />
             )
         }

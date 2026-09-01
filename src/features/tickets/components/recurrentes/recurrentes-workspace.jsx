@@ -133,18 +133,18 @@ export const RecurrentesWorkspace = ({ onMaterialized, isMobile = false, canMana
         const { regla, action } = lifecycle;
         const operation = action === 'pausar' || action === 'reactivar'
             ? () => hook.setActivo(regla.id, action === 'reactivar')
-            : action === 'archivar'
-                ? () => hook.archivar(regla.id)
+            : action === 'cancelar'
+                ? () => hook.cancelar(regla.id)
                 : () => hook.restaurar(regla.id);
         const ok = await execute(
             operation,
-            action === 'archivar'
-                ? 'Regla archivada.'
+            action === 'cancelar'
+                ? 'Recurrencia cancelada. Las tareas existentes se conservaron.'
                 : action === 'restaurar'
-                    ? 'Regla restaurada en pausa.'
+                    ? 'Recurrencia restaurada y pausada.'
                     : action === 'pausar'
-                        ? 'Regla pausada.'
-                        : 'Regla reactivada.'
+                        ? 'Recurrencia pausada.'
+                        : 'Recurrencia reactivada.'
         );
         if (ok) setLifecycle(null);
     };
@@ -162,6 +162,14 @@ export const RecurrentesWorkspace = ({ onMaterialized, isMobile = false, canMana
         onToggleActivo: (regla) => {
             setActionError('');
             setLifecycle({ regla, action: regla.activo ? 'pausar' : 'reactivar' });
+        },
+        onCancel: (regla) => {
+            setActionError('');
+            setLifecycle({ regla, action: 'cancelar' });
+        },
+        onRestore: (regla) => {
+            setActionError('');
+            setLifecycle({ regla, action: 'restaurar' });
         },
     };
 

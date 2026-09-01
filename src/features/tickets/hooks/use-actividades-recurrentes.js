@@ -66,7 +66,7 @@ export const useActividadesRecurrentes = () => {
         create: (data) => mutate(() => api.createActividadRecurrente(data)),
         update: (id, data) => mutate(() => api.updateActividadRecurrente(id, data)),
         setActivo: (id, activo) => mutate(() => api.setActividadActiva(id, activo)),
-        archivar: (id) => mutate(() => api.archivarActividad(id)),
+        cancelar: (id) => mutate(() => api.archivarActividad(id)),
         restaurar: (id) => mutate(() => api.restaurarActividad(id)),
         remove: (id) => mutate(() => api.deleteActividad(id)),
         materializar: (id, data) => mutate(() => api.materializarActividad(id, data)),

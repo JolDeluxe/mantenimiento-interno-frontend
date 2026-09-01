@@ -11,6 +11,8 @@ export const RecurrentesListadoMobile = ({
     onView,
     onEdit,
     onToggleActivo,
+    onCancel,
+    onRestore,
 }) => {
     if (loading) {
         return (
@@ -82,6 +84,8 @@ export const RecurrentesListadoMobile = ({
                             onView={onView}
                             onEdit={onEdit}
                             onToggleActivo={onToggleActivo}
+                            onCancel={onCancel}
+                            onRestore={onRestore}
                         />
                     </div>
                 </article>
