@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Table, Skeleton, Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
+import { TicketRecurrenciaActividadBadge } from '@/features/common/components/ticket-recurrencia-actividad-badge';
 import { TicketFormModal } from './ticket-form-modal';
 import { TicketStatusModal } from '@/features/common/components/status-modal';
 import { TicketDetailModal } from '@/features/common/components/ticket-detail-modal';
@@ -138,6 +139,7 @@ export const TicketsTable = ({
                                 </span>
                             )}
                         </div>
+                        <TicketRecurrenciaActividadBadge ticket={row} className="mt-1 self-start" />
                         {row.area && (
                             <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
                                 <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />

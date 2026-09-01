@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Icon, Skeleton, Table } from '@/components/ui/z_index';
 import { TicketPriorityBadge, TicketStatusBadge } from '@/features/common/components/ticket-status-badge';
+import { TicketRecurrenciaActividadBadge } from '@/features/common/components/ticket-recurrencia-actividad-badge';
 import { TicketActions } from '@/features/tickets/components/historico/ticket-actions';
 import { TicketDetailModal as HoyDetailModal } from '@/features/common/components/ticket-detail-modal';
 import { AdminCloseModal } from '@/features/common/components/admin-close-modal';
@@ -147,6 +148,7 @@ export const MantenimientosTicketTable = ({
                                 </span>
                             )}
                         </div>
+                        <TicketRecurrenciaActividadBadge ticket={row} className="mt-1 self-start" />
                         {row.area && (
                             <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-slate-500 self-start max-w-full">
                                 <Icon name="location_on" size="xxs" className="text-slate-400 shrink-0" />

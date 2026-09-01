@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Icon, Tooltip } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
+import { TicketRecurrenciaActividadBadge } from '@/features/common/components/ticket-recurrencia-actividad-badge';
 import { formatFechaHora, formatDurationToDaysHours, isoToLocalMXTime, format12h } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
@@ -273,6 +274,7 @@ export const MantenimientosTicketCard = ({
                             {ticket.titulo}
                         </h3>
                     </div>
+                    <TicketRecurrenciaActividadBadge ticket={ticket} className="mt-1 max-w-full" />
 
                     {ticket.area && (
                         <div className="flex items-start gap-1 mt-1 text-[11px] font-semibold text-slate-500">

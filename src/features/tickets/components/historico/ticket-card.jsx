@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/ui/z_index';
 import { TicketStatusBadge, TicketPriorityBadge } from '@/features/common/components/ticket-status-badge';
+import { TicketRecurrenciaActividadBadge } from '@/features/common/components/ticket-recurrencia-actividad-badge';
 import { formatFecha, formatFechaRelativa } from '@/lib/date';
 import { cn } from '@/utils/cn';
 import { CATEGORIAS_EQUIPO } from '@/features/common/constants/catalogos-tareas';
@@ -141,6 +142,7 @@ export const TicketCard = ({
                             </span>
                         )}
                     </div>
+                    <TicketRecurrenciaActividadBadge ticket={ticket} className="mt-1 max-w-full" />
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                     <div className="flex items-center gap-1">
