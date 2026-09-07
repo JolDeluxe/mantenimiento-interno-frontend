@@ -70,6 +70,7 @@ export const AREAS = [
     'SALON AGUSTIN',
     'SIGMA',
     'TALLER 2',
+    'TORRE 1',
 ];
 
 export const AREA_ALIASES = {
