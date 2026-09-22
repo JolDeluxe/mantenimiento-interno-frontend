@@ -88,6 +88,18 @@ const ReportContextCard = ({ ticket }) => {
         ? 'bg-emerald-600 text-white'
         : 'bg-red-600 text-white';
 
+    // Calcular minutos de impacto: usar ticket.impactoProduccion o derivar de fechaParoProduccion
+    const minutosImpacto = (() => {
+        if (ticket.impactoProduccion) return ticket.impactoProduccion;
+        if (ticket.paroProduccion && ticket.fechaParoProduccion) {
+            const tInicio = new Date(ticket.fechaParoProduccion).getTime();
+            const tFin = ticket.finalizadoAt ? new Date(ticket.finalizadoAt).getTime() : Date.now();
+            const diff = tFin - tInicio;
+            if (diff > 0) return Math.round(diff / 60000);
+        }
+        return null;
+    })();
+
     return (
         <div className={`rounded-xl p-3.5 space-y-2 border ${
             ticket.paroProduccion
@@ -115,7 +127,7 @@ const ReportContextCard = ({ ticket }) => {
                     <DataRow
                         icon="timer"
                         label="Impacto"
-                        value={ticket.impactoProduccion ? formatMinutos(ticket.impactoProduccion) : null}
+                        value={minutosImpacto ? formatMinutos(minutosImpacto) : null}
                         fallback="Sin impacto registrado"
                     />
                 </div>
