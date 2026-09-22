@@ -117,6 +117,15 @@ export default function HoyActividadesPage() {
     const totalParaSummary = totalVistaActiva;
 
     const handleCreate = async (payloads) => {
+        // Caso especial: el modal de técnico llama onSuccess() sin argumentos
+        // o con la respuesta del backend (objeto plano, no FormData ni array de FormData).
+        // En ese caso solo refrescamos sin intentar crear otro ticket.
+        if (payloads === undefined || (payloads && typeof payloads === 'object' && !Array.isArray(payloads) && !(payloads instanceof FormData))) {
+            setShowCreate(false);
+            refreshAfterSuccess();
+            return;
+        }
+
         if (payloads === null) {
             notify.success('Actividad recurrente creada con éxito.');
             setShowCreate(false);

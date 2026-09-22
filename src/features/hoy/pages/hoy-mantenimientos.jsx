@@ -121,6 +121,14 @@ export default function HoyMantenimientosPage() {
     const totalParaSummary = totalVistaActiva;
 
     const handleCreate = async (payloads) => {
+        // Caso especial: el modal de técnico llama onSuccess() con la respuesta del backend.
+        // En ese caso solo refrescamos sin intentar crear otro ticket hacia /api/tickets.
+        if (payloads === undefined || (payloads && typeof payloads === 'object' && !Array.isArray(payloads) && !(payloads instanceof FormData))) {
+            setShowCreate(false);
+            refreshAfterSuccess();
+            return;
+        }
+
         if (payloads === null) {
             // Es un mantenimiento recurrente que ya fue guardado en el formulario
             notify.success('Mantenimiento recurrente creado con éxito.');

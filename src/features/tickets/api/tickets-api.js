@@ -31,6 +31,16 @@ export const createTicket = (data) =>
         itemCount: 1,
     });
 
+export const createTicketTecnico = (data) =>
+    sendOrQueueMutation({
+        operation: QUEUE_OPERATIONS.CREATE_TICKET_TECNICO,
+        method: 'POST',
+        endpoint: '/api/tickets/tecnico',
+        payload: data,
+        headers: { 'Content-Type': 'multipart/form-data' },
+        itemCount: 1,
+    });
+
 export const updateTicket = (id, data) =>
     api.put(`/api/tickets/${id}`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },

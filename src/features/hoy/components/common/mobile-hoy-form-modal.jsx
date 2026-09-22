@@ -3,9 +3,21 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon } from '@/components/ui/z_index';
 import { HoyActividadesForm } from '../hoy-actividades/hoy-actividades-form';
 import { MobileMantenimientosFormModal } from '@/features/mantenimientos/components/common/mobile-mantenimientos-form-modal';
+import { TecnicoRegistroDirectoModal } from './TecnicoRegistroDirectoModal';
 
 export const MobileHoyFormModal = (props) => {
-    const { isOpen, onClose, scope, ticketAEditar } = props;
+    const { isOpen, onClose, scope, ticketAEditar, currentUser, onSuccess } = props;
+    
+    // Si el usuario autenticado es TECNICO y no está editando, abrir directamente el formulario especializado de técnico
+    if (currentUser?.rol === 'TECNICO' && !ticketAEditar) {
+        return (
+            <TecnicoRegistroDirectoModal
+                isOpen={isOpen}
+                onClose={onClose}
+                onSuccess={onSuccess}
+            />
+        );
+    }
     
     const [createType, setCreateType] = useState(null);
     const [createClasificacion, setCreateClasificacion] = useState(null);

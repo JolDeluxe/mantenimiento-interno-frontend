@@ -100,7 +100,7 @@ export const HoyMantenimientosDesktop = ({
     totalVistaActiva,
     totalAtrasadas,
 }) => {
-    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol) || currentUser?.rol === 'TECNICO';
     const totalPeriodo = totalVistaActiva;
 
     const isFilteringActive = !!(
@@ -157,7 +157,7 @@ export const HoyMantenimientosDesktop = ({
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle selected={vistaActiva} onChange={onVistaActivaChange} totalHoy={totalHoy} totalManana={totalManana} totalSemana={totalSemana} totalPrimeraVista={totalPrimeraVista} totalAtrasadas={totalAtrasadas} />
                 <div className="flex items-center gap-2">
-                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} scope="mantenimientos" />}
+                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} scope="mantenimientos" currentUser={currentUser} />}
                 </div>
             </div>
 

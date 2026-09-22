@@ -124,7 +124,7 @@ export const HoyMantenimientosMobile = ({
     totalPrimeraVista,
     totalAtrasadas,
 }) => {
-    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol);
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol) || currentUser?.rol === 'TECNICO';
     const baseBottom = 84;
     const showCreateFab = puedeCrear;
     const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;

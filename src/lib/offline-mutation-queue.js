@@ -18,6 +18,7 @@ export const QUEUE_STATES = {
 
 export const QUEUE_OPERATIONS = {
   CREATE_TICKET: 'CREATE_TICKET',
+  CREATE_TICKET_TECNICO: 'CREATE_TICKET_TECNICO',
   CREATE_TICKETS_BATCH: 'CREATE_TICKETS_BATCH',
 };
 
@@ -31,6 +32,7 @@ const MAX_RETRY_DELAY = 5 * 60 * 1000;
 
 const ALLOWLIST = {
   [QUEUE_OPERATIONS.CREATE_TICKET]: { method: 'POST', endpoint: '/api/tickets' },
+  [QUEUE_OPERATIONS.CREATE_TICKET_TECNICO]: { method: 'POST', endpoint: '/api/tickets/tecnico' },
   [QUEUE_OPERATIONS.CREATE_TICKETS_BATCH]: { method: 'POST', endpoint: '/api/tickets/batch' },
 };
 
