@@ -106,6 +106,7 @@ export const HoyTodasMobile = ({
     highlightId,
     onSave,
     onChangeStatus,
+    onOpenCreate,
     toApproveCount,
     onOpenDrawerAmnistia,
     conteos,
@@ -119,8 +120,9 @@ export const HoyTodasMobile = ({
     totalPrimeraVista,
     totalAtrasadas,
 }) => {
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol) || currentUser?.rol === 'TECNICO';
     const baseBottom = 84;
-    const showCreateFab = false;
+    const showCreateFab = puedeCrear;
     const fabAddBottom = `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
     const fabRefreshBottom = showCreateFab ? `calc(${baseBottom + 60}px + var(--safe-bottom-offset, 0px))` : `calc(${baseBottom}px + var(--safe-bottom-offset, 0px))`;
     const [detailTarget, setDetailTarget] = useState(null);
@@ -237,11 +239,11 @@ export const HoyTodasMobile = ({
                 </div>
             )}
 
-            {/* {showCreateFab && (
+            {showCreateFab && (
                 <div className="lg:hidden">
                     <GlassFab onClick={onOpenCreate} icon="add" bottom={fabAddBottom} />
                 </div>
-            )} */}
+            )}
 
             <div className="lg:hidden">
                 <GlassFab

@@ -9,6 +9,7 @@ import { HoyTicketTable } from '../components/common/hoy-ticket-table';
 import { ROLES_ADMIN } from '@/features/common/constants/catalogos-tareas';
 import { cn } from '@/utils/cn';
 import { HoyAprobarPanel } from '../components/common/hoy-aprobar-panel';
+import { HoyAddButton } from '../components/common/hoy-add-button';
 import { getHoyEmptyCopy, getHoyEmptyIcon, getHoyPeriodoLabel, getHoyVistaOptions } from '../utils/date-filters';
 
 const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalSemana, totalPrimeraVista, totalAtrasadas }) => (
@@ -17,31 +18,32 @@ const DateToggle = ({ selected, onChange, totalHoy, totalManana, totalSemana, to
             const count = index === 0 ? totalPrimeraVista : id === 'hoy' ? totalHoy : id === 'manana' ? totalManana : totalSemana;
             const alert = id === 'activas' && totalAtrasadas > 0;
             return (
-            <button
-                key={id}
-                type="button"
-                onClick={() => onChange(id)}
-                className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 relative cursor-pointer',
-                    selected === id
-                        ? 'bg-marca-secundario text-white shadow-md'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                )}
-            >
-                <Icon name={icon} size="sm" />
-                <span>{label}</span>
-                {count > 0 && (
-                    <span className={cn(
-                        'min-w-5 h-5 px-1.5 rounded-full text-[10px] font-extrabold flex items-center justify-center border-2 border-white leading-none shadow-sm',
+                <button
+                    key={id}
+                    type="button"
+                    onClick={() => onChange(id)}
+                    className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 relative cursor-pointer',
                         selected === id
-                            ? 'bg-white text-marca-secundario'
-                            : alert ? 'bg-estado-rechazado text-white animate-pulse' : 'bg-slate-200 text-slate-600'
-                    )}>
-                        {count}
-                    </span>
-                )}
-            </button>
-        )})}
+                            ? 'bg-marca-secundario text-white shadow-md'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    )}
+                >
+                    <Icon name={icon} size="sm" />
+                    <span>{label}</span>
+                    {count > 0 && (
+                        <span className={cn(
+                            'min-w-5 h-5 px-1.5 rounded-full text-[10px] font-extrabold flex items-center justify-center border-2 border-white leading-none shadow-sm',
+                            selected === id
+                                ? 'bg-white text-marca-secundario'
+                                : alert ? 'bg-estado-rechazado text-white animate-pulse' : 'bg-slate-200 text-slate-600'
+                        )}>
+                            {count}
+                        </span>
+                    )}
+                </button>
+            );
+        })}
     </div>
 );
 
@@ -80,6 +82,7 @@ export const HoyTodasDesktop = ({
     highlightId,
     onSave,
     onChangeStatus,
+    onOpenCreate,
     toApproveCount,
     onOpenDrawerAmnistia,
     conteos,
@@ -94,6 +97,7 @@ export const HoyTodasDesktop = ({
     totalVistaActiva,
     totalAtrasadas,
 }) => {
+    const puedeCrear = ROLES_ADMIN.has(currentUser?.rol) || currentUser?.rol === 'TECNICO';
     const totalPeriodo = totalVistaActiva;
 
     const isFilteringActive = !!(
@@ -143,9 +147,9 @@ export const HoyTodasDesktop = ({
 
             <div className="flex items-center justify-between w-full gap-4 flex-wrap">
                 <DateToggle selected={vistaActiva} onChange={onVistaActivaChange} totalHoy={totalHoy} totalManana={totalManana} totalSemana={totalSemana} totalPrimeraVista={totalPrimeraVista} totalAtrasadas={totalAtrasadas} />
-                {/* <div className="flex items-center gap-2">
-                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} />}
-                </div> */}
+                <div className="flex items-center gap-2">
+                    {puedeCrear && <HoyAddButton onClick={onOpenCreate} isMobile={false} currentUser={currentUser} />}
+                </div>
             </div>
 
             <HoyFilterBar
@@ -158,9 +162,9 @@ export const HoyTodasDesktop = ({
                 filtroPrioridad={filtroPrioridad}
                 onPrioridadChange={onPrioridadChange}
                 filtroCategoria={filtroCategoria}
-                            filtroArea={filtroArea}
+                filtroArea={filtroArea}
                 onCategoriaChange={onCategoriaChange}
-                            onAreaChange={onAreaChange}
+                onAreaChange={onAreaChange}
                 filtroResponsable={filtroResponsable}
                 onResponsableChange={onResponsableChange}
                 opcionesResponsables={tecnicos}
@@ -207,4 +211,3 @@ export const HoyTodasDesktop = ({
         </div>
     );
 };
-
