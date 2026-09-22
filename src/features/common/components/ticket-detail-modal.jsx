@@ -527,6 +527,9 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const imagenesReferencia = (ticket.imagenes || []).filter(
         img => !img.tipo || img.tipo === 'EVIDENCIA_INICIAL'
     );
+    // Si la tarea ya está CERRADA, las fotos iniciales son evidencia del trabajo terminado.
+    // En cualquier otro estado son fotos de referencia (la tarea sigue en curso).
+    const esEvidenciaInicial = ticket.estado === 'CERRADO';
     const tipoEstadoActual = EVIDENCIA_TIPO[ticket.estado];
     const imagenesOtras = (ticket.imagenes || []).filter(
         img => img.tipo && img.tipo !== 'EVIDENCIA_INICIAL' && (!tipoEstadoActual || img.tipo !== tipoEstadoActual)
@@ -864,7 +867,7 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fotos:</span>
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                             <Icon name="photo_camera" size="xs" className="text-blue-600 shrink-0" />
-                                            <span>{imagenesReferencia.length} {imagenesReferencia.length === 1 ? 'referencia' : 'referencias'}</span>
+                                            <span>{imagenesReferencia.length} {esEvidenciaInicial ? (imagenesReferencia.length === 1 ? 'evidencia' : 'evidencias') : (imagenesReferencia.length === 1 ? 'referencia' : 'referencias')}</span>
                                         </span>
                                     </div>
                                 )}
@@ -882,14 +885,16 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                     {ticket.descripcion}
                                 </p>
 
-                                {/* Fotos de referencia adjuntas al crear la tarea/ticket */}
+                                {/* Fotos adjuntas al crear la tarea — evidencia si ya cerrada, referencia si aún en curso */}
                                 {imagenesReferencia.length > 0 && (
                                     <div className="mt-3.5 pt-3 border-t border-slate-200/70">
                                         <div className="flex items-center justify-between gap-2 mb-1.5">
                                             <div className="flex items-center gap-1.5">
-                                                <Icon name="photo_library" size="xs" className="text-slate-600" />
-                                                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                                                    Fotos de referencia ({imagenesReferencia.length})
+                                                <Icon name={esEvidenciaInicial ? 'task_alt' : 'photo_library'} size="xs" className={esEvidenciaInicial ? 'text-emerald-600' : 'text-slate-600'} />
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${esEvidenciaInicial ? 'text-emerald-700' : 'text-slate-700'}`}>
+                                                    {esEvidenciaInicial
+                                                        ? `Evidencia adjunta (${imagenesReferencia.length})`
+                                                        : `Fotos de referencia (${imagenesReferencia.length})`}
                                                 </span>
                                             </div>
                                             <span className="text-[10px] text-slate-400 font-medium">
