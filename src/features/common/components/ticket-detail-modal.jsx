@@ -159,10 +159,16 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
             onClose={onClose}
             className="bg-transparent shadow-none w-full max-w-none h-full flex items-center justify-center p-0"
         >
-            <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none">
+            <div 
+                className="relative w-full h-full flex flex-col items-center justify-center"
+                onClick={onClose}
+            >
 
                 {/* Header Overlay */}
-                <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-50 pointer-events-auto">
+                <div 
+                    className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-50 pointer-events-auto"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {images?.length > 1 ? (
                         <span className="text-white/80 text-sm font-bold bg-black/40 px-3 py-1 rounded-full drop-shadow">
                             {index + 1} / {images.length}
@@ -172,6 +178,7 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
                         type="button"
                         onClick={onClose}
                         className="flex items-center justify-center shrink-0 w-10 h-10 text-white bg-black/40 hover:bg-black/60 rounded-full transition-colors active:scale-90 cursor-pointer"
+                        title="Cerrar visor"
                     >
                         <Icon name="close" size="md" />
                     </button>
@@ -183,6 +190,7 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onNavigate((index - 1 + images.length) % images.length); }}
                         className="absolute left-2 md:left-6 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 text-white bg-black/40 hover:bg-black/60 rounded-full z-50 active:scale-90 cursor-pointer transition-colors pointer-events-auto"
+                        title="Anterior"
                     >
                         <Icon name="chevron_left" size="md" />
                     </button>
@@ -193,7 +201,7 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
                     <img
                         key={index}
                         src={images[index]}
-                        alt="Evidencia visual"
+                        alt="Foto de referencia"
                         className="max-w-[95vw] max-h-[85vh] object-contain rounded-lg shadow-2xl pointer-events-auto"
                         onClick={(e) => e.stopPropagation()}
                     />
@@ -205,6 +213,7 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onNavigate((index + 1) % images.length); }}
                         className="absolute right-2 md:right-6 flex items-center justify-center shrink-0 w-10 h-10 md:w-12 md:h-12 text-white bg-black/40 hover:bg-black/60 rounded-full z-50 active:scale-90 cursor-pointer transition-colors pointer-events-auto"
+                        title="Siguiente"
                     >
                         <Icon name="chevron_right" size="md" />
                     </button>
@@ -215,25 +224,28 @@ const ImageViewer = ({ images, index, onClose, onNavigate }) => {
 };
 
 // ── Mini galería de thumbnails ──────────────────────────────────────────────
-const MiniImageGrid = ({ urls, onExpand }) => {
+const MiniImageGrid = ({ urls, onExpand, itemClassName = 'w-16 h-16 sm:w-20 sm:h-20' }) => {
     if (!urls?.length) return null;
     const visible = urls.slice(0, 4);
     const extra = urls.length - 4;
     return (
-        <div className="flex items-center gap-2 flex-wrap mt-2">
+        <div className="flex items-center gap-2.5 flex-wrap mt-1.5">
             {visible.map((url, i) => (
                 <button
                     key={i}
                     type="button"
                     onClick={() => onExpand(i)}
-                    className="relative w-14 h-14 rounded-xl overflow-hidden border border-white/60 hover:border-white transition-all group shrink-0 cursor-pointer shadow-sm bg-black/10"
+                    className={`relative ${itemClassName} rounded-xl overflow-hidden border border-slate-300 hover:border-marca-primario hover:ring-2 hover:ring-marca-primario/25 transition-all group shrink-0 cursor-pointer shadow-sm bg-slate-100`}
+                    title="Clic para ampliar"
                 >
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
-                        <Icon name="zoom_in" size="sm" className="text-white opacity-0 group-hover:opacity-100 drop-shadow" />
+                        <div className="w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity drop-shadow">
+                            <Icon name="zoom_in" size="xs" />
+                        </div>
                     </div>
                     {i === 3 && extra > 0 && (
-                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                             <span className="text-white text-xs font-extrabold drop-shadow">+{extra}</span>
                         </div>
                     )}
@@ -453,7 +465,7 @@ const ContextualBanner = ({ ticket, onImageExpand }) => {
             <ParsedNote notaRaw={nota} config={config} />
 
             {images.length > 0 && (
-                <MiniImageGrid urls={images} onExpand={(i) => onImageExpand(images, i)} />
+                <MiniImageGrid urls={images} onExpand={(i) => onImageExpand(images, i)} itemClassName="w-14 h-14 sm:w-16 sm:h-16" />
             )}
 
             {actor && (
@@ -510,6 +522,15 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
     const responsables = ticket.responsables ?? [];
     const tieneHistorial = ticket.historial && ticket.historial.length > 0;
     const esTecnico = user?.rol === 'TECNICO';
+
+    // Clasificación de imágenes: Referencia (iniciales al reportar/crear) vs Otras etapas
+    const imagenesReferencia = (ticket.imagenes || []).filter(
+        img => !img.tipo || img.tipo === 'EVIDENCIA_INICIAL'
+    );
+    const tipoEstadoActual = EVIDENCIA_TIPO[ticket.estado];
+    const imagenesOtras = (ticket.imagenes || []).filter(
+        img => img.tipo && img.tipo !== 'EVIDENCIA_INICIAL' && (!tipoEstadoActual || img.tipo !== tipoEstadoActual)
+    );
 
     const entryResuelto = getContextualEntry(ticket.historial, 'RESUELTO');
     const fechaFinalizada = ticket.finalizadoAt || entryResuelto?.createdAt;
@@ -838,6 +859,15 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                         </div>
                                     );
                                 })()}
+                                {imagenesReferencia.length > 0 && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fotos:</span>
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                            <Icon name="photo_camera" size="xs" className="text-blue-600 shrink-0" />
+                                            <span>{imagenesReferencia.length} {imagenesReferencia.length === 1 ? 'referencia' : 'referencias'}</span>
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Tarjeta de Título + Descripción + Indicador de Retraso/Alerta */}
@@ -851,14 +881,46 @@ export const TicketDetailModal = ({ isOpen, onClose, ticket }) => {
                                 <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                                     {ticket.descripcion}
                                 </p>
-                                {ticket.imagenes && ticket.imagenes.length > 0 && (
-                                    <div className="mt-3 pt-3 border-t border-slate-200/60">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                                            Evidencia Adjunta ({ticket.imagenes.length})
-                                        </span>
+
+                                {/* Fotos de referencia adjuntas al crear la tarea/ticket */}
+                                {imagenesReferencia.length > 0 && (
+                                    <div className="mt-3.5 pt-3 border-t border-slate-200/70">
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon name="photo_library" size="xs" className="text-slate-600" />
+                                                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                                                    Fotos de referencia ({imagenesReferencia.length})
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-medium">
+                                                <span className="hidden sm:inline">Clic en la foto para ampliar</span>
+                                                <span className="sm:hidden">Toca para ampliar</span>
+                                            </span>
+                                        </div>
                                         <MiniImageGrid 
-                                            urls={ticket.imagenes.map(img => resolveUrl(img.url))} 
-                                            onExpand={(idx) => handleImageExpand(ticket.imagenes.map(img => resolveUrl(img.url)), idx)} 
+                                            urls={imagenesReferencia.map(img => resolveUrl(img.url))} 
+                                            onExpand={(idx) => handleImageExpand(imagenesReferencia.map(img => resolveUrl(img.url)), idx)} 
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Otras fotos adjuntas en el ciclo de vida (si no corresponden al estado contextual activo) */}
+                                {imagenesOtras.length > 0 && (
+                                    <div className="mt-3.5 pt-3 border-t border-slate-200/70">
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon name="collections" size="xs" className="text-slate-500" />
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                                    Otras fotos adjuntas ({imagenesOtras.length})
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-medium">
+                                                Toca para ampliar
+                                            </span>
+                                        </div>
+                                        <MiniImageGrid 
+                                            urls={imagenesOtras.map(img => resolveUrl(img.url))} 
+                                            onExpand={(idx) => handleImageExpand(imagenesOtras.map(img => resolveUrl(img.url)), idx)} 
                                         />
                                     </div>
                                 )}

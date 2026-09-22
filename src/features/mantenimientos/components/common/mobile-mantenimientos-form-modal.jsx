@@ -7,8 +7,9 @@ import {
     validateFechaEdicionNoPasadaSiCambio,
     validateFechaInicioRecurrencia,
     validateFechaRequerida,
+    validateImages,
 } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
+import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker, ImageUploadField } from '@/features/common/forms/tareas/fields';
 import { ResponsablesMobileSection } from '@/features/common/forms/tareas/responsables';
 import { getAllMaquinas, getMaquinaById } from '@/features/maquinaria/api/maquinaria-api';
 import { shouldShowMachineryBlock, canReportProductionHalt, deriveLocationFromMachine, shouldLockLocationByMachine, deriveCategoryFromTicket, deriveLocationFromTicket, deriveTimeModeFromTicket } from '@/features/common/forms/tareas/utils/machinery-utils';
@@ -98,6 +99,7 @@ export const MobileTicketFormModal = ({
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
+    const [imagenes, setImagenes] = useState([]);
     const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('MEDIA');
@@ -216,6 +218,7 @@ export const MobileTicketFormModal = ({
         } else {
             setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
+            setImagenes([]);
             setArea(''); setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || 'PREVENTIVO'); setTipo('PLANEADA');
             setFechaVencimiento((defaultDate && defaultDate >= hoyLocal) ? defaultDate : hoyLocal); setTiempoEstimadoMins(0); setResponsables([]);
@@ -396,6 +399,10 @@ export const MobileTicketFormModal = ({
                 e.fechaVencimiento = fechaError;
             }
         }
+
+        const errImg = validateImages(imagenes, { maxImages: 3 });
+        if (errImg) e.imagenes = errImg;
+
         return e;
     };
 
@@ -459,6 +466,12 @@ export const MobileTicketFormModal = ({
             if (fechaVencimiento) formData.append('fechaVencimiento', fechaInputToISOLocal(fechaVencimiento));
             if (tiempoEstimadoMins > 0) formData.append('tiempoEstimado', String(tiempoEstimadoMins));
             responsables.forEach((id) => formData.append('responsables', id));
+        }
+
+        if (imagenes && imagenes.length > 0) {
+            imagenes.forEach((file) => {
+                formData.append('imagenes', file);
+            });
         }
 
         try {
@@ -919,6 +932,18 @@ export const MobileTicketFormModal = ({
                             placeholder="Describe el problema o tarea con el mayor detalle posible…"
                             rows={3}
                             className="animate-in fade-in slide-in-from-top-2 duration-200"
+                        />
+                    )}
+
+                    {/* ── EVIDENCIA FOTOGRÁFICA (Solo en creación individual / no recurrente) ── */}
+                    {!esEdicion && !esRecurrente && (
+                        <ImageUploadField
+                            imagenes={imagenes}
+                            onChange={setImagenes}
+                            maxImages={3}
+                            disabled={isSubmitting}
+                            error={fe.imagenes}
+                            className="pt-1 border-t border-slate-100"
                         />
                     )}
 

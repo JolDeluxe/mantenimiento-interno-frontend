@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Icon, SearchableSelect } from '@/components/ui/z_index';
 import { MaquinaSelectField, PlantaAreaFields } from '@/features/common/forms/tareas/fields';
 import { getMinDateHoy, fechaInputToISOLocal, isoToDateInput, localMXTimeToISO, isoToLocalMXTime } from '@/lib/date';
-import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia } from '@/features/common/forms/tareas/validation';
-import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker } from '@/features/common/forms/tareas/fields';
+import { validateFechaRequerida, validateFechaEdicionNoPasadaSiCambio, validateFechaInicioRecurrencia, validateImages } from '@/features/common/forms/tareas/validation';
+import { PrioridadField, TituloField, DescripcionField, FechaVencimientoField, DurationPicker, ImageUploadField } from '@/features/common/forms/tareas/fields';
 import { WorkloadBadge, ResponsablesDesktopSection } from '@/features/common/forms/tareas/responsables';
 import { Label, Input, Select } from '@/components/form/z_index';
 import { cn } from '@/utils/cn';
@@ -100,7 +100,44 @@ const buildResponsablesSnapshot = (tecnicoId) => {
     return id ? [id] : [];
 };
 
-const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico }) => {
+const CarritoThumbnail = ({ file, onRemove }) => {
+    const [preview, setPreview] = useState(null);
+
+    useEffect(() => {
+        if (!file || !(file instanceof Blob || file instanceof File)) {
+            setPreview(null);
+            return;
+        }
+        const url = URL.createObjectURL(file);
+        setPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [file]);
+
+    return (
+        <div className="relative group w-11 h-11 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 shadow-2xs">
+            {preview ? (
+                <img src={preview} alt={file?.name || 'miniatura'} className="w-full h-full object-cover" />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <Icon name="image" size="xs" />
+                </div>
+            )}
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                }}
+                title="Quitar imagen"
+                className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-90 transition-opacity shadow-sm cursor-pointer"
+            >
+                <Icon name="close" style={{ fontSize: '10px' }} />
+            </button>
+        </div>
+    );
+};
+
+const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico, onRemoveImagen }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
@@ -164,6 +201,15 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                                 </>
                             )
                         )}
+                        {item.imagenes && item.imagenes.filter(f => f instanceof Blob || f instanceof File).length > 0 && (
+                            <>
+                                <span className="text-slate-300 text-[10px]">·</span>
+                                <span className="text-[10px] text-marca-primario font-bold bg-marca-primario/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                    <Icon name="photo_camera" style={{ fontSize: '11px' }} />
+                                    <span>{item.imagenes.filter(f => f instanceof Blob || f instanceof File).length}</span>
+                                </span>
+                            </>
+                        )}
                     </div>
 
                     {!expanded && tecnicosIds.length > 0 && (
@@ -221,6 +267,26 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                 <div className="px-3 pb-3 pt-2 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
                     {item.descripcion && item.descripcion !== 'Sin descripción.' && (
                         <p className="text-xs text-slate-600 leading-relaxed px-1">{item.descripcion}</p>
+                    )}
+
+                    {item.imagenes && item.imagenes.filter(f => f instanceof Blob || f instanceof File).length > 0 && (
+                        <div className="flex flex-col gap-1.5 pt-1">
+                            <div className="flex items-center gap-1 px-1">
+                                <Icon name="photo_camera" size="xs" className="text-slate-400" />
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                    Fotos adjuntas ({item.imagenes.filter(f => f instanceof Blob || f instanceof File).length}/3)
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 px-1 flex-wrap">
+                                {item.imagenes.filter(f => f instanceof Blob || f instanceof File).map((file, imgIdx) => (
+                                    <CarritoThumbnail
+                                        key={`${file?.name || 'foto'}-${imgIdx}`}
+                                        file={file}
+                                        onRemove={() => onRemoveImagen && onRemoveImagen(item._id, imgIdx)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     )}
 
                     <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-200/60">
@@ -308,6 +374,7 @@ export const MantenimientosFormModal = ({
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
+    const [imagenes, setImagenes] = useState([]);
     const [categoria, setCategoria] = useState(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
     const [area, setArea] = useState('');
     const [prioridad, setPrioridad] = useState('');
@@ -460,6 +527,7 @@ export const MantenimientosFormModal = ({
         } else {
             setTitulo(''); setDescripcion(''); setCategoria(scope === 'mantenimientos' ? 'MAQUINARIA' : '');
             setMostrarDescripcion(false);
+            setImagenes([]);
             setArea('');
             setPrioridad('MEDIA');
             setClasificacion(defaultClasificacion || (scope === 'mantenimientos' ? 'PREVENTIVO' : ''));
@@ -653,12 +721,17 @@ export const MantenimientosFormModal = ({
                 if (!tecnicoCartId) e.responsables = 'Debes seleccionar un técnico para las nuevas tareas.';
             }
         }
+
+        const errImg = validateImages(imagenes, { maxImages: 3 });
+        if (errImg) e.imagenes = errImg;
+
         return e;
     };
 
     const resetFormFields = () => {
         setTitulo(''); setDescripcion(''); setCategoria('');
         setMostrarDescripcion(false);
+        setImagenes([]);
         setArea(''); setPrioridad('');
         setClasificacion(scope === 'mantenimientos' ? 'PREVENTIVO' : ''); setTipo(''); setFechaVencimiento('');
         setTiempoEstimadoMins(0); setSubmitted(false);
@@ -676,6 +749,15 @@ export const MantenimientosFormModal = ({
         setSubmitted(true);
         const errors = getErrors();
         if (Object.keys(errors).length > 0) return;
+
+        if (imagenes && imagenes.length > 0) {
+            const tareasConFotos = carrito.filter(item => item.imagenes && item.imagenes.length > 0).length;
+            if (tareasConFotos >= 10) {
+                setBackendError("Ya alcanzaste el máximo de 10 tareas con fotos en este lote, puedes agregar esta tarea sin imágenes o quitar fotos de otra.");
+                return;
+            }
+        }
+
         const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
         setCarrito(prev => [...prev, {
@@ -692,12 +774,14 @@ export const MantenimientosFormModal = ({
             horaFin: modoRangoHoras ? horaFin : null,
             horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
             horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+            imagenes: [...imagenes],
         }]);
         
         // Solo reseteamos lo que cambia por tarea. El contexto del área se mantiene.
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
+        setImagenes([]);
         setTiempoEstimadoMins(0);
         setSubmitted(false);
         setIsDropdownOpen(false);
@@ -712,6 +796,15 @@ export const MantenimientosFormModal = ({
 
     const handleQuitarDelCarrito = (_id) => {
         setCarrito(prev => prev.filter(item => item._id !== _id));
+    };
+
+    const handleRemoveImagenItem = (itemId, imgIndex) => {
+        setCarrito(prev => prev.map(item => {
+            if (item._id !== itemId) return item;
+            const newImgs = [...(item.imagenes || [])];
+            newImgs.splice(imgIndex, 1);
+            return { ...item, imagenes: newImgs };
+        }));
     };
 
     const handleAgregarTecnicoItem = (itemId, techId) => {
@@ -861,6 +954,12 @@ export const MantenimientosFormModal = ({
                 responsables.forEach(id => fd.append('responsables', id));
             }
 
+            if (imagenes && imagenes.length > 0) {
+                imagenes.forEach((file) => {
+                    fd.append('imagenes', file);
+                });
+            }
+
             try {
                 await onSuccess(fd);
                 setTecnicoCartId('');
@@ -887,6 +986,15 @@ export const MantenimientosFormModal = ({
                 setBackendError("La tarea actual tiene errores. Corrígelos o limpia los campos.");
                 return;
             }
+
+            if (imagenes && imagenes.length > 0) {
+                const tareasConFotos = finalCarrito.filter(item => item.imagenes && item.imagenes.some(f => f instanceof Blob || f instanceof File)).length;
+                if (tareasConFotos >= 10) {
+                    setBackendError("Ya alcanzaste el máximo de 10 tareas con fotos en este lote, puedes agregar esta tarea sin imágenes o quitar fotos de otra.");
+                    return;
+                }
+            }
+
             const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
 
             finalCarrito.push({
@@ -902,7 +1010,8 @@ export const MantenimientosFormModal = ({
                 horaInicio: modoRangoHoras ? horaInicio : null,
                 horaFin: modoRangoHoras ? horaFin : null,
                 horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
-                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                imagenes: imagenes || [],
             });
         }
 
@@ -925,7 +1034,8 @@ export const MantenimientosFormModal = ({
                     impactoProduccion: item.impactoProduccion,
                     tipo: item.tipo,
                     fechaVencimiento: item.fechaVencimiento ? fechaInputToISOLocal(item.fechaVencimiento) : null,
-                    responsables: item.responsables.map(Number)
+                    responsables: item.responsables.map(Number),
+                    imagenes: (item.imagenes || []).filter(f => f instanceof Blob || f instanceof File)
                 };
                 if (item.modoRangoHoras) {
                     payload.horaInicioProgramada = item.horaInicioProgramada;
@@ -1466,6 +1576,18 @@ export const MantenimientosFormModal = ({
                                 className="animate-in fade-in slide-in-from-top-2 duration-200"
                             />
                         )}
+
+                        {/* ── EVIDENCIA FOTOGRÁFICA (Solo en creación individual / lote no recurrente) ── */}
+                        {!esEdicion && !esRecurrente && (
+                            <ImageUploadField
+                                imagenes={imagenes}
+                                onChange={setImagenes}
+                                maxImages={3}
+                                disabled={isSubmitting}
+                                error={fe.imagenes}
+                                className="pt-1 border-t border-slate-100"
+                            />
+                        )}
                         </div>
 
                         {modoCarrito && (
@@ -1533,6 +1655,7 @@ export const MantenimientosFormModal = ({
                                             onAddTecnico={handleAgregarTecnicoItem}
                                             onRemoveTecnico={handleQuitarTecnicoItem}
                                             onCambiarTecnico={handleCambiarTecnicoItem}
+                                            onRemoveImagen={handleRemoveImagenItem}
                                         />
                                     ))}
                                 </div>

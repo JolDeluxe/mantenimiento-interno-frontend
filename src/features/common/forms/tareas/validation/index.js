@@ -6,3 +6,7 @@ export {
     validateFechaEdicionNoPasadaSiCambio,
     validateFechaInicioRecurrencia,
 } from './date-validation';
+
+export {
+    validateImages,
+} from './image-validation';

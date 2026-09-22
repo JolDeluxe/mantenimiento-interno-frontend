@@ -197,6 +197,10 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     const mutationKey = getMutationKey(config);
     if (mutationKey) {
       if (!navigator.onLine) {

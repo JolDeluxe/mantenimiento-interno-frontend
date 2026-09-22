@@ -6,3 +6,4 @@ export { DurationPicker } from './DurationPicker';
 export { MaquinaSelectField } from './MaquinaSelectField';
 export { PlantaAreaFields } from './PlantaAreaFields';
 export { TiempoHorarioSection } from './TiempoHorarioSection';
+export { ImageUploadField } from './ImageUploadField';

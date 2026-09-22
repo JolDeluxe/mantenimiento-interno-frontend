@@ -44,14 +44,44 @@ export const changeTicketStatus = async (id, data) => {
     return response;
 };
 
-export const createTicketsBatch = (tareas) =>
-    sendOrQueueMutation({
+export const createTicketsBatch = (tareas) => {
+    const list = Array.isArray(tareas) ? tareas : [];
+    const hasImages = list.some(t => Array.isArray(t.imagenes) && t.imagenes.some(f => f instanceof Blob || f instanceof File));
+
+    if (!hasImages) {
+        const tareasClean = list.map(({ imagenes, ...t }) => t);
+        return sendOrQueueMutation({
+            operation: QUEUE_OPERATIONS.CREATE_TICKETS_BATCH,
+            method: 'POST',
+            endpoint: '/api/tickets/batch',
+            payload: { tareas: tareasClean },
+            itemCount: list.length || 1,
+        });
+    }
+
+    const fd = new FormData();
+    const tareasClean = list.map(({ imagenes, ...t }) => t);
+    fd.append('tareas', JSON.stringify(tareasClean));
+
+    list.forEach((tarea, index) => {
+        if (Array.isArray(tarea.imagenes)) {
+            tarea.imagenes.forEach((file) => {
+                if (file instanceof Blob || file instanceof File) {
+                    fd.append(`imagenes_${index}`, file);
+                }
+            });
+        }
+    });
+
+    return sendOrQueueMutation({
         operation: QUEUE_OPERATIONS.CREATE_TICKETS_BATCH,
         method: 'POST',
         endpoint: '/api/tickets/batch',
-        payload: { tareas },
-        itemCount: Array.isArray(tareas) ? tareas.length : 1,
+        payload: fd,
+        headers: { 'Content-Type': 'multipart/form-data' },
+        itemCount: list.length || 1,
     });
+};
 
 export const rescheduleTicketsBatch = (payload) =>
     api.patch('/api/tickets/reschedule', payload);
