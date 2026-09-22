@@ -60,7 +60,8 @@ export function MaquinaSelectField({
           <Icon name="check_circle" size="xs" className="text-emerald-600 shrink-0 mt-0.5" />
           <div className="flex-1 leading-tight">
             <p className="text-emerald-800">
-              Máquina validada: <strong className="font-bold">{maquinaInfo.nombre}</strong> ({maquinaInfo.proceso})
+              Máquina validada: <strong className="font-bold">{maquinaInfo.nombre || maquinaInfo.codigo}</strong>
+              {maquinaInfo.proceso ? ` (${maquinaInfo.proceso})` : ''}
             </p>
             {maquinaInfo.area && (
               <p className="text-[10px] text-emerald-600 font-normal mt-0.5">

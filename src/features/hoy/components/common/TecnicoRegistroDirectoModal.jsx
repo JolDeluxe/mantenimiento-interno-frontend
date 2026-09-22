@@ -207,13 +207,13 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
     const [duracionMinutos, setDuracionMinutos]                   = useState(30);
     const [tiempoRange, setTiempoRange]                           = useState(null);
     const [maquinaOperativaAlResolver, setMaquinaOperativaAlResolver] = useState(false);
+    const [paroProduccion, setParoProduccion]                     = useState(false);
     const [fechaParoProduccion, setFechaParoProduccion]           = useState('');
 
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors]         = useState({});
 
-    // paroProduccion es automático: si CORRECTIVO + maquina → siempre true
-    const esCorrectivoDeMaquina = tipoUbicacion === 'MAQUINA' && maquinaId && clasificacion === 'CORRECTIVO';
+    const esCorrectivoDeMaquina = tipoUbicacion === 'MAQUINA' && Boolean(maquinaId) && clasificacion === 'CORRECTIVO';
 
     // ── Reset al abrir/cerrar ───────────────────────────────────────────────
     useEffect(() => {
@@ -229,6 +229,7 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
             setDuracionMinutos(30);
             setTiempoRange(null);
             setMaquinaOperativaAlResolver(false);
+            setParoProduccion(false);
             setFechaParoProduccion('');
             setErrors({});
             return;
@@ -298,11 +299,12 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                 fd.append('area',        maquinaSeleccionada.area   || '');
 
                 if (clasificacion === 'CORRECTIVO') {
-                    // Paro de producción automático para correctivos en maquina
-                    fd.append('paroProduccion', 'true');
-                    if (fechaParoProduccion) fd.append('fechaParoProduccion', new Date(fechaParoProduccion).toISOString());
+                    fd.append('paroProduccion', String(paroProduccion));
+                    if (paroProduccion && fechaParoProduccion) {
+                        fd.append('fechaParoProduccion', new Date(fechaParoProduccion).toISOString());
+                    }
                     if (yaTerminado) {
-                        fd.append('impactoConfirmado',        'PARO_TOTAL');
+                        fd.append('impactoConfirmado', paroProduccion ? 'PARO_TOTAL' : 'SIN_PARO');
                         fd.append('maquinaOperativaAlResolver', String(maquinaOperativaAlResolver));
                     }
                 }
@@ -449,32 +451,56 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                                             </button>
                                         </div>
 
-                                        {/* Aviso automático de paro — sin checkbox */}
+                                        {/* Toggle de paro de producción (opcional, no obligatorio) */}
                                         {esCorrectivoDeMaquina && (
-                                            <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in duration-200">
-                                                <Icon name="warning" size="sm" className="text-amber-600 shrink-0 mt-0.5" />
-                                                <p className="text-xs text-amber-800 leading-relaxed">
-                                                    Los correctivos en maquinaria se registran como <strong>paro de producción</strong> automáticamente.
-                                                    Indica el inicio del paro si es diferente a ahora.
-                                                </p>
-                                            </div>
-                                        )}
+                                            <div className="flex flex-col gap-2.5 pt-1 animate-in fade-in duration-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setParoProduccion(prev => !prev)}
+                                                    className={cn(
+                                                        'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                                        paroProduccion
+                                                            ? 'bg-red-50 border-red-200 text-red-900 ring-1 ring-red-300'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70'
+                                                    )}
+                                                >
+                                                    <span className={cn(
+                                                        'mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                                                        paroProduccion
+                                                            ? 'bg-red-600 border-red-600 text-white'
+                                                            : 'bg-white border-slate-300 text-transparent'
+                                                    )}>
+                                                        <Icon name="check" size="xs" />
+                                                    </span>
+                                                    <span className="flex flex-col gap-0.5">
+                                                        <span className={cn('text-xs font-bold', paroProduccion ? 'text-red-800' : 'text-slate-800')}>
+                                                            ¿La falla causó paro de producción?
+                                                        </span>
+                                                        <span className="text-[11px] text-slate-500 leading-tight">
+                                                            {paroProduccion
+                                                                ? 'La máquina se registrará con afectación a producción y cálculo de paro.'
+                                                                : 'Mantenimiento correctivo sin interrupción total de la línea de producción.'}
+                                                        </span>
+                                                    </span>
+                                                </button>
 
-                                        {/* Fecha inicio del paro (correctivo + maquina) */}
-                                        {esCorrectivoDeMaquina && (
-                                            <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
-                                                <Label htmlFor="tec-paro">
-                                                    Inicio del paro
-                                                    <span className="ml-1 text-xs font-normal text-slate-400">(deja vacío = ahora mismo)</span>
-                                                </Label>
-                                                <input
-                                                    id="tec-paro"
-                                                    type="datetime-local"
-                                                    value={fechaParoProduccion}
-                                                    max={new Date().toISOString().slice(0, 16)}
-                                                    onChange={(e) => setFechaParoProduccion(e.target.value)}
-                                                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario"
-                                                />
+                                                {/* Fecha inicio del paro (solo si el técnico marcó que hubo paro) */}
+                                                {paroProduccion && (
+                                                    <div className="flex flex-col gap-1.5 pl-8 animate-in fade-in duration-200">
+                                                        <Label htmlFor="tec-paro">
+                                                            Inicio del paro
+                                                            <span className="ml-1 text-xs font-normal text-slate-400">(deja vacío = ahora mismo)</span>
+                                                        </Label>
+                                                        <input
+                                                            id="tec-paro"
+                                                            type="datetime-local"
+                                                            value={fechaParoProduccion}
+                                                            max={new Date().toISOString().slice(0, 16)}
+                                                            onChange={(e) => setFechaParoProduccion(e.target.value)}
+                                                            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400/30 focus:border-red-500"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
