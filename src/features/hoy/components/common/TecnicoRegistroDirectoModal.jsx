@@ -10,6 +10,13 @@ import { createTicketTecnico } from '@/features/tickets/api/tickets-api';
 import { isQueuedResult, notifyQueuedResult } from '@/features/tickets/utils/offline-result';
 import { notify } from '@/components/notification/adaptive-notify';
 import { cn } from '@/utils/cn';
+import { isoToDateInput, localMXTimeToISO } from '@/lib/date';
+
+const addDaysToDateInput = (dateStr, days) => {
+    const date = new Date(`${dateStr}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+};
 
 // ── Time picker (igual que en ticket-progress-modal) ────────────────────────
 const MAX_DURATION_MINS = 960; // 16 horas
@@ -188,17 +195,19 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
     const [loadingMaquinas, setLoadingMaquinas] = useState(false);
 
     // ── Contenido ──────────────────────────────────────────────────────────
-    const [titulo, setTitulo]           = useState('');
-    const [descripcion, setDescripcion] = useState('');
-    const [archivos, setArchivos]       = useState([]);
+    const [titulo, setTitulo]             = useState('');
+    // Cuando yaTerminado=true → este campo es la "nota de cierre" (historial)
+    // Cuando yaTerminado=false → es la "descripción" del trabajo a realizar
+    const [textoLibre, setTextoLibre]     = useState('');
+
+    const [archivos, setArchivos]         = useState([]);
 
     // ── Estado de realización ──────────────────────────────────────────────
     const [yaTerminado, setYaTerminado]                           = useState(true);
     const [duracionMinutos, setDuracionMinutos]                   = useState(30);
     const [tiempoRange, setTiempoRange]                           = useState(null);
     const [maquinaOperativaAlResolver, setMaquinaOperativaAlResolver] = useState(false);
-    // Para correctivo con maquina terminado: cuándo empezó el paro
-    const [fechaParoProduccion, setFechaParoProduccion] = useState('');
+    const [fechaParoProduccion, setFechaParoProduccion]           = useState('');
 
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors]         = useState({});
@@ -214,7 +223,7 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
             setClasificacion('CORRECTIVO');
             setArea('');
             setTitulo('');
-            setDescripcion('');
+            setTextoLibre('');
             setArchivos(prev => { prev.forEach(i => URL.revokeObjectURL(i.preview)); return []; });
             setYaTerminado(true);
             setDuracionMinutos(30);
@@ -265,7 +274,16 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
         try {
             const fd = new FormData();
             fd.append('titulo', titulo.trim());
-            if (descripcion.trim()) fd.append('descripcion', descripcion.trim());
+            
+            // Si ya terminó, el texto escrito es la NOTA de cierre para el historial.
+            // Si está pendiente, es la DESCRIPCIÓN del trabajo a realizar.
+            if (textoLibre.trim()) {
+                if (yaTerminado) {
+                    fd.append('nota', textoLibre.trim());
+                } else {
+                    fd.append('descripcion', textoLibre.trim());
+                }
+            }
 
             if (tipoUbicacion === 'MAQUINA' && maquinaSeleccionada) {
                 fd.append('maquinaId',   String(maquinaSeleccionada.id));
@@ -292,10 +310,16 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
             fd.append('yaTerminado', String(yaTerminado));
             if (yaTerminado) {
                 fd.append('duracionMinutos', String(duracionMinutos));
-                // Si usó rango horario, enviar inicio/fin para IntervaloTiempo
-                if (tiempoRange?.mode === 'range') {
-                    fd.append('horaInicioProgramada', tiempoRange.startTime);
-                    fd.append('horaFinProgramada',    tiempoRange.endTime);
+                // Si usó rango horario, enviar inicioManual y finManual en formato ISO
+                if (tiempoRange?.mode === 'range' && tiempoRange.startTime && tiempoRange.endTime) {
+                    const dateStr = isoToDateInput(new Date());
+                    const endDate = tiempoRange.endTime <= tiempoRange.startTime ? addDaysToDateInput(dateStr, 1) : dateStr;
+                    const inicioISO = localMXTimeToISO(dateStr, tiempoRange.startTime);
+                    const finISO = localMXTimeToISO(endDate, tiempoRange.endTime);
+                    if (inicioISO && finISO) {
+                        fd.append('inicioManual', inicioISO);
+                        fd.append('finManual', finISO);
+                    }
                 }
             }
 
@@ -501,16 +525,22 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="tec-desc">
-                                Notas / descripción
-                                <span className="ml-1 text-xs font-normal text-slate-400">(opcional)</span>
+                                {yaTerminado ? 'Nota de cierre' : 'Descripción / notas'}
+                                <span className="ml-1 text-xs font-normal text-slate-400">
+                                    {yaTerminado ? '(opcional — se guardará en el historial de cierre)' : '(opcional)'}
+                                </span>
                             </Label>
                             <textarea
                                 id="tec-desc"
                                 rows={2}
                                 maxLength={500}
-                                placeholder="Detalles breves del trabajo…"
-                                value={descripcion}
-                                onChange={(e) => setDescripcion(e.target.value)}
+                                placeholder={
+                                    yaTerminado
+                                        ? 'Detalles del trabajo realizado, observaciones de cierre…'
+                                        : 'Detalles breves del trabajo a realizar…'
+                                }
+                                value={textoLibre}
+                                onChange={(e) => setTextoLibre(e.target.value)}
                                 className="w-full border border-slate-300 rounded-sm px-3 py-2 text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-marca-secundario/30 focus:border-marca-secundario transition-all"
                             />
                         </div>
