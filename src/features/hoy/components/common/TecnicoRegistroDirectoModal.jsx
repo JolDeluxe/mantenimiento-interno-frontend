@@ -236,15 +236,20 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
 
         let isMounted = true;
         setLoadingMaquinas(true);
-        getAllMaquinas({ soloOperativas: 'true' })
-            .then((data) => { if (isMounted) setMaquinasRaw(filterMaquinasParaMantenimiento(data)); })
+        getAllMaquinas()
+            .then((data) => {
+                if (isMounted) {
+                    const list = Array.isArray(data) ? data : (data?.data || []);
+                    setMaquinasRaw(list);
+                }
+            })
             .catch((err) => console.error('Error al cargar máquinas:', err))
             .finally(() => { if (isMounted) setLoadingMaquinas(false); });
 
         return () => { isMounted = false; };
     }, [isOpen]);
 
-    const opcionesMaquinas    = useMemo(() => buildMaquinaOptions(maquinasRaw), [maquinasRaw]);
+    const opcionesMaquinas    = useMemo(() => buildMaquinaOptions(Array.isArray(maquinasRaw) ? maquinasRaw : []), [maquinasRaw]);
     const maquinaSeleccionada = useMemo(() => maquinasRaw.find((m) => String(m.id) === String(maquinaId)) || null, [maquinasRaw, maquinaId]);
     const areasOptions        = useMemo(() => AREAS.map((a) => ({ value: a, label: a })), []);
 
