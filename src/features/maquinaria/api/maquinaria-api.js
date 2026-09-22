@@ -16,18 +16,26 @@ const extractMaquinasPage = (response) => {
 const extractPagination = (response) => response?.data?.pagination || response?.pagination || {};
 
 export const getAllMaquinas = async (params = {}) => {
-  const limit = 1000;
-  const allMaquinas = [];
+  // Pedir directamente el catálogo completo sin límite arbitrario de 1000
+  const response = await getMaquinas({ ...params, all: true });
+  const allMaquinas = extractMaquinasPage(response);
+  if (Array.isArray(allMaquinas) && allMaquinas.length > 0) {
+    return allMaquinas;
+  }
+
+  // Fallback seguro por si la respuesta vino vacía o con paginación tradicional
   let page = 1;
+  const limit = 2000;
   let totalPages = null;
+  const paginatedMaquinas = [];
 
   while (totalPages === null || page <= totalPages) {
-    const response = await getMaquinas({ ...params, page, limit });
-    const pageData = extractMaquinasPage(response);
-    const pagination = extractPagination(response);
+    const pResponse = await getMaquinas({ ...params, page, limit });
+    const pageData = extractMaquinasPage(pResponse);
+    const pagination = extractPagination(pResponse);
     const parsedTotalPages = Number(pagination.totalPages || pagination.pages);
 
-    allMaquinas.push(...pageData);
+    paginatedMaquinas.push(...pageData);
 
     if (Number.isFinite(parsedTotalPages) && parsedTotalPages > 0) {
       totalPages = parsedTotalPages;
@@ -38,7 +46,7 @@ export const getAllMaquinas = async (params = {}) => {
     page += 1;
   }
 
-  return allMaquinas;
+  return paginatedMaquinas;
 };
 
 /**
