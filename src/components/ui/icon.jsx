@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 
 // Diccionario de tallas corporativas
 const ICON_SIZES = {
+  xxs: '12px',
   xs: '16px',
   sm: '20px',
   md: '24px',
@@ -20,10 +21,11 @@ export const Icon = ({
   grad = 0, 
   opsz = 24, 
   size = "md", // Cambiamos el default a la talla lógica
-  className = "" 
+  className = "",
+  style = {}
 }) => {
   // Resuelve la talla lógica ("xs") o usa el valor directo ("14px", "2rem") si no existe en el diccionario
-  const resolvedSize = ICON_SIZES[size] || size;
+  const resolvedSize = style.fontSize || ICON_SIZES[size] || size;
 
   return (
     <span 
@@ -31,7 +33,8 @@ export const Icon = ({
       style={{
         fontSize: resolvedSize,
         // Inyectamos los ejes variables directamente al estilo para que el motor de la fuente los procese
-        fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grad}, 'opsz' ${opsz}`
+        fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' ${grad}, 'opsz' ${opsz}`,
+        ...style,
       }}
     >
       {name}

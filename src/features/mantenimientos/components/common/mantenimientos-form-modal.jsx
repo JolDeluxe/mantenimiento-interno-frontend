@@ -81,9 +81,11 @@ const TecnicoAdicionalChip = ({ nombre, onRemove }) => (
         <button
             type="button"
             onClick={onRemove}
-            className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
+            className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+            title="Quitar técnico"
+            aria-label="Quitar técnico"
         >
-            <Icon name="close" size="xs" />
+            <Icon name="close" size="10px" />
         </button>
     </span>
 );
@@ -129,15 +131,16 @@ const CarritoThumbnail = ({ file, onRemove }) => {
                     onRemove();
                 }}
                 title="Quitar imagen"
-                className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-90 transition-opacity shadow-sm cursor-pointer"
+                className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                aria-label="Quitar imagen"
             >
-                <Icon name="close" style={{ fontSize: '10px' }} />
+                <Icon name="close" size="8px" />
             </button>
         </div>
     );
 };
 
-const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico, onRemoveImagen }) => {
+const CarritoItem = ({ item, index, onRemove, onEdit, isEditing, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico, onRemoveImagen }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
@@ -197,18 +200,9 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                             item.tiempoEstimado > 0 && (
                                 <>
                                     <span className="text-slate-300 text-[10px]">·</span>
-                                    <span className="text-[10px] text-slate-450 font-semibold">${item.tiempoEstimado} min</span>
+                                    <span className="text-[10px] text-slate-450 font-semibold">{item.tiempoEstimado} min</span>
                                 </>
                             )
-                        )}
-                        {item.imagenes && item.imagenes.filter(f => f instanceof Blob || f instanceof File).length > 0 && (
-                            <>
-                                <span className="text-slate-300 text-[10px]">·</span>
-                                <span className="text-[10px] text-marca-primario font-bold bg-marca-primario/10 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                    <Icon name="photo_camera" style={{ fontSize: '11px' }} />
-                                    <span>{item.imagenes.filter(f => f instanceof Blob || f instanceof File).length}</span>
-                                </span>
-                            </>
                         )}
                     </div>
 
@@ -248,10 +242,17 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
+                    <button type="button" onClick={() => onEdit && onEdit(item)} title="Editar tarea"
+                        className={cn(
+                            "p-1.5 rounded-md transition-colors shrink-0",
+                            isEditing ? "bg-amber-100 text-amber-700" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        )}>
+                        <Icon name="edit" size="xs" className="shrink-0" />
+                    </button>
                     <button type="button" onClick={() => setExpanded(!expanded)}
                         title={expanded ? 'Ocultar detalles' : 'Administrar tarea'}
                         className={cn(
-                            "p-1.5 rounded-md transition-colors",
+                            "p-1.5 rounded-md transition-colors shrink-0",
                             expanded ? 'bg-marca-primario/10 text-marca-primario' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                         )}>
                         <Icon name={expanded ? 'expand_less' : 'expand_more'} size="xs" />
@@ -370,6 +371,7 @@ export const MantenimientosFormModal = ({
 
     const [carrito, setCarrito] = useState([]);
     const [tecnicoCartId, setTecnicoCartId] = useState('');
+    const [editingCartItemId, setEditingCartItemId] = useState(null);
 
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
@@ -501,6 +503,7 @@ export const MantenimientosFormModal = ({
         setBackendError('');
         setIsDropdownOpen(false);
         setCarrito([]);
+        setEditingCartItemId(null);
 
         if (esEdicion) {
             const loc = deriveLocationFromTicket(ticketAEditar);
@@ -745,37 +748,132 @@ export const MantenimientosFormModal = ({
         setHoraFin('');
     };
 
+    const handleEditarItemCarrito = (item) => {
+        setEditingCartItemId(item._id);
+        setTitulo(item.titulo || '');
+        const desc = item.descripcion && item.descripcion !== 'Sin descripción.' ? item.descripcion : '';
+        setDescripcion(desc);
+        setMostrarDescripcion(Boolean(desc));
+        setCategoria(item.categoria || (scope === 'mantenimientos' ? 'MAQUINARIA' : ''));
+        setArea(item.area || '');
+        setPrioridad(item.prioridad || 'MEDIA');
+        setClasificacion(item.clasificacion || (scope === 'mantenimientos' ? 'PREVENTIVO' : ''));
+        setTipo(item.tipo || 'PLANEADA');
+        setFechaVencimiento(item.fechaVencimiento || hoyLocal);
+        setImagenes(item.imagenes ? [...item.imagenes] : []);
+        setMaquinaId(item.maquinaId ? String(item.maquinaId) : '');
+        setParoProduccion(Boolean(item.paroProduccion));
+        setImpactoProduccionMins(item.impactoProduccion || 0);
+
+        if (item.responsables && item.responsables.length > 0) {
+            setTecnicoCartId(String(item.responsables[0]));
+        }
+
+        if (item.modoRangoHoras) {
+            setModoRangoHoras(true);
+            setHoraInicio(item.horaInicio || (item.horaInicioProgramada ? isoToLocalMXTime(item.horaInicioProgramada) : ''));
+            setHoraFin(item.horaFin || (item.horaFinProgramada ? isoToLocalMXTime(item.horaFinProgramada) : ''));
+            setTiempoEstimadoMins(0);
+        } else {
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
+            setTiempoEstimadoMins(item.tiempoEstimado || 0);
+        }
+
+        setSubmitted(false);
+        setBackendError('');
+    };
+
+    const handleCancelarEdicionCarrito = () => {
+        setEditingCartItemId(null);
+        setTitulo('');
+        setDescripcion('');
+        setMostrarDescripcion(false);
+        setImagenes([]);
+        setTiempoEstimadoMins(0);
+        setHoraInicio('');
+        setHoraFin('');
+        setMaquinaId('');
+        setMaquinaInfo(null);
+        setParoProduccion(false);
+        setImpactoProduccionMins(0);
+        setModoRangoHoras(false);
+        setSubmitted(false);
+        setIsDropdownOpen(false);
+        setBackendError('');
+    };
+
     const handleAgregarAlCarrito = () => {
         setSubmitted(true);
         const errors = getErrors();
         if (Object.keys(errors).length > 0) return;
 
         if (imagenes && imagenes.length > 0) {
-            const tareasConFotos = carrito.filter(item => item.imagenes && item.imagenes.length > 0).length;
+            const tareasConFotos = carrito.filter(item => item._id !== editingCartItemId && item.imagenes && item.imagenes.some(f => f instanceof Blob || f instanceof File)).length;
             if (tareasConFotos >= 10) {
                 setBackendError("Ya alcanzaste el máximo de 10 tareas con fotos en este lote, puedes agregar esta tarea sin imágenes o quitar fotos de otra.");
                 return;
             }
         }
 
-        const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
+        if (editingCartItemId) {
+            // Actualizar tarea existente en el carrito
+            setCarrito(prev => prev.map(item => {
+                if (item._id !== editingCartItemId) return item;
+                const techList = item.responsables && item.responsables.length > 0 ? [...item.responsables] : [];
+                if (tecnicoCartId && !techList.includes(String(tecnicoCartId))) {
+                    techList[0] = String(tecnicoCartId);
+                } else if (tecnicoCartId && techList.length === 0) {
+                    techList.push(String(tecnicoCartId));
+                }
 
-        setCarrito(prev => [...prev, {
-            _id: `${Date.now()}-${Math.random()}`,
-            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
-            prioridad, clasificacion, tipo, fechaVencimiento,
-            tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
-            responsables: responsablesSnapshot,
-            maquinaId: maquinaId ? Number(maquinaId) : null,
-            paroProduccion,
-            impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
-            modoRangoHoras,
-            horaInicio: modoRangoHoras ? horaInicio : null,
-            horaFin: modoRangoHoras ? horaFin : null,
-            horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
-            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
-            imagenes: [...imagenes],
-        }]);
+                return {
+                    ...item,
+                    titulo,
+                    descripcion: descripcion.trim() || 'Sin descripción.',
+                    categoria,
+                    area,
+                    prioridad,
+                    clasificacion,
+                    tipo,
+                    fechaVencimiento,
+                    tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins,
+                    esRutina,
+                    responsables: techList.length > 0 ? techList : buildResponsablesSnapshot(tecnicoCartId),
+                    maquinaId: maquinaId ? Number(maquinaId) : null,
+                    paroProduccion,
+                    impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
+                    modoRangoHoras,
+                    horaInicio: modoRangoHoras ? horaInicio : null,
+                    horaFin: modoRangoHoras ? horaFin : null,
+                    horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                    horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                    imagenes: [...imagenes],
+                };
+            }));
+
+            setEditingCartItemId(null);
+        } else {
+            const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
+
+            setCarrito(prev => [...prev, {
+                _id: `${Date.now()}-${Math.random()}`,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
+                prioridad, clasificacion, tipo, fechaVencimiento,
+                tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina,
+                responsables: responsablesSnapshot,
+                maquinaId: maquinaId ? Number(maquinaId) : null,
+                paroProduccion,
+                impactoProduccion: paroProduccion && impactoProduccionMins > 0 ? impactoProduccionMins : null,
+                modoRangoHoras,
+                horaInicio: modoRangoHoras ? horaInicio : null,
+                horaFin: modoRangoHoras ? horaFin : null,
+                horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                imagenes: [...imagenes],
+            }]);
+        }
         
         // Solo reseteamos lo que cambia por tarea. El contexto del área se mantiene.
         setTitulo('');
@@ -795,6 +893,9 @@ export const MantenimientosFormModal = ({
     };
 
     const handleQuitarDelCarrito = (_id) => {
+        if (editingCartItemId === _id) {
+            handleCancelarEdicionCarrito();
+        }
         setCarrito(prev => prev.filter(item => item._id !== _id));
     };
 
@@ -1593,10 +1694,27 @@ export const MantenimientosFormModal = ({
                         {modoCarrito && (
                             <div className="shrink-0 flex items-center justify-between pt-3 mt-1 border-t border-slate-100 bg-white">
                                 <div className="flex items-center gap-3">
-                                    <Button variant="accion" icon="add_circle" onClick={handleAgregarAlCarrito} disabled={isSubmitting}>
-                                        Agregar a la lista
+                                    <Button
+                                        variant="accion"
+                                        icon={editingCartItemId ? "check" : "add_circle"}
+                                        onClick={handleAgregarAlCarrito}
+                                        disabled={isSubmitting}
+                                        className={cn(
+                                            editingCartItemId ? "!bg-amber-600 hover:!bg-amber-700 !text-white" : ""
+                                        )}
+                                    >
+                                        {editingCartItemId ? "Actualizar tarea" : "Agregar a la lista"}
                                     </Button>
-                                    {carrito.length > 0 && (
+                                    {editingCartItemId && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelarEdicionCarrito}
+                                            className="text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+                                        >
+                                            Cancelar edición
+                                        </button>
+                                    )}
+                                    {carrito.length > 0 && !editingCartItemId && (
                                         <span className="text-xs text-slate-500 font-medium">
                                             {carrito.length} tarea{carrito.length !== 1 ? 's' : ''} en lista
                                         </span>
@@ -1621,7 +1739,10 @@ export const MantenimientosFormModal = ({
                                         </span>
                                     )}
                                     {carrito.length > 0 && (
-                                        <button type="button" onClick={() => setCarrito([])}
+                                        <button type="button" onClick={() => {
+                                            setEditingCartItemId(null);
+                                            setCarrito([]);
+                                        }}
                                             className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors cursor-pointer">
                                             Limpiar
                                         </button>
@@ -1650,6 +1771,8 @@ export const MantenimientosFormModal = ({
                                             item={item}
                                             index={i}
                                             onRemove={handleQuitarDelCarrito}
+                                            onEdit={handleEditarItemCarrito}
+                                            isEditing={editingCartItemId === item._id}
                                             tecnicoMap={tecnicoMapCompleto}
                                             tecnicos={tecnicos}
                                             onAddTecnico={handleAgregarTecnicoItem}

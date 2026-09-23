@@ -9,6 +9,7 @@ import api from '@/lib/axios';
 import {
     CLASIFICACIONES_ADMIN, PRIORIDADES, TIPOS_ADMIN, ROLES_ADMIN, AREAS, CATEGORIAS_EQUIPO, normalizeAreaName
 } from '@/features/common/constants/catalogos-tareas';
+import { idbSet, idbGet, idbDelete } from '@/lib/idb';
 
 import {
     PrioridadField,
@@ -157,8 +158,10 @@ const TecnicoAdicionalChip = ({ nombre, onRemove }) => (
             type="button"
             onClick={onRemove}
             className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+            title="Quitar técnico"
+            aria-label="Quitar técnico"
         >
-            <Icon name="close" size="xs" />
+            <Icon name="close" size="10px" />
         </button>
     </span>
 );
@@ -204,15 +207,16 @@ const CarritoThumbnail = ({ file, onRemove }) => {
                     onRemove();
                 }}
                 title="Quitar imagen"
-                className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-90 transition-opacity shadow-sm cursor-pointer"
+                className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                aria-label="Quitar imagen"
             >
-                <Icon name="close" style={{ fontSize: '10px' }} />
+                <Icon name="close" size="8px" />
             </button>
         </div>
     );
 };
 
-const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico, onRemoveImagen }) => {
+const CarritoItem = ({ item, index, onRemove, onEdit, isEditing, tecnicoMap, tecnicos, onAddTecnico, onRemoveTecnico, onCambiarTecnico, onRemoveImagen }) => {
     const [expanded, setExpanded] = useState(false);
     const clasificLabel = item.clasificacion ? (CLASIFICACIONES_ADMIN.find(c => c.value === item.clasificacion)?.label || item.clasificacion) : null;
     const tipoLabel = TIPOS_ADMIN.find(t => t.value === item.tipo)?.label || item.tipo;
@@ -292,15 +296,6 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                                 </span>
                             </>
                         )}
-                        {item.imagenes && item.imagenes.filter(f => f instanceof Blob || f instanceof File).length > 0 && (
-                            <>
-                                <span className="text-slate-300 text-[10px]">·</span>
-                                <span className="text-[10px] text-marca-primario font-bold bg-marca-primario/10 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                    <Icon name="photo_camera" style={{ fontSize: '11px' }} />
-                                    <span>{item.imagenes.filter(f => f instanceof Blob || f instanceof File).length}</span>
-                                </span>
-                            </>
-                        )}
                     </div>
 
                     {!expanded && tecnicosIds.length > 0 && (
@@ -339,6 +334,13 @@ const CarritoItem = ({ item, index, onRemove, tecnicoMap, tecnicos, onAddTecnico
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
+                    <button type="button" onClick={() => onEdit && onEdit(item)} title="Editar tarea"
+                        className={cn(
+                            "p-1.5 rounded-md transition-colors shrink-0",
+                            isEditing ? "bg-amber-100 text-amber-700" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        )}>
+                        <Icon name="edit" size="xs" className="shrink-0" />
+                    </button>
                     <button type="button" onClick={() => setExpanded(!expanded)}
                         title={expanded ? 'Ocultar detalles' : 'Administrar tarea'}
                         className={cn(
@@ -534,6 +536,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         return localStorage.getItem(storageKey('tecnicoCartId')) || '';
     });
 
+    const [editingCartItemId, setEditingCartItemId] = useState(null);
+
     const modoCarrito = !esEdicion && esAdmin && !isMobile && modoLista;
     const tecnicoCart = tecnicos.find(t => String(t.id) === String(tecnicoCartId));
 
@@ -617,6 +621,72 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         localStorage.setItem(storageKey('modoLista'), JSON.stringify(modoLista));
         localStorage.setItem(storageKey('responsables'), JSON.stringify(responsables));
     }, [titulo, descripcion, categoria, area, prioridad, tipo, fechaVencimiento, tiempoEstimadoMins, modoRangoHoras, horaInicio, horaFin, tecnicoCartId, carrito, modoLista, responsables, esEdicion, storageKey]);
+    // --- EFECTO PARA GUARDAR IMÁGENES DE BORRADOR EN INDEXEDDB ---
+    useEffect(() => {
+        if (esEdicion) return;
+        // Solo guardar mientras el modal está abierto; cuando está cerrado el estado
+        // puede ser [] (estado inicial) y borraría el IDB antes de que se restaure.
+        if (!isOpen) return;
+
+        const cartImagesMap = {};
+        let hasCartImages = false;
+
+        (carrito || []).forEach(item => {
+            const validImgs = (item.imagenes || []).filter(f => f instanceof Blob || f instanceof File);
+            if (validImgs.length > 0) {
+                cartImagesMap[item._id] = validImgs;
+                hasCartImages = true;
+            }
+        });
+
+        const validFormImgs = (imagenes || []).filter(f => f instanceof Blob || f instanceof File);
+        const hasFormImages = validFormImgs.length > 0;
+
+        const draftImagesKey = storageKey('draft_images');
+
+        // Solo guardar si hay imágenes; nunca borrar automáticamente desde aquí.
+        // El borrado lo hace exclusivamente clearDraft para evitar la condición de carrera.
+        if (hasCartImages || hasFormImages) {
+            idbSet('tickets', draftImagesKey, {
+                formImages: validFormImgs,
+                cartImages: cartImagesMap
+            }).catch(() => {});
+        }
+    }, [carrito, imagenes, esEdicion, storageKey, isOpen]);
+
+    // --- EFECTO PARA RESTAURAR IMÁGENES DESDE INDEXEDDB AL ABRIR EL MODAL ---
+    useEffect(() => {
+        if (!isOpen || esEdicion) return;
+
+        let isMounted = true;
+        const draftImagesKey = storageKey('draft_images');
+
+        idbGet('tickets', draftImagesKey).then(result => {
+            if (!isMounted || !result?.data) return;
+            const { formImages = [], cartImages = {} } = result.data;
+
+            // Restaurar imágenes del formulario activo si aún no tiene imágenes cargadas
+            if (Array.isArray(formImages) && formImages.length > 0) {
+                setImagenes(prev => (prev.length === 0 ? formImages : prev));
+            }
+
+            // Restaurar imágenes de cada tarea en el carrito
+            if (cartImages && Object.keys(cartImages).length > 0) {
+                setCarrito(prev => prev.map(item => {
+                    const savedImgs = cartImages[item._id];
+                    if (savedImgs && savedImgs.length > 0 && (!item.imagenes || item.imagenes.length === 0)) {
+                        return { ...item, imagenes: savedImgs };
+                    }
+                    return item;
+                }));
+            }
+        }).catch(() => {});
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isOpen, esEdicion, storageKey]);
+
     const clearDraft = () => {
         [
             'titulo',
@@ -635,6 +705,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
             'modoLista',
             'responsables',
         ].forEach((key) => localStorage.removeItem(storageKey(key)));
+        idbDelete('tickets', storageKey('draft_images')).catch(() => {});
         setTitulo('');
         setDescripcion('');
         setMostrarDescripcion(false);
@@ -650,6 +721,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setHoraFin('');
         setTecnicoCartId('');
         setCarrito([]);
+        setEditingCartItemId(null);
         setModoLista(true);
         setResponsables([]);
         setSubmitted(false);
@@ -664,6 +736,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         if (!isOpen) return;
         setSubmitted(false);
         setBackendError('');
+        setEditingCartItemId(null);
         setIsDropdownOpen(false);
 
         if (esEdicion) {
@@ -826,47 +899,56 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         return e;
     };
 
-    const handleAgregarAlCarrito = () => {
-        setSubmitted(true);
-        const errors = getErrors();
-        if (Object.keys(errors).length > 0) return;
+    const handleEditarItemCarrito = (item) => {
+        setEditingCartItemId(item._id);
+        setTitulo(item.titulo || '');
+        const desc = item.descripcion && item.descripcion !== 'Sin descripción.' ? item.descripcion : '';
+        setDescripcion(desc);
+        setMostrarDescripcion(Boolean(desc));
+        setCategoria(item.categoria || '');
+        setArea(item.area || '');
+        setPrioridad(item.prioridad || 'MEDIA');
+        setTipo(item.tipo || defaultTipo);
+        setFechaVencimiento(item.fechaVencimiento || hoyLocal);
+        setImagenes(item.imagenes ? [...item.imagenes] : []);
 
-        if (imagenes && imagenes.length > 0) {
-            const tareasConFotos = carrito.filter(item => item.imagenes && item.imagenes.some(f => f instanceof Blob || f instanceof File)).length;
-            if (tareasConFotos >= 10) {
-                setBackendError("Ya alcanzaste el máximo de 10 tareas con fotos en este lote, puedes agregar esta tarea sin imágenes o quitar fotos de otra.");
-                return;
-            }
+        if (item.responsables && item.responsables.length > 0) {
+            setTecnicoCartId(String(item.responsables[0]));
         }
 
-        const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
+        if (item.modoRangoHoras) {
+            setModoRangoHoras(true);
+            setHoraInicio(item.horaInicio || (item.horaInicioProgramada ? isoToLocalMXTime(item.horaInicioProgramada) : ''));
+            setHoraFin(item.horaFin || (item.horaFinProgramada ? isoToLocalMXTime(item.horaFinProgramada) : ''));
+            setTiempoEstimadoMins(0);
+        } else {
+            setModoRangoHoras(false);
+            setHoraInicio('');
+            setHoraFin('');
+            setTiempoEstimadoMins(item.tiempoEstimado || 0);
+        }
 
-        const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
+        if (item.esRecurrente) {
+            setEsRecurrente(true);
+            setFrecuencia(item.frecuencia || 'DIARIA');
+            setUnidad(item.unidad || 'DIA');
+            setIntervalo(String(item.intervalo || 1));
+        } else {
+            setEsRecurrente(false);
+            setFrecuencia('DIARIA');
+            setUnidad('DIA');
+            setIntervalo('1');
+        }
 
-        const newItem = {
-            _id: `${Date.now()}-${Math.random()}`,
-            titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
-            prioridad, clasificacion: null, tipo, fechaVencimiento,
-            tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
-            responsables: responsablesSnapshot,
-            maquinaId: null,
-            modoRangoHoras,
-            horaInicio: modoRangoHoras ? horaInicio : null,
-            horaFin: modoRangoHoras ? horaFin : null,
-            horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
-            horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
-            // Recurrente fields
-            esRecurrente,
-            frecuencia,
-            unidad: esRecurrente ? freq.unidad : null,
-            intervalo: esRecurrente ? Number(freq.intervalo) : null,
-            imagenes: !esRecurrente ? [...imagenes] : []
-        };
+        setSubmitted(false);
+        setBackendError('');
+    };
 
-        setCarrito(prev => [...prev, newItem]);
-
+    const handleCancelarEdicionCarrito = () => {
+        setEditingCartItemId(null);
         setTitulo('');
         setDescripcion('');
+        setMostrarDescripcion(false);
         setImagenes([]);
         setTiempoEstimadoMins(0);
         setHoraInicio('');
@@ -879,9 +961,108 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
         setIntervalo('1');
         setSubmitted(false);
         setIsDropdownOpen(false);
+        setBackendError('');
+    };
+
+    const handleAgregarAlCarrito = () => {
+        setSubmitted(true);
+        const errors = getErrors();
+        if (Object.keys(errors).length > 0) return;
+
+        if (imagenes && imagenes.length > 0) {
+            const tareasConFotos = carrito.filter(item => item._id !== editingCartItemId && item.imagenes && item.imagenes.some(f => f instanceof Blob || f instanceof File)).length;
+            if (tareasConFotos >= 10) {
+                setBackendError("Ya alcanzaste el máximo de 10 tareas con fotos en este lote, puedes agregar esta tarea sin imágenes o quitar fotos de otra.");
+                return;
+            }
+        }
+
+        const freq = buildFrecuenciaFields(frecuencia, unidad, intervalo);
+
+        if (editingCartItemId) {
+            // Actualizar tarea existente en el carrito
+            setCarrito(prev => prev.map(item => {
+                if (item._id !== editingCartItemId) return item;
+                const techList = item.responsables && item.responsables.length > 0 ? [...item.responsables] : [];
+                if (tecnicoCartId && !techList.includes(String(tecnicoCartId))) {
+                    techList[0] = String(tecnicoCartId);
+                } else if (tecnicoCartId && techList.length === 0) {
+                    techList.push(String(tecnicoCartId));
+                }
+
+                return {
+                    ...item,
+                    titulo,
+                    descripcion: descripcion.trim() || 'Sin descripción.',
+                    categoria,
+                    area,
+                    prioridad,
+                    tipo,
+                    fechaVencimiento,
+                    tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins,
+                    responsables: techList.length > 0 ? techList : buildResponsablesSnapshot(tecnicoCartId),
+                    modoRangoHoras,
+                    horaInicio: modoRangoHoras ? horaInicio : null,
+                    horaFin: modoRangoHoras ? horaFin : null,
+                    horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                    horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                    esRecurrente,
+                    frecuencia,
+                    unidad: esRecurrente ? freq.unidad : null,
+                    intervalo: esRecurrente ? Number(freq.intervalo) : null,
+                    imagenes: !esRecurrente ? [...imagenes] : []
+                };
+            }));
+
+            setEditingCartItemId(null);
+        } else {
+            // Nueva tarea
+            const responsablesSnapshot = buildResponsablesSnapshot(tecnicoCartId);
+            const newItem = {
+                _id: `${Date.now()}-${Math.random()}`,
+                titulo, descripcion: descripcion.trim() || 'Sin descripción.', categoria, area,
+                prioridad, clasificacion: null, tipo, fechaVencimiento,
+                tiempoEstimado: modoRangoHoras ? 0 : tiempoEstimadoMins, esRutina: false,
+                responsables: responsablesSnapshot,
+                maquinaId: null,
+                modoRangoHoras,
+                horaInicio: modoRangoHoras ? horaInicio : null,
+                horaFin: modoRangoHoras ? horaFin : null,
+                horaInicioProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaInicio) : null,
+                horaFinProgramada: modoRangoHoras ? localMXTimeToISO(fechaVencimiento || hoyLocal, horaFin) : null,
+                // Recurrente fields
+                esRecurrente,
+                frecuencia,
+                unidad: esRecurrente ? freq.unidad : null,
+                intervalo: esRecurrente ? Number(freq.intervalo) : null,
+                imagenes: !esRecurrente ? [...imagenes] : []
+            };
+
+            setCarrito(prev => [...prev, newItem]);
+        }
+
+        setTitulo('');
+        setDescripcion('');
+        setMostrarDescripcion(false);
+        setImagenes([]);
+        setTiempoEstimadoMins(0);
+        setHoraInicio('');
+        setHoraFin('');
+        setArea('');
+        setCategoria('');
+        setEsRecurrente(false);
+        setFrecuencia('DIARIA');
+        setUnidad('DIA');
+        setIntervalo('1');
+        setSubmitted(false);
+        setIsDropdownOpen(false);
+        setBackendError('');
     };
 
     const handleQuitarDelCarrito = (_id) => {
+        if (editingCartItemId === _id) {
+            handleCancelarEdicionCarrito();
+        }
         setCarrito(prev => prev.filter(item => item._id !== _id));
     };
 
@@ -1668,14 +1849,26 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                 <div className="flex items-center gap-3">
                                     <Button
                                         variant="accion"
-                                        icon="add_circle"
+                                        icon={editingCartItemId ? "check" : "add_circle"}
                                         onClick={handleAgregarAlCarrito}
                                         disabled={isSubmitting}
-                                        className="!py-1 !px-2.5 !h-7.5 !text-xs"
+                                        className={cn(
+                                            "!py-1 !px-2.5 !h-7.5 !text-xs",
+                                            editingCartItemId ? "!bg-amber-600 hover:!bg-amber-700 !text-white" : ""
+                                        )}
                                     >
-                                        Agregar a la lista
+                                        {editingCartItemId ? "Actualizar tarea" : "Agregar a la lista"}
                                     </Button>
-                                    {carrito.length > 0 && (
+                                    {editingCartItemId && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelarEdicionCarrito}
+                                            className="text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+                                        >
+                                            Cancelar edición
+                                        </button>
+                                    )}
+                                    {carrito.length > 0 && !editingCartItemId && (
                                         <span className="text-[11px] text-slate-500 font-bold">
                                             {carrito.length} {carrito.length !== 1 ? 'tareas' : 'tarea'} en lista
                                         </span>
@@ -1700,7 +1893,7 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                         </span>
                                     )}
                                     {carrito.length > 0 && (
-                                        <button type="button" onClick={() => setCarrito([])}
+                                        <button type="button" onClick={() => { if (editingCartItemId) handleCancelarEdicionCarrito(); setCarrito([]); }}
                                             className="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors cursor-pointer">
                                             Limpiar
                                         </button>
@@ -1729,6 +1922,8 @@ export const ActividadFormModal = ({ isOpen, onClose, ticketAEditar = null, curr
                                             item={item}
                                             index={i}
                                             onRemove={handleQuitarDelCarrito}
+                                            onEdit={handleEditarItemCarrito}
+                                            isEditing={editingCartItemId === item._id}
                                             tecnicoMap={tecnicoMapCompleto}
                                             tecnicos={tecnicos}
                                             onAddTecnico={handleAgregarTecnicoItem}
