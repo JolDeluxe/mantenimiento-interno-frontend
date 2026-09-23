@@ -156,7 +156,8 @@ const FotoSection = ({ archivos, onAgregar, onEliminar }) => {
                             <button
                                 type="button"
                                 onClick={() => onEliminar(idx)}
-                                className="absolute top-1 right-1 w-5 h-5 bg-estado-rechazado rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                className="absolute top-1 right-1 w-6 h-6 bg-estado-rechazado rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-md z-10"
+                                aria-label="Eliminar foto"
                             >
                                 <Icon name="close" size="xs" className="text-white" />
                             </button>
@@ -370,7 +371,64 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
             <ModalBody>
                 <div className="flex flex-col gap-4 py-1">
 
-                    {/* ── 1. ¿DÓNDE SE REALIZÓ O REALIZARÁ? ────────────────────────── */}
+                    {/* ── 1. ¿CUÁL ES EL ESTADO DE ESTE TRABAJO? ─────────────────── */}
+                    <div className="flex flex-col gap-3">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            ¿Cuál es el estado de este trabajo?
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setYaTerminado(true)}
+                                className={cn(
+                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
+                                    yaTerminado
+                                        ? 'border-estado-resuelto bg-estado-resuelto/5'
+                                        : 'border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5'
+                                )}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
+                                    <Icon name="check_circle" size="28px" className="text-estado-resuelto" fill />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700">Ya lo terminé</p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Se cerrará inmediatamente</p>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setYaTerminado(false)}
+                                className={cn(
+                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
+                                    !yaTerminado
+                                        ? 'border-marca-primario bg-marca-primario/5'
+                                        : 'border-slate-200 bg-white hover:border-marca-primario/50 hover:bg-marca-primario/5'
+                                )}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-marca-primario/10 flex items-center justify-center">
+                                    <Icon name="pending_actions" size="28px" className="text-marca-primario" fill />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700">Todavía falta</p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Quedará en tu lista de hoy</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Info cuando está pendiente */}
+                        {!yaTerminado && (
+                            <div className="flex items-start gap-3 px-3 py-2.5 bg-blue-50 border border-blue-200/80 rounded-xl animate-in fade-in duration-200">
+                                <Icon name="info" size="sm" className="text-blue-600 shrink-0 mt-0.5" />
+                                <p className="text-xs text-blue-900 font-medium leading-relaxed">
+                                    La tarea se creará como <strong>Asignada para ti</strong> y aparecerá de inmediato en tu lista de hoy.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── 2. ¿DÓNDE SE REALIZÓ O REALIZARÁ? ────────────────────────── */}
                     <div className="flex flex-col gap-3">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             ¿Dónde se realizó o realizará?
@@ -489,7 +547,7 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                                                     <div className="flex flex-col gap-1.5 pl-8 animate-in fade-in duration-200">
                                                         <Label htmlFor="tec-paro">
                                                             Inicio del paro
-                                                            <span className="ml-1 text-xs font-normal text-slate-400">(deja vacío = ahora mismo)</span>
+                                                             <span className="ml-1 text-xs font-normal text-slate-400">(deja vacío = ahora mismo)</span>
                                                         </Label>
                                                         <input
                                                             id="tec-paro"
@@ -521,63 +579,6 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
                                 </Select>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── 2. ¿CUÁL ES EL ESTADO DE ESTE TRABAJO? ─────────────────── */}
-                    <div className="flex flex-col gap-3">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            ¿Cuál es el estado de este trabajo?
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setYaTerminado(true)}
-                                className={cn(
-                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
-                                    yaTerminado
-                                        ? 'border-estado-resuelto bg-estado-resuelto/5'
-                                        : 'border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5'
-                                )}
-                            >
-                                <div className="w-12 h-12 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
-                                    <Icon name="check_circle" size="28px" className="text-estado-resuelto" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Ya lo terminé</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Se cerrará inmediatamente</p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setYaTerminado(false)}
-                                className={cn(
-                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
-                                    !yaTerminado
-                                        ? 'border-marca-primario bg-marca-primario/5'
-                                        : 'border-slate-200 bg-white hover:border-marca-primario/50 hover:bg-marca-primario/5'
-                                )}
-                            >
-                                <div className="w-12 h-12 rounded-full bg-marca-primario/10 flex items-center justify-center">
-                                    <Icon name="pending_actions" size="28px" className="text-marca-primario" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Todavía falta</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Quedará en tu lista de hoy</p>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Info cuando está pendiente */}
-                        {!yaTerminado && (
-                            <div className="flex items-start gap-3 px-3 py-2.5 bg-blue-50 border border-blue-200/80 rounded-xl animate-in fade-in duration-200">
-                                <Icon name="info" size="sm" className="text-blue-600 shrink-0 mt-0.5" />
-                                <p className="text-xs text-blue-900 font-medium leading-relaxed">
-                                    La tarea se creará como <strong>Asignada para ti</strong> y aparecerá de inmediato en tu lista de hoy.
-                                </p>
                             </div>
                         )}
                     </div>
