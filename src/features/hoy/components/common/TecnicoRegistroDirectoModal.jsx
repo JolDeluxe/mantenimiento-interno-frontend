@@ -370,7 +370,7 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
             <ModalBody>
                 <div className="flex flex-col gap-4 py-1">
 
-                    {/* ── UBICACIÓN ─────────────────────────────────────────────── */}
+                    {/* ── 1. ¿DÓNDE SE REALIZÓ O REALIZARÁ? ────────────────────────── */}
                     <div className="flex flex-col gap-3">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             ¿Dónde se realizó o realizará?
@@ -525,7 +525,64 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                         )}
                     </div>
 
-                    {/* ── QUÉ SE HIZO ───────────────────────────────────────────── */}
+                    {/* ── 2. ¿CUÁL ES EL ESTADO DE ESTE TRABAJO? ─────────────────── */}
+                    <div className="flex flex-col gap-3">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            ¿Cuál es el estado de este trabajo?
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setYaTerminado(true)}
+                                className={cn(
+                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
+                                    yaTerminado
+                                        ? 'border-estado-resuelto bg-estado-resuelto/5'
+                                        : 'border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5'
+                                )}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
+                                    <Icon name="check_circle" size="28px" className="text-estado-resuelto" fill />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700">Ya lo terminé</p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Se cerrará inmediatamente</p>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setYaTerminado(false)}
+                                className={cn(
+                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
+                                    !yaTerminado
+                                        ? 'border-marca-primario bg-marca-primario/5'
+                                        : 'border-slate-200 bg-white hover:border-marca-primario/50 hover:bg-marca-primario/5'
+                                )}
+                            >
+                                <div className="w-12 h-12 rounded-full bg-marca-primario/10 flex items-center justify-center">
+                                    <Icon name="pending_actions" size="28px" className="text-marca-primario" fill />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700">Todavía falta</p>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Quedará en tu lista de hoy</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Info cuando está pendiente */}
+                        {!yaTerminado && (
+                            <div className="flex items-start gap-3 px-3 py-2.5 bg-blue-50 border border-blue-200/80 rounded-xl animate-in fade-in duration-200">
+                                <Icon name="info" size="sm" className="text-blue-600 shrink-0 mt-0.5" />
+                                <p className="text-xs text-blue-900 font-medium leading-relaxed">
+                                    La tarea se creará como <strong>Asignada para ti</strong> y aparecerá de inmediato en tu lista de hoy.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── 3. ¿QUÉ TRABAJO SE REALIZÓ O REALIZARÁ? ───────────────── */}
                     <div className="flex flex-col gap-3">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             ¿Qué trabajo se realizó o realizará?
@@ -579,132 +636,75 @@ export const TecnicoRegistroDirectoModal = ({ isOpen, onClose, onSuccess }) => {
                         <FotoSection archivos={archivos} onAgregar={handleAgregar} onEliminar={handleEliminar} />
                     </div>
 
-                    {/* ── ESTADO ────────────────────────────────────────────────── */}
-                    <div className="flex flex-col gap-3">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            ¿Cuál es el estado de este trabajo?
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setYaTerminado(true)}
-                                className={cn(
-                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
-                                    yaTerminado
-                                        ? 'border-estado-resuelto bg-estado-resuelto/5'
-                                        : 'border-slate-200 bg-white hover:border-estado-resuelto/50 hover:bg-estado-resuelto/5'
-                                )}
-                            >
-                                <div className="w-12 h-12 rounded-full bg-estado-resuelto/10 flex items-center justify-center">
-                                    <Icon name="check_circle" size="28px" className="text-estado-resuelto" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Ya lo terminé</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Se cerrará inmediatamente</p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setYaTerminado(false)}
-                                className={cn(
-                                    'flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 cursor-pointer',
-                                    !yaTerminado
-                                        ? 'border-marca-primario bg-marca-primario/5'
-                                        : 'border-slate-200 bg-white hover:border-marca-primario/50 hover:bg-marca-primario/5'
-                                )}
-                            >
-                                <div className="w-12 h-12 rounded-full bg-marca-primario/10 flex items-center justify-center">
-                                    <Icon name="pending_actions" size="28px" className="text-marca-primario" fill />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-bold text-slate-700">Todavía falta</p>
-                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-tight">Quedará en tu lista de hoy</p>
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Tiempo (solo si ya terminado) */}
-                        {yaTerminado && (
-                            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex items-center gap-2">
-                                    <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
-                                    <p className="text-sm font-bold text-slate-700">Tiempo invertido *</p>
-                                </div>
-
-                                <TimePicker
-                                    totalMins={duracionMinutos}
-                                    onChange={setDuracionMinutos}
-                                    onRangeChange={setTiempoRange}
-                                />
-
-                                {duracionMinutos === 0 && (
-                                    <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
-                                        <Icon name="warning" size="xs" />
-                                        El tiempo debe ser mayor a 0 minutos.
-                                    </p>
-                                )}
-                                {errors.duracion && (
-                                    <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
-                                        <Icon name="warning" size="xs" />{errors.duracion}
-                                    </p>
-                                )}
-
-                                {/* Resumen tiempo */}
-                                {duracionMinutos > 0 && !duracionInvalida && (
-                                    <div className="flex items-center justify-between px-3 py-2 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
-                                        <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                            <Icon name="timer" size="sm" className="text-estado-resuelto" />
-                                            Tiempo a registrar
-                                        </span>
-                                        <span className="text-base font-extrabold font-mono text-estado-resuelto">
-                                            {duracionMinutos < 60
-                                                ? `${duracionMinutos} min`
-                                                : `${Math.floor(duracionMinutos / 60)} h ${duracionMinutos % 60 > 0 ? `${duracionMinutos % 60} min` : ''}`}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Máquina operativa (correctivo + maquina + terminado) */}
-                                {esCorrectivoDeMaquina && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setMaquinaOperativaAlResolver(prev => !prev)}
-                                        className={cn(
-                                            'flex items-start gap-3 p-3 rounded-lg border text-left transition-colors cursor-pointer animate-in fade-in duration-200',
-                                            maquinaOperativaAlResolver
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                                : 'bg-red-50 border-red-200 text-red-800'
-                                        )}
-                                    >
-                                        <span className={cn(
-                                            'mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0',
-                                            maquinaOperativaAlResolver ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-red-300 text-transparent'
-                                        )}>
-                                            <Icon name="check" size="xs" />
-                                        </span>
-                                        <span className="flex flex-col gap-0.5">
-                                            <span className="text-xs font-bold">Máquina funcional y probada</span>
-                                            <span className="text-[10px] leading-tight text-slate-500">
-                                                Confirmo que se realizaron pruebas y la máquina quedó operativa.
-                                            </span>
-                                        </span>
-                                    </button>
-                                )}
+                    {/* ── 4. TIEMPO INVERTIDO (solo si ya terminado) ────────────────── */}
+                    {yaTerminado && (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="flex items-center gap-2">
+                                <Icon name="nest_clock_farsight_analog" size="sm" className="text-marca-primario" />
+                                <p className="text-sm font-bold text-slate-700">Tiempo invertido *</p>
                             </div>
-                        )}
 
-                        {/* Info cuando está pendiente */}
-                        {!yaTerminado && (
-                            <div className="flex items-start gap-3 px-3 py-2.5 bg-blue-50 border border-blue-200/80 rounded-xl animate-in fade-in duration-200">
-                                <Icon name="info" size="sm" className="text-blue-600 shrink-0 mt-0.5" />
-                                <p className="text-xs text-blue-900 font-medium leading-relaxed">
-                                    La tarea se creará como <strong>Asignada para ti</strong> y aparecerá de inmediato en tu lista de hoy.
+                            <TimePicker
+                                totalMins={duracionMinutos}
+                                onChange={setDuracionMinutos}
+                                onRangeChange={setTiempoRange}
+                            />
+
+                            {duracionMinutos === 0 && (
+                                <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                    <Icon name="warning" size="xs" />
+                                    El tiempo debe ser mayor a 0 minutos.
                                 </p>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                            {errors.duracion && (
+                                <p className="text-xs text-estado-rechazado font-bold flex items-center gap-1 -mt-2">
+                                    <Icon name="warning" size="xs" />{errors.duracion}
+                                </p>
+                            )}
+
+                            {/* Resumen tiempo */}
+                            {duracionMinutos > 0 && !duracionInvalida && (
+                                <div className="flex items-center justify-between px-3 py-2 bg-estado-resuelto/10 border border-estado-resuelto/20 rounded-xl">
+                                    <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Icon name="timer" size="sm" className="text-estado-resuelto" />
+                                        Tiempo a registrar
+                                    </span>
+                                    <span className="text-base font-extrabold font-mono text-estado-resuelto">
+                                        {duracionMinutos < 60
+                                            ? `${duracionMinutos} min`
+                                            : `${Math.floor(duracionMinutos / 60)} h ${duracionMinutos % 60 > 0 ? `${duracionMinutos % 60} min` : ''}`}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Máquina operativa (correctivo + maquina + terminado) */}
+                            {esCorrectivoDeMaquina && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMaquinaOperativaAlResolver(prev => !prev)}
+                                    className={cn(
+                                        'flex items-start gap-3 p-3 rounded-lg border text-left transition-colors cursor-pointer animate-in fade-in duration-200',
+                                        maquinaOperativaAlResolver
+                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                            : 'bg-red-50 border-red-200 text-red-800'
+                                    )}
+                                >
+                                    <span className={cn(
+                                        'mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0',
+                                        maquinaOperativaAlResolver ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-red-300 text-transparent'
+                                    )}>
+                                        <Icon name="check" size="xs" />
+                                    </span>
+                                    <span className="flex flex-col gap-0.5">
+                                        <span className="text-xs font-bold">Máquina funcional y probada</span>
+                                        <span className="text-[10px] leading-tight text-slate-500">
+                                            Confirmo que se realizaron pruebas y la máquina quedó operativa.
+                                        </span>
+                                    </span>
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </ModalBody>
 
